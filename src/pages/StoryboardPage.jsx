@@ -9,7 +9,7 @@ import { STORYBOARDS, STORYBOARDS_BY_ERA } from "../data/storyboards";
 import { ERA_MAP } from "../data/eras";
 import { GENERATED_ART } from "../data/generated-art";
 
-const GEMINI_KEY = "AIzaSyCaAOXazk3pTWQqqDT1WWruDo8vhFM29Uc";
+const GEMINI_KEY = localStorage.getItem("gemini_key") || "";
 const GEMINI_IMAGE_MODELS = [
   "gemini-2.5-flash-image",
   "gemini-2.0-flash-exp-image-generation",

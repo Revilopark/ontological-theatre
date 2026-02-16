@@ -11,7 +11,7 @@ import ArtCanvas from "../components/ArtCanvas";
 import { geminiImage, generateWithClaude } from "../api/generate";
 import { addToGallery } from "./GalleryPage";
 
-const GEMINI_KEY = "AIzaSyCaAOXazk3pTWQqqDT1WWruDo8vhFM29Uc";
+const GEMINI_KEY = localStorage.getItem("gemini_key") || "";
 
 export default function MediaStudioPage() {
     // Era and Lineage selection

@@ -6,9 +6,9 @@
 import neo4j from 'neo4j-driver';
 
 // Connection configuration
-const NEO4J_URI = 'neo4j+s://c779e832.databases.neo4j.io';
+const NEO4J_URI = localStorage.getItem('neo4j_uri') || '';
 const NEO4J_USER = 'neo4j';
-const NEO4J_PASSWORD = 'ZXOupyILxFKlLmzHsmHI9rCmC8e2dXTfyRD7SomGhPw';
+const NEO4J_PASSWORD = localStorage.getItem('neo4j_password') || '';
 const NEO4J_DATABASE = 'neo4j';
 
 let driver = null;
