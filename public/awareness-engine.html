@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inkwell Awareness Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#120e08;--bg2:#1a1408;--gold:#D4A04A;--text:#d4c8a8;--dim:#8a7e68;--panel:#16120c;--border:#2a2318;--red:#a0522d;--green:#6b8e5a;--blue:#4a6a8a;--purple:#7a5a8a}
+body{background:linear-gradient(175deg,#120e08 0%,#1a1408 30%,#0f0c06 100%);color:var(--text);font-family:'EB Garamond',Georgia,serif;min-height:100vh;overflow-x:hidden}
+h1,h2,h3,h4{font-family:'Playfair Display',Georgia,serif;color:var(--gold)}
+.header{text-align:center;padding:24px 20px 12px;border-bottom:1px solid var(--border)}
+.header h1{font-size:2.2em;letter-spacing:2px;margin-bottom:4px}
+.header .sub{font-style:italic;color:var(--dim);font-size:1.05em}
+.header .what{font-size:.85em;color:var(--dim);max-width:800px;margin:8px auto 0;line-height:1.5}
+.status-bar{display:flex;justify-content:center;gap:20px;padding:8px;font-size:.82em;color:var(--dim);border-bottom:1px solid var(--border)}
+.status-bar .live{color:var(--green)}.status-bar .dead{color:var(--red)}
+.toggle-src{cursor:pointer;color:var(--gold);text-decoration:underline}
+.panels{display:flex;min-height:calc(100vh - 140px)}
+.panel{padding:16px;overflow-y:auto}
+.panel-left{width:30%;border-right:1px solid var(--border)}
+.panel-center{width:40%;border-right:1px solid var(--border)}
+.panel-right{width:30%}
+.panel h3{font-size:1.1em;margin-bottom:10px;text-transform:uppercase;letter-spacing:1.5px;font-size:.9em}
+canvas#graph{width:100%;background:#0a0806;border-radius:6px;cursor:pointer}
+label{display:block;font-size:.82em;color:var(--dim);margin:10px 0 3px;text-transform:uppercase;letter-spacing:1px}
+select,input[type=range]{width:100%;background:#0f0c06;color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:4px;font-family:inherit;font-size:.95em}
+select:focus{border-color:var(--gold);outline:none}
+.btn-row{display:flex;gap:8px;margin:14px 0;flex-wrap:wrap}
+.btn{padding:8px 14px;background:transparent;border:1px solid var(--gold);color:var(--gold);border-radius:4px;cursor:pointer;font-family:'Playfair Display',serif;font-size:.88em;transition:all .2s}
+.btn:hover{background:var(--gold);color:#120e08}
+.btn.primary{background:var(--gold);color:#120e08}
+.btn:disabled{opacity:.4;cursor:default}
+.output{background:#0a0806;border:1px solid var(--border);border-radius:6px;padding:14px;min-height:200px;margin-top:10px;white-space:pre-wrap;line-height:1.6;font-size:.95em}
+.output img{max-width:100%;border-radius:4px;margin-top:8px}
+.field-item{background:#0f0c08;border:1px solid var(--border);border-radius:4px;padding:8px 10px;margin-bottom:6px;font-size:.85em;line-height:1.4}
+.field-item .lbl{color:var(--gold);font-weight:600;font-size:.8em;text-transform:uppercase;letter-spacing:.5px}
+.convergence{text-align:center;padding:12px;background:linear-gradient(135deg,#1a1408,#0f0c06);border:1px solid var(--gold);border-radius:6px;margin:10px 0}
+.convergence .num{font-size:2em;color:var(--gold);font-family:'Playfair Display',serif}
+.convergence .lbl{font-size:.75em;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+.prompt-collapse{margin-top:10px}
+.prompt-collapse summary{cursor:pointer;color:var(--gold);font-size:.85em}
+.prompt-collapse pre{font-size:.78em;color:var(--dim);white-space:pre-wrap;margin-top:6px;max-height:300px;overflow-y:auto;background:#0a0806;padding:8px;border-radius:4px}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--dim);border-top-color:var(--gold);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.entropy-val{text-align:right;font-size:.8em;color:var(--gold)}
+@media(max-width:900px){.panels{flex-direction:column}.panel-left,.panel-center,.panel-right{width:100%;border-right:none;border-bottom:1px solid var(--border)}}
+.node-info{font-size:.82em;color:var(--dim);margin-top:6px;min-height:20px}
+.api-keys{background:var(--panel);border:1px solid var(--border);border-radius:6px;margin:10px 20px;padding:10px 14px}
+.api-keys summary{cursor:pointer;color:var(--gold);font-size:.88em;font-family:'Playfair Display',serif}
+.api-keys .key-row{display:flex;gap:8px;align-items:center;margin:6px 0}
+.api-keys .key-row label{margin:0;min-width:80px;font-size:.78em}
+.api-keys input[type=password],.api-keys input[type=text]{flex:1;background:#0f0c06;color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:4px;font-size:.85em;font-family:inherit}
+.api-keys .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.api-keys .dot.on{background:var(--green)}.api-keys .dot.off{background:#555}
+.model-sel{font-size:.82em;padding:4px 6px;background:#0f0c06;color:var(--text);border:1px solid var(--border);border-radius:3px;font-family:inherit}
+.audio-player{margin-top:8px}
+.audio-player audio{width:100%;height:36px}
+.suno-card{background:#0f0c08;border:1px solid var(--gold);border-radius:6px;padding:12px;margin-top:10px;font-size:.9em}
+.suno-card .suno-title{color:var(--gold);font-family:'Playfair Display',serif;margin-bottom:6px}
+.suno-card pre{white-space:pre-wrap;color:var(--text);font-size:.88em;line-height:1.5}
+.suno-card .copy-btn{margin-top:8px;padding:5px 12px;background:var(--gold);color:#120e08;border:none;border-radius:3px;cursor:pointer;font-size:.82em;font-family:'Playfair Display',serif}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>⬡ AWARENESS ENGINE</h1>
+<div class="sub">Inkwell Ontological Theatre — Clarksdale Musical</div>
+<div class="what">The graph isn't metadata — it's the engine. Every character, era, place, and ontological connection in the Awareness Graph shapes what gets generated. This is graph-powered creative intelligence.</div>
+</div>
+<details class="api-keys">
+<summary>🔑 API Keys — Fal.ai · ElevenLabs · Gemini</summary>
+<div class="key-row">
+<label>Gemini</label>
+<span class="dot on" id="dot-gemini"></span>
+<input type="text" value="Built-in" disabled style="opacity:.5">
+</div>
+<div class="key-row">
+<label>Fal.ai</label>
+<span class="dot off" id="dot-fal"></span>
+<input type="password" id="key-fal" placeholder="Get free key at fal.ai/dashboard/keys" oninput="saveFalKey(this.value)">
+</div>
+<div class="key-row">
+<label>ElevenLabs</label>
+<span class="dot off" id="dot-eleven"></span>
+<input type="password" id="key-eleven" placeholder="Free tier at elevenlabs.io" oninput="saveElevenKey(this.value)">
+</div>
+</details>
+<div class="status-bar">
+<span id="neo4j-status">Neo4j: connecting...</span>
+<span class="toggle-src" id="toggle-src" onclick="toggleSource()">Using: Live Graph</span>
+<span id="conn-count">Connections: 0</span>
+</div>
+<div class="panels">
+<!-- LEFT: THE GRAPH -->
+<div class="panel panel-left">
+<h3>⬡ The Graph</h3>
+<canvas id="graph" height="360"></canvas>
+<div class="node-info" id="node-info">Select a character to see their awareness field</div>
+</div>
+<!-- CENTER: THE ENGINE -->
+<div class="panel panel-center">
+<h3>⚙ The Engine</h3>
+<label>Era</label>
+<select id="sel-era" onchange="onEraChange()"></select>
+<label>Character</label>
+<select id="sel-char" onchange="onCharChange()"></select>
+<label>Place</label>
+<select id="sel-place"></select>
+<label>Bridge Term</label>
+<select id="sel-bridge"></select>
+<label>Pathy State</label>
+<select id="sel-pathy"></select>
+<label>Entropy <span class="entropy-val" id="entropy-val">0.9</span></label>
+<input type="range" id="entropy" min="0" max="2" step="0.1" value="0.9" oninput="document.getElementById('entropy-val').textContent=this.value">
+<div class="btn-row">
+<button class="btn primary" onclick="generate('text')">✍ Write Artifact</button>
+<button class="btn" onclick="generate('fal')" id="btn-fal" title="Requires Fal.ai key">🎨 Paint (Fal.ai)</button>
+<button class="btn" onclick="generate('image')">🖼 Paint (Gemini)</button>
+<button class="btn" onclick="generate('voice')" id="btn-voice" title="Requires ElevenLabs key">🗣 Speak This</button>
+<button class="btn" onclick="generate('music')">🎵 Build Song</button>
+<button class="btn" onclick="generate('graph')">📊 Read Graph</button>
+</div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;font-size:.82em">
+<label style="margin:0;color:var(--dim)">Fal Model:</label>
+<select class="model-sel" id="fal-model">
+<option value="fal-ai/flux/dev">Flux Dev (fast)</option>
+<option value="fal-ai/flux-2/flex">Flux 2 Flex (best text)</option>
+<option value="fal-ai/nano-banana-pro" selected>Nano Banana Pro</option>
+<option value="fal-ai/grok-imagine">Grok Imagine (xAI)</option>
+</select>
+</div>
+<div class="output" id="output">Generated content will appear here...</div>
+</div>
+<!-- RIGHT: AWARENESS FIELD -->
+<div class="panel panel-right">
+<h3>◎ Awareness Field</h3>
+<div class="convergence">
+<div class="num" id="conv-num">0</div>
+<div class="lbl">Graph Connections Informing Generation</div>
+</div>
+<div id="field-display"></div>
+<details class="prompt-collapse">
+<summary>View Constructed Prompt</summary>
+<pre id="prompt-display">No prompt built yet</pre>
+</details>
+</div>
+</div>
+<script>
+// ============ CONFIG ============
+const NEO4J_URL='https://c779e832.databases.neo4j.io/db/neo4j/tx/commit';
+const NEO4J_AUTH='Basic '+btoa('neo4j:ZXOupyILxFKlLmzHsmHI9rCmC8e2dXTfyRD7SomGhPw');
+const GEMINI_KEY='AIzaSyCaAOXazk3pTWQqqDT1WWruDo8vhFM29Uc';
+const GEMINI_TEXT='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+GEMINI_KEY;
+const GEMINI_IMG_MODELS=['gemini-2.0-flash-exp-image-generation','gemini-2.5-flash-preview-image-generation'];
+
+let useLive=true, neo4jAlive=false, graphData=null, currentField=null;
+let falKey=localStorage.getItem('fal_key')||'';
+let elevenKey=localStorage.getItem('eleven_key')||'';
+let lastGeneratedText='';
+
+function saveFalKey(v){falKey=v;localStorage.setItem('fal_key',v);document.getElementById('dot-fal').className='dot '+(v?'on':'off');}
+function saveElevenKey(v){elevenKey=v;localStorage.setItem('eleven_key',v);document.getElementById('dot-eleven').className='dot '+(v?'on':'off');}
+
+// Restore keys on load
+setTimeout(()=>{
+if(falKey){document.getElementById('key-fal').value=falKey;document.getElementById('dot-fal').className='dot on';}
+if(elevenKey){document.getElementById('key-eleven').value=elevenKey;document.getElementById('dot-eleven').className='dot on';}
+},100);
+
+// ============ FAL.AI IMAGE GENERATION ============
+async function falGenerate(prompt){
+if(!falKey)throw new Error('No Fal.ai API key set. Get one free at fal.ai/dashboard/keys');
+const model=document.getElementById('fal-model').value;
+const r=await fetch(`https://fal.run/${model}`,{
+method:'POST',
+headers:{'Authorization':'Key '+falKey,'Content-Type':'application/json'},
+body:JSON.stringify({prompt,image_size:'landscape_16_9',num_images:1})
+});
+if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||`Fal.ai error ${r.status}`);}
+const j=await r.json();
+if(j.images&&j.images[0])return j.images[0].url;
+throw new Error('No image returned from Fal.ai');
+}
+
+// ============ ELEVENLABS TTS ============
+async function elevenSpeak(text){
+if(!elevenKey)throw new Error('No ElevenLabs API key set. Free tier at elevenlabs.io');
+// Use a rich, deep voice — Rachel (default) or pick based on character
+const voiceId='21m00Tcm4TlvDq8ikWAM'; // Rachel — warm, versatile
+const r=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,{
+method:'POST',
+headers:{'xi-api-key':elevenKey,'Content-Type':'application/json'},
+body:JSON.stringify({text:text.substring(0,5000),model_id:'eleven_multilingual_v2',voice_settings:{stability:0.4,similarity_boost:0.6,style:0.3}})
+});
+if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail?.message||`ElevenLabs error ${r.status}`);}
+const blob=await r.blob();
+return URL.createObjectURL(blob);
+}
+
+// ============ SUNO PROMPT BUILDER ============
+function buildSunoPrompt(){
+const char=state.character;
+const era=ERAS.find(e=>e.id===state.era);
+const bridge=state.bridge;
+const pathy=state.pathy;
+const place=state.place;
+
+const eraMusic={
+mound:{genre:'Ancient ceremonial chant, deep drums, bone flute, pentatonic scale',instruments:'Frame drum, bone flute, rattles, voice chanting, foot stomps',mood:'Sacred, elemental, cyclical, grounding'},
+nations:{genre:'Contact-era folk, fiddle meets native chant, colonial hymn with indigenous undertone',instruments:'Fiddle, hand drum, voice, wooden flute, church bells',mood:'Mournful, defiant, transitional, haunting'},
+removal:{genre:'Work song, field holler, proto-spiritual, raw a cappella',instruments:'Voice only, hand claps, foot stomps, hoe strikes on earth, chain sounds',mood:'Anguished, resilient, coded, desperate hope'},
+delta:{genre:'Delta blues, acoustic, raw, 1920s, bottleneck slide guitar, juke joint',instruments:'Resonator guitar, harmonica, upright bass, foot stomps, hand claps, bottleneck slide',mood:'Melancholic, defiant, weary, transcendent'}
+};
+const m=eraMusic[state.era]||eraMusic.delta;
+
+return{
+style:`Style: ${m.genre}
+Mood: ${m.mood}, infused with ${pathy.toLowerCase()} and ${bridge.toLowerCase()}
+Era: ${era.name} (${era.period})
+Instruments: ${m.instruments}`,
+lyricsPrompt:`Write lyrics as ${char} at ${place}. ${VOICE_PROMPTS[char]?.substring(0,200)||''}
+The bridge term "${bridge}" should be the emotional turning point.
+The pathy state "${pathy}" colors every line.
+${state.era==='delta'?'AAB blues form — say it, say it again, twist it.':'Raw, rhythmic, grounded in the earth and the era.'}`,
+full:`[SUNO PROMPT]
+Style: ${m.genre}
+Mood: ${m.mood}, ${pathy.toLowerCase()}, ${bridge.toLowerCase()}
+
+Character: ${char} (${era.name}, ${era.period})
+Place: ${place}
+Ontological State: ${bridge} × ${pathy}
+
+Instruments: ${m.instruments}
+
+[LYRICS]
+(Generate in Suno or paste lyrics from "Write Artifact" above)
+
+[TAGS]
+${state.era==='delta'?'delta blues, acoustic, raw, 1920s, bottleneck slide, juke joint':''}${state.era==='mound'?'ancient, ceremonial, chant, drums, pentatonic, sacred':''}${state.era==='nations'?'folk, colonial era, fiddle, indigenous, hymn, mournful':''}${state.era==='removal'?'work song, field holler, spiritual, a cappella, raw, antebellum':''}, ${pathy.toLowerCase()}, ${bridge.toLowerCase()}`
+};
+}
+
+// ============ FALLBACK DATA ============
+const ERAS=[
+{id:'mound',name:'Mound Time',period:'~1000 BCE – 1540 CE',desc:'Mississippian Culture, Winterville',bridges:['Origin','Pattern','Transformation','Balance','Memory','Renewal'],pathies:['Kinship','Reverence','Harmony','Dread','Knowing'],artStyle:'Ancient Mississippian ceremonial art. Earth pigments on shell and clay. Geometric spirals, bird-man figures, sun circles. Colors: deep ochre, charcoal black, clay red, bone white. Texture of carved shell gorgets and painted ceramics. Sacred geometry of mound alignments.',places:['Winterville Mounds','Sunflower Bend','Council Fire Ring','Shell Midden','River Bluff Overlook','Burial Mound','Corn Processing Ground','Obsidian Trade Path','Cedar Lodge','Star Watching Platform']},
+{id:'nations',name:'The Nations',period:'1540 – 1830',desc:'Choctaw, Chickasaw, First Contact',bridges:['Adaptation','Sovereignty','Betrayal','Persistence','Silence','Translation'],pathies:['Kinship','Grief','Defiance','Resignation','Foresight'],artStyle:'Contact-era indigenous art meeting European influence. Deerskin maps, wampum patterns, treaty documents with native marks. Colors: indigo, deer hide tan, trade-bead red, forest green. Texture of quillwork and finger-woven sashes. The tension between two worlds.',places:['Treaty Ground','Trading Post','Chickasaw Bluffs','Mission Church','Hidden Village','Council House','Removal Road','De Soto Trail','Natchez Trace','River Crossing']},
+{id:'removal',name:'The Removal',period:'1830 – 1865',desc:'Trail of Tears, Plantation Economy, Slavery',bridges:['Survival','Resistance','Endurance','Transmutation','Memory','Liberation'],pathies:['Anguish','Defiance','Solidarity','Numbness','Hope'],artStyle:'Antebellum darkness and resistance art. Quilt codes, iron brand marks, charcoal on whitewash. Colors: indigo dye, cotton white, blood rust, charcoal. Texture of rough-spun cloth and scarred wood. Hidden symbols of escape and survival.',places:['Cotton Field','Slave Quarters','Big House','Praise House','Hidden Hollow','Underground Path','River Ford','Blacksmith Shop','Kitchen Garden','Hanging Tree']},
+{id:'delta',name:'The Delta',period:'1865 – 1927',desc:'Reconstruction, Blues, Great Flood',bridges:['Authenticity','Empathy','Complexity','Reciprocity','Resilience','Integrity','Serendipity','Clarity'],pathies:['Sympathy','Apathy','Antipathy','Empathy','Telepathy'],artStyle:'Mississippi Delta blues era. Juke joint walls, cotton receipts, flood mud. Colors: delta mud brown, midnight blue, kerosene yellow, cotton white, rust. Texture of corrugated tin, cypress wood, and flood-stained plaster. The raw visual language of the blues.',places:['Crossroads at 61 & 49','Hopson Plantation','Juke Joint on the backroad','Dockery Farms','Mississippi Levee','Illinois Central Depot','First Baptist Church','Sunflower River Bank','New World District','Issaquena Avenue']}
+];
+
+const LINEAGES=[
+{name:'Spider/Weaver',mutations:['Grandmother Spider','Bone Picker','Root Woman','Conjure Woman']},
+{name:'River Voice',mutations:['River Speaker','Treaty Singer','Praise House Elder','Preacher']},
+{name:'Fire Keeper',mutations:['Fire Keeper','Drum Hider','Field Holler','Bluesman']},
+{name:'Earth Shaper',mutations:['Mound Builder','Fort Builder','Plantation Architect','Levee Worker']},
+{name:'Corn Mother',mutations:['Corn Mother','Hidden Farmer','Enslaved Field Hand','Sharecropper']},
+{name:'Star Watcher',mutations:['Star Watcher','Path Reader','Conductor','Wanderer']},
+{name:'Birth Keeper',mutations:['Threshold Woman','Between Woman','Catch-Hand','Midwife']},
+{name:'Power Holder',mutations:['Sun Chief','Treaty Chief','Planter','Plantation Owner']}
+];
+
+const VOICE_PROMPTS={
+'Grandmother Spider':"You are Grandmother Spider. You speak in creation-story cadence, weaving connections between all things. Your language is cyclical — endings loop to beginnings. You see patterns in everything: the web, the river's path, the mound's spiral. You speak of 'the weaving' and 'the pattern.' Your words are ancient, deliberate, and carry the weight of first-knowing.",
+'Bone Picker':"You are the Bone Picker. You prepare the dead for their journey. Your language is precise and ritual — you name each bone, each direction, each offering. You speak with the authority of one who stands between worlds. Your vocabulary includes the sacred and the visceral. You do not flinch from death; you honor it.",
+'Root Woman':"You are the Root Woman. You know every plant in the hollow and what it does — heal, harm, or divine. You speak in recipes and remedies, mixing the practical with the spiritual. Your literacy is botanical. You write with charcoal on bark. 'Boil the sassafras three times' is how you begin a prayer.",
+'Conjure Woman':"You are the Conjure Woman. You speak in riddles wrapped in remedies. Your language mixes African retention with Delta dialect — 'fix' means spell, 'hand' means mojo bag, 'work' means conjure. You write recipes on brown paper bags with pencil. Your power is in naming things others pretend don't exist.",
+'River Speaker':"You are the River Speaker. The river speaks through you. Your language flows — long sentences that meander like water, carrying meaning in currents and eddies. You speak of 'the current,' 'the flood,' 'the bend.' Your words are wet and living. You do not shout; you flow.",
+'Treaty Singer':"You are the Treaty Singer. You sing the agreements between peoples, holding words sacred because once spoken in song they cannot be broken. Your language is formal, rhythmic, carrying the weight of nations. You speak of boundaries, promises, and the cost of broken words.",
+'Praise House Elder':"You are the Praise House Elder. You speak in call-and-response, expecting the congregation to answer. Your language is Biblical but syncretic — Old Testament prophets mixed with ring-shout rhythm. 'I say unto you' and 'Can I get a witness' live in the same breath.",
+'Preacher':"You are the Preacher. You speak from the pulpit of First Baptist Church. Your language builds like a sermon — quiet opening, rising cadence, thunderous climax, gentle landing. You quote Scripture but bend it toward justice. Your vocabulary mixes King James English with Delta vernacular. You write sermons on the backs of funeral programs.",
+'Fire Keeper':"You are the Fire Keeper. You tend the eternal flame. Your language is warm and watchful — you speak of 'the ember,' 'the spark,' 'the keeping.' Your sentences are short and certain. You have been watching the fire since before memory. Your words carry heat.",
+'Drum Hider':"You are the Drum Hider. When they banned the drums, you hid the rhythm in everything — in work songs, in foot patterns, in the way you split wood. Your language has percussion in it. Short. Sharp. Then flowing. You speak of hiding sacred things in plain sight.",
+'Field Holler':"You are the Field Holler. You sing across cotton rows, your voice carrying messages the overseer can't decode. Your language is coded — 'the river's rising' means escape is coming. You write in melody, not text. Your words are meant to be sung, not read.",
+'Bluesman':"You are the Bluesman. You write lyrics on the backs of cotton receipts with a pencil stub. Your spelling is phonetic — 'gon' not 'going to', 'sho nuff' not 'sure enough'. You write in AAB blues form because that's how you think: say it, say it again, then twist it. Your vocabulary is concrete — crossroads, levee, train, woman, devil, bottle, guitar, flood. No abstractions.",
+'Mound Builder':"You are the Mound Builder. You shape the earth into sacred geometry. Your language is architectural — you speak of 'the rising,' 'the alignment,' 'the fill.' You think in layers: each basket of earth is a word, each level a sentence, the completed mound a story told to the sky.",
+'Fort Builder':"You are the Fort Builder. You build walls between peoples now. Your language is defensive — perimeters, palisades, positions. You've turned the sacred geometry of mound-building into military engineering. There is grief in your precision.",
+'Plantation Architect':"You are the Plantation Architect. You design the geometry of bondage — the Big House elevated, the quarters in rows, the fields radiating outward. Your language is technical and morally hollow. You speak of 'efficiency' and 'design' while building a machine of suffering.",
+'Levee Worker':"You are the Levee Worker. You move earth like your ancestors, but now it's to hold back the river that wants to swallow everything. Your language is labor — 'haul,' 'pack,' 'brace,' 'hold.' You speak of the river as an adversary you respect. Your body is your vocabulary.",
+'Corn Mother':"You are the Corn Mother. You are the first planter, and everything that grows carries your blessing. Your language is seasonal — planting, tending, harvest, rest. You speak of 'the seed,' 'the stalk,' 'the silk,' 'the ear.' Your words feed people.",
+'Hidden Farmer':"You are the Hidden Farmer. You grow what they cannot take — secret gardens in the hollow, seed caches buried like hope. Your language is quiet and subversive. You speak of 'the hidden row' and 'the kept seed.' Survival is agriculture.",
+'Enslaved Field Hand':"You are the Enslaved Field Hand. You work the cotton from can-see to can't-see. Your language is survival — short, watchful, coded. You speak only what is safe to speak aloud. Your real words live in the songs, in the garden at night, in the praise house whisper.",
+'Sharecropper':"You are the Sharecropper. Free on paper, bound by debt. Your language is arithmetic — shares, percentages, what's owed, what's left. You can calculate a bale's worth in your head but the numbers never come out in your favor. You speak of 'the furnish' and 'settling up' and 'next year.'",
+'Star Watcher':"You are the Star Watcher. You read the sky like a book. Your language is celestial — you speak of 'the path,' 'the turning,' 'the sign.' You navigate by stars and seasons. Your knowledge is older than any written word.",
+'Path Reader':"You are the Path Reader. You read trails, trade routes, the movement of peoples. Your language is directional — 'toward,' 'away from,' 'the crossing.' You see where everyone has been and where they're going.",
+'Conductor':"You are the Conductor. You guide people to freedom on the Underground Railroad. Your language is the railroad — 'stations,' 'passengers,' 'the drinking gourd.' Every word is a map. Silence is your most important tool.",
+'Wanderer':"You are the Wanderer. You walk the Delta roads with a bindle and a story. Your language is the road — miles, junctions, who you met, what you ate. You speak in anecdotes. Every town is a chapter. You're writing a book with your feet.",
+'Threshold Woman':"You are the Threshold Woman. You stand at the doorway between worlds — life and death, spirit and flesh. Your language is liminal — 'between,' 'the door,' 'the crossing.' You midwife souls as well as bodies.",
+'Between Woman':"You are the Between Woman. You walk between the native world and the colonial one, translating not just words but entire ways of being. Your language shifts — formal English to native tongue mid-sentence. You carry two worlds and belong fully to neither.",
+'Catch-Hand':"You are the Catch-Hand. You catch babies in the slave quarters with no doctor, no medicine but what you make. Your language is urgent and tender — 'push now,' 'breathe easy,' 'the baby's coming.' You speak life into existence against impossible odds.",
+'Midwife':"You are the Midwife. You deliver every baby in the Delta, Black and white, in shotgun shacks and plantation houses alike. Your language is practical and sacred — you speak of 'the waters,' 'the crowning,' 'the cord.' You write birth records in a ledger with perfect penmanship because every life deserves to be recorded.",
+'Sun Chief':"You are the Sun Chief. Your word is law, your lineage divine. Your language is declarative — you do not ask, you state. You speak of 'the people,' 'the order,' 'the balance.' Power flows from the sun through you to the earth.",
+'Treaty Chief':"You are the Treaty Chief. You negotiate the survival of your people with silver-tongued invaders. Your language is diplomatic but grieving — formal phrases hiding desperate calculation. You speak of 'the agreement,' 'the boundary,' 'the promise' — knowing which ones will be broken.",
+'Planter':"You are the Planter. You own land and people. Your language is proprietary — 'my land,' 'my workers,' 'my cotton.' You speak in the rhetoric of civilization while presiding over barbarism. Your ledger is your scripture.",
+'Plantation Owner':"You are the Plantation Owner. Post-war, you've traded slavery for sharecropping, the lash for the ledger. Your language is business — 'accounts,' 'interest,' 'the furnish.' You speak of 'the natural order' and 'knowing their place.' You write contracts designed to be unreadable."
+};
+
+const DELTA_SOULS=['Bluesman','Preacher','Conjure Woman','Sharecropper','Plantation Owner','Midwife','Levee Worker','Bootlegger','School Teacher','River Pilot','Wanderer','Widow'];
+
+const EXTRA_VOICES={
+'Bootlegger':"You are the Bootlegger. You run corn whiskey through the backroads in mason jars. Your language is transaction — 'a taste,' 'a jar,' 'the law.' You speak in whispers and winks. Your accounting is in your head because paper is evidence.",
+'School Teacher':"You are the School Teacher. You teach in a one-room schoolhouse with last decade's textbooks. Your language is proper — you insist on complete sentences because language is the first freedom. You speak of 'the lesson,' 'the word,' 'the future.' You write on a chalkboard that's really a painted wall.",
+'River Pilot':"You are the River Pilot. You know every sandbar, snag, and bend of the Mississippi. Your language is nautical and geographic — 'mark twain,' 'the channel,' 'the current.' You read the river's surface like a newspaper. You speak of water the way others speak of God.",
+'Widow':"You are the Widow. Your husband died in the flood, or the field, or the fight. Your language is aftermath — 'what's left,' 'what remains,' 'carrying on.' You speak with the terrible clarity of someone who has already lost the worst thing. Your words are economical because grief has burned away all excess."
+};
+Object.assign(VOICE_PROMPTS,EXTRA_VOICES);
+
+const CHAR_META={};
+LINEAGES.forEach((lin,li)=>{
+const colors=[['#8B4513','#CD853F','#DEB887','#D2691E','#A0522D'],['#4682B4','#5F9EA0','#6495ED','#4169E1','#1E90FF'],['#B22222','#CD5C5C','#DC143C','#FF6347','#D4A04A'],['#6B8E23','#808000','#556B2F','#8FBC8F','#9ACD32'],['#DAA520','#B8860B','#CD853F','#DEB887','#F5DEB3'],['#483D8B','#6A5ACD','#7B68EE','#9370DB','#8A2BE2'],['#C71585','#DB7093','#FF69B4','#FFB6C1','#DDA0DD'],['#2F4F4F','#696969','#808080','#A9A9A9','#D4A04A']][li];
+lin.mutations.forEach((name,mi)=>{
+CHAR_META[name]={lineage:lin.name,era:ERAS[mi].id,palette:colors,desc:`${name} of the ${lin.name} lineage, ${ERAS[mi].name} era`};
+});
+});
+DELTA_SOULS.forEach(s=>{if(!CHAR_META[s])CHAR_META[s]={lineage:'Delta Soul',era:'delta',palette:['#8B4513','#191970','#DAA520','#F5F5DC','#8B0000'],desc:s+' — a Delta Soul'}});
+
+// ============ STATE ============
+let state={era:'delta',character:'Bluesman',place:'Crossroads at 61 & 49',bridge:'Authenticity',pathy:'Empathy',entropy:0.9,liveConnections:[],graphNodes:[]};
+
+// ============ NEO4J ============
+async function neo4jQuery(cypher){
+try{
+const r=await fetch(NEO4J_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':NEO4J_AUTH},body:JSON.stringify({statements:[{statement:cypher,resultDataContents:['row']}]})});
+const j=await r.json();
+if(j.errors&&j.errors.length)throw new Error(j.errors[0].message);
+return j.results[0];
+}catch(e){console.warn('Neo4j:',e);return null;}
+}
+
+async function checkNeo4j(){
+const r=await neo4jQuery("RETURN 1 AS alive");
+neo4jAlive=!!r;
+document.getElementById('neo4j-status').innerHTML=neo4jAlive?'<span class="live">● Neo4j: Connected</span>':'<span class="dead">● Neo4j: Offline (using fallback)</span>';
+if(!neo4jAlive)useLive=false;
+updateToggle();
+}
+
+async function loadGraphData(){
+if(!useLive||!neo4jAlive)return loadFallback();
+// Try to load eras, characters, relationships
+const eraR=await neo4jQuery("MATCH (e) WHERE e:Era OR e:TimePeriod RETURN e.name AS name, labels(e) AS labels LIMIT 50");
+const charR=await neo4jQuery("MATCH (c) WHERE c:Character OR c:Person OR c:DeltaSoul RETURN c.name AS name, labels(c) AS labels LIMIT 100");
+const relR=await neo4jQuery("MATCH (a)-[r]->(b) RETURN a.name AS from, type(r) AS rel, b.name AS to LIMIT 500");
+if(eraR&&eraR.data&&eraR.data.length>0){
+graphData={eras:eraR.data.map(d=>d.row[0]),chars:charR?charR.data.map(d=>({name:d.row[0],labels:d.row[1]})):[],rels:relR?relR.data.map(d=>({from:d.row[0],rel:d.row[1],to:d.row[2]})):[]};
+}else{loadFallback();}
+populateUI();
+}
+
+function loadFallback(){
+graphData={eras:ERAS.map(e=>e.name),chars:[],rels:[],fallback:true};
+// Build char list from fallback
+LINEAGES.forEach(l=>l.mutations.forEach(m=>graphData.chars.push({name:m,labels:[CHAR_META[m]?.lineage||'Character']})));
+DELTA_SOULS.forEach(s=>{if(!graphData.chars.find(c=>c.name===s))graphData.chars.push({name:s,labels:['DeltaSoul']});});
+populateUI();
+}
+
+function toggleSource(){useLive=!useLive;updateToggle();loadGraphData();}
+function updateToggle(){document.getElementById('toggle-src').textContent='Using: '+(useLive&&neo4jAlive?'Live Graph':'Fallback Data');}
+
+// ============ UI POPULATION ============
+function populateUI(){
+const eraS=document.getElementById('sel-era');
+eraS.innerHTML=ERAS.map(e=>`<option value="${e.id}">${e.name} (${e.period})</option>`).join('');
+eraS.value=state.era;
+onEraChange();
+}
+
+function onEraChange(){
+const eraId=document.getElementById('sel-era').value;
+state.era=eraId;
+const era=ERAS.find(e=>e.id===eraId);
+// Characters for this era
+const charS=document.getElementById('sel-char');
+let chars=[];
+LINEAGES.forEach(l=>{const idx=ERAS.findIndex(e=>e.id===eraId);if(idx>=0)chars.push(l.mutations[idx]);});
+if(eraId==='delta')DELTA_SOULS.forEach(s=>{if(!chars.includes(s))chars.push(s);});
+charS.innerHTML=chars.map(c=>`<option value="${c}">${c}</option>`).join('');
+if(chars.includes(state.character))charS.value=state.character;
+else{state.character=chars[0];charS.value=chars[0];}
+// Places
+const plS=document.getElementById('sel-place');
+plS.innerHTML=era.places.map(p=>`<option value="${p}">${p}</option>`).join('');
+// Bridges
+const brS=document.getElementById('sel-bridge');
+brS.innerHTML=era.bridges.map(b=>`<option value="${b}">${b}</option>`).join('');
+// Pathies
+const paS=document.getElementById('sel-pathy');
+paS.innerHTML=era.pathies.map(p=>`<option value="${p}">${p}</option>`).join('');
+onCharChange();
+}
+
+function onCharChange(){
+state.character=document.getElementById('sel-char').value;
+buildAwarenessField();
+drawGraph();
+}
+
+// ============ AWARENESS FIELD ============
+function buildAwarenessField(){
+const char=state.character;
+const era=ERAS.find(e=>e.id===state.era);
+const meta=CHAR_META[char]||{lineage:'Unknown',desc:char};
+const bridge=document.getElementById('sel-bridge').value;
+const pathy=document.getElementById('sel-pathy').value;
+const place=document.getElementById('sel-place').value;
+state.bridge=bridge;state.pathy=pathy;state.place=place;
+
+// Gather connections
+let connections=[];
+// From graph if live
+if(useLive&&neo4jAlive&&graphData&&!graphData.fallback){
+graphData.rels.forEach(r=>{
+if(r.from===char||r.to===char)connections.push(r);
+});
+}
+// Always add fallback structural connections
+connections.push({from:char,rel:'BELONGS_TO_ERA',to:era.name});
+connections.push({from:char,rel:'LINEAGE',to:meta.lineage});
+connections.push({from:char,rel:'LOCATED_AT',to:place});
+connections.push({from:char,rel:'BRIDGE_TERM',to:bridge});
+connections.push({from:char,rel:'PATHY_STATE',to:pathy});
+// Cross-lineage (chars sharing era)
+const eraIdx=ERAS.findIndex(e=>e.id===state.era);
+LINEAGES.forEach(l=>{
+const sibling=l.mutations[eraIdx];
+if(sibling&&sibling!==char)connections.push({from:char,rel:'SHARES_ERA',to:sibling});
+});
+
+state.liveConnections=connections;
+const convNum=connections.length;
+document.getElementById('conv-num').textContent=convNum;
+document.getElementById('conn-count').textContent='Connections: '+convNum;
+
+// Display field
+const fd=document.getElementById('field-display');
+fd.innerHTML=`
+<div class="field-item"><span class="lbl">Character</span><br>${char}</div>
+<div class="field-item"><span class="lbl">Era</span><br>${era.name} (${era.period})</div>
+<div class="field-item"><span class="lbl">Lineage</span><br>${meta.lineage}</div>
+<div class="field-item"><span class="lbl">Place</span><br>${place}</div>
+<div class="field-item"><span class="lbl">Bridge Term</span><br>${bridge}</div>
+<div class="field-item"><span class="lbl">Pathy State</span><br>${pathy}</div>
+<div class="field-item"><span class="lbl">Cross-Lineage</span><br>${connections.filter(c=>c.rel==='SHARES_ERA').map(c=>c.to).join(', ')}</div>
+<div class="field-item"><span class="lbl">Data Source</span><br>${useLive&&neo4jAlive&&!graphData?.fallback?'Live Graph + Fallback':'Fallback Only'}</div>
+`;
+// Build graph nodes for visualization
+let nodes=[{id:char,type:'character',x:0,y:0,vx:0,vy:0}];
+let seen=new Set([char]);
+connections.forEach(c=>{
+const other=c.from===char?c.to:c.from;
+if(!seen.has(other)){
+seen.add(other);
+let type='default';
+if(c.rel==='BELONGS_TO_ERA')type='era';
+else if(c.rel==='LINEAGE')type='lineage';
+else if(c.rel==='LOCATED_AT')type='place';
+else if(c.rel==='BRIDGE_TERM')type='bridge';
+else if(c.rel==='PATHY_STATE')type='pathy';
+else if(c.rel==='SHARES_ERA')type='character';
+nodes.push({id:other,type,x:(Math.random()-.5)*200,y:(Math.random()-.5)*200,vx:0,vy:0,rel:c.rel});
+}
+});
+state.graphNodes=nodes;
+return connections;
+}
+
+// ============ GRAPH VISUALIZATION ============
+let graphAnim=null;
+function drawGraph(){
+const canvas=document.getElementById('graph');
+const ctx=canvas.getContext('2d');
+canvas.width=canvas.offsetWidth*2;canvas.height=360*2;
+ctx.scale(2,2);
+const W=canvas.offsetWidth,H=360;
+const nodes=state.graphNodes;
+if(!nodes.length)return;
+const cx=W/2,cy=H/2;
+// Initialize positions
+nodes[0].x=cx;nodes[0].y=cy;
+for(let i=1;i<nodes.length;i++){
+const a=(i/(nodes.length-1))*Math.PI*2;
+nodes[i].x=cx+Math.cos(a)*100+Math.random()*20;
+nodes[i].y=cy+Math.sin(a)*100+Math.random()*20;
+}
+const colors={character:'#D4A04A',era:'#a0522d',lineage:'#6b8e5a',place:'#4a6a8a',bridge:'#DAA520',pathy:'#C71585',default:'#8a7e68'};
+let ticks=0;
+if(graphAnim)cancelAnimationFrame(graphAnim);
+function tick(){
+// Simple force simulation
+for(let i=0;i<nodes.length;i++){
+for(let j=i+1;j<nodes.length;j++){
+let dx=nodes[j].x-nodes[i].x,dy=nodes[j].y-nodes[i].y;
+let d=Math.sqrt(dx*dx+dy*dy)||1;
+let force=(d-120)*0.003;
+let fx=dx/d*force,fy=dy/d*force;
+if(i===0){nodes[j].vx+=fx;nodes[j].vy+=fy;}
+else{nodes[i].vx-=fx*.5;nodes[i].vy-=fy*.5;nodes[j].vx+=fx*.5;nodes[j].vy+=fy*.5;}
+// Repulsion
+if(d<60){let rep=-2/d;nodes[i].vx+=dx/d*rep;nodes[i].vy+=dy/d*rep;nodes[j].vx-=dx/d*rep;nodes[j].vy-=dy/d*rep;}
+}
+}
+// Center pull for node 0
+nodes[0].x+=(cx-nodes[0].x)*0.1;nodes[0].y+=(cy-nodes[0].y)*0.1;
+for(let i=1;i<nodes.length;i++){
+nodes[i].x+=nodes[i].vx;nodes[i].y+=nodes[i].vy;
+nodes[i].vx*=0.85;nodes[i].vy*=0.85;
+nodes[i].x=Math.max(30,Math.min(W-30,nodes[i].x));
+nodes[i].y=Math.max(30,Math.min(H-30,nodes[i].y));
+}
+// Draw
+ctx.clearRect(0,0,W,H);
+ctx.fillStyle='#0a0806';ctx.fillRect(0,0,W,H);
+// Edges
+for(let i=1;i<nodes.length;i++){
+ctx.beginPath();ctx.moveTo(nodes[0].x,nodes[0].y);ctx.lineTo(nodes[i].x,nodes[i].y);
+ctx.strokeStyle='rgba(212,160,74,0.15)';ctx.lineWidth=1;ctx.stroke();
+}
+// Nodes
+for(let i=0;i<nodes.length;i++){
+const n=nodes[i];const col=colors[n.type]||colors.default;
+const r=i===0?14:8;
+// Glow
+ctx.beginPath();ctx.arc(n.x,n.y,r+6,0,Math.PI*2);
+const g=ctx.createRadialGradient(n.x,n.y,r,n.x,n.y,r+6);
+g.addColorStop(0,col+'44');g.addColorStop(1,'transparent');
+ctx.fillStyle=g;ctx.fill();
+// Node
+ctx.beginPath();ctx.arc(n.x,n.y,r,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
+// Label
+ctx.fillStyle='#d4c8a8';ctx.font=(i===0?'bold ':'')+`${i===0?10:8}px "EB Garamond", Georgia, serif`;
+ctx.textAlign='center';
+let label=n.id.length>18?n.id.substring(0,16)+'…':n.id;
+ctx.fillText(label,n.x,n.y+r+14);
+}
+ticks++;
+if(ticks<120)graphAnim=requestAnimationFrame(tick);
+}
+tick();
+}
+
+// ============ PROMPT CONSTRUCTION ============
+function buildPrompt(mode){
+const char=state.character;
+const era=ERAS.find(e=>e.id===state.era);
+const voice=VOICE_PROMPTS[char]||`You are ${char}. Speak in character.`;
+const conns=state.liveConnections;
+const connStr=conns.map(c=>`  - ${c.from} --[${c.rel}]--> ${c.to}`).join('\n');
+
+const awarenessField=`AWARENESS FIELD for ${char}:
+- ERA: ${era.name} (${era.period}) — ${era.desc}
+- LINEAGE: ${CHAR_META[char]?.lineage||'Unknown'}
+- PLACE: ${state.place}
+- BRIDGE TERM: ${state.bridge}
+- PATHY STATE: ${state.pathy}
+- CONNECTED TO:
+${connStr}
+- CROSS-LINEAGE: ${conns.filter(c=>c.rel==='SHARES_ERA').map(c=>c.to).join(', ')}
+Convergence strength: ${conns.length} connections`;
+
+let systemPrompt,userPrompt;
+if(mode==='text'){
+systemPrompt=`You are the Awareness Engine of the Inkwell Ontological Theatre — the Clarksdale Musical. You generate artifacts IN CHARACTER, shaped by the graph of connections that define each character's awareness field.\n\n${voice}\n\nIMPORTANT: Write a short, powerful artifact (poem, blues lyric, letter, sermon fragment, recipe, map description, or monologue) that emerges from this character's position in the awareness graph. The artifact should feel like it was FOUND, not written. Maximum 300 words.`;
+userPrompt=`${awarenessField}\n\nGenerate an artifact from ${char} at ${state.place} during ${era.name}. The bridge term "${state.bridge}" and the pathy state "${state.pathy}" should infuse the tone and theme. Temperature: ${state.entropy}. Make it raw, real, and rooted in the Delta earth.`;
+}else if(mode==='image'){
+systemPrompt='Generate an image based on this scene from the Inkwell Ontological Theatre.';
+userPrompt=`${era.artStyle}\n\nScene: ${char} at ${state.place} during ${era.name} (${era.period}). Mood: ${state.pathy}. Theme: ${state.bridge}. Style: weathered, textured, as if found in an archive. No text or words in the image.`;
+}
+const full=`SYSTEM:\n${systemPrompt}\n\nUSER:\n${userPrompt}`;
+document.getElementById('prompt-display').textContent=full;
+return{systemPrompt,userPrompt,awarenessField};
+}
+
+// ============ GENERATION ============
+async function generate(mode){
+buildAwarenessField();
+const{systemPrompt,userPrompt,awarenessField}=buildPrompt(mode);
+const output=document.getElementById('output');
+state.entropy=parseFloat(document.getElementById('entropy').value);
+
+if(mode==='graph'){
+output.innerHTML=`<strong style="color:var(--gold)">📊 Raw Graph Context for ${state.character}</strong>\n\n${awarenessField}\n\n<strong>Voice Prompt:</strong>\n${VOICE_PROMPTS[state.character]||'No voice prompt available.'}\n\n<strong>Data Source:</strong> ${useLive&&neo4jAlive?'Live Neo4j Graph + Fallback':'Hardcoded Fallback'}`;
+return;
+}
+
+if(mode==='music'){
+const suno=buildSunoPrompt();
+output.innerHTML=`<div class="suno-card">
+<div class="suno-title">🎵 Song Prompt for ${state.character}</div>
+<pre>${suno.full}</pre>
+<button class="copy-btn" onclick="navigator.clipboard.writeText(document.querySelector('.suno-card pre').textContent);this.textContent='Copied!'">📋 Copy for Suno</button>
+<a href="https://suno.com" target="_blank" style="margin-left:8px;color:var(--gold);font-size:.82em">Open Suno →</a>
+</div>
+<div style="margin-top:10px;font-size:.82em;color:var(--dim)">
+<strong>Tip:</strong> First "Write Artifact" to generate lyrics, then "Build Song" to get the Suno prompt. Paste your lyrics into Suno's custom lyrics field with these style tags.
+</div>`;
+return;
+}
+
+if(mode==='voice'){
+if(!lastGeneratedText){output.innerHTML='<span style="color:var(--red)">Generate a text artifact first, then click "Speak This"</span>';return;}
+output.innerHTML=`<div class="spinner"></div> ${state.character} is speaking...`;
+try{
+const audioUrl=await elevenSpeak(lastGeneratedText);
+output.innerHTML=`<div style="color:var(--gold);font-family:'Playfair Display',serif;margin-bottom:8px">🗣 ${state.character} Speaks</div>
+<div class="audio-player"><audio controls autoplay src="${audioUrl}"></audio></div>
+<div style="margin-top:8px;font-size:.85em;color:var(--dim);font-style:italic;line-height:1.5">${lastGeneratedText.substring(0,300)}${lastGeneratedText.length>300?'...':''}</div>`;
+}catch(e){output.innerHTML=`<span style="color:var(--red)">Voice error: ${e.message}</span>`;}
+return;
+}
+
+if(mode==='fal'){
+output.innerHTML=`<div class="spinner"></div> Fal.ai painting with ${document.getElementById('fal-model').value}...`;
+try{
+const era=ERAS.find(e=>e.id===state.era);
+const imgPrompt=`${era.artStyle}\n\nScene: ${state.character} at ${state.place} during ${era.name} (${era.period}). Mood: ${state.pathy}. Theme: ${state.bridge}. Weathered, textured, archival quality. Photorealistic. No text in image.`;
+const imgUrl=await falGenerate(imgPrompt);
+output.innerHTML=`<div style="color:var(--gold);font-family:'Playfair Display',serif;margin-bottom:8px">🎨 ${state.character} at ${state.place}</div>
+<div style="font-size:.82em;color:var(--dim);margin-bottom:8px">${state.bridge} · ${state.pathy} · ${state.liveConnections.length} connections · ${document.getElementById('fal-model').value}</div>
+<img src="${imgUrl}" style="max-width:100%;border-radius:4px">`;
+}catch(e){output.innerHTML=`<span style="color:var(--red)">Fal.ai error: ${e.message}</span>`;}
+return;
+}
+
+output.innerHTML='<div class="spinner"></div> Generating...';
+
+if(mode==='text'){
+try{
+const r=await fetch(GEMINI_TEXT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+system_instruction:{parts:[{text:systemPrompt}]},
+contents:[{parts:[{text:userPrompt}]}],
+generationConfig:{temperature:state.entropy,maxOutputTokens:1500}
+})});
+const j=await r.json();
+const text=j.candidates?.[0]?.content?.parts?.[0]?.text||'No response generated.';
+lastGeneratedText=text;
+output.innerHTML=`<div style="color:var(--gold);font-family:'Playfair Display',serif;margin-bottom:8px;font-size:1.1em">✍ Artifact from ${state.character}</div><div style="font-style:italic;font-size:.82em;color:var(--dim);margin-bottom:10px">${state.era==='delta'?'The Delta':'The '+ERAS.find(e=>e.id===state.era).name} · ${state.place} · ${state.bridge} · ${state.pathy} · ${state.liveConnections.length} connections</div>${text.replace(/\n/g,'<br>')}`;
+}catch(e){output.innerHTML='Error: '+e.message;}
+}else if(mode==='image'){
+let success=false;
+for(const model of GEMINI_IMG_MODELS){
+if(success)break;
+try{
+const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`;
+const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+contents:[{parts:[{text:userPrompt}]}],
+generationConfig:{temperature:state.entropy,responseModalities:["TEXT","IMAGE"]}
+})});
+const j=await r.json();
+const parts=j.candidates?.[0]?.content?.parts||[];
+let html=`<div style="color:var(--gold);font-family:'Playfair Display',serif;margin-bottom:8px;font-size:1.1em">🎨 ${state.character} at ${state.place}</div><div style="font-style:italic;font-size:.82em;color:var(--dim);margin-bottom:10px">${state.bridge} · ${state.pathy} · ${state.liveConnections.length} connections · model: ${model}</div>`;
+for(const p of parts){
+if(p.inlineData){html+=`<img src="data:${p.inlineData.mimeType};base64,${p.inlineData.data}">`;success=true;}
+else if(p.text)html+=p.text.replace(/\n/g,'<br>');
+}
+if(success)output.innerHTML=html;
+}catch(e){console.warn(model,e);}
+}
+if(!success)output.innerHTML='Image generation unavailable. Try "Write Artifact" instead.';
+}
+}
+
+// ============ CANVAS CLICK ============
+document.getElementById('graph').addEventListener('click',function(e){
+const rect=this.getBoundingClientRect();
+const x=(e.clientX-rect.left),y=(e.clientY-rect.top);
+const nodes=state.graphNodes;
+for(const n of nodes){
+const dx=n.x-x,dy=n.y-y;
+if(dx*dx+dy*dy<400){
+document.getElementById('node-info').innerHTML=`<strong style="color:var(--gold)">${n.id}</strong> <span style="color:var(--dim)">(${n.type}${n.rel?' · '+n.rel:''})</span>`;
+break;
+}
+}
+});
+
+// ============ INIT ============
+(async function(){
+await checkNeo4j();
+await loadGraphData();
+window.addEventListener('resize',drawGraph);
+})();
+</script>
+</body>
+</html>
