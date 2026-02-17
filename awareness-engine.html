@@ -184,8 +184,8 @@ select:focus{border-color:var(--gold);outline:none}
 
 <script>
 // ============ CONFIG ============
-const NEO4J_URL='https://c779e832.databases.neo4j.io/db/neo4j/tx/commit';
-const NEO4J_AUTH='Basic '+btoa('neo4j:'+(localStorage.getItem('neo4j_password')||''));
+const NEO4J_URL='https://c779e832.databases.neo4j.io/db/neo4j/query/v2';
+const NEO4J_AUTH='Basic '+btoa('neo4j:ZXOupyILxFKlLmzHsmHI9rCmC8e2dXTfyRD7SomGhPw');
 const DEFAULT_GEMINI_KEY=localStorage.getItem('gemini_key')||'';
 
 let useLive=true,neo4jAlive=false,graphData=null,lastGeneratedText='';
@@ -366,17 +366,22 @@ DELTA_SOULS.forEach(s=>{if(!CHAR_META[s])CHAR_META[s]={lineage:'Delta Soul',era:
 let state={era:'delta',character:'Bluesman',place:'Crossroads at 61 & 49',bridge:'Authenticity',pathy:'Empathy',entropy:0.9,liveConnections:[],graphNodes:[]};
 
 // ============ NEO4J ============
-async function neo4jQuery(cypher){
+async function neo4jQuery(cypher, retries=3){
+for(let i=0;i<retries;i++){
 try{
-const r=await fetch(NEO4J_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':NEO4J_AUTH},body:JSON.stringify({statements:[{statement:cypher,resultDataContents:['row']}]})});
+const r=await fetch(NEO4J_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':NEO4J_AUTH},body:JSON.stringify({statement:cypher})});
+if(!r.ok){if(i<retries-1){await new Promise(r=>setTimeout(r,2000*(i+1)));continue;}return null;}
 const j=await r.json();
-if(j.errors&&j.errors.length)throw new Error(j.errors[0].message);
-return j.results[0];
-}catch(e){console.warn('Neo4j:',e);return null;}
+if(j.data)return{fields:j.data.fields,rows:j.data.values||[]};
+return null;
+}catch(e){console.warn('Neo4j attempt '+(i+1)+':',e);if(i<retries-1)await new Promise(r=>setTimeout(r,2000*(i+1)));}
+}
+return null;
 }
 
 async function checkNeo4j(){
-const r=await neo4jQuery("RETURN 1 AS alive");
+document.getElementById('neo4j-status').innerHTML='<span style="color:var(--dim)">● Neo4j: connecting...</span>';
+const r=await neo4jQuery("RETURN 1 AS alive",5);
 neo4jAlive=!!r;
 document.getElementById('neo4j-status').innerHTML=neo4jAlive?'<span class="live">● Neo4j: Connected</span>':'<span class="dead">● Neo4j: Offline (fallback)</span>';
 if(!neo4jAlive)useLive=false;
@@ -388,8 +393,8 @@ if(!useLive||!neo4jAlive)return loadFallback();
 const eraR=await neo4jQuery("MATCH (e) WHERE e:Era OR e:TimePeriod RETURN e.name AS name, labels(e) AS labels LIMIT 50");
 const charR=await neo4jQuery("MATCH (c) WHERE c:Character OR c:Person OR c:DeltaSoul RETURN c.name AS name, labels(c) AS labels LIMIT 100");
 const relR=await neo4jQuery("MATCH (a)-[r]->(b) RETURN a.name AS from, type(r) AS rel, b.name AS to LIMIT 500");
-if(eraR&&eraR.data&&eraR.data.length>0){
-graphData={eras:eraR.data.map(d=>d.row[0]),chars:charR?charR.data.map(d=>({name:d.row[0],labels:d.row[1]})):[],rels:relR?relR.data.map(d=>({from:d.row[0],rel:d.row[1],to:d.row[2]})):[]};
+if(eraR&&eraR.rows&&eraR.rows.length>0){
+graphData={eras:eraR.rows.map(d=>d[0]),chars:charR?charR.rows.map(d=>({name:d[0],labels:d[1]})):[],rels:relR?relR.rows.map(d=>({from:d[0],rel:d[1],to:d[2]})):[]};
 }else{loadFallback();}
 populateUI();
 }
