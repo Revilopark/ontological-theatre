@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BMOS — Block Entertainment</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0e17;--bg2:#111827;--bg3:#1a2236;--bg4:#243049;
+  --fg:#e2e8f0;--fg2:#94a3b8;--fg3:#64748b;
+  --green:#00e676;--amber:#ffab00;--red:#ff1744;--blue:#2979ff;--cyan:#00e5ff;--purple:#b388ff;
+  --border:#1e293b;--accent:#00e676;
+  --font:'SF Mono','Fira Code','Consolas',monospace;
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--fg);font-size:13px;overflow:hidden}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+input,select,textarea,button{font-family:var(--font);font-size:13px}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column}
+#login-screen.hidden{display:none}
+.login-box{background:var(--bg2);border:1px solid var(--border);padding:48px 40px;width:420px;text-align:center}
+.login-box h1{font-size:11px;letter-spacing:6px;text-transform:uppercase;color:var(--green);margin-bottom:4px}
+.login-box h2{font-size:22px;font-weight:700;color:var(--fg);margin-bottom:6px}
+.login-box .subtitle{color:var(--fg3);font-size:11px;margin-bottom:32px;letter-spacing:1px}
+.login-box input{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);color:var(--fg);margin-bottom:12px;outline:none}
+.login-box input:focus{border-color:var(--green)}
+.login-box button{width:100%;padding:10px;background:var(--green);color:#000;border:none;cursor:pointer;font-weight:700;letter-spacing:2px;text-transform:uppercase;font-size:11px}
+.login-box button:hover{background:#00c853}
+.login-box .footer{margin-top:24px;font-size:10px;color:var(--fg3);letter-spacing:1px}
+.login-scanline{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);animation:scanline 3s linear infinite}
+@keyframes scanline{0%{top:0}100%{top:100%}}
+
+/* LAYOUT */
+#app{display:none;height:100vh;flex-direction:column}
+#app.active{display:flex}
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;height:40px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+header .logo{display:flex;align-items:center;gap:10px}
+header .logo span{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--green);font-weight:700}
+header .logo .pipe{color:var(--fg3)}
+header .logo .product{color:var(--fg2);font-size:11px;letter-spacing:2px}
+header .right{display:flex;align-items:center;gap:16px}
+header .clock{color:var(--cyan);font-size:12px}
+header .user-badge{background:var(--bg3);padding:4px 12px;font-size:11px;color:var(--fg2)}
+#search-global{background:var(--bg);border:1px solid var(--border);color:var(--fg);padding:5px 12px;width:280px;outline:none;font-size:12px}
+#search-global:focus{border-color:var(--green)}
+
+.main-wrap{display:flex;flex:1;overflow:hidden}
+nav{width:200px;background:var(--bg2);border-right:1px solid var(--border);padding:8px 0;flex-shrink:0;overflow-y:auto}
+nav .section-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--fg3);padding:12px 16px 4px}
+nav a{display:flex;align-items:center;gap:8px;padding:8px 16px;color:var(--fg2);text-decoration:none;font-size:12px;cursor:pointer;border-left:2px solid transparent}
+nav a:hover{background:var(--bg3);color:var(--fg)}
+nav a.active{background:var(--bg3);color:var(--green);border-left-color:var(--green)}
+nav a .icon{width:16px;text-align:center;font-size:14px}
+
+.content{flex:1;overflow-y:auto;padding:16px}
+.page{display:none}
+.page.active{display:block}
+
+/* COMPONENTS */
+.grid{display:grid;gap:12px}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-1-2{grid-template-columns:1fr 2fr}
+.grid-2-1{grid-template-columns:2fr 1fr}
+
+.card{background:var(--bg2);border:1px solid var(--border);padding:16px;position:relative;overflow:hidden}
+.card.full{grid-column:1/-1}
+.card-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--fg3);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.card-value{font-size:28px;font-weight:700;color:var(--fg)}
+.card-sub{font-size:11px;color:var(--fg3);margin-top:4px}
+.card-accent{position:absolute;top:0;left:0;right:0;height:2px}
+.card-accent.green{background:var(--green)}.card-accent.amber{background:var(--amber)}.card-accent.red{background:var(--red)}.card-accent.blue{background:var(--blue)}.card-accent.cyan{background:var(--cyan)}
+
+.tag{display:inline-block;padding:2px 8px;font-size:10px;letter-spacing:1px;text-transform:uppercase;border:1px solid}
+.tag.green{color:var(--green);border-color:var(--green)}.tag.amber{color:var(--amber);border-color:var(--amber)}.tag.red{color:var(--red);border-color:var(--red)}.tag.blue{color:var(--blue);border-color:var(--blue)}
+
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:8px 10px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--fg3);border-bottom:1px solid var(--border);font-weight:600}
+td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--fg2)}
+tr:hover td{background:rgba(0,230,118,0.03)}
+.mono{font-family:var(--font)}
+.right-align{text-align:right}
+.green-text{color:var(--green)}.amber-text{color:var(--amber)}.red-text{color:var(--red)}.cyan-text{color:var(--cyan)}.blue-text{color:var(--blue)}
+
+.chart-wrap{position:relative;height:220px}
+.chart-wrap.tall{height:300px}
+.chart-wrap canvas{width:100%!important;height:100%!important}
+
+/* Artist selector */
+.artist-selector{display:flex;gap:8px;margin-bottom:16px}
+.artist-btn{padding:6px 16px;background:var(--bg3);border:1px solid var(--border);color:var(--fg2);cursor:pointer;font-size:11px;letter-spacing:1px}
+.artist-btn.active{background:var(--green);color:#000;border-color:var(--green);font-weight:700}
+.artist-btn:hover:not(.active){background:var(--bg4)}
+
+/* Tree */
+.tree{padding-left:0;list-style:none}
+.tree ul{padding-left:24px;list-style:none;border-left:1px solid var(--border);margin-left:8px}
+.tree li{padding:6px 0}
+.tree .node{display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 8px;border-radius:2px}
+.tree .node:hover{background:var(--bg3)}
+.tree .node-icon{font-size:14px}
+.tree .node-name{color:var(--fg);font-weight:600;font-size:12px}
+.tree .node-type{font-size:10px;color:var(--fg3);text-transform:uppercase;letter-spacing:1px}
+.tree .node-bal{font-size:11px;color:var(--cyan);margin-left:auto}
+
+/* Intelligence NL Query */
+.nl-input{display:flex;gap:8px;margin-top:12px}
+.nl-input input{flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);color:var(--fg);outline:none}
+.nl-input input:focus{border-color:var(--green)}
+.nl-input button{padding:10px 20px;background:var(--green);color:#000;border:none;cursor:pointer;font-weight:700;font-size:11px;letter-spacing:1px}
+.nl-result{margin-top:12px;background:var(--bg);border:1px solid var(--border);padding:12px;font-size:12px;color:var(--fg2);max-height:200px;overflow-y:auto;white-space:pre-wrap}
+
+/* Search results */
+.search-result{padding:12px;border-bottom:1px solid var(--border);cursor:pointer}
+.search-result:hover{background:var(--bg3)}
+.search-result .sr-type{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--green);margin-bottom:2px}
+.search-result .sr-title{font-size:14px;color:var(--fg);font-weight:600}
+.search-result .sr-sub{font-size:11px;color:var(--fg3)}
+
+/* Anomaly card */
+.anomaly-item{padding:10px;border-left:3px solid;margin-bottom:8px;background:var(--bg)}
+.anomaly-item.high{border-color:var(--red)}.anomaly-item.medium{border-color:var(--amber)}.anomaly-item.low{border-color:var(--blue)}
+.anomaly-title{font-size:12px;font-weight:600;color:var(--fg);margin-bottom:2px}
+.anomaly-detail{font-size:11px;color:var(--fg3)}
+
+/* Responsive */
+@media(max-width:1200px){.grid-4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:800px){.grid-4,.grid-3,.grid-2,.grid-1-2,.grid-2-1{grid-template-columns:1fr}nav{width:160px}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-scanline"></div>
+  <div class="login-box">
+    <h1>Block Entertainment</h1>
+    <h2>BMOS</h2>
+    <div class="subtitle">Business Management Operating System</div>
+    <input type="text" id="login-user" placeholder="Username" value="pierce@blockent.com">
+    <input type="password" id="login-pass" placeholder="Password" value="••••••••">
+    <button onclick="doLogin()">AUTHENTICATE →</button>
+    <div class="footer">THE OPERATING SYSTEM FOR THE MODERN ARTIST</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <header>
+    <div class="logo">
+      <span>BLOCK</span><span class="pipe">│</span><span class="product">BMOS</span>
+    </div>
+    <input type="text" id="search-global" placeholder="⌘K  Search entities, shows, vendors..." onkeyup="handleSearch(event)">
+    <div class="right">
+      <div class="clock" id="clock"></div>
+      <div class="user-badge">PIERCE SCOTT</div>
+    </div>
+  </header>
+  <div class="main-wrap">
+    <nav>
+      <div class="section-label">Command Center</div>
+      <a class="active" data-page="dashboard" onclick="showPage('dashboard')"><span class="icon">◉</span>Dashboard</a>
+      <a data-page="entities" onclick="showPage('entities')"><span class="icon">⬡</span>Entities</a>
+      <div class="section-label">Touring Intel</div>
+      <a data-page="touring" onclick="showPage('touring')"><span class="icon">⚡</span>Tour Mgmt</a>
+      <a data-page="settlements" onclick="showPage('settlements')"><span class="icon">☰</span>Settlements</a>
+      <div class="section-label">Revenue</div>
+      <a data-page="streaming" onclick="showPage('streaming')"><span class="icon">♫</span>Streaming</a>
+      <a data-page="vendors" onclick="showPage('vendors')"><span class="icon">◈</span>Vendors</a>
+      <div class="section-label">Intelligence</div>
+      <a data-page="intelligence" onclick="showPage('intelligence')"><span class="icon">◎</span>Trinity AI</a>
+      <a data-page="search" onclick="showPage('search')"><span class="icon">⊕</span>Search</a>
+    </nav>
+    <div class="content">
+
+<!-- ============ DASHBOARD ============ -->
+<div class="page active" id="page-dashboard">
+  <div class="artist-selector">
+    <button class="artist-btn active" onclick="selectArtist('mcr',this)">MCR</button>
+    <button class="artist-btn" onclick="selectArtist('luna',this)">LUNA PARK</button>
+    <button class="artist-btn" onclick="selectArtist('all',this)">ALL ARTISTS</button>
+  </div>
+  <div class="grid grid-4" id="kpi-cards"></div>
+  <div class="grid grid-2" style="margin-top:12px">
+    <div class="card"><div class="card-title">Revenue by Show</div><div class="chart-wrap"><canvas id="chart-revenue"></canvas></div></div>
+    <div class="card"><div class="card-title">Expense Breakdown</div><div class="chart-wrap"><canvas id="chart-expenses"></canvas></div></div>
+  </div>
+  <div class="grid grid-2" style="margin-top:12px">
+    <div class="card"><div class="card-title">Monthly Cash Flow</div><div class="chart-wrap"><canvas id="chart-cashflow"></canvas></div></div>
+    <div class="card"><div class="card-title">Streaming Revenue Trend</div><div class="chart-wrap"><canvas id="chart-streaming-trend"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ============ ENTITIES ============ -->
+<div class="page" id="page-entities">
+  <div class="artist-selector">
+    <button class="artist-btn active" onclick="selectEntityArtist('mcr',this)">MCR</button>
+    <button class="artist-btn" onclick="selectEntityArtist('luna',this)">LUNA PARK</button>
+  </div>
+  <div class="grid grid-1-2">
+    <div class="card"><div class="card-title">Entity Hierarchy</div><div id="entity-tree"></div></div>
+    <div class="card"><div class="card-title">Financial Summary</div><div id="entity-financials"></div></div>
+  </div>
+</div>
+
+<!-- ============ TOURING ============ -->
+<div class="page" id="page-touring">
+  <div class="artist-selector">
+    <button class="artist-btn active" onclick="selectTourArtist('mcr',this)">MCR 2025 NA Summer Tour</button>
+    <button class="artist-btn" onclick="selectTourArtist('luna',this)">Luna Park First Light Tour</button>
+  </div>
+  <div class="grid grid-4" id="tour-kpis"></div>
+  <div class="grid grid-2" style="margin-top:12px">
+    <div class="card"><div class="card-title">Budget vs Actual</div><div class="chart-wrap"><canvas id="chart-budget"></canvas></div></div>
+    <div class="card"><div class="card-title">Cumulative Pot Tracker</div><div class="chart-wrap"><canvas id="chart-pot"></canvas></div></div>
+  </div>
+  <div class="card full" style="margin-top:12px"><div class="card-title">Show-by-Show P&L</div><div id="tour-table-wrap"></div></div>
+</div>
+
+<!-- ============ SETTLEMENTS ============ -->
+<div class="page" id="page-settlements">
+  <div class="grid grid-3" id="settlement-kpis"></div>
+  <div class="card full" style="margin-top:12px"><div class="card-title">Settlement Ledger <span id="settlement-filter-info"></span></div><table id="settlement-table"><thead><tr><th>Show</th><th>Venue</th><th>Date</th><th>Promoter</th><th class="right-align">Gross</th><th class="right-align">Expenses</th><th class="right-align">Net</th><th>Status</th><th>Action</th></tr></thead><tbody id="settlement-tbody"></tbody></table></div>
+  <div class="card full" style="margin-top:12px;display:none" id="invoice-panel"><div class="card-title">Invoice Drill-Down — <span id="invoice-venue"></span></div><table id="invoice-table"><thead><tr><th>PO#</th><th>Binder</th><th>Category</th><th>Vendor</th><th class="right-align">Amount</th><th>Status</th><th>Flag</th></tr></thead><tbody id="invoice-tbody"></tbody></table></div>
+</div>
+
+<!-- ============ STREAMING ============ -->
+<div class="page" id="page-streaming">
+  <div class="artist-selector">
+    <button class="artist-btn active" onclick="selectStreamArtist('mcr',this)">MCR</button>
+    <button class="artist-btn" onclick="selectStreamArtist('luna',this)">LUNA PARK</button>
+  </div>
+  <div class="grid grid-4" id="streaming-kpis"></div>
+  <div class="grid grid-2" style="margin-top:12px">
+    <div class="card"><div class="card-title">DSP Revenue Breakdown</div><div class="chart-wrap"><canvas id="chart-dsp"></canvas></div></div>
+    <div class="card"><div class="card-title">Stream Volume by Platform</div><div class="chart-wrap"><canvas id="chart-streams"></canvas></div></div>
+  </div>
+  <div class="card full" style="margin-top:12px"><div class="card-title">Royalty Tracking & Variance Detection</div><table id="streaming-table"><thead><tr><th>Platform</th><th class="right-align">Monthly Revenue</th><th class="right-align">Streams</th><th class="right-align">Per-Stream Rate</th><th class="right-align">Variance %</th><th>Status</th></tr></thead><tbody id="streaming-tbody"></tbody></table></div>
+</div>
+
+<!-- ============ VENDORS ============ -->
+<div class="page" id="page-vendors">
+  <div class="grid grid-3" id="vendor-kpis"></div>
+  <div class="grid grid-2" style="margin-top:12px">
+    <div class="card"><div class="card-title">Spend by Category</div><div class="chart-wrap"><canvas id="chart-vendor-cat"></canvas></div></div>
+    <div class="card"><div class="card-title">Risk Score Distribution</div><div class="chart-wrap"><canvas id="chart-vendor-risk"></canvas></div></div>
+  </div>
+  <div class="card full" style="margin-top:12px"><div class="card-title">Vendor Database</div><table><thead><tr><th>Vendor</th><th>Category</th><th class="right-align">Total Paid</th><th class="right-align">Invoices</th><th class="right-align">Avg Days</th><th class="right-align">Risk Score</th><th>Status</th></tr></thead><tbody id="vendor-tbody"></tbody></table></div>
+</div>
+
+<!-- ============ INTELLIGENCE ============ -->
+<div class="page" id="page-intelligence">
+  <div class="grid grid-3" id="intel-kpis"></div>
+  <div class="grid grid-2" style="margin-top:12px">
+    <div class="card"><div class="card-title">Active Anomalies</div><div id="anomaly-list"></div></div>
+    <div class="card"><div class="card-title">Cash Forecast (30/60/90 Day)</div><div class="chart-wrap tall"><canvas id="chart-forecast"></canvas></div></div>
+  </div>
+  <div class="grid grid-2" style="margin-top:12px">
+    <div class="card"><div class="card-title">Reconciliation Suggestions</div><div id="recon-list"></div></div>
+    <div class="card">
+      <div class="card-title">Natural Language Query</div>
+      <div style="color:var(--fg3);font-size:11px;margin-bottom:8px">Ask questions about your data in plain English</div>
+      <div class="nl-input"><input type="text" id="nl-query" placeholder='e.g. "Show me flagged invoices over $100K"' onkeydown="if(event.key==='Enter')runNLQuery()"><button onclick="runNLQuery()">QUERY</button></div>
+      <div class="nl-result" id="nl-result" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SEARCH ============ -->
+<div class="page" id="page-search">
+  <div class="card full">
+    <div class="card-title">Graph-Powered Search</div>
+    <input type="text" id="search-input" placeholder="Search entities, shows, vendors, settlements..." style="width:100%;padding:12px 16px;background:var(--bg);border:1px solid var(--border);color:var(--fg);outline:none;font-size:14px;margin-top:8px" onkeyup="handleFullSearch(event)">
+    <div id="search-results" style="margin-top:12px"></div>
+  </div>
+</div>
+
+    </div><!-- /content -->
+  </div>
+</div>
+
+<script>
+// ==================== DATA ====================
+const DATA = {
+  mcr: {
+    name:'My Chemical Romance', genre:'Rock/Alternative',
+    tour:{name:'MCR 2025 NA Summer Tour',budget:28500000,actual:22750000,startDate:'2025-06-15',endDate:'2025-09-20'},
+    pot:{totalGross:31200000,totalExpenses:22750000,netProfit:8450000,splitPct:90,settled:10,pending:2},
+    shows:[
+      {id:'MCR-2025-001',date:'2025-06-15',city:'Boston',state:'MA',venue:'Fenway Park',gross:2850000,net:1925000,exp:925000,tickets:36500,price:78.08,num:1,promoter:'Live Nation',settlementStatus:'finalized',settlement:'SET-MCR-001'},
+      {id:'MCR-2025-002',date:'2025-06-22',city:'East Rutherford',state:'NJ',venue:'MetLife Stadium',gross:3450000,net:2415000,exp:1035000,tickets:72000,price:47.92,num:2,promoter:'Live Nation',settlementStatus:'finalized',settlement:'SET-MCR-002'},
+      {id:'MCR-2025-003',date:'2025-06-29',city:'New York',state:'NY',venue:'Madison Square Garden',gross:2100000,net:1365000,exp:735000,tickets:20500,price:102.44,num:3,promoter:'AEG Presents',settlementStatus:'finalized',settlement:'SET-MCR-003'},
+      {id:'MCR-2025-004',date:'2025-07-06',city:'Washington',state:'DC',venue:'Capital One Arena',gross:1950000,net:1267500,exp:682500,tickets:19800,price:98.48,num:4,promoter:'IMP',settlementStatus:'finalized',settlement:'SET-MCR-004'},
+      {id:'MCR-2025-005',date:'2025-07-13',city:'Chicago',state:'IL',venue:'Soldier Field',gross:2750000,net:1787500,exp:962500,tickets:58000,price:47.41,num:5,promoter:'Live Nation',settlementStatus:'finalized',settlement:'SET-MCR-005'},
+      {id:'MCR-2025-006',date:'2025-07-20',city:'Arlington',state:'TX',venue:'AT&T Stadium',gross:3100000,net:2170000,exp:930000,tickets:75000,price:41.33,num:6,promoter:'Live Nation',settlementStatus:'finalized',settlement:'SET-MCR-006'},
+      {id:'MCR-2025-007',date:'2025-07-27',city:'Denver',state:'CO',venue:'Ball Arena',gross:1800000,net:1170000,exp:630000,tickets:19000,price:94.74,num:7,promoter:'AEG Presents',settlementStatus:'finalized',settlement:'SET-MCR-007'},
+      {id:'MCR-2025-008',date:'2025-08-03',city:'San Francisco',state:'CA',venue:'Chase Center',gross:1950000,net:1267500,exp:682500,tickets:17800,price:109.55,num:8,promoter:'Another Planet',settlementStatus:'agreed',settlement:'SET-MCR-008'},
+      {id:'MCR-2025-009',date:'2025-08-10',city:'Los Angeles',state:'CA',venue:'Dodger Stadium',gross:3200000,net:2240000,exp:960000,tickets:54000,price:59.26,num:9,promoter:'Goldenvoice',settlementStatus:'agreed',settlement:'SET-MCR-009'},
+      {id:'MCR-2025-010',date:'2025-08-17',city:'Seattle',state:'WA',venue:'Climate Pledge Arena',gross:1650000,net:1072500,exp:577500,tickets:16800,price:98.21,num:10,promoter:'STG Presents',settlementStatus:'pending',settlement:'SET-MCR-010'},
+      {id:'MCR-2025-011',date:'2025-08-24',city:'Toronto',state:'ON',venue:'Scotiabank Arena',gross:2200000,net:1430000,exp:770000,tickets:19500,price:112.82,num:11,promoter:'Live Nation Canada',settlementStatus:'pending',settlement:'SET-MCR-011'},
+      {id:'MCR-2025-012',date:'2025-09-01',city:'Boston',state:'MA',venue:'TD Garden',gross:2100000,net:1365000,exp:735000,tickets:19200,price:109.38,num:12,promoter:'Bowery Presents',settlementStatus:'pending',settlement:'SET-MCR-012'},
+    ],
+    entities:[
+      {name:'My Chemical Romance',type:'artist',children:[
+        {name:'MCR Touring LLC',type:'llc',bank:{id:'MCR-TOUR-CHK-001',inst:'City National Bank',bal:4250000,acctType:'Checking'},children:[]},
+        {name:'MCR Merch LLC',type:'llc',bank:{id:'MCR-MERCH-CHK-001',inst:'City National Bank',bal:1875000,acctType:'Checking'},children:[
+          {name:'MCR Brand',type:'brand',children:[]}
+        ]},
+        {name:'Way Personal LLC',type:'llc',bank:{id:'MCR-PERS-SAV-001',inst:'JP Morgan Private',bal:8500000,acctType:'Savings'},children:[]},
+      ]}
+    ],
+    streaming:[
+      {platform:'Spotify',revenue:285000,streams:95000000,rate:0.003,variance:3.2},
+      {platform:'Apple Music',revenue:195000,streams:39000000,rate:0.005,variance:-1.8},
+      {platform:'YouTube Music',revenue:142000,streams:71000000,rate:0.002,variance:5.1},
+      {platform:'Amazon Music',revenue:68000,streams:17000000,rate:0.004,variance:-0.5},
+      {platform:'Tidal',revenue:42000,streams:3230769,rate:0.013,variance:2.3},
+    ],
+    invoices:{
+      'SET-MCR-001':[
+        {po:'PO-MCR-001-01',vendor:'IATSE Local 11',amount:145000,cat:'Stagehands',status:'paid',binder:'004.1',budgeted:130000},
+        {po:'PO-MCR-001-02',vendor:'Rhino Staging',amount:87500,cat:'Steel & Staging',status:'paid',binder:'005',budgeted:85000},
+        {po:'PO-MCR-001-03',vendor:'Eat My Lunch Catering',amount:32000,cat:'Catering',status:'paid',binder:'008',budgeted:35000},
+        {po:'PO-MCR-001-04',vendor:'Landmark Event Staffing',amount:68000,cat:'Security',status:'paid',binder:'006',budgeted:65000},
+        {po:'PO-MCR-001-05',vendor:'Boston Coach',amount:18500,cat:'Ground Transport',status:'paid',binder:'010',budgeted:20000},
+        {po:'PO-MCR-001-06',vendor:'Aggreko',amount:42000,cat:'Generators',status:'paid',binder:'011',budgeted:38000},
+        {po:'PO-MCR-001-07',vendor:'K&K Insurance',amount:28000,cat:'Insurance',status:'paid',binder:'001',budgeted:28000},
+        {po:'PO-MCR-001-08',vendor:'Fenway Park',amount:350000,cat:'Venue Rental',status:'paid',binder:'002',budgeted:350000},
+      ],
+      'SET-MCR-002':[
+        {po:'PO-MCR-002-01',vendor:'IATSE Local 1',amount:165000,cat:'Stagehands',status:'paid',binder:'004.1',budgeted:150000},
+        {po:'PO-MCR-002-02',vendor:'Mountain Productions',amount:112000,cat:'Steel & Staging',status:'paid',binder:'005',budgeted:100000},
+        {po:'PO-MCR-002-03',vendor:'Proof of the Pudding',amount:45000,cat:'Catering',status:'paid',binder:'008',budgeted:40000},
+        {po:'PO-MCR-002-04',vendor:'Contemporary Services Corp',amount:95000,cat:'Security',status:'paid',binder:'006',budgeted:90000},
+        {po:'PO-MCR-002-05',vendor:'Carey Limousine',amount:22000,cat:'Ground Transport',status:'paid',binder:'010',budgeted:20000},
+        {po:'PO-MCR-002-06',vendor:'Aggreko',amount:55000,cat:'Generators',status:'paid',binder:'011',budgeted:45000},
+        {po:'PO-MCR-002-07',vendor:'K&K Insurance',amount:32000,cat:'Insurance',status:'paid',binder:'001',budgeted:32000},
+        {po:'PO-MCR-002-08',vendor:'MetLife Stadium',amount:425000,cat:'Venue Rental',status:'paid',binder:'002',budgeted:425000},
+        {po:'PO-MCR-002-09',vendor:'Clair Global',amount:84000,cat:'Sound',status:'paid',binder:'003',budgeted:80000},
+      ],
+      'SET-MCR-005':[
+        {po:'PO-MCR-005-01',vendor:'IATSE Local 2',amount:155000,cat:'Stagehands',status:'paid',binder:'004.1',budgeted:140000},
+        {po:'PO-MCR-005-02',vendor:'SGPS Inc',amount:98000,cat:'Steel & Staging',status:'paid',binder:'005',budgeted:95000},
+        {po:'PO-MCR-005-03',vendor:'Constellation Culinary',amount:38000,cat:'Catering',status:'paid',binder:'008',budgeted:35000},
+        {po:'PO-MCR-005-04',vendor:'Elite Protective Services',amount:78000,cat:'Security',status:'paid',binder:'006',budgeted:75000},
+        {po:'PO-MCR-005-05',vendor:'Windy City Limousine',amount:16000,cat:'Ground Transport',status:'paid',binder:'010',budgeted:18000},
+        {po:'PO-MCR-005-06',vendor:'Power Solutions Intl',amount:48000,cat:'Generators',status:'paid',binder:'011',budgeted:42000},
+        {po:'PO-MCR-005-07',vendor:'Marsh Entertainment',amount:35000,cat:'Insurance',status:'paid',binder:'001',budgeted:35000},
+        {po:'PO-MCR-005-08',vendor:'Chicago Park District',amount:380000,cat:'Venue Rental',status:'paid',binder:'002',budgeted:380000},
+      ],
+    }
+  },
+  luna: {
+    name:'Luna Park', genre:'Indie Pop',
+    tour:{name:'Luna Park 2025 First Light Tour',budget:425000,actual:310000,startDate:'2025-09-05',endDate:'2025-10-15'},
+    pot:{totalGross:575000,totalExpenses:310000,netProfit:265000,splitPct:85,settled:3,pending:2},
+    shows:[
+      {id:'LP-2025-001',date:'2025-09-05',city:'Los Angeles',state:'CA',venue:'The Troubadour',gross:52000,net:31200,exp:20800,tickets:380,price:136.84,num:1,promoter:'Spaceland Presents',settlementStatus:'finalized',settlement:'SET-LP-001'},
+      {id:'LP-2025-002',date:'2025-09-12',city:'San Francisco',state:'CA',venue:'The Fillmore',gross:78000,net:46800,exp:31200,tickets:1250,price:62.40,num:2,promoter:'Another Planet',settlementStatus:'finalized',settlement:'SET-LP-002'},
+      {id:'LP-2025-003',date:'2025-09-20',city:'Chicago',state:'IL',venue:'Metro Chicago',gross:95000,net:57000,exp:38000,tickets:1050,price:90.48,num:3,promoter:'Jam Productions',settlementStatus:'finalized',settlement:'SET-LP-003'},
+      {id:'LP-2025-004',date:'2025-09-28',city:'Washington',state:'DC',venue:'9:30 Club',gross:155000,net:93000,exp:62000,tickets:1150,price:134.78,num:4,promoter:'IMP',settlementStatus:'pending',settlement:'SET-LP-004'},
+      {id:'LP-2025-005',date:'2025-10-05',city:'New York',state:'NY',venue:'Bowery Ballroom',gross:195000,net:117000,exp:78000,tickets:550,price:354.55,num:5,promoter:'Bowery Presents',settlementStatus:'pending',settlement:'SET-LP-005'},
+    ],
+    entities:[
+      {name:'Luna Park',type:'artist',children:[
+        {name:'Luna Park Touring LLC',type:'llc',bank:{id:'LP-TOUR-CHK-001',inst:'Chase',bal:185000,acctType:'Checking'},children:[]},
+        {name:'Luna Park Personal LLC',type:'llc',children:[]},
+      ]}
+    ],
+    streaming:[
+      {platform:'Spotify',revenue:12500,streams:4166667,rate:0.003,variance:18.5},
+      {platform:'Apple Music',revenue:8200,streams:1640000,rate:0.005,variance:22.1},
+      {platform:'YouTube Music',revenue:4800,streams:2400000,rate:0.002,variance:35.0},
+      {platform:'Amazon Music',revenue:2100,streams:525000,rate:0.004,variance:12.0},
+      {platform:'Tidal',revenue:850,streams:65385,rate:0.013,variance:8.0},
+    ],
+    invoices:{
+      'SET-LP-001':[
+        {po:'PO-LP-001-01',vendor:'IATSE Local 33',amount:8500,cat:'Stagehands',status:'paid',binder:'004',budgeted:8000},
+        {po:'PO-LP-001-02',vendor:'Rock N Roll Catering',amount:2800,cat:'Catering',status:'paid',binder:'008',budgeted:3000},
+        {po:'PO-LP-001-03',vendor:'The Troubadour',amount:5000,cat:'Venue Rental',status:'paid',binder:'002',budgeted:5000},
+      ],
+    }
+  },
+  vendors:[
+    {name:'StageCraft Productions',cat:'Stagehands',paid:8750000,invoices:48,avgDays:32,risk:35,status:'active'},
+    {name:'ProSound Audio',cat:'Sound',paid:7200000,invoices:36,avgDays:28,risk:15,status:'active'},
+    {name:'Gourmet Tour Catering',cat:'Catering',paid:3400000,invoices:52,avgDays:21,risk:10,status:'active'},
+    {name:'Lumina Lighting Co',cat:'Lighting',paid:4800000,invoices:24,avgDays:45,risk:55,status:'flagged'},
+    {name:'Shield Security Group',cat:'Security',paid:3950000,invoices:42,avgDays:30,risk:20,status:'active'},
+    {name:'IATSE Local 1',cat:'Stagehands',paid:2400000,invoices:28,avgDays:30,risk:12,status:'active'},
+    {name:'IATSE Local 11',cat:'Stagehands',paid:1800000,invoices:22,avgDays:30,risk:8,status:'active'},
+    {name:'Rhino Staging',cat:'Steel & Staging',paid:3200000,invoices:18,avgDays:45,risk:42,status:'active'},
+    {name:'Mountain Productions',cat:'Steel & Staging',paid:2900000,invoices:15,avgDays:52,risk:48,status:'flagged'},
+    {name:'Aggreko',cat:'Generators',paid:2100000,invoices:20,avgDays:45,risk:38,status:'active'},
+    {name:'K&K Insurance',cat:'Insurance',paid:1500000,invoices:30,avgDays:30,risk:5,status:'active'},
+    {name:'Clair Global',cat:'Sound',paid:4200000,invoices:32,avgDays:45,risk:25,status:'active'},
+    {name:'Ticketmaster',cat:'Ticketing',paid:850000,invoices:15,avgDays:21,risk:52,status:'flagged'},
+    {name:'Bravado (Universal)',cat:'Merch',paid:1200000,invoices:8,avgDays:60,risk:30,status:'active'},
+  ],
+  anomalies:[
+    {severity:'high',title:'Stagehand Invoice Variance — MetLife',detail:'IATSE Local 1 invoice $165K vs $150K budget (+10%). Pattern: 3rd consecutive increase.'},
+    {severity:'high',title:'Aggreko Generator Overcharge',detail:'$55K vs $45K budgeted at MetLife (+22%). Exceeds venue benchmark 95th percentile.'},
+    {severity:'medium',title:'Mountain Productions Payment Delay',detail:'Avg 52 days to pay. Industry benchmark: 35 days. Risk score elevated to 48.'},
+    {severity:'medium',title:'Ticketmaster Dispute Rate',detail:'8% dispute rate across 15 invoices. Highest among all vendors. Review contract terms.'},
+    {severity:'medium',title:'Lumina Lighting — Price Escalation',detail:'20%+ price increase over last 3 invoices. Risk score: 55. Consider rebid.'},
+    {severity:'low',title:'Luna Park Streaming Spike',detail:'YouTube Music +35% MoM. Likely viral TikTok sync. Monitor for sustainability.'},
+    {severity:'low',title:'MCR Apple Music Revenue Dip',detail:'-1.8% variance. Within normal range but 3rd consecutive month of decline.'},
+  ],
+  forecast:[
+    {period:'30 Day',income:4200000,expenses:2800000,net:1400000},
+    {period:'60 Day',income:7800000,expenses:5100000,net:2700000},
+    {period:'90 Day',income:11500000,expenses:7200000,net:4300000},
+  ],
+  reconciliation:[
+    {desc:'MetLife Stadium settlement vs Ticketmaster box office report',confidence:0.96,amount:3450000,status:'Auto-matched'},
+    {desc:'Fenway Park settlement vs Live Nation accounting',confidence:0.94,amount:2850000,status:'Auto-matched'},
+    {desc:'Soldier Field — stagehand invoice vs union rate card',confidence:0.82,amount:155000,status:'Needs review'},
+    {desc:'Chase Center — generator cost vs venue historical avg',confidence:0.71,amount:42000,status:'Needs review'},
+    {desc:'Dodger Stadium settlement — pending promoter confirmation',confidence:0.60,amount:3200000,status:'Pending'},
+  ]
+};
+
+// ==================== UTILS ====================
+const fmt = n => {
+  if(n>=1e6) return '$'+( n/1e6).toFixed(1)+'M';
+  if(n>=1e3) return '$'+(n/1e3).toFixed(0)+'K';
+  return '$'+n.toLocaleString();
+};
+const fmtFull = n => '$'+n.toLocaleString();
+const fmtNum = n => {
+  if(n>=1e6) return (n/1e6).toFixed(1)+'M';
+  if(n>=1e3) return (n/1e3).toFixed(0)+'K';
+  return n.toLocaleString();
+};
+const statusTag = s => {
+  const m={finalized:'green',agreed:'blue',pending:'amber',draft:'amber',paid:'green',estimate:'amber',active:'green',flagged:'red'};
+  return `<span class="tag ${m[s]||'blue'}">${s}</span>`;
+};
+
+// Chart defaults
+Chart.defaults.color='#94a3b8';Chart.defaults.borderColor='#1e293b';Chart.defaults.font.family="'SF Mono','Fira Code',monospace";Chart.defaults.font.size=11;
+const charts={};
+
+// ==================== LOGIN ====================
+function doLogin(){
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.add('active');
+  initDashboard();
+  initClock();
+}
+
+// ==================== NAVIGATION ====================
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('nav a').forEach(a=>{a.classList.toggle('active',a.dataset.page===id)});
+  if(id==='touring') renderTouring('mcr');
+  if(id==='settlements') renderSettlements();
+  if(id==='streaming') renderStreaming('mcr');
+  if(id==='vendors') renderVendors();
+  if(id==='intelligence') renderIntelligence();
+  if(id==='entities') renderEntities('mcr');
+  if(id==='search') document.getElementById('search-input').focus();
+}
+
+// ==================== CLOCK ====================
+function initClock(){
+  const tick=()=>{
+    const d=new Date();
+    document.getElementById('clock').textContent=d.toISOString().replace('T',' ').substring(0,19)+' UTC';
+  };
+  tick();setInterval(tick,1000);
+}
+
+// ==================== DASHBOARD ====================
+let currentArtist='mcr';
+function selectArtist(a,btn){
+  currentArtist=a;
+  document.querySelectorAll('#page-dashboard .artist-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderDashboard();
+}
+
+function initDashboard(){renderDashboard();}
+
+function renderDashboard(){
+  const a=currentArtist;
+  let totalGross,netProfit,shows,venues,streamRev;
+  if(a==='all'){
+    totalGross=DATA.mcr.pot.totalGross+DATA.luna.pot.totalGross;
+    netProfit=DATA.mcr.pot.netProfit+DATA.luna.pot.netProfit;
+    shows=DATA.mcr.shows.length+DATA.luna.shows.length;
+    venues=new Set([...DATA.mcr.shows.map(s=>s.venue),...DATA.luna.shows.map(s=>s.venue)]).size;
+    streamRev=DATA.mcr.streaming.reduce((s,x)=>s+x.revenue,0)+DATA.luna.streaming.reduce((s,x)=>s+x.revenue,0);
+  } else {
+    const d=DATA[a];
+    totalGross=d.pot.totalGross;netProfit=d.pot.netProfit;shows=d.shows.length;
+    venues=new Set(d.shows.map(s=>s.venue)).size;
+    streamRev=d.streaming.reduce((s,x)=>s+x.revenue,0);
+  }
+  const margin=((netProfit/totalGross)*100).toFixed(1);
+  document.getElementById('kpi-cards').innerHTML=`
+    <div class="card"><div class="card-accent green"></div><div class="card-title">Total Gross Revenue</div><div class="card-value">${fmt(totalGross)}</div><div class="card-sub">${shows} shows across ${venues} venues</div></div>
+    <div class="card"><div class="card-accent cyan"></div><div class="card-title">Net Profit</div><div class="card-value green-text">${fmt(netProfit)}</div><div class="card-sub">${margin}% margin</div></div>
+    <div class="card"><div class="card-accent blue"></div><div class="card-title">Monthly Streaming</div><div class="card-value">${fmt(streamRev)}</div><div class="card-sub">${a==='all'?'10':'5'} DSP sources</div></div>
+    <div class="card"><div class="card-accent amber"></div><div class="card-title">Active Anomalies</div><div class="card-value amber-text">${DATA.anomalies.filter(x=>x.severity==='high').length}</div><div class="card-sub">${DATA.anomalies.length} total flags</div></div>
+  `;
+  renderDashCharts();
+}
+
+function renderDashCharts(){
+  const a=currentArtist;
+  const showData=a==='all'?[...DATA.mcr.shows,...DATA.luna.shows]:DATA[a].shows;
+  // Revenue chart
+  if(charts.revenue)charts.revenue.destroy();
+  charts.revenue=new Chart(document.getElementById('chart-revenue'),{
+    type:'bar',data:{
+      labels:showData.map(s=>s.venue.length>15?s.venue.substring(0,15)+'…':s.venue),
+      datasets:[
+        {label:'Gross',data:showData.map(s=>s.gross),backgroundColor:'rgba(0,230,118,0.7)'},
+        {label:'Expenses',data:showData.map(s=>s.exp),backgroundColor:'rgba(255,23,68,0.5)'},
+      ]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12}}},scales:{y:{ticks:{callback:v=>fmt(v)}},x:{ticks:{maxRotation:45}}}}
+  });
+  // Expense donut
+  const cats={};showData.forEach(s=>{
+    const r=s.exp;['Venue','Labor','Production','Catering','Transport','Insurance'].forEach((c,i)=>{
+      cats[c]=(cats[c]||0)+r*[0.38,0.22,0.15,0.08,0.07,0.10][i];
+    });
+  });
+  if(charts.expenses)charts.expenses.destroy();
+  charts.expenses=new Chart(document.getElementById('chart-expenses'),{
+    type:'doughnut',data:{
+      labels:Object.keys(cats),
+      datasets:[{data:Object.values(cats),backgroundColor:['#00e676','#2979ff','#b388ff','#ffab00','#00e5ff','#ff1744']}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{boxWidth:10}}}}
+  });
+  // Cash flow
+  const months=['Jun','Jul','Aug','Sep','Oct','Nov'];
+  const income=[8400000,9800000,6800000,2300000,575000,0];
+  const exp2=[3400000,3600000,2900000,1500000,310000,0];
+  if(charts.cashflow)charts.cashflow.destroy();
+  charts.cashflow=new Chart(document.getElementById('chart-cashflow'),{
+    type:'line',data:{
+      labels:months,
+      datasets:[
+        {label:'Income',data:income,borderColor:'#00e676',backgroundColor:'rgba(0,230,118,0.1)',fill:true,tension:0.3},
+        {label:'Expenses',data:exp2,borderColor:'#ff1744',backgroundColor:'rgba(255,23,68,0.1)',fill:true,tension:0.3},
+      ]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12}}},scales:{y:{ticks:{callback:v=>fmt(v)}}}}
+  });
+  // Streaming trend
+  const sMonths=['Sep','Oct','Nov','Dec','Jan','Feb'];
+  const sData=a==='luna'?[18000,21000,24500,26200,27800,28450]:[680000,695000,710000,718000,725000,732000];
+  if(charts.streamTrend)charts.streamTrend.destroy();
+  charts.streamTrend=new Chart(document.getElementById('chart-streaming-trend'),{
+    type:'line',data:{
+      labels:sMonths,
+      datasets:[{label:'Monthly Revenue',data:sData,borderColor:'#b388ff',backgroundColor:'rgba(179,136,255,0.1)',fill:true,tension:0.4,pointBackgroundColor:'#b388ff'}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>fmt(v)}}}}
+  });
+}
+
+// ==================== ENTITIES ====================
+function selectEntityArtist(a,btn){
+  document.querySelectorAll('#page-entities .artist-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderEntities(a);
+}
+function renderEntities(a){
+  const d=DATA[a];
+  document.getElementById('entity-tree').innerHTML=buildTreeHTML(d.entities);
+  const totalBal=sumBankBalances(d.entities);
+  const streamTotal=d.streaming.reduce((s,x)=>s+x.revenue,0);
+  document.getElementById('entity-financials').innerHTML=`
+    <div class="grid grid-2" style="margin-bottom:16px">
+      <div class="card"><div class="card-accent green"></div><div class="card-title">Total Bank Balance</div><div class="card-value">${fmt(totalBal)}</div></div>
+      <div class="card"><div class="card-accent cyan"></div><div class="card-title">Tour Revenue</div><div class="card-value">${fmt(d.pot.totalGross)}</div></div>
+    </div>
+    <div class="grid grid-2">
+      <div class="card"><div class="card-accent blue"></div><div class="card-title">Monthly Streaming</div><div class="card-value">${fmt(streamTotal)}</div></div>
+      <div class="card"><div class="card-accent purple"></div><div class="card-title">Net Profit</div><div class="card-value green-text">${fmt(d.pot.netProfit)}</div></div>
+    </div>
+    <div style="margin-top:16px">
+      <table><thead><tr><th>Account</th><th>Institution</th><th>Type</th><th class="right-align">Balance</th></tr></thead><tbody>
+      ${getBankAccounts(d.entities).map(b=>`<tr><td>${b.id}</td><td>${b.inst}</td><td>${b.acctType||'—'}</td><td class="right-align cyan-text">${fmtFull(b.bal)}</td></tr>`).join('')}
+      </tbody></table>
+    </div>`;
+}
+function buildTreeHTML(nodes,depth=0){
+  let h='<ul class="tree">';
+  nodes.forEach(n=>{
+    const icons={artist:'◉',llc:'⬡',brand:'◈'};
+    const bankStr=n.bank?`<span class="node-bal">${fmt(n.bank.bal)}</span>`:'';
+    h+=`<li><div class="node"><span class="node-icon">${icons[n.type]||'○'}</span><span class="node-name">${n.name}</span><span class="node-type">${n.type}</span>${bankStr}</div>`;
+    if(n.children&&n.children.length)h+=buildTreeHTML(n.children,depth+1);
+    h+='</li>';
+  });
+  return h+'</ul>';
+}
+function sumBankBalances(nodes){
+  let s=0;
+  nodes.forEach(n=>{if(n.bank)s+=n.bank.bal;if(n.children)s+=sumBankBalances(n.children);});
+  return s;
+}
+function getBankAccounts(nodes){
+  let accts=[];
+  nodes.forEach(n=>{if(n.bank)accts.push(n.bank);if(n.children)accts=accts.concat(getBankAccounts(n.children));});
+  return accts;
+}
+
+// ==================== TOURING ====================
+let currentTourArtist='mcr';
+function selectTourArtist(a,btn){
+  currentTourArtist=a;
+  document.querySelectorAll('#page-touring .artist-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTouring(a);
+}
+function renderTouring(a){
+  const d=DATA[a];
+  const margin=((d.pot.netProfit/d.pot.totalGross)*100).toFixed(1);
+  document.getElementById('tour-kpis').innerHTML=`
+    <div class="card"><div class="card-accent green"></div><div class="card-title">Tour Gross</div><div class="card-value">${fmt(d.pot.totalGross)}</div><div class="card-sub">${d.tour.name}</div></div>
+    <div class="card"><div class="card-accent cyan"></div><div class="card-title">Net Profit</div><div class="card-value green-text">${fmt(d.pot.netProfit)}</div><div class="card-sub">${margin}% margin</div></div>
+    <div class="card"><div class="card-accent blue"></div><div class="card-title">Budget Variance</div><div class="card-value green-text">${fmt(d.tour.budget-d.tour.actual)}</div><div class="card-sub">Under budget</div></div>
+    <div class="card"><div class="card-accent amber"></div><div class="card-title">Settlement Status</div><div class="card-value">${d.pot.settled}/${d.pot.settled+d.pot.pending}</div><div class="card-sub">${d.pot.pending} pending</div></div>
+  `;
+  // Budget chart
+  if(charts.budget)charts.budget.destroy();
+  const budgetCats=['Venue','Labor','Production','Catering','Transport','Insurance','Misc'];
+  const budgetAmts=budgetCats.map((_,i)=>Math.round(d.tour.budget*[0.35,0.22,0.15,0.08,0.07,0.08,0.05][i]));
+  const actualAmts=budgetCats.map((_,i)=>Math.round(d.tour.actual*[0.36,0.24,0.14,0.09,0.06,0.07,0.04][i]));
+  charts.budget=new Chart(document.getElementById('chart-budget'),{
+    type:'bar',data:{
+      labels:budgetCats,
+      datasets:[
+        {label:'Budget',data:budgetAmts,backgroundColor:'rgba(41,121,255,0.5)'},
+        {label:'Actual',data:actualAmts,backgroundColor:'rgba(0,230,118,0.7)'},
+      ]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12}}},scales:{y:{ticks:{callback:v=>fmt(v)}}}}
+  });
+  // Pot tracker
+  if(charts.pot)charts.pot.destroy();
+  let cumGross=0,cumNet=0;
+  const cumGrossArr=[],cumNetArr=[];
+  d.shows.forEach(s=>{cumGross+=s.gross;cumNet+=s.net;cumGrossArr.push(cumGross);cumNetArr.push(cumNet);});
+  charts.pot=new Chart(document.getElementById('chart-pot'),{
+    type:'line',data:{
+      labels:d.shows.map(s=>'#'+s.num),
+      datasets:[
+        {label:'Cumulative Gross',data:cumGrossArr,borderColor:'#00e676',tension:0.3,fill:false},
+        {label:'Cumulative Net',data:cumNetArr,borderColor:'#00e5ff',tension:0.3,fill:false},
+      ]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12}}},scales:{y:{ticks:{callback:v=>fmt(v)}}}}
+  });
+  // Table
+  document.getElementById('tour-table-wrap').innerHTML=`<table><thead><tr><th>#</th><th>Date</th><th>Venue</th><th>City</th><th class="right-align">Gross</th><th class="right-align">Expenses</th><th class="right-align">Net</th><th class="right-align">Tickets</th><th class="right-align">Avg Price</th><th>Status</th></tr></thead><tbody>${
+    d.shows.map(s=>`<tr><td>${s.num}</td><td>${s.date}</td><td>${s.venue}</td><td>${s.city}, ${s.state}</td><td class="right-align">${fmtFull(s.gross)}</td><td class="right-align red-text">${fmtFull(s.exp)}</td><td class="right-align green-text">${fmtFull(s.net)}</td><td class="right-align">${s.tickets.toLocaleString()}</td><td class="right-align">${fmtFull(s.price)}</td><td>${statusTag(s.settlementStatus)}</td></tr>`).join('')
+  }</tbody></table>`;
+}
+
+// ==================== SETTLEMENTS ====================
+function renderSettlements(){
+  const allShows=[...DATA.mcr.shows,...DATA.luna.shows];
+  const finalized=allShows.filter(s=>s.settlementStatus==='finalized').length;
+  const pending=allShows.filter(s=>s.settlementStatus==='pending').length;
+  const totalGross=allShows.reduce((s,x)=>s+x.gross,0);
+  document.getElementById('settlement-kpis').innerHTML=`
+    <div class="card"><div class="card-accent green"></div><div class="card-title">Finalized</div><div class="card-value green-text">${finalized}</div></div>
+    <div class="card"><div class="card-accent amber"></div><div class="card-title">Pending</div><div class="card-value amber-text">${pending}</div></div>
+    <div class="card"><div class="card-accent cyan"></div><div class="card-title">Total Settled Value</div><div class="card-value">${fmt(totalGross)}</div></div>
+  `;
+  document.getElementById('settlement-tbody').innerHTML=allShows.map(s=>`
+    <tr><td>${s.id}</td><td>${s.venue}</td><td>${s.date}</td><td>${s.promoter}</td>
+    <td class="right-align">${fmtFull(s.gross)}</td><td class="right-align red-text">${fmtFull(s.exp)}</td>
+    <td class="right-align green-text">${fmtFull(s.net)}</td><td>${statusTag(s.settlementStatus)}</td>
+    <td><a style="color:var(--cyan);cursor:pointer" onclick="drillInvoice('${s.settlement}','${s.venue}')">Invoices →</a></td></tr>
+  `).join('');
+}
+function drillInvoice(setId,venue){
+  const allInv={...DATA.mcr.invoices,...DATA.luna.invoices};
+  const invs=allInv[setId];
+  const panel=document.getElementById('invoice-panel');
+  if(!invs){panel.style.display='none';return;}
+  panel.style.display='block';
+  document.getElementById('invoice-venue').textContent=venue;
+  document.getElementById('invoice-tbody').innerHTML=invs.map(i=>{
+    const variance=i.amount-i.budgeted;
+    const pct=((variance/i.budgeted)*100).toFixed(1);
+    const flag=Math.abs(variance/i.budgeted)>0.1?`<span class="red-text">⚠ ${pct>0?'+':''}${pct}%</span>`:(variance===0?'<span class="green-text">✓</span>':`<span class="amber-text">${pct>0?'+':''}${pct}%</span>`);
+    return `<tr><td>${i.po}</td><td>${i.binder}</td><td>${i.cat}</td><td>${i.vendor}</td><td class="right-align">${fmtFull(i.amount)}</td><td>${statusTag(i.status)}</td><td>${flag}</td></tr>`;
+  }).join('');
+}
+
+// ==================== STREAMING ====================
+let currentStreamArtist='mcr';
+function selectStreamArtist(a,btn){
+  currentStreamArtist=a;
+  document.querySelectorAll('#page-streaming .artist-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderStreaming(a);
+}
+function renderStreaming(a){
+  const d=DATA[a];
+  const totalRev=d.streaming.reduce((s,x)=>s+x.revenue,0);
+  const totalStreams=d.streaming.reduce((s,x)=>s+x.streams,0);
+  const avgRate=(totalRev/totalStreams).toFixed(4);
+  const flagged=d.streaming.filter(x=>Math.abs(x.variance)>10).length;
+  document.getElementById('streaming-kpis').innerHTML=`
+    <div class="card"><div class="card-accent green"></div><div class="card-title">Monthly Revenue</div><div class="card-value">${fmt(totalRev)}</div></div>
+    <div class="card"><div class="card-accent blue"></div><div class="card-title">Total Streams</div><div class="card-value">${fmtNum(totalStreams)}</div></div>
+    <div class="card"><div class="card-accent cyan"></div><div class="card-title">Avg Per-Stream</div><div class="card-value">$${avgRate}</div></div>
+    <div class="card"><div class="card-accent ${flagged?'amber':'green'}"></div><div class="card-title">Variance Flags</div><div class="card-value ${flagged?'amber-text':'green-text'}">${flagged}</div></div>
+  `;
+  // DSP chart
+  if(charts.dsp)charts.dsp.destroy();
+  charts.dsp=new Chart(document.getElementById('chart-dsp'),{
+    type:'doughnut',data:{
+      labels:d.streaming.map(s=>s.platform),
+      datasets:[{data:d.streaming.map(s=>s.revenue),backgroundColor:['#00e676','#ff1744','#2979ff','#ffab00','#b388ff']}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{boxWidth:10}}}}
+  });
+  if(charts.streams)charts.streams.destroy();
+  charts.streams=new Chart(document.getElementById('chart-streams'),{
+    type:'bar',data:{
+      labels:d.streaming.map(s=>s.platform),
+      datasets:[{label:'Streams',data:d.streaming.map(s=>s.streams),backgroundColor:['#00e676','#ff1744','#2979ff','#ffab00','#b388ff']}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>fmtNum(v)}}}}
+  });
+  document.getElementById('streaming-tbody').innerHTML=d.streaming.map(s=>{
+    const vClass=Math.abs(s.variance)>10?'red-text':(Math.abs(s.variance)>5?'amber-text':'green-text');
+    const status=Math.abs(s.variance)>10?statusTag('flagged'):(Math.abs(s.variance)>5?statusTag('active'):statusTag('active'));
+    return `<tr><td>${s.platform}</td><td class="right-align">${fmtFull(s.revenue)}</td><td class="right-align">${fmtNum(s.streams)}</td><td class="right-align">$${s.rate.toFixed(4)}</td><td class="right-align ${vClass}">${s.variance>0?'+':''}${s.variance.toFixed(1)}%</td><td>${status}</td></tr>`;
+  }).join('');
+}
+
+// ==================== VENDORS ====================
+function renderVendors(){
+  const v=DATA.vendors;
+  const totalPaid=v.reduce((s,x)=>s+x.paid,0);
+  const flagged=v.filter(x=>x.status==='flagged').length;
+  const avgRisk=Math.round(v.reduce((s,x)=>s+x.risk,0)/v.length);
+  document.getElementById('vendor-kpis').innerHTML=`
+    <div class="card"><div class="card-accent green"></div><div class="card-title">Total Vendors</div><div class="card-value">${v.length}</div></div>
+    <div class="card"><div class="card-accent red"></div><div class="card-title">Flagged</div><div class="card-value red-text">${flagged}</div></div>
+    <div class="card"><div class="card-accent amber"></div><div class="card-title">Avg Risk Score</div><div class="card-value">${avgRisk}/100</div></div>
+  `;
+  // Category chart
+  const cats={};v.forEach(x=>cats[x.cat]=(cats[x.cat]||0)+x.paid);
+  if(charts.vendorCat)charts.vendorCat.destroy();
+  charts.vendorCat=new Chart(document.getElementById('chart-vendor-cat'),{
+    type:'bar',data:{
+      labels:Object.keys(cats),
+      datasets:[{data:Object.values(cats),backgroundColor:'rgba(0,230,118,0.6)'}]
+    },options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>fmt(v)}}}}
+  });
+  if(charts.vendorRisk)charts.vendorRisk.destroy();
+  const riskBuckets=[v.filter(x=>x.risk<20).length,v.filter(x=>x.risk>=20&&x.risk<40).length,v.filter(x=>x.risk>=40&&x.risk<60).length,v.filter(x=>x.risk>=60).length];
+  charts.vendorRisk=new Chart(document.getElementById('chart-vendor-risk'),{
+    type:'bar',data:{
+      labels:['Low (0-19)','Medium (20-39)','High (40-59)','Critical (60+)'],
+      datasets:[{data:riskBuckets,backgroundColor:['#00e676','#ffab00','#ff6d00','#ff1744']}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+  });
+  document.getElementById('vendor-tbody').innerHTML=v.sort((a,b)=>b.risk-a.risk).map(x=>{
+    const riskClass=x.risk>=50?'red-text':(x.risk>=30?'amber-text':'green-text');
+    return `<tr><td>${x.name}</td><td>${x.cat}</td><td class="right-align">${fmt(x.paid)}</td><td class="right-align">${x.invoices}</td><td class="right-align">${x.avgDays}</td><td class="right-align ${riskClass}">${x.risk}</td><td>${statusTag(x.status)}</td></tr>`;
+  }).join('');
+}
+
+// ==================== INTELLIGENCE ====================
+function renderIntelligence(){
+  const a=DATA.anomalies;
+  document.getElementById('intel-kpis').innerHTML=`
+    <div class="card"><div class="card-accent red"></div><div class="card-title">High Severity</div><div class="card-value red-text">${a.filter(x=>x.severity==='high').length}</div></div>
+    <div class="card"><div class="card-accent amber"></div><div class="card-title">Medium</div><div class="card-value amber-text">${a.filter(x=>x.severity==='medium').length}</div></div>
+    <div class="card"><div class="card-accent blue"></div><div class="card-title">Low / Info</div><div class="card-value blue-text">${a.filter(x=>x.severity==='low').length}</div></div>
+  `;
+  document.getElementById('anomaly-list').innerHTML=a.map(x=>`<div class="anomaly-item ${x.severity}"><div class="anomaly-title">${x.title}</div><div class="anomaly-detail">${x.detail}</div></div>`).join('');
+  // Forecast chart
+  if(charts.forecast)charts.forecast.destroy();
+  charts.forecast=new Chart(document.getElementById('chart-forecast'),{
+    type:'bar',data:{
+      labels:DATA.forecast.map(f=>f.period),
+      datasets:[
+        {label:'Income',data:DATA.forecast.map(f=>f.income),backgroundColor:'rgba(0,230,118,0.7)'},
+        {label:'Expenses',data:DATA.forecast.map(f=>f.expenses),backgroundColor:'rgba(255,23,68,0.5)'},
+        {label:'Net',data:DATA.forecast.map(f=>f.net),type:'line',borderColor:'#00e5ff',backgroundColor:'transparent',tension:0.3,pointBackgroundColor:'#00e5ff',borderWidth:2},
+      ]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12}}},scales:{y:{ticks:{callback:v=>fmt(v)}}}}
+  });
+  // Reconciliation
+  document.getElementById('recon-list').innerHTML=DATA.reconciliation.map(r=>{
+    const confClass=r.confidence>=0.9?'green-text':(r.confidence>=0.8?'amber-text':'red-text');
+    return `<div style="padding:10px;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between"><span style="font-size:12px;color:var(--fg)">${r.desc}</span><span class="${confClass}" style="font-size:11px">${(r.confidence*100).toFixed(0)}%</span></div><div style="font-size:11px;color:var(--fg3);margin-top:2px">${fmtFull(r.amount)} — ${r.status}</div></div>`;
+  }).join('');
+}
+
+function runNLQuery(){
+  const q=document.getElementById('nl-query').value.trim();
+  if(!q)return;
+  const el=document.getElementById('nl-result');
+  el.style.display='block';
+  const ql=q.toLowerCase();
+  let result='';
+  if(ql.includes('flag')||ql.includes('anomal')){
+    result='Found '+DATA.anomalies.length+' anomalies:\n\n'+DATA.anomalies.map(a=>`[${a.severity.toUpperCase()}] ${a.title}\n  ${a.detail}`).join('\n\n');
+  } else if(ql.includes('vendor')&&ql.includes('risk')){
+    result='Vendor Risk Assessment:\n\n'+DATA.vendors.filter(v=>v.risk>=30).sort((a,b)=>b.risk-a.risk).map(v=>`${v.name} — Risk: ${v.risk}/100 (${v.status}), Avg ${v.avgDays} days`).join('\n');
+  } else if(ql.includes('stream')||ql.includes('revenue')){
+    const mcr=DATA.mcr.streaming;const lp=DATA.luna.streaming;
+    result='Streaming Revenue Summary:\n\nMCR: '+fmt(mcr.reduce((s,x)=>s+x.revenue,0))+'/mo\n'+mcr.map(s=>`  ${s.platform}: ${fmtFull(s.revenue)} (${s.variance>0?'+':''}${s.variance}%)`).join('\n')+'\n\nLuna Park: '+fmt(lp.reduce((s,x)=>s+x.revenue,0))+'/mo\n'+lp.map(s=>`  ${s.platform}: ${fmtFull(s.revenue)} (${s.variance>0?'+':''}${s.variance}%)`).join('\n');
+  } else if(ql.includes('settlement')||ql.includes('show')){
+    result='Show Settlements:\n\n'+[...DATA.mcr.shows,...DATA.luna.shows].map(s=>`${s.id} | ${s.venue} | ${fmtFull(s.gross)} | ${s.settlementStatus}`).join('\n');
+  } else if(ql.includes('mcr')||ql.includes('chemical')){
+    result=`My Chemical Romance — MCR 2025 NA Summer Tour\nGross: ${fmt(DATA.mcr.pot.totalGross)} | Net: ${fmt(DATA.mcr.pot.netProfit)} | Shows: 12 | Venues: 12\nStreaming: ${fmt(DATA.mcr.streaming.reduce((s,x)=>s+x.revenue,0))}/mo`;
+  } else if(ql.includes('luna')){
+    result=`Luna Park — First Light Tour 2025\nGross: ${fmt(DATA.luna.pot.totalGross)} | Net: ${fmt(DATA.luna.pot.netProfit)} | Shows: 5\nStreaming: ${fmt(DATA.luna.streaming.reduce((s,x)=>s+x.revenue,0))}/mo`;
+  } else {
+    result='Query: "'+q+'"\n\nCypher: MATCH (n) WHERE n.name CONTAINS "'+q+'" RETURN n LIMIT 10\n\nNo matching results in local data. Connect Neo4j for full graph queries.';
+  }
+  el.textContent=result;
+}
+
+// ==================== SEARCH ====================
+const SEARCH_INDEX=[
+  ...DATA.mcr.shows.map(s=>({type:'show',title:s.venue+' — '+s.city,sub:`MCR Show #${s.num} | ${s.date} | ${fmtFull(s.gross)}`,keywords:s.venue+' '+s.city+' '+s.state+' mcr chemical romance '+s.promoter})),
+  ...DATA.luna.shows.map(s=>({type:'show',title:s.venue+' — '+s.city,sub:`Luna Park Show #${s.num} | ${s.date} | ${fmtFull(s.gross)}`,keywords:s.venue+' '+s.city+' '+s.state+' luna park '+s.promoter})),
+  ...DATA.vendors.map(v=>({type:'vendor',title:v.name,sub:`${v.cat} | Risk: ${v.risk} | ${fmtFull(v.paid)} total`,keywords:v.name+' '+v.cat})),
+  {type:'entity',title:'My Chemical Romance',sub:'Artist — Rock/Alternative | 4 LLCs',keywords:'mcr my chemical romance artist'},
+  {type:'entity',title:'Luna Park',sub:'Artist — Indie Pop | 2 LLCs',keywords:'luna park artist indie'},
+  {type:'entity',title:'MCR Touring LLC',sub:'LLC — City National Bank | $4.25M',keywords:'mcr touring llc'},
+  {type:'entity',title:'MCR Merch LLC',sub:'LLC — City National Bank | $1.875M',keywords:'mcr merch llc'},
+  {type:'entity',title:'Way Personal LLC',sub:'LLC — JP Morgan Private | $8.5M',keywords:'way personal llc'},
+  {type:'streaming',title:'Spotify — MCR',sub:'$285K/mo | 95M streams',keywords:'spotify mcr streaming'},
+  {type:'streaming',title:'Apple Music — MCR',sub:'$195K/mo | 39M streams',keywords:'apple music mcr streaming'},
+  {type:'tour',title:'MCR 2025 NA Summer Tour',sub:'$31.2M gross | 12 shows | Jun-Sep 2025',keywords:'mcr tour summer 2025'},
+  {type:'tour',title:'Luna Park First Light Tour',sub:'$575K gross | 5 shows | Sep-Oct 2025',keywords:'luna park tour first light'},
+];
+
+function handleSearch(e){
+  if(e.key==='Enter'){
+    showPage('search');
+    document.getElementById('search-input').value=document.getElementById('search-global').value;
+    doSearch(document.getElementById('search-global').value);
+  }
+}
+function handleFullSearch(e){doSearch(e.target.value);}
+function doSearch(q){
+  if(!q||q.length<2){document.getElementById('search-results').innerHTML='';return;}
+  const ql=q.toLowerCase();
+  const results=SEARCH_INDEX.filter(r=>r.keywords.toLowerCase().includes(ql)||r.title.toLowerCase().includes(ql));
+  document.getElementById('search-results').innerHTML=results.length?results.map(r=>`<div class="search-result"><div class="sr-type">${r.type}</div><div class="sr-title">${r.title}</div><div class="sr-sub">${r.sub}</div></div>`).join(''):'<div style="padding:20px;color:var(--fg3)">No results for "'+q+'"</div>';
+}
+</script>
+</body>
+</html>
