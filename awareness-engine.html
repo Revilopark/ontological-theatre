@@ -503,17 +503,20 @@ let graphAnim=null;
 function drawGraph(){
 const canvas=document.getElementById('graph');
 const ctx=canvas.getContext('2d');
-canvas.width=canvas.offsetWidth*2;canvas.height=360*2;
+const isMobile=window.innerWidth<900;
+const cH=isMobile?300:360;
+canvas.width=canvas.offsetWidth*2;canvas.height=cH*2;
 ctx.scale(2,2);
-const W=canvas.offsetWidth,H=360;
+const W=canvas.offsetWidth,H=cH;
 const nodes=state.graphNodes;
 if(!nodes.length)return;
 const cx=W/2,cy=H/2;
 nodes[0].x=cx;nodes[0].y=cy;
 for(let i=1;i<nodes.length;i++){
 const a=(i/(nodes.length-1))*Math.PI*2;
-nodes[i].x=cx+Math.cos(a)*100+Math.random()*20;
-nodes[i].y=cy+Math.sin(a)*100+Math.random()*20;
+const spread=Math.min(W,H)*0.35;
+nodes[i].x=cx+Math.cos(a)*spread+Math.random()*15;
+nodes[i].y=cy+Math.sin(a)*spread+Math.random()*15;
 }
 const colors={character:'#D4A04A',era:'#a0522d',lineage:'#6b8e5a',place:'#4a6a8a',bridge:'#DAA520',pathy:'#C71585',default:'#8a7e68'};
 let ticks=0;
@@ -523,7 +526,8 @@ for(let i=0;i<nodes.length;i++){
 for(let j=i+1;j<nodes.length;j++){
 let dx=nodes[j].x-nodes[i].x,dy=nodes[j].y-nodes[i].y;
 let d=Math.sqrt(dx*dx+dy*dy)||1;
-let force=(d-120)*0.003;
+const idealDist=isMobile?80:120;
+let force=(d-idealDist)*0.003;
 let fx=dx/d*force,fy=dy/d*force;
 if(i===0){nodes[j].vx+=fx;nodes[j].vy+=fy;}
 else{nodes[i].vx-=fx*.5;nodes[i].vy-=fy*.5;nodes[j].vx+=fx*.5;nodes[j].vy+=fy*.5;}
@@ -550,9 +554,10 @@ const g=ctx.createRadialGradient(n.x,n.y,r,n.x,n.y,r+6);
 g.addColorStop(0,col+'44');g.addColorStop(1,'transparent');
 ctx.fillStyle=g;ctx.fill();
 ctx.beginPath();ctx.arc(n.x,n.y,r,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
-ctx.fillStyle='#d4c8a8';ctx.font=(i===0?'bold ':'')+`${i===0?10:8}px "EB Garamond", Georgia, serif`;
+const fontSize=isMobile?(i===0?11:9):(i===0?10:8);
+ctx.fillStyle='#d4c8a8';ctx.font=(i===0?'bold ':'')+`${fontSize}px "EB Garamond", Georgia, serif`;
 ctx.textAlign='center';
-let label=n.id.length>18?n.id.substring(0,16)+'…':n.id;
+let label=isMobile?(n.id.length>14?n.id.substring(0,12)+'…':n.id):(n.id.length>18?n.id.substring(0,16)+'…':n.id);
 ctx.fillText(label,n.x,n.y+r+14);
 }
 ticks++;
