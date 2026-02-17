@@ -660,34 +660,18 @@ function getAvailableProviders(){
 return IMG_PROVIDERS.filter(p=>p.check());
 }
 
-// Fal.ai via queue pattern
+// Fal.ai via sync endpoint (simpler, more reliable)
 async function generateFal(prompt){
-// Submit to proxy
-const submitR=await fetch(`${PROXY}/fal/generate`,{
+const r=await fetch(`${PROXY}/fal/generate-sync`,{
 method:'POST',
 headers:{'Content-Type':'application/json'},
 body:JSON.stringify({model:'fal-ai/flux/schnell',prompt,image_size:'landscape_16_9',num_inference_steps:4})
 });
-if(!submitR.ok){const t=await submitR.text();throw new Error('Fal submit: '+submitR.status+' '+t);}
-const submitData=await submitR.json();
-const requestId=submitData.request_id;
-if(!requestId)throw new Error('No request_id from Fal');
-
-// Poll for completion
-for(let i=0;i<60;i++){
-await new Promise(r=>setTimeout(r,1000));
-const statusR=await fetch(`${PROXY}/fal/status/${requestId}?model=fal-ai/flux/schnell`);
-const statusData=await statusR.json();
-if(statusData.status==='COMPLETED'){
-const resultR=await fetch(`${PROXY}/fal/result/${requestId}?model=fal-ai/flux/schnell`);
-const resultData=await resultR.json();
-const url=resultData.images?.[0]?.url;
-if(!url)throw new Error('No image URL in Fal result');
+if(!r.ok){const t=await r.text();throw new Error('Fal: '+r.status+' '+t);}
+const data=await r.json();
+const url=data.images?.[0]?.url;
+if(!url)throw new Error('No image URL from Fal');
 return{url,provider:'Fal.ai'};
-}
-if(statusData.status==='FAILED')throw new Error('Fal generation failed');
-}
-throw new Error('Fal timeout after 60s');
 }
 
 // DALL-E 3 via OpenRouter
