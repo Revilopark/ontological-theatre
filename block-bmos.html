@@ -238,6 +238,27 @@ tr:hover td{background:rgba(0,230,118,0.03)}
 .btn-template:hover{border-color:var(--cyan)!important}
 .import-status{font-size:11px;margin-left:auto}
 
+/* RESEARCH */
+.gauge-ring{position:relative;width:80px;height:80px;display:inline-flex;align-items:center;justify-content:center}
+.gauge-ring svg{position:absolute;top:0;left:0;transform:rotate(-90deg)}
+.gauge-ring .gauge-val{font-size:18px;font-weight:700;z-index:1}
+.research-pillar{padding:8px 10px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s}
+.research-pillar:hover{background:var(--bg3)}
+.research-pillar .rp-name{font-size:11px;color:var(--fg);font-weight:600;text-transform:uppercase;letter-spacing:1px}
+.research-pillar .rp-bar{height:4px;background:var(--bg4);margin-top:4px;position:relative;overflow:hidden}
+.research-pillar .rp-fill{height:100%;position:absolute;left:0;top:0}
+.trinity-panel{background:var(--bg);border:1px solid var(--border);padding:14px;position:relative}
+.trinity-panel .tp-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;font-weight:700}
+.trinity-panel .tp-item{font-size:11px;color:var(--fg2);padding:3px 0}
+.rec-item{padding:12px;border-left:3px solid;margin-bottom:8px;background:var(--bg)}
+.rec-item.p1{border-color:var(--green)}.rec-item.p2{border-color:var(--cyan)}.rec-item.p3{border-color:var(--blue)}.rec-item.p4{border-color:var(--amber)}.rec-item.p5,.rec-item.p6{border-color:var(--fg3)}
+.rec-title{font-size:12px;font-weight:600;color:var(--fg)}
+.rec-detail{font-size:11px;color:var(--fg3);margin-top:2px}
+.rec-meta{display:flex;gap:12px;margin-top:4px;font-size:10px}
+.sentiment-meter{display:flex;align-items:center;gap:8px;margin:8px 0}
+.sentiment-bar{flex:1;height:8px;background:var(--bg4);position:relative;overflow:hidden}
+.sentiment-fill{height:100%;position:absolute;transition:width 0.5s}
+
 /* TABLE RESPONSIVE WRAPPER */
 .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 
@@ -332,6 +353,7 @@ tr:hover td{background:rgba(0,230,118,0.03)}
       <a data-page="vendors" onclick="showPage('vendors')"><span class="icon">◈</span>Vendors</a>
       <div class="section-label">Intelligence</div>
       <a data-page="intelligence" onclick="showPage('intelligence')"><span class="icon">◎</span>Trinity AI</a>
+      <a data-page="research" onclick="showPage('research')"><span class="icon">🔍</span>Research</a>
       <a data-page="search" onclick="showPage('search')"><span class="icon">⊕</span>Search</a>
       <div class="section-label">Data</div>
       <a data-page="import" onclick="showPage('import')"><span class="icon">⇧</span>Import Data</a>
@@ -353,6 +375,13 @@ tr:hover td{background:rgba(0,230,118,0.03)}
   <div class="grid grid-2" style="margin-top:12px">
     <div class="card"><div class="card-title">Monthly Cash Flow</div><div class="chart-wrap"><canvas id="chart-cashflow"></canvas></div></div>
     <div class="card"><div class="card-title">Streaming Revenue Trend</div><div class="chart-wrap"><canvas id="chart-streaming-trend"></canvas></div></div>
+  </div>
+  <div class="grid grid-3" style="margin-top:12px">
+    <div class="card" id="quick-research-widget" style="cursor:pointer" onclick="showPage('research')">
+      <div class="card-accent" style="background:linear-gradient(90deg,#c8a84e,#f5d77a,#c8a84e)"></div>
+      <div class="card-title">🔍 Artist Intelligence <span style="color:var(--cyan);font-size:9px;cursor:pointer" onclick="event.stopPropagation();showPage('research')">VIEW FULL REPORT →</span></div>
+      <div id="qr-content" style="color:var(--fg3);font-size:11px">Loading...</div>
+    </div>
   </div>
 </div>
 
@@ -482,6 +511,62 @@ tr:hover td{background:rgba(0,230,118,0.03)}
       <div class="nl-input"><input type="text" id="nl-query" placeholder='e.g. "Show me flagged invoices over $100K"' onkeydown="if(event.key==='Enter')runNLQuery()"><button onclick="runNLQuery()">QUERY</button></div>
       <div class="nl-result" id="nl-result" style="display:none"></div>
     </div>
+  </div>
+</div>
+
+<!-- ============ RESEARCH ============ -->
+<div class="page" id="page-research">
+  <div class="artist-selector">
+    <button class="artist-btn active" onclick="selectResearchArtist('mcr',this)">MCR</button>
+    <button class="artist-btn" onclick="selectResearchArtist('luna',this)">LUNA PARK</button>
+  </div>
+
+  <!-- Hero Section -->
+  <div id="research-hero" class="card full" style="position:relative;overflow:hidden;padding:24px">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#c8a84e,#f5d77a,#00e676,#00e5ff,#b388ff,#c8a84e)"></div>
+    <div id="research-hero-content" style="color:var(--fg3)">Select an artist and scan to generate intelligence report...</div>
+  </div>
+
+  <!-- Score Cards -->
+  <div class="grid grid-4" style="margin-top:12px" id="research-scores"></div>
+
+  <!-- Audience Density -->
+  <div class="grid grid-2" style="margin-top:12px">
+    <div class="card">
+      <div class="card-title">Audience Density — Top Cities</div>
+      <div class="chart-wrap tall"><canvas id="chart-audience-cities"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Regional Density</div>
+      <div class="chart-wrap"><canvas id="chart-audience-regions"></canvas></div>
+      <div id="research-markets" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <!-- Trinity Graph -->
+  <div class="card full" style="margin-top:12px">
+    <div class="card-title">Trinity Graph Analysis <span style="font-size:9px;color:var(--cyan);letter-spacing:1px">AWARENESS FIELD</span></div>
+    <div class="grid grid-3" style="margin-top:8px" id="trinity-panels"></div>
+    <div style="text-align:center;margin-top:16px" id="trinity-convergence"></div>
+  </div>
+
+  <!-- SAVESUCCESS Radar + Sentiment -->
+  <div class="grid grid-2" style="margin-top:12px">
+    <div class="card">
+      <div class="card-title">SAVESUCCESS Pillars</div>
+      <div class="chart-wrap tall"><canvas id="chart-savesuccess"></canvas></div>
+      <div id="savesuccess-detail" style="margin-top:8px;font-size:11px;color:var(--fg3);max-height:120px;overflow-y:auto"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Sentiment Timeline (12 Months)</div>
+      <div class="chart-wrap tall"><canvas id="chart-sentiment-timeline"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Recommendations -->
+  <div class="card full" style="margin-top:12px">
+    <div class="card-title">AI Recommendations <span style="font-size:9px;color:var(--green);letter-spacing:1px">PRIORITY RANKED</span></div>
+    <div id="research-recommendations"></div>
   </div>
 </div>
 
@@ -819,6 +904,7 @@ function showPage(id){
   if(id==='vendors') renderVendors();
   if(id==='intelligence') renderIntelligence();
   if(id==='entities') renderEntities('mcr');
+  if(id==='research') loadResearchReport(currentResearchArtist);
   if(id==='search') document.getElementById('search-input').focus();
 }
 
@@ -840,7 +926,7 @@ function selectArtist(a,btn){
   renderDashboard();
 }
 
-function initDashboard(){loadArtists();renderDashboard();}
+function initDashboard(){loadArtists();renderDashboard();loadResearchReport(currentArtist !== 'all' ? currentArtist : 'mcr');}
 
 function renderDashboard(){
   const a=currentArtist;
@@ -1601,6 +1687,301 @@ function showArtistProfile(id) {
 function showArtistsListView() {
   document.getElementById('artists-list-view').style.display = 'block';
   document.getElementById('artist-profile-view').style.display = 'none';
+}
+
+// ==================== RESEARCH ====================
+let currentResearchArtist = 'mcr';
+let researchReports = {};
+
+function selectResearchArtist(a, btn) {
+  currentResearchArtist = a;
+  document.querySelectorAll('#page-research .artist-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadResearchReport(a);
+}
+
+async function loadResearchReport(artistId) {
+  try {
+    const res = await fetch(API_BASE + '/api/research/' + artistId, { headers: apiHeaders() });
+    const data = await res.json();
+    if (data.report) {
+      researchReports[artistId] = data.report;
+      renderResearchDashboard(data.report);
+    }
+  } catch(e) {
+    // Generate client-side fallback
+    document.getElementById('research-hero-content').innerHTML = '<span class="red-text">Could not reach server. Start the backend to enable Research.</span>';
+  }
+}
+
+async function rescanArtist(artistId) {
+  try {
+    const res = await fetch(API_BASE + '/api/research/scan/' + artistId, { method: 'POST', headers: apiHeaders() });
+    const data = await res.json();
+    if (data.report) {
+      researchReports[artistId] = data.report;
+      renderResearchDashboard(data.report);
+    }
+  } catch(e) {}
+}
+
+function renderResearchDashboard(report) {
+  if (!report) return;
+  const r = report;
+  const pi = r.popularity.popularityIndex;
+  const piColor = pi >= 70 ? 'var(--green)' : pi >= 30 ? 'var(--amber)' : 'var(--red)';
+  const sentColor = r.sentiment.fanSentiment > 0.3 ? 'var(--green)' : r.sentiment.fanSentiment > -0.1 ? 'var(--amber)' : 'var(--red)';
+  const convColor = r.trinityGraph.convergenceScore >= 70 ? 'var(--green)' : r.trinityGraph.convergenceScore >= 40 ? 'var(--amber)' : 'var(--red)';
+  const trendIcon = r.sentiment.sentimentTrend === 'improving' ? '↑' : r.sentiment.sentimentTrend === 'declining' ? '↓' : '→';
+  const trendColor = r.sentiment.sentimentTrend === 'improving' ? 'var(--green)' : r.sentiment.sentimentTrend === 'declining' ? 'var(--red)' : 'var(--amber)';
+
+  // Hero
+  document.getElementById('research-hero-content').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+      <div>
+        <div style="font-size:22px;font-weight:700;color:var(--fg)">${r.artistName}</div>
+        <div style="font-size:11px;color:var(--fg3);margin-top:4px">Last scanned: ${new Date(r.scannedAt).toLocaleString()} &nbsp;
+          <button onclick="rescanArtist('${r.artistId}')" style="background:var(--bg3);border:1px solid var(--border);color:var(--cyan);padding:3px 10px;cursor:pointer;font-size:10px;letter-spacing:1px">⟳ RESCAN</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:24px;align-items:center">
+        <div style="text-align:center">
+          ${makeGaugeRing(pi, 100, piColor, 80)}
+          <div style="font-size:9px;letter-spacing:1px;color:var(--fg3);margin-top:4px">POPULARITY</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:28px;font-weight:700;color:${sentColor}">${r.sentiment.fanSentiment > 0 ? '+' : ''}${r.sentiment.fanSentiment.toFixed(2)}</div>
+          <div style="font-size:9px;letter-spacing:1px;color:var(--fg3)">SENTIMENT <span style="color:${trendColor}">${trendIcon} ${r.sentiment.sentimentTrend.toUpperCase()}</span></div>
+        </div>
+        <div style="text-align:center">
+          ${makeGaugeRing(r.trinityGraph.convergenceScore, 100, convColor, 80)}
+          <div style="font-size:9px;letter-spacing:1px;color:var(--fg3)">CONVERGENCE</div>
+        </div>
+      </div>
+    </div>
+    <div class="sentiment-meter" style="margin-top:12px">
+      <span style="font-size:10px;color:var(--red)">NEG</span>
+      <div class="sentiment-bar">
+        <div class="sentiment-fill" style="width:${r.sentiment.pressSentiment.negative}%;background:var(--red);left:0"></div>
+        <div class="sentiment-fill" style="width:${r.sentiment.pressSentiment.neutral}%;background:var(--amber);left:${r.sentiment.pressSentiment.negative}%"></div>
+        <div class="sentiment-fill" style="width:${r.sentiment.pressSentiment.positive}%;background:var(--green);left:${r.sentiment.pressSentiment.negative + r.sentiment.pressSentiment.neutral}%"></div>
+      </div>
+      <span style="font-size:10px;color:var(--green)">POS</span>
+    </div>
+    <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+      ${r.sentiment.buzzKeywords.map(k => `<span style="padding:2px 8px;background:var(--bg3);border:1px solid var(--border);font-size:10px;color:var(--cyan)">#${k}</span>`).join('')}
+      ${r.sentiment.controversyFlags.map(c => `<span style="padding:2px 8px;background:rgba(255,23,68,0.1);border:1px solid var(--red);font-size:10px;color:var(--red)">⚠ ${c}</span>`).join('')}
+    </div>`;
+
+  // Score cards
+  document.getElementById('research-scores').innerHTML = `
+    <div class="card"><div class="card-accent green"></div><div class="card-title">Monthly Listeners</div><div class="card-value">${fmtNum(r.popularity.monthlyListeners)}</div><div class="card-sub">Google Trends: ${r.popularity.googleTrends}/100</div></div>
+    <div class="card"><div class="card-accent cyan"></div><div class="card-title">Social Following</div><div class="card-value">${fmtNum(r.popularity.social.instagram + r.popularity.social.twitter + r.popularity.social.tiktok + r.popularity.social.youtube)}</div><div class="card-sub">IG ${fmtNum(r.popularity.social.instagram)} · TT ${fmtNum(r.popularity.social.tiktok)}</div></div>
+    <div class="card"><div class="card-accent blue"></div><div class="card-title">Touring Efficiency</div><div class="card-value" style="color:${r.audienceDensity.touringEfficiency > 70 ? 'var(--green)' : 'var(--amber)'}">${r.audienceDensity.touringEfficiency}%</div><div class="card-sub">${r.popularity.festivalAppearances} festival appearances</div></div>
+    <div class="card"><div class="card-accent amber"></div><div class="card-title">Billboard</div><div class="card-value">${r.popularity.billboardPresence ? '#' + r.popularity.billboardPeak : 'N/A'}</div><div class="card-sub">${r.popularity.billboardPresence ? 'Chart presence confirmed' : 'Not charted'}</div></div>`;
+
+  // Audience density charts
+  renderAudienceCharts(r);
+
+  // Markets
+  const hot = r.audienceDensity.cities.filter(c => c.category === 'hot');
+  const cold = r.audienceDensity.cities.filter(c => c.category === 'cold');
+  document.getElementById('research-markets').innerHTML = `
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:9px;letter-spacing:1px;color:var(--green);margin-bottom:4px">🔥 HOT MARKETS</div>
+        ${hot.slice(0, 5).map(c => `<div style="font-size:11px;color:var(--fg2);padding:2px 0">${c.city}, ${c.state} <span style="color:var(--green)">${c.density}%</span></div>`).join('')}
+      </div>
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:9px;letter-spacing:1px;color:var(--blue);margin-bottom:4px">❄ COLD MARKETS</div>
+        ${cold.slice(0, 5).map(c => `<div style="font-size:11px;color:var(--fg2);padding:2px 0">${c.city}, ${c.state} <span style="color:var(--fg3)">${c.density}%</span></div>`).join('')}
+      </div>
+    </div>`;
+
+  // Trinity Graph panels
+  const tg = r.trinityGraph;
+  document.getElementById('trinity-panels').innerHTML = `
+    <div class="trinity-panel" style="border-top:2px solid var(--blue)">
+      <div class="tp-title" style="color:var(--blue)">◉ Social Graph</div>
+      <div style="font-size:10px;color:var(--fg3);margin-bottom:6px">Fan Demographics</div>
+      ${tg.social.fanDemographics.map(d => `<div class="tp-item">${d.ageRange}: <span style="color:var(--fg)">${d.pct}%</span></div>`).join('')}
+      <div style="font-size:10px;color:var(--fg3);margin-top:8px;margin-bottom:4px">Psychographics</div>
+      ${tg.social.psychographics.map(p => `<div class="tp-item">• ${p}</div>`).join('')}
+      <div style="font-size:10px;color:var(--fg3);margin-top:8px;margin-bottom:4px">Communities</div>
+      ${tg.social.communityClusters.map(c => `<div class="tp-item">• ${c}</div>`).join('')}
+    </div>
+    <div class="trinity-panel" style="border-top:2px solid var(--amber)">
+      <div class="tp-title" style="color:var(--amber)">◈ Knowledge Graph</div>
+      <div style="font-size:10px;color:var(--fg3);margin-bottom:4px">Genre Position</div>
+      <div class="tp-item">${tg.knowledge.genrePosition}</div>
+      <div style="font-size:10px;color:var(--fg3);margin-top:8px;margin-bottom:4px">Similar Artists</div>
+      ${tg.knowledge.similarArtists.map(a => `<div class="tp-item">→ ${a}</div>`).join('')}
+      <div style="font-size:10px;color:var(--fg3);margin-top:8px;margin-bottom:4px">Industry</div>
+      <div class="tp-item">Label: ${tg.knowledge.labelAgency.label}</div>
+      <div class="tp-item">Agency: ${tg.knowledge.labelAgency.agency}</div>
+      <div class="tp-item">Publisher: ${tg.knowledge.labelAgency.publisher}</div>
+    </div>
+    <div class="trinity-panel" style="border-top:2px solid var(--purple)">
+      <div class="tp-title" style="color:var(--purple)">⚡ Generative Graph</div>
+      <div style="font-size:10px;color:var(--fg3);margin-bottom:4px">Content Potential</div>
+      ${tg.generative.contentPotential.map(c => `<div class="tp-item">• ${c}</div>`).join('')}
+      <div style="font-size:10px;color:var(--fg3);margin-top:8px;margin-bottom:4px">Merch Opportunities</div>
+      ${tg.generative.merchOpportunities.slice(0, 3).map(m => `<div class="tp-item">💰 ${m}</div>`).join('')}
+      <div style="font-size:10px;color:var(--fg3);margin-top:8px;margin-bottom:4px">Collaborations</div>
+      ${tg.generative.collaborationSuggestions.map(c => `<div class="tp-item">🤝 ${c}</div>`).join('')}
+    </div>`;
+
+  document.getElementById('trinity-convergence').innerHTML = `
+    <div style="display:inline-flex;align-items:center;gap:16px;padding:12px 24px;background:var(--bg);border:1px solid var(--border)">
+      <div style="font-size:10px;letter-spacing:2px;color:var(--fg3)">CONVERGENCE SCORE</div>
+      ${makeGaugeRing(tg.convergenceScore, 100, convColor, 60)}
+      <div style="font-size:11px;color:var(--fg2)">${tg.convergenceScore >= 70 ? 'Strong alignment across all three graph layers' : tg.convergenceScore >= 40 ? 'Moderate alignment — untapped potential detected' : 'Low alignment — significant opportunities for repositioning'}</div>
+    </div>`;
+
+  // SAVESUCCESS
+  renderSavesuccessChart(r);
+
+  // Sentiment Timeline
+  renderSentimentTimeline(r);
+
+  // Recommendations
+  document.getElementById('research-recommendations').innerHTML = r.recommendations.map(rec => `
+    <div class="rec-item p${rec.priority}">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">
+        <div class="rec-title">${rec.title}</div>
+        <span class="tag ${rec.priority <= 2 ? 'green' : rec.priority <= 4 ? 'blue' : 'amber'}">${rec.category}</span>
+      </div>
+      <div class="rec-detail">${rec.detail}</div>
+      <div class="rec-meta"><span style="color:var(--green)">Impact: ${rec.impact}</span><span style="color:var(--fg3)">Priority: ${rec.priority}/6</span></div>
+    </div>`).join('');
+
+  // Quick Research Widget on dashboard
+  updateQuickResearchWidget(r);
+}
+
+function makeGaugeRing(value, max, color, size) {
+  const r = (size - 8) / 2;
+  const circ = 2 * Math.PI * r;
+  const pct = value / max;
+  const dash = circ * pct;
+  return `<div class="gauge-ring" style="width:${size}px;height:${size}px">
+    <svg width="${size}" height="${size}"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--bg4)" stroke-width="4"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="4" stroke-dasharray="${dash} ${circ}" stroke-linecap="round"/></svg>
+    <span class="gauge-val" style="color:${color}">${value}</span></div>`;
+}
+
+function renderAudienceCharts(r) {
+  const top12 = r.audienceDensity.cities.slice(0, 12);
+  if (charts.audienceCities) charts.audienceCities.destroy();
+  charts.audienceCities = new Chart(document.getElementById('chart-audience-cities'), {
+    type: 'bar', data: {
+      labels: top12.map(c => c.city),
+      datasets: [{
+        label: 'Density %',
+        data: top12.map(c => c.density),
+        backgroundColor: top12.map(c => c.category === 'hot' ? 'rgba(0,230,118,0.7)' : c.category === 'warm' ? 'rgba(255,171,0,0.6)' : 'rgba(41,121,255,0.4)')
+      }]
+    }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { max: 100, ticks: { callback: v => v + '%' } } } }
+  });
+
+  if (charts.audienceRegions) charts.audienceRegions.destroy();
+  charts.audienceRegions = new Chart(document.getElementById('chart-audience-regions'), {
+    type: 'bar', data: {
+      labels: r.audienceDensity.regions.map(rg => rg.region),
+      datasets: [{ data: r.audienceDensity.regions.map(rg => rg.density), backgroundColor: 'rgba(179,136,255,0.6)' }]
+    }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { max: 100, ticks: { callback: v => v + '%' } } } }
+  });
+}
+
+function renderSavesuccessChart(r) {
+  const pillars = ['serendipity', 'artiquity', 'vitality', 'enginuity', 'synchronicity', 'ubiquity', 'clarity', 'certainty', 'ethics', 'sagacity'];
+  const labels = pillars.map(p => p.charAt(0).toUpperCase() + p.slice(1));
+  const data = pillars.map(p => r.savesuccess[p].score);
+
+  if (charts.savesuccess) charts.savesuccess.destroy();
+  charts.savesuccess = new Chart(document.getElementById('chart-savesuccess'), {
+    type: 'radar', data: {
+      labels,
+      datasets: [{
+        label: 'Score',
+        data,
+        backgroundColor: 'rgba(200,168,78,0.15)',
+        borderColor: '#c8a84e',
+        borderWidth: 2,
+        pointBackgroundColor: data.map(d => d >= 70 ? '#00e676' : d >= 40 ? '#ffab00' : '#ff1744'),
+        pointBorderColor: data.map(d => d >= 70 ? '#00e676' : d >= 40 ? '#ffab00' : '#ff1744'),
+        pointRadius: 4
+      }]
+    }, options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { r: { min: 0, max: 100, ticks: { stepSize: 25, display: false }, grid: { color: 'rgba(30,41,59,0.8)' }, pointLabels: { font: { size: 10 }, color: '#94a3b8' } } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            afterLabel: function(ctx) { return r.savesuccess[pillars[ctx.dataIndex]].detail.substring(0, 80) + '...'; }
+          }
+        }
+      },
+      onClick: function(evt, elements) {
+        if (elements.length) {
+          const idx = elements[0].index;
+          const p = pillars[idx];
+          document.getElementById('savesuccess-detail').innerHTML = `<div style="color:#c8a84e;font-weight:700;margin-bottom:4px">${labels[idx]}: ${r.savesuccess[p].score}/100</div><div>${r.savesuccess[p].detail}</div>`;
+        }
+      }
+    }
+  });
+}
+
+function renderSentimentTimeline(r) {
+  if (charts.sentimentTimeline) charts.sentimentTimeline.destroy();
+  const timeline = r.sentiment.timeline;
+  charts.sentimentTimeline = new Chart(document.getElementById('chart-sentiment-timeline'), {
+    type: 'line', data: {
+      labels: timeline.map(t => t.month),
+      datasets: [{
+        label: 'Sentiment',
+        data: timeline.map(t => t.score),
+        borderColor: '#c8a84e',
+        backgroundColor: 'rgba(200,168,78,0.1)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: timeline.map(t => t.event ? '#00e5ff' : '#c8a84e'),
+        pointRadius: timeline.map(t => t.event ? 6 : 3),
+        pointBorderWidth: timeline.map(t => t.event ? 2 : 0),
+        pointBorderColor: '#00e5ff'
+      }]
+    }, options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { min: -1, max: 1, ticks: { stepSize: 0.5 } } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            afterLabel: function(ctx) {
+              const t = timeline[ctx.dataIndex];
+              return t.event ? '📌 ' + t.event : '';
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function updateQuickResearchWidget(report) {
+  const el = document.getElementById('qr-content');
+  if (!el || !report) return;
+  const pi = report.popularity.popularityIndex;
+  const piColor = pi >= 70 ? 'var(--green)' : pi >= 30 ? 'var(--amber)' : 'var(--red)';
+  el.innerHTML = `
+    <div style="font-size:14px;font-weight:700;color:var(--fg);margin-bottom:8px">${report.artistName}</div>
+    <div style="display:flex;gap:16px;align-items:center">
+      <div style="text-align:center">${makeGaugeRing(pi, 100, piColor, 50)}<div style="font-size:8px;color:var(--fg3);margin-top:2px">POP</div></div>
+      <div style="text-align:center"><div style="font-size:16px;font-weight:700;color:${report.sentiment.fanSentiment > 0.3 ? 'var(--green)' : 'var(--amber)'}">${report.sentiment.fanSentiment > 0 ? '+' : ''}${report.sentiment.fanSentiment.toFixed(2)}</div><div style="font-size:8px;color:var(--fg3)">SENT</div></div>
+      <div style="text-align:center">${makeGaugeRing(report.trinityGraph.convergenceScore, 100, report.trinityGraph.convergenceScore >= 70 ? 'var(--green)' : 'var(--amber)', 50)}<div style="font-size:8px;color:var(--fg3);margin-top:2px">CONV</div></div>
+    </div>`;
 }
 
 // ==================== WINDOW RESIZE ====================
