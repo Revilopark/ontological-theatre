@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trinity Worlds — Ontological Theatre</title>
+<meta name="description" content="WHAT · WHO · WHAT IF — The Trinity Graph Architecture powering Ontological Theatre">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  /* ============================================================
+     RESET & BASE
+  ============================================================ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue:   #6BA4FF;
+    --rose:   #FF6B8A;
+    --purple: #8B6BFF;
+    --amber:  #FFB86B;
+    --bg:     #0a0a0f;
+    --text:   rgba(255,255,255,0.90);
+    --muted:  rgba(255,255,255,0.45);
+    --glass-bg: rgba(255,255,255,0.06);
+    --glass-border: rgba(255,255,255,0.12);
+    --glass-top:    rgba(255,255,255,0.10);
+    --radius-panel: 20px;
+    --radius-card:  28px;
+    --blur: blur(40px) saturate(1.8);
+    --transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  html { scroll-behavior: smooth; font-size: 16px; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 300;
+    line-height: 1.6;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* ============================================================
+     ANIMATED BACKGROUND MESH
+  ============================================================ */
+  .bg-mesh {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .bg-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.18;
+    will-change: transform;
+  }
+
+  .bg-blob-1 {
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, var(--blue), transparent 70%);
+    top: -200px; left: -200px;
+    animation: drift1 25s ease-in-out infinite alternate;
+  }
+
+  .bg-blob-2 {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, var(--purple), transparent 70%);
+    bottom: -150px; right: -150px;
+    animation: drift2 30s ease-in-out infinite alternate;
+  }
+
+  .bg-blob-3 {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, var(--rose), transparent 70%);
+    top: 40%; left: 60%;
+    animation: drift3 20s ease-in-out infinite alternate;
+  }
+
+  .bg-blob-4 {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, var(--amber), transparent 70%);
+    top: 30%; left: 20%;
+    animation: drift4 35s ease-in-out infinite alternate;
+    opacity: 0.10;
+  }
+
+  @keyframes drift1 {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(300px, 200px) scale(1.3); }
+  }
+  @keyframes drift2 {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(-250px, -180px) scale(1.2); }
+  }
+  @keyframes drift3 {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(-200px, 150px) scale(0.8); }
+  }
+  @keyframes drift4 {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(180px, -120px) scale(1.4); }
+  }
+
+  /* ============================================================
+     GLASS SYSTEM
+  ============================================================ */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: var(--blur);
+    -webkit-backdrop-filter: var(--blur);
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      inset 0 1px 0 var(--glass-top),
+      0 8px 32px rgba(0,0,0,0.4),
+      0 2px 8px rgba(0,0,0,0.2);
+    border-radius: var(--radius-panel);
+    position: relative;
+    overflow: hidden;
+    transition: transform var(--transition), box-shadow var(--transition);
+  }
+
+  .glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--mouse-highlight, transparent);
+    pointer-events: none;
+    z-index: 1;
+    transition: background 0.15s ease;
+  }
+
+  .glass:hover {
+    transform: scale(1.015);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.18),
+      0 16px 48px rgba(0,0,0,0.5),
+      0 4px 16px rgba(0,0,0,0.3);
+  }
+
+  .glass-card {
+    border-radius: var(--radius-card);
+  }
+
+  /* Accent borders */
+  .accent-blue  { border-color: rgba(107,164,255,0.30); }
+  .accent-rose  { border-color: rgba(255,107,138,0.30); }
+  .accent-purple{ border-color: rgba(139,107,255,0.30); }
+  .accent-amber { border-color: rgba(255,184,107,0.30); }
+
+  .accent-blue::after,
+  .accent-rose::after,
+  .accent-purple::after,
+  .accent-amber::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: inherit;
+    opacity: 0.6;
+  }
+  .accent-blue::after   { background: linear-gradient(90deg, transparent, var(--blue), transparent); }
+  .accent-rose::after   { background: linear-gradient(90deg, transparent, var(--rose), transparent); }
+  .accent-purple::after { background: linear-gradient(90deg, transparent, var(--purple), transparent); }
+  .accent-amber::after  { background: linear-gradient(90deg, transparent, var(--amber), transparent); }
+
+  /* ============================================================
+     LAYOUT
+  ============================================================ */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 2;
+  }
+
+  section {
+    position: relative;
+    z-index: 2;
+  }
+
+  /* ============================================================
+     FADE-IN ON SCROLL
+  ============================================================ */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ============================================================
+     NAVIGATION
+  ============================================================ */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10,10,15,0.7);
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    transition: background 0.3s ease;
+  }
+
+  .nav-logo {
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .nav-logo span { color: var(--blue); }
+
+  .nav-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: color 0.2s ease;
+  }
+
+  .nav-links a:hover { color: var(--text); }
+
+  /* ============================================================
+     HERO SECTION
+  ============================================================ */
+  #hero {
+    position: relative;
+    height: 100vh;
+    min-height: 600px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  #particle-canvas {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 800px;
+    padding: 0 24px;
+  }
+
+  .hero-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    animation: fadeUp 0.8s ease 0.2s both;
+  }
+
+  .hero-title {
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 200;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    margin-bottom: 20px;
+    animation: fadeUp 0.8s ease 0.4s both;
+    background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-tagline {
+    font-size: clamp(1rem, 2.5vw, 1.4rem);
+    font-weight: 400;
+    letter-spacing: 0.25em;
+    margin-bottom: 40px;
+    animation: fadeUp 0.8s ease 0.6s both;
+  }
+
+  .hero-tagline .what    { color: var(--blue); }
+  .hero-tagline .dot     { color: var(--muted); margin: 0 8px; }
+  .hero-tagline .who     { color: var(--rose); }
+  .hero-tagline .what-if { color: var(--purple); }
+
+  .trinity-svg-wrap {
+    width: 180px;
+    height: 180px;
+    margin: 0 auto 40px;
+    animation: fadeUp 0.8s ease 0.3s both;
+  }
+
+  .trinity-rotate {
+    animation: slowRotate 20s linear infinite;
+    transform-origin: center;
+  }
+
+  @keyframes slowRotate {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .cta-btn {
+    display: inline-block;
+    padding: 14px 40px;
+    border-radius: 40px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.20);
+    color: var(--text);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    transition: all var(--transition);
+    animation: fadeUp 0.8s ease 0.8s both;
+    cursor: pointer;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 4px 20px rgba(0,0,0,0.3);
+  }
+
+  .cta-btn:hover {
+    background: rgba(107,164,255,0.15);
+    border-color: rgba(107,164,255,0.5);
+    box-shadow: 0 0 30px rgba(107,164,255,0.25), inset 0 1px 0 rgba(255,255,255,0.2);
+    transform: scale(1.04);
+    color: #fff;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    animation: fadeUp 1s ease 1.2s both;
+  }
+
+  .scroll-arrow {
+    width: 20px; height: 20px;
+    border-right: 1px solid var(--muted);
+    border-bottom: 1px solid var(--muted);
+    transform: rotate(45deg);
+    animation: bounceDown 2s ease-in-out infinite;
+  }
+
+  @keyframes bounceDown {
+    0%, 100% { transform: rotate(45deg) translateY(0); opacity: 0.5; }
+    50%       { transform: rotate(45deg) translateY(5px); opacity: 1; }
+  }
+
+  /* ============================================================
+     SECTION COMMON
+  ============================================================ */
+  .section-eyebrow {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 200;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+
+  .section-sub {
+    font-size: 1rem;
+    color: var(--muted);
+    max-width: 500px;
+    margin-bottom: 60px;
+  }
+
+  /* ============================================================
+     THREE LAYERS SECTION
+  ============================================================ */
+  #layers {
+    padding: 120px 0;
+  }
+
+  .layers-header {
+    text-align: center;
+    margin-bottom: 60px;
+  }
+
+  .layers-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+
+  .layer-card {
+    padding: 40px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .layer-icon {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 8px;
+  }
+
+  .layer-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+  }
+
+  .layer-label.blue   { color: var(--blue); }
+  .layer-label.rose   { color: var(--rose); }
+  .layer-label.purple { color: var(--purple); }
+
+  .layer-name {
+    font-size: 1.5rem;
+    font-weight: 300;
+    line-height: 1.2;
+  }
+
+  .layer-desc {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.65;
+    flex: 1;
+  }
+
+  .layer-stat {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.07);
+  }
+
+  .layer-stat-num {
+    font-size: 1.8rem;
+    font-weight: 200;
+    line-height: 1;
+  }
+
+  .layer-stat-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .layer-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .layer-tag {
+    font-size: 0.65rem;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.10);
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+
+  /* ============================================================
+     STUDIOS SECTION
+  ============================================================ */
+  #studios {
+    padding: 80px 0 120px;
+  }
+
+  .studios-header {
+    text-align: center;
+    margin-bottom: 60px;
+  }
+
+  .studios-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+
+  .studio-card {
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-decoration: none;
+    color: var(--text);
+  }
+
+  .studio-icon {
+    width: 40px; height: 40px;
+  }
+
+  .studio-name {
+    font-size: 1rem;
+    font-weight: 400;
+  }
+
+  .studio-desc {
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.55;
+    flex: 1;
+  }
+
+  .studio-enter {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    transition: gap 0.2s ease;
+  }
+
+  .studio-card:hover .studio-enter { gap: 10px; }
+
+  .studio-enter.blue   { color: var(--blue); }
+  .studio-enter.rose   { color: var(--rose); }
+  .studio-enter.purple { color: var(--purple); }
+  .studio-enter.amber  { color: var(--amber); }
+
+  .coming-soon {
+    display: inline-block;
+    font-size: 0.58rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(255,184,107,0.12);
+    border: 1px solid rgba(255,184,107,0.25);
+    color: var(--amber);
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  /* ============================================================
+     LIVE GRAPH SECTION
+  ============================================================ */
+  #graph-section {
+    padding: 80px 0 120px;
+  }
+
+  .graph-header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .graph-wrapper {
+    padding: 0;
+    overflow: hidden;
+    height: 520px;
+    position: relative;
+  }
+
+  #graph-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+
+  #graph-svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .graph-overlay {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 10;
+  }
+
+  .graph-stat-chip {
+    padding: 8px 16px;
+    background: rgba(10,10,15,0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 20px;
+    font-size: 0.72rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+  }
+
+  .graph-stat-chip strong {
+    color: var(--text);
+    font-weight: 400;
+  }
+
+  .graph-legend {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+    display: flex;
+    gap: 16px;
+    z-index: 10;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.68rem;
+    color: var(--muted);
+  }
+
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .graph-sleeping {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    cursor: pointer;
+    z-index: 5;
+  }
+
+  .graph-sleeping-icon {
+    font-size: 3rem;
+    opacity: 0.4;
+    animation: pulse-slow 3s ease-in-out infinite;
+  }
+
+  .graph-sleeping-text {
+    font-size: 1.1rem;
+    font-weight: 300;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  .graph-sleeping-sub {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: 0.1em;
+  }
+
+  @keyframes pulse-slow {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50%       { opacity: 0.6; transform: scale(1.05); }
+  }
+
+  /* ============================================================
+     PHILOSOPHY SECTION
+  ============================================================ */
+  #philosophy {
+    padding: 80px 0 120px;
+  }
+
+  .philosophy-header {
+    text-align: center;
+    margin-bottom: 60px;
+  }
+
+  .philosophy-layers {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .philosophy-layer {
+    padding: 36px 40px;
+    display: flex;
+    align-items: flex-start;
+    gap: 32px;
+    border-radius: 0;
+    position: relative;
+  }
+
+  .philosophy-layer:first-child {
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+  }
+
+  .philosophy-layer:last-child {
+    border-radius: 0 0 var(--radius-card) var(--radius-card);
+  }
+
+  .philosophy-num {
+    font-size: 3rem;
+    font-weight: 100;
+    line-height: 1;
+    color: rgba(255,255,255,0.10);
+    flex-shrink: 0;
+    width: 48px;
+  }
+
+  .philosophy-content { flex: 1; }
+
+  .philosophy-name {
+    font-size: 1.3rem;
+    font-weight: 300;
+    margin-bottom: 8px;
+  }
+
+  .philosophy-desc {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* ============================================================
+     FOOTER
+  ============================================================ */
+  footer {
+    position: relative;
+    z-index: 2;
+    padding: 48px 0;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    text-align: center;
+  }
+
+  .footer-equation {
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
+    font-weight: 200;
+    letter-spacing: 0.05em;
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+
+  .footer-equation .what    { color: var(--blue); }
+  .footer-equation .who     { color: var(--rose); }
+  .footer-equation .what-if { color: var(--purple); }
+  .footer-equation .iam     { color: var(--amber); font-weight: 400; }
+  .footer-equation .op      { color: var(--muted); margin: 0 6px; }
+
+  .footer-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .footer-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    transition: color 0.2s ease;
+  }
+
+  .footer-links a:hover { color: var(--text); }
+
+  .footer-dot {
+    width: 3px; height: 3px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: inline-block;
+  }
+
+  .footer-copy {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 0.12em;
+  }
+
+  /* ============================================================
+     RESPONSIVE
+  ============================================================ */
+  @media (max-width: 900px) {
+    .layers-grid { grid-template-columns: 1fr; }
+    .studios-grid { grid-template-columns: repeat(2, 1fr); }
+    .nav-links { display: none; }
+  }
+
+  @media (max-width: 600px) {
+    .studios-grid { grid-template-columns: 1fr; }
+    .philosophy-layer { flex-direction: column; gap: 12px; padding: 24px 20px; }
+    .graph-wrapper { height: 380px; }
+    .graph-legend { flex-wrap: wrap; gap: 10px; }
+  }
+
+  /* ============================================================
+     GRAPH SVG STYLES
+  ============================================================ */
+  .graph-node { cursor: pointer; }
+  .graph-node circle {
+    stroke-width: 1.5;
+    transition: r 0.2s ease;
+  }
+  .graph-node:hover circle { filter: brightness(1.3); }
+  .graph-link {
+    stroke: rgba(255,255,255,0.08);
+    stroke-width: 1;
+  }
+  .graph-label {
+    font-size: 8px;
+    fill: rgba(255,255,255,0.5);
+    pointer-events: none;
+    font-family: -apple-system, sans-serif;
+  }
+
+  /* ============================================================
+     GLASS BREATHE ANIMATION
+  ============================================================ */
+  @keyframes glass-breathe {
+    0%, 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.4); }
+    50%       { box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 12px 40px rgba(0,0,0,0.45); }
+  }
+
+  .glass-breathe {
+    animation: glass-breathe 4s ease-in-out infinite;
+  }
+
+  /* Stagger fade for studio cards */
+  .studios-grid .glass:nth-child(1) { transition-delay: 0.05s; }
+  .studios-grid .glass:nth-child(2) { transition-delay: 0.10s; }
+  .studios-grid .glass:nth-child(3) { transition-delay: 0.15s; }
+  .studios-grid .glass:nth-child(4) { transition-delay: 0.20s; }
+  .studios-grid .glass:nth-child(5) { transition-delay: 0.25s; }
+  .studios-grid .glass:nth-child(6) { transition-delay: 0.30s; }
+  .studios-grid .glass:nth-child(7) { transition-delay: 0.35s; }
+  .studios-grid .glass:nth-child(8) { transition-delay: 0.40s; }
+</style>
+</head>
+<body>
+
+<!-- ========================================================
+     ANIMATED BACKGROUND MESH
+======================================================== -->
+<div class="bg-mesh" aria-hidden="true">
+  <div class="bg-blob bg-blob-1"></div>
+  <div class="bg-blob bg-blob-2"></div>
+  <div class="bg-blob bg-blob-3"></div>
+  <div class="bg-blob bg-blob-4"></div>
+</div>
+
+<!-- ========================================================
+     NAVIGATION
+======================================================== -->
+<nav>
+  <a href="#hero" class="nav-logo">Trinity<span>.</span>Worlds</a>
+  <ul class="nav-links">
+    <li><a href="#layers">Layers</a></li>
+    <li><a href="#studios">Studios</a></li>
+    <li><a href="#graph-section">Graph</a></li>
+    <li><a href="#philosophy">Philosophy</a></li>
+  </ul>
+</nav>
+
+<!-- ========================================================
+     HERO SECTION
+======================================================== -->
+<section id="hero">
+  <canvas id="particle-canvas"></canvas>
+
+  <div class="hero-content">
+    <p class="hero-eyebrow">Ontological Theatre</p>
+
+    <!-- Trinity Symbol SVG -->
+    <div class="trinity-svg-wrap">
+      <svg viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g class="trinity-rotate" style="transform-origin: 90px 90px;">
+          <!-- WHAT circle - blue -->
+          <circle cx="90" cy="62" r="44" fill="none"
+            stroke="#6BA4FF" stroke-width="1.5" opacity="0.7"/>
+          <!-- WHO circle - rose -->
+          <circle cx="67" cy="104" r="44" fill="none"
+            stroke="#FF6B8A" stroke-width="1.5" opacity="0.7"/>
+          <!-- WHAT IF circle - purple -->
+          <circle cx="113" cy="104" r="44" fill="none"
+            stroke="#8B6BFF" stroke-width="1.5" opacity="0.7"/>
+
+          <!-- Inner glow fills -->
+          <circle cx="90" cy="62" r="44" fill="url(#grad-blue)" opacity="0.08"/>
+          <circle cx="67" cy="104" r="44" fill="url(#grad-rose)" opacity="0.08"/>
+          <circle cx="113" cy="104" r="44" fill="url(#grad-purple)" opacity="0.08"/>
+
+          <!-- Center dot -->
+          <circle cx="90" cy="90" r="4" fill="white" opacity="0.5"/>
+        </g>
+
+        <!-- Gradient defs -->
+        <defs>
+          <radialGradient id="grad-blue" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#6BA4FF"/>
+            <stop offset="100%" stop-color="#6BA4FF" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="grad-rose" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#FF6B8A"/>
+            <stop offset="100%" stop-color="#FF6B8A" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="grad-purple" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#8B6BFF"/>
+            <stop offset="100%" stop-color="#8B6BFF" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+      </svg>
+    </div>
+
+    <h1 class="hero-title">Trinity Worlds</h1>
+
+    <div class="hero-tagline">
+      <span class="what">WHAT</span>
+      <span class="dot">·</span>
+      <span class="who">WHO</span>
+      <span class="dot">·</span>
+      <span class="what-if">WHAT IF</span>
+    </div>
+
+    <a href="#layers" class="cta-btn">Enter the Worlds</a>
+  </div>
+
+  <div class="scroll-hint" aria-hidden="true">
+    <span>Scroll</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- ========================================================
+     THREE LAYERS SECTION
+======================================================== -->
+<section id="layers">
+  <div class="container">
+
+    <div class="layers-header fade-in">
+      <p class="section-eyebrow">The Architecture</p>
+      <h2 class="section-title">Three Worlds. One Graph.</h2>
+      <p class="section-sub">Reality structured into three interlocking ontological layers — facts, beings, and possibilities.</p>
+    </div>
+
+    <div class="layers-grid">
+
+      <!-- WHAT -->
+      <div class="glass glass-card accent-blue layer-card fade-in glass-breathe">
+        <svg class="layer-icon" viewBox="0 0 56 56" fill="none">
+          <!-- Hexagonal lattice -->
+          <polygon points="28,4 46,14 46,34 28,44 10,34 10,14" stroke="#6BA4FF" stroke-width="1.5" fill="none" opacity="0.7"/>
+          <polygon points="28,14 38,19 38,31 28,36 18,31 18,19" stroke="#6BA4FF" stroke-width="1" fill="rgba(107,164,255,0.08)" opacity="0.9"/>
+          <line x1="28" y1="4"  x2="28" y2="14"  stroke="#6BA4FF" stroke-width="0.8" opacity="0.4"/>
+          <line x1="46" y1="14" x2="38" y2="19"  stroke="#6BA4FF" stroke-width="0.8" opacity="0.4"/>
+          <line x1="46" y1="34" x2="38" y2="31"  stroke="#6BA4FF" stroke-width="0.8" opacity="0.4"/>
+          <line x1="28" y1="44" x2="28" y2="36"  stroke="#6BA4FF" stroke-width="0.8" opacity="0.4"/>
+          <line x1="10" y1="34" x2="18" y2="31"  stroke="#6BA4FF" stroke-width="0.8" opacity="0.4"/>
+          <line x1="10" y1="14" x2="18" y2="19"  stroke="#6BA4FF" stroke-width="0.8" opacity="0.4"/>
+          <circle cx="28" cy="25" r="3" fill="#6BA4FF" opacity="0.8"/>
+        </svg>
+
+        <span class="layer-label blue">WHAT</span>
+        <h3 class="layer-name">Knowledge Graph</h3>
+        <p class="layer-desc">The world as it is. Facts, history, ontology, provenance. Every node is a truth — verified, sourced, immutable.</p>
+
+        <div class="layer-stat">
+          <span class="layer-stat-num" id="what-node-count" style="color: var(--blue);">—</span>
+          <span class="layer-stat-label">nodes indexed</span>
+        </div>
+
+        <div class="layer-tags">
+          <span class="layer-tag">Eras</span>
+          <span class="layer-tag">Places</span>
+          <span class="layer-tag">Artifacts</span>
+          <span class="layer-tag">Movements</span>
+        </div>
+      </div>
+
+      <!-- WHO -->
+      <div class="glass glass-card accent-rose layer-card fade-in glass-breathe" style="animation-delay: 0.1s;">
+        <svg class="layer-icon" viewBox="0 0 56 56" fill="none">
+          <!-- Connected people -->
+          <circle cx="14" cy="18" r="6" stroke="#FF6B8A" stroke-width="1.5" fill="rgba(255,107,138,0.08)"/>
+          <circle cx="42" cy="18" r="6" stroke="#FF6B8A" stroke-width="1.5" fill="rgba(255,107,138,0.08)"/>
+          <circle cx="28" cy="38" r="6" stroke="#FF6B8A" stroke-width="1.5" fill="rgba(255,107,138,0.08)"/>
+          <!-- Lines connecting them -->
+          <line x1="14" y1="18" x2="42" y2="18" stroke="#FF6B8A" stroke-width="1" opacity="0.5" stroke-dasharray="3,2"/>
+          <line x1="14" y1="18" x2="28" y2="38" stroke="#FF6B8A" stroke-width="1" opacity="0.5" stroke-dasharray="3,2"/>
+          <line x1="42" y1="18" x2="28" y2="38" stroke="#FF6B8A" stroke-width="1" opacity="0.5" stroke-dasharray="3,2"/>
+          <!-- Center node -->
+          <circle cx="28" cy="28" r="3" fill="#FF6B8A" opacity="0.6"/>
+        </svg>
+
+        <span class="layer-label rose">WHO</span>
+        <h3 class="layer-name">Social Graph</h3>
+        <p class="layer-desc">The beings who inhabit it. Identity, relationship, interiority. Every character is a living ontological entity with memory and motive.</p>
+
+        <div class="layer-stat">
+          <span class="layer-stat-num" id="who-node-count" style="color: var(--rose);">—</span>
+          <span class="layer-stat-label">characters mapped</span>
+        </div>
+
+        <div class="layer-tags">
+          <span class="layer-tag">Characters</span>
+          <span class="layer-tag">Lineages</span>
+          <span class="layer-tag">Relationships</span>
+          <span class="layer-tag">Identity</span>
+        </div>
+      </div>
+
+      <!-- WHAT IF -->
+      <div class="glass glass-card accent-purple layer-card fade-in glass-breathe" style="animation-delay: 0.2s;">
+        <svg class="layer-icon" viewBox="0 0 56 56" fill="none">
+          <!-- Spark / explosion -->
+          <circle cx="28" cy="28" r="8" stroke="#8B6BFF" stroke-width="1.5" fill="rgba(139,107,255,0.12)"/>
+          <line x1="28" y1="6"  x2="28" y2="16" stroke="#8B6BFF" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="28" y1="40" x2="28" y2="50" stroke="#8B6BFF" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="6"  y1="28" x2="16" y2="28" stroke="#8B6BFF" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="40" y1="28" x2="50" y2="28" stroke="#8B6BFF" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="12" y1="12" x2="19" y2="19" stroke="#8B6BFF" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
+          <line x1="37" y1="37" x2="44" y2="44" stroke="#8B6BFF" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
+          <line x1="44" y1="12" x2="37" y2="19" stroke="#8B6BFF" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
+          <line x1="12" y1="44" x2="19" y2="37" stroke="#8B6BFF" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
+          <circle cx="28" cy="28" r="3" fill="#8B6BFF"/>
+        </svg>
+
+        <span class="layer-label purple">WHAT IF</span>
+        <h3 class="layer-name">Generative Graph</h3>
+        <p class="layer-desc">The collisions that create. Emergence, imagination, possibility. When WHAT meets WHO, new worlds ignite.</p>
+
+        <div class="layer-stat">
+          <span class="layer-stat-num" id="whatif-node-count" style="color: var(--purple);">—</span>
+          <span class="layer-stat-label">sparks generated</span>
+        </div>
+
+        <div class="layer-tags">
+          <span class="layer-tag">Sparks</span>
+          <span class="layer-tag">Generated Content</span>
+          <span class="layer-tag">Convergence</span>
+          <span class="layer-tag">Emergence</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================
+     STUDIOS SECTION
+======================================================== -->
+<section id="studios">
+  <div class="container">
+
+    <div class="studios-header fade-in">
+      <p class="section-eyebrow">Creative Tools</p>
+      <h2 class="section-title">The Studios</h2>
+      <p class="section-sub">Eight instruments for world-building at the ontological level.</p>
+    </div>
+
+    <div class="studios-grid">
+
+      <!-- Character Studio -->
+      <a href="/character-studio.html" class="glass glass-card studio-card accent-rose fade-in">
+        <svg class="studio-icon" viewBox="0 0 40 40" fill="none">
+          <circle cx="20" cy="14" r="7" stroke="#FF6B8A" stroke-width="1.5" fill="rgba(255,107,138,0.08)"/>
+          <path d="M6 36c0-7.732 6.268-14 14-14s14 6.268 14 14" stroke="#FF6B8A" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+        </svg>
+        <div>
+          <span class="studio-name">Character Studio<span class="coming-soon">Soon</span></span>
+        </div>
+        <p class="studio-desc">Birth characters with ontological depth — identity, history, interiority and moral core.</p>
+        <span class="studio-enter rose">Enter <span>→</span></span>
+      </a>
+
+      <!-- Capsule Builder -->
+      <a href="/capsule-builder.html" class="glass glass-card studio-card accent-purple fade-in">
+        <svg class="studio-icon" viewBox="0 0 40 40" fill="none">
+          <rect x="8" y="8" width="24" height="24" rx="6" stroke="#8B6BFF" stroke-width="1.5" fill="rgba(139,107,255,0.08)"/>
+          <circle cx="20" cy="20" r="5" stroke="#8B6BFF" stroke-width="1.2" fill="none"/>
+          <line x1="20" y1="8" x2="20" y2="13" stroke="#8B6BFF" stroke-width="1.2"/>
+          <line x1="20" y1="27" x2="20" y2="32" stroke="#8B6BFF" stroke-width="1.2"/>
+          <line x1="8"  y1="20" x2="13" y2="20" stroke="#8B6BFF" stroke-width="1.2"/>
+          <line x1="27" y1="20" x2="32" y2="20" stroke="#8B6BFF" stroke-width="1.2"/>
+        </svg>
+        <div>
+          <span class="studio-name">Capsule Builder</span>
+        </div>
+        <p class="studio-desc">Analyze artwork, extract creative DNA and encode it into ontological capsules.</p>
+        <span class="studio-enter purple">Enter <span>→</span></span>
+      </a>
+
+      <!-- Garment Studio -->
+      <a href="/garment-studio.html" class="glass glass-card studio-card accent-amber fade-in">
+        <svg class="studio-icon" viewBox="0 0 40 40" fill="none">
+          <path d="M12 8l-6 8h6v16h16V16h6l-6-8c-2 2-4 3-8 3s-6-1-8-3z" stroke="#FFB86B" stroke-width="1.5" stroke-linejoin="round" fill="rgba(255,184,107,0.08)"/>
+        </svg>
+        <div>
+          <span class="studio-name">Garment Studio</span>
+        </div>
+        <p class="studio-desc">Dress characters in ontologically-grounded costume. Fabric as language, silhouette as story.</p>
+        <span class="studio-enter amber">Enter <span>→</span></span>
+      </a>
+
+      <!-- Environment Studio -->
+      <a href="/environment-studio.html" class="glass glass-card studio-card accent-blue fade-in">
+        <svg class="studio-icon" viewBox="0 0 40 40" fill="none">
+          <path d="M4 32L14 14l8 12 6-8 8 14H4z" stroke="#6BA4FF" stroke-width="1.5" stroke-linejoin="round" fill="rgba(107,164,255,0.08)"/>
+          <circle cx="30" cy="10" r="4" stroke="#6BA4FF" stroke-width="1.2" fill="none"/>
+        </svg>
+        <div>
+          <span class="studio-name">Environment Studio<span class="coming-soon">Soon</span></span>
+        </div>
+        <p class="studio-desc">Create places with sensory weight — atmosphere, history, and emotional resonance baked in.</p>
+        <span class="studio-enter blue">Enter <span>→</span></span>
+      </a>
+
+      <!-- Spark Maker -->
+      <a href="/spark-maker.html" class="glass glass-card studio-card accent-amber fade-in">
+        <svg class="studio-icon" viewBox="0 0 40 40" fill="none">
+          <polygon points="20,4 24,16 36,16 26,24 30,36 20,28 10,36 14,24 4,16 16,16" stroke="#FFB86B" stroke-width="1.5" stroke-linejoin="round" fill="rgba(255,184,107,0.08)"/>
+        </svg>
+        <div>
+          <span class="studio-name">Spark Maker<span class="coming-soon">Soon</span></span>
+        </div>
+        <p class="studio-desc">Collide characters and artifacts to generate unexpected creative moments of convergence.</p>
+        <span class="studio-enter amber">Enter <span>→</span></span>
+      </a>
+
+      <!-- Awareness Engine -->
+      <a href="/awareness-engine.html" class="glass glass-card studio-card accent-purple fade-in">
+        <svg class="studio-icon" viewBox="0 0 40 40" fill="none">
+          <path d="M20 6 C10 6, 4 12, 4 20 C4 28, 10 34, 20 34 C26 34, 31 31, 34 26" stroke="#8B6BFF" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+          <circle cx="20" cy="20" r="5" stroke="#8B6BFF" stroke-width="1.2" fill="rgba(139,107,255,0.1)"/>
+          <path d="M28 8 L36 4 L32 12" stroke="#8B6BFF" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        <div>
+          <span class="studio-name">Awareness Engine</span>
+        </div>
+        <p class="studio-desc">Generate from the Delta's creative DNA. The model that learned from the masters.</p>
+        <span class="studio-enter purple">Enter <span>→</span></span>
+      </a>
+
+      <!-- Comic Reformatter -->
+      <a href="/infinity-comic-reformatter.html" class="glass glass-card studio-card accent-blue fade-in">
+        <svg class="studio-icon" viewBox="0 0 40 40" fill="none">
+          <rect x="4" y="4" width="14" height="10" rx="2" stroke="#6BA4FF" stroke-width="1.2" fill="rgba(107,164,255,0.08)"/>
+          <rect x="22" y="4" width="14" height="10" rx="2" stroke="#6BA4FF" stroke-width="1.2" fill="rgba(107,164,255,0.08)"/>
+          <rect x="4" y="18" width="32" height="10" rx="2" stroke="#6BA4FF" stroke-width="1.2" fill="rgba(107,164,255,0.08)"/>
+          <rect x="10" y="32" width="20" height="5" rx="2" stroke="#6BA4FF" stroke-width="1.2" fill="rgba(107,164,255,0.08)"/>
+        </svg>
+        <div>
+          <span class="studio-name">Comic Reformatter</span>
+        </div>
+        <p class="studio-desc">Reformat visual narrative for infinite scroll. Panels become portals into vertical worlds.</p>
+        <span class="studio-enter blue">Enter <span>→</span></span>
+      </a>
+
+      <!-- Scene Studio -->
+      <a href="/scene-studio.html" class="glass glass-card studio-card accent-rose fade-in">
+        <svg class="studio-icon" viewBox="0 0 40 40" fill="none">
+          <rect x="4" y="10" width="32" height="22" rx="3" stroke="#FF6B8A" stroke-width="1.5" fill="rgba(255,107,138,0.08)"/>
+          <line x1="4" y1="18" x2="36" y2="18" stroke="#FF6B8A" stroke-width="0.8" opacity="0.4"/>
+          <circle cx="14" cy="24" r="3" stroke="#FF6B8A" stroke-width="1" fill="rgba(255,107,138,0.15)"/>
+          <circle cx="26" cy="24" r="3" stroke="#FF6B8A" stroke-width="1" fill="rgba(255,107,138,0.15)"/>
+          <line x1="16" y1="6" x2="20" y2="10" stroke="#FF6B8A" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="24" y1="6" x2="20" y2="10" stroke="#FF6B8A" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <span class="studio-name">Scene Studio<span class="coming-soon">Soon</span></span>
+        </div>
+        <p class="studio-desc">Stage characters in environments. Choreograph moments where worlds collide and stories ignite.</p>
+        <span class="studio-enter rose">Enter <span>→</span></span>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================
+     LIVE GRAPH SECTION
+======================================================== -->
+<section id="graph-section">
+  <div class="container">
+
+    <div class="graph-header fade-in">
+      <p class="section-eyebrow">The Living Graph</p>
+      <h2 class="section-title">Reality, Mapped in Real Time</h2>
+      <p class="section-sub">Every node a truth. Every edge a relationship. The graph breathes.</p>
+    </div>
+
+    <div class="glass graph-wrapper fade-in" id="graph-panel">
+      <div id="graph-container">
+        <svg id="graph-svg"></svg>
+
+        <!-- Sleeping state (shown if Neo4j fails) -->
+        <div class="graph-sleeping" id="graph-sleeping" style="display: none;">
+          <div class="graph-sleeping-icon">◎</div>
+          <div class="graph-sleeping-text">Graph Sleeping — Click to Wake</div>
+          <div class="graph-sleeping-sub">Neo4j connection unavailable · Click to retry</div>
+        </div>
+
+        <!-- Stats overlay -->
+        <div class="graph-overlay" id="graph-stats" style="display: none;">
+          <div class="graph-stat-chip">
+            <strong id="stat-nodes">0</strong>&nbsp;nodes
+          </div>
+          <div class="graph-stat-chip">
+            <strong id="stat-edges">0</strong>&nbsp;edges
+          </div>
+          <div class="graph-stat-chip">
+            Worlds:&nbsp;<strong id="stat-worlds">—</strong>
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="graph-legend" id="graph-legend" style="display: none;">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#6BA4FF;"></div>Era
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#FF6B8A;"></div>Character
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#5CBF8A;"></div>Place
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#FFB86B;"></div>Artifact
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#8B6BFF;"></div>Spark
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========================================================
+     PHILOSOPHY SECTION
+======================================================== -->
+<section id="philosophy">
+  <div class="container">
+
+    <div class="philosophy-header fade-in">
+      <p class="section-eyebrow">The Architecture of Meaning</p>
+      <h2 class="section-title">From Core to Culture</h2>
+      <p class="section-sub">Three concentric rings of creation — each one amplifying the last.</p>
+    </div>
+
+    <div class="philosophy-layers">
+
+      <div class="glass philosophy-layer accent-blue fade-in">
+        <div class="philosophy-num">I</div>
+        <div class="philosophy-content">
+          <h3 class="philosophy-name" style="color:var(--blue);">Artiquity</h3>
+          <p class="philosophy-desc">The Cultural Record. Where creative DNA is extracted, encoded, and preserved. Every artifact of human expression — digitized, analyzed, ontologically mapped. This is the ground truth from which all worlds are seeded. Not a database, but a living cultural memory.</p>
+        </div>
+      </div>
+
+      <div class="glass philosophy-layer accent-amber fade-in">
+        <div class="philosophy-num">II</div>
+        <div class="philosophy-content">
+          <h3 class="philosophy-name" style="color:var(--amber);">Enginuity</h3>
+          <p class="philosophy-desc">Physical Manifestation. Vision reconciled with reality. The engineering layer where ontological truth becomes tangible — garments stitched from narrative, objects weighted with provenance, environments carrying the atmospheric signature of their historical moment.</p>
+        </div>
+      </div>
+
+      <div class="glass philosophy-layer accent-purple fade-in">
+        <div class="philosophy-num">III</div>
+        <div class="philosophy-content">
+          <h3 class="philosophy-name" style="color:var(--purple);">Ubiquity</h3>
+          <p class="philosophy-desc">Storytelling Everywhere. Worlds that speak through every channel — comic panels, generative audio, immersive environments, social feeds. The same ontological truth expressed in the native language of each medium. Stories that exist as fully in a WhatsApp message as in a museum installation.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================
+     FOOTER
+======================================================== -->
+<footer>
+  <div class="container">
+    <div class="footer-equation fade-in">
+      <span class="what">WHAT</span>
+      <span class="op">+</span>
+      <span class="who">WHO</span>
+      <span class="op">+</span>
+      <span class="what-if">WHAT IF</span>
+      <span class="op">=</span>
+      <span class="iam">IAM</span>
+    </div>
+
+    <div class="footer-links">
+      <a href="#hero">Trinity Worlds</a>
+      <span class="footer-dot"></span>
+      <a href="https://github.com/inkwelllabs" target="_blank" rel="noopener">GitHub</a>
+      <span class="footer-dot"></span>
+      <a href="#studios">Studios</a>
+      <span class="footer-dot"></span>
+      <a href="#graph-section">Graph</a>
+      <span class="footer-dot"></span>
+      <a href="https://iamgia.app" target="_blank" rel="noopener">IAMgia</a>
+    </div>
+
+    <p class="footer-copy">Ontological Theatre &nbsp;·&nbsp; Inkwell Labs &nbsp;·&nbsp; Trinity Graph Architecture</p>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   PARTICLE SYSTEM — hero background dots
+============================================================ */
+(function initParticles() {
+  const canvas = document.getElementById('particle-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  let W, H, particles = [];
+  const COUNT = 65;
+  const COLORS = ['#6BA4FF','#FF6B8A','#8B6BFF','#FFB86B','#ffffff'];
+
+  function resize() {
+    W = canvas.width  = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+  }
+
+  function createParticle() {
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 1.8 + 0.4,
+      vx: (Math.random() - 0.5) * 0.25,
+      vy: (Math.random() - 0.5) * 0.25,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      alpha: Math.random() * 0.4 + 0.1
+    };
+  }
+
+  function init() {
+    resize();
+    particles = Array.from({ length: COUNT }, createParticle);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Draw faint connecting lines between nearby particles
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 120) {
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(255,255,255,${0.04 * (1 - dist/120)})`;
+          ctx.lineWidth = 0.5;
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Draw particles
+    particles.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color + Math.floor(p.alpha * 255).toString(16).padStart(2,'0');
+      ctx.fill();
+    });
+  }
+
+  function update() {
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      // Wrap around
+      if (p.x < -10) p.x = W + 10;
+      if (p.x > W + 10) p.x = -10;
+      if (p.y < -10) p.y = H + 10;
+      if (p.y > H + 10) p.y = -10;
+    });
+  }
+
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener('resize', resize);
+  init();
+  loop();
+})();
+
+
+/* ============================================================
+   SCROLL FADE-IN — IntersectionObserver
+============================================================ */
+(function initScrollFade() {
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.fade-in').forEach(el => io.observe(el));
+})();
+
+
+/* ============================================================
+   MOUSE-TRACKING GLASS HIGHLIGHT
+   Subtle radial gradient follows cursor on glass panels
+============================================================ */
+(function initMouseHighlight() {
+  const glassPanels = document.querySelectorAll('.glass');
+
+  glassPanels.forEach(panel => {
+    panel.addEventListener('mousemove', (e) => {
+      const rect = panel.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width)  * 100;
+      const y = ((e.clientY - rect.top)  / rect.height) * 100;
+      panel.style.setProperty('--mouse-highlight',
+        `radial-gradient(circle at ${x}% ${y}%, rgba(255,255,255,0.06) 0%, transparent 60%)`
+      );
+    });
+
+    panel.addEventListener('mouseleave', () => {
+      panel.style.setProperty('--mouse-highlight', 'transparent');
+    });
+  });
+})();
+
+
+/* ============================================================
+   LAYER STATS — fetch node counts from Neo4j
+============================================================ */
+const NEO4J_URL  = 'https://c779e832.databases.neo4j.io/db/neo4j/query/v2';
+const NEO4J_AUTH = 'Basic bmVvNGo6WlhPdXB5SUx4RktsTG16SHNtSEk5ckNtQzhlMmRYVGZ5UkQ3U29tR2hQdw==';
+
+async function fetchNeo4j(cypher, params = {}) {
+  const res = await fetch(NEO4J_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': NEO4J_AUTH
+    },
+    body: JSON.stringify({ statement: cypher, parameters: params })
+  });
+  if (!res.ok) throw new Error(`Neo4j HTTP ${res.status}`);
+  return res.json();
+}
+
+async function loadLayerStats() {
+  try {
+    // Count all nodes by label
+    const data = await fetchNeo4j(
+      `MATCH (n) 
+       WITH labels(n) AS lbls, count(*) AS cnt
+       RETURN lbls, cnt`
+    );
+
+    let whatCount = 0, whoCount = 0, whatifCount = 0;
+
+    const rows = data.data?.values || data.results?.[0]?.data || [];
+    rows.forEach(row => {
+      const vals = row.row || row;
+      const labels = Array.isArray(vals[0]) ? vals[0] : [vals[0]];
+      const cnt    = vals[1] || 0;
+      labels.forEach(lbl => {
+        const l = (lbl || '').toLowerCase();
+        if (['era','place','artifact','location','event','concept'].includes(l)) whatCount += cnt;
+        else if (['character','person','being','entity'].includes(l)) whoCount += cnt;
+        else if (['spark','generated','collision'].includes(l)) whatifCount += cnt;
+        else whatCount += cnt; // default to WHAT
+      });
+    });
+
+    animateCount('what-node-count',  whatCount  || '—');
+    animateCount('who-node-count',   whoCount   || '—');
+    animateCount('whatif-node-count', whatifCount || '—');
+  } catch (err) {
+    console.warn('Layer stats unavailable:', err.message);
+    // Leave as —
+  }
+}
+
+function animateCount(id, target) {
+  const el = document.getElementById(id);
+  if (!el || target === '—') return;
+  const end = parseInt(target, 10);
+  if (isNaN(end)) { el.textContent = target; return; }
+  let current = 0;
+  const step = Math.max(1, Math.floor(end / 60));
+  const timer = setInterval(() => {
+    current = Math.min(current + step, end);
+    el.textContent = current.toLocaleString();
+    if (current >= end) clearInterval(timer);
+  }, 16);
+}
+
+loadLayerStats();
+</script>
+
+<script>
+/* ============================================================
+   D3 FORCE GRAPH — Neo4j live visualization
+============================================================ */
+(function initGraph() {
+  const NODE_COLORS = {
+    'Era':        '#6BA4FF',
+    'Place':      '#5CBF8A',
+    'Location':   '#5CBF8A',
+    'Character':  '#FF6B8A',
+    'Person':     '#FF6B8A',
+    'Being':      '#FF6B8A',
+    'Artifact':   '#FFB86B',
+    'Object':     '#FFB86B',
+    'Spark':      '#8B6BFF',
+    'Generated':  '#8B6BFF',
+    'Concept':    '#6BA4FF',
+    'Event':      '#6BA4FF',
+    'default':    '#888888'
+  };
+
+  function nodeColor(labels) {
+    if (!labels || !labels.length) return NODE_COLORS.default;
+    for (const l of labels) {
+      if (NODE_COLORS[l]) return NODE_COLORS[l];
+    }
+    return NODE_COLORS.default;
+  }
+
+  function nodeRadius(labels) {
+    if (!labels) return 5;
+    if (labels.includes('Character') || labels.includes('Person')) return 8;
+    if (labels.includes('Era') || labels.includes('Concept'))      return 9;
+    if (labels.includes('Spark'))                                   return 6;
+    return 5;
+  }
+
+  function parseNeo4jGraph(data) {
+    // Handle both query/v2 and older formats
+    const nodesMap = new Map();
+    const links    = [];
+
+    try {
+      // v2 format: data.data.values is array of rows
+      // each row has n, r, m as graph elements
+      const values = data?.data?.values || data?.results?.[0]?.data?.map(d => d.row) || [];
+
+      values.forEach(row => {
+        // row = [n, r, m] — graph objects
+        [0, 2].forEach(idx => {
+          const node = row[idx];
+          if (node && node.elementId !== undefined) {
+            const id = node.elementId || node.id;
+            if (!nodesMap.has(id)) {
+              nodesMap.set(id, {
+                id,
+                labels: node.labels || [],
+                props:  node.properties || {}
+              });
+            }
+          }
+        });
+        const rel = row[1];
+        if (rel && rel.startNodeElementId !== undefined) {
+          links.push({
+            source: rel.startNodeElementId || rel.start,
+            target: rel.endNodeElementId   || rel.end,
+            type:   rel.type || ''
+          });
+        }
+      });
+    } catch (e) {
+      console.warn('Graph parse error:', e);
+    }
+
+    return { nodes: Array.from(nodesMap.values()), links };
+  }
+
+  function renderGraph(graphData) {
+    const svgEl = document.getElementById('graph-svg');
+    const container = document.getElementById('graph-container');
+    if (!svgEl || !graphData) return;
+
+    const W = container.clientWidth  || 900;
+    const H = container.clientHeight || 520;
+
+    const svg = d3.select(svgEl)
+      .attr('width', W)
+      .attr('height', H);
+
+    svg.selectAll('*').remove();
+
+    // Defs: arrow marker
+    const defs = svg.append('defs');
+    defs.append('marker')
+      .attr('id', 'arrow')
+      .attr('viewBox', '0 -4 8 8')
+      .attr('refX', 18).attr('refY', 0)
+      .attr('markerWidth', 4).attr('markerHeight', 4)
+      .attr('orient', 'auto')
+      .append('path')
+        .attr('d', 'M0,-4L8,0L0,4')
+        .attr('fill', 'rgba(255,255,255,0.15)');
+
+    const g = svg.append('g');
+
+    // Zoom
+    svg.call(d3.zoom()
+      .scaleExtent([0.2, 4])
+      .on('zoom', (event) => g.attr('transform', event.transform))
+    );
+
+    // Force simulation
+    const sim = d3.forceSimulation(graphData.nodes)
+      .force('link', d3.forceLink(graphData.links)
+        .id(d => d.id)
+        .distance(80)
+        .strength(0.4)
+      )
+      .force('charge', d3.forceManyBody().strength(-180))
+      .force('center', d3.forceCenter(W / 2, H / 2))
+      .force('collide', d3.forceCollide(d => nodeRadius(d.labels) + 6))
+      .alphaDecay(0.025);
+
+    // Links
+    const link = g.append('g').attr('class', 'links')
+      .selectAll('line')
+      .data(graphData.links)
+      .join('line')
+        .attr('class', 'graph-link')
+        .attr('marker-end', 'url(#arrow)');
+
+    // Node groups
+    const node = g.append('g').attr('class', 'nodes')
+      .selectAll('g')
+      .data(graphData.nodes)
+      .join('g')
+        .attr('class', 'graph-node')
+        .call(d3.drag()
+          .on('start', (event, d) => {
+            if (!event.active) sim.alphaTarget(0.3).restart();
+            d.fx = d.x; d.fy = d.y;
+          })
+          .on('drag', (event, d) => {
+            d.fx = event.x; d.fy = event.y;
+          })
+          .on('end', (event, d) => {
+            if (!event.active) sim.alphaTarget(0);
+            d.fx = null; d.fy = null;
+          })
+        );
+
+    // Node circles with glow
+    node.append('circle')
+      .attr('r', d => nodeRadius(d.labels))
+      .attr('fill', d => nodeColor(d.labels) + '33')
+      .attr('stroke', d => nodeColor(d.labels))
+      .attr('stroke-width', 1.5);
+
+    // Node label (short)
+    node.append('text')
+      .attr('class', 'graph-label')
+      .attr('dy', d => nodeRadius(d.labels) + 10)
+      .attr('text-anchor', 'middle')
+      .text(d => {
+        const name = d.props.name || d.props.title || d.props.label || '';
+        return name.length > 14 ? name.slice(0, 12) + '…' : name;
+      });
+
+    // Tooltip on hover
+    node.append('title')
+      .text(d => `${d.labels.join(', ')}\n${d.props.name || d.props.title || d.id}`);
+
+    // Tick
+    sim.on('tick', () => {
+      link
+        .attr('x1', d => d.source.x)
+        .attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x)
+        .attr('y2', d => d.target.y);
+      node.attr('transform', d => `translate(${d.x},${d.y})`);
+    });
+
+    // Update stats
+    document.getElementById('stat-nodes').textContent = graphData.nodes.length;
+    document.getElementById('stat-edges').textContent = graphData.links.length;
+
+    // Count distinct label sets as worlds
+    const worldLabels = new Set();
+    graphData.nodes.forEach(n => {
+      if (n.labels.includes('Era') || n.labels.includes('Concept')) {
+        worldLabels.add(n.props.name || n.props.title || '');
+      }
+    });
+    document.getElementById('stat-worlds').textContent = worldLabels.size || '∞';
+
+    // Show overlays
+    document.getElementById('graph-stats').style.display = 'flex';
+    document.getElementById('graph-legend').style.display = 'flex';
+  }
+
+  function showSleeping() {
+    const sleeping = document.getElementById('graph-sleeping');
+    if (sleeping) {
+      sleeping.style.display = 'flex';
+      sleeping.onclick = () => {
+        sleeping.style.display = 'none';
+        loadGraph();
+      };
+    }
+  }
+
+  function showLoading() {
+    const svgEl = document.getElementById('graph-svg');
+    if (!svgEl) return;
+    const container = document.getElementById('graph-container');
+    const W = container.clientWidth || 900;
+    const H = container.clientHeight || 520;
+    const svg = d3.select(svgEl).attr('width', W).attr('height', H);
+    svg.selectAll('*').remove();
+
+    // Animated loading ring
+    const g = svg.append('g').attr('transform', `translate(${W/2},${H/2})`);
+    g.append('text')
+      .attr('text-anchor', 'middle')
+      .attr('dy', -30)
+      .attr('fill', 'rgba(255,255,255,0.3)')
+      .attr('font-size', '13px')
+      .attr('font-family', '-apple-system, sans-serif')
+      .attr('letter-spacing', '0.1em')
+      .text('CONNECTING TO GRAPH');
+
+    // Spinning arc
+    const arc = d3.arc().innerRadius(24).outerRadius(30).startAngle(0).endAngle(Math.PI * 1.5);
+    const path = g.append('path')
+      .attr('d', arc)
+      .attr('fill', '#6BA4FF')
+      .attr('opacity', 0.7);
+
+    let angle = 0;
+    function spin() {
+      angle += 3;
+      path.attr('transform', `rotate(${angle})`);
+      requestAnimationFrame(spin);
+    }
+    spin();
+  }
+
+  async function loadGraph() {
+    showLoading();
+    try {
+      const data = await fetchNeo4j(
+        'MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 200'
+      );
+
+      // Check if we have data
+      const values = data?.data?.values || data?.results?.[0]?.data || [];
+      if (!values.length) {
+        showSleeping();
+        return;
+      }
+
+      const graphData = parseNeo4jGraph(data);
+
+      if (!graphData.nodes.length) {
+        showSleeping();
+        return;
+      }
+
+      renderGraph(graphData);
+    } catch (err) {
+      console.warn('Graph load failed:', err.message);
+      showSleeping();
+    }
+  }
+
+  // Load graph when section scrolls into view
+  const graphPanel = document.getElementById('graph-panel');
+  if (graphPanel) {
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        io.disconnect();
+        loadGraph();
+      }
+    }, { threshold: 0.2 });
+    io.observe(graphPanel);
+  }
+
+  // Expose for retry
+  window.loadGraph = loadGraph;
+})();
+</script>
+
+<script>
+/* ============================================================
+   SMOOTH NAV SCROLL + ACTIVE STATE
+============================================================ */
+(function initNav() {
+  // Smooth scroll for all anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
+  // Nav background intensifies on scroll
+  const nav = document.querySelector('nav');
+  window.addEventListener('scroll', () => {
+    const scrolled = window.scrollY > 60;
+    nav.style.background = scrolled
+      ? 'rgba(10,10,15,0.92)'
+      : 'rgba(10,10,15,0.70)';
+  }, { passive: true });
+})();
+
+/* ============================================================
+   STAGGERED CARD ENTRY — studios grid
+============================================================ */
+(function staggerCards() {
+  const cards = document.querySelectorAll('.studios-grid .fade-in');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => {
+          e.target.classList.add('visible');
+        }, i * 60);
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.05 });
+  cards.forEach(c => io.observe(c));
+})();
+</script>
+
+</body>
+</html>
+
