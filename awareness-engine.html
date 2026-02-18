@@ -108,6 +108,7 @@ select:focus{border-color:var(--gold);outline:none}
 <span id="neo4j-status">Neo4j: connecting...</span>
 <span class="toggle-src" id="toggle-src" onclick="toggleSource()">Using: Live Graph</span>
 <span id="conn-count">Connections: 0</span>
+<span id="graph-count" style="color:var(--green)">0 saved</span>
 </div>
 
 <div class="panels">
@@ -164,10 +165,14 @@ select:focus{border-color:var(--gold);outline:none}
 <script>
 // ============ CONFIG ============
 const PROXY='https://awareness-proxy-328246068140.us-central1.run.app';
+const TRINITY_API='https://trinity-graph-api-328246068140.us-central1.run.app';
 const NEO4J_URL='https://c779e832.databases.neo4j.io/db/neo4j/query/v2';
 const NEO4J_AUTH='Basic '+btoa('neo4j:ZXOupyILxFKlLmzHsmHI9rCmC8e2dXTfyRD7SomGhPw');
 
 let useLive=true,neo4jAlive=false,graphData=null,lastGeneratedText='';
+// Graph growth tracking
+let sessionGenCount=0;
+const charIdCache={};  // name → id cache
 const providerStatus={fal:'unknown',openrouter:'unknown',gemini:'unknown',elevenlabs:'unknown'};
 
 function updateDots(){
@@ -320,6 +325,16 @@ neo4jAlive=!!r;
 document.getElementById('neo4j-status').innerHTML=neo4jAlive?'<span class="live">● Neo4j: Connected</span>':'<span class="dead">● Neo4j: Offline (fallback)</span>';
 if(!neo4jAlive)useLive=false;
 updateToggle();
+// Load existing graph size from Trinity API
+try{
+  const rs=await fetch(`${TRINITY_API}/graph/stats`);
+  if(rs.ok){
+    const js=await rs.json();
+    const gc=js.nodes?.GeneratedContent||0;
+    const badge=document.getElementById('graph-count');
+    if(badge&&gc>0)badge.textContent=gc+' in graph';
+  }
+}catch(e){}
 }
 
 async function loadGraphData(){
@@ -540,6 +555,52 @@ document.getElementById('prompt-display').textContent=full;
 return{systemPrompt,userPrompt,awarenessField};
 }
 
+// ============ GRAPH FEEDBACK LOOP ============
+async function lookupCharacterId(name){
+  if(charIdCache[name])return charIdCache[name];
+  try{
+    const r=await fetch(`${TRINITY_API}/characters?limit=200`);
+    if(!r.ok)return null;
+    const j=await r.json();
+    const chars=j.characters||j||[];
+    for(const c of chars){
+      if(c.name&&c.name.toLowerCase()===name.toLowerCase()){
+        charIdCache[c.name]=c.id;
+        return c.id;
+      }
+    }
+    return null;
+  }catch(e){return null;}
+}
+
+async function persistGenerated(type, url, prompt, toolId){
+  try{
+    const charId=await lookupCharacterId(state.character);
+    const payload={
+      type,
+      url,
+      prompt:prompt||(state.character+' · '+state.place+' · '+state.bridge+' / '+state.pathy),
+      source_tool:toolId||'awareness-engine',
+    };
+    if(charId){
+      payload.character_id=charId;
+      payload.depicts_character_ids=[charId];
+      payload.feedback_character_ids=[charId];
+    }
+    const r=await fetch(`${TRINITY_API}/ingest`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    if(!r.ok)return false;
+    sessionGenCount++;
+    // Update counter badge
+    const badge=document.getElementById('graph-count');
+    if(badge)badge.textContent=sessionGenCount+' saved';
+    return true;
+  }catch(e){console.warn('Graph persist failed:',e);return false;}
+}
+
 // ============ GENERATION ============
 async function generate(mode){
 buildAwarenessField();
@@ -587,6 +648,11 @@ postActions.innerHTML=`
 <button class="btn small voice" onclick="speakText()">🔊 Speak This</button>
 <button class="btn small music" onclick="generate('music')">🎵 Build Song</button>
 <button class="btn small" onclick="navigator.clipboard.writeText(lastGeneratedText);this.textContent='✓ Copied';setTimeout(()=>this.textContent='📋 Copy',1500)">📋 Copy</button>`;
+// Persist text artifact to Trinity Graph
+const textDataUrl='data:text/plain;base64,'+btoa(unescape(encodeURIComponent(text)));
+persistGenerated('text',textDataUrl,userPrompt,'gemini-2.0-flash').then(ok=>{
+  if(ok){const s=document.createElement('span');s.style.cssText='font-size:.75em;color:var(--green);margin-left:8px';s.textContent='● saved to graph';postActions.appendChild(s);}
+});
 }catch(e){output.innerHTML='Error: '+e.message;}
 }
 
@@ -688,31 +754,22 @@ if(!url)throw new Error('No image URL from DALL-E');
 return{url,provider:'DALL-E 3'};
 }
 
-// Gemini image generation (with retry)
+// Gemini image generation
 async function generateGemini(prompt){
-const models=['gemini-2.0-flash-preview-image-generation','gemini-2.0-flash-exp-image-generation'];
-for(const model of models){
-for(let attempt=0;attempt<2;attempt++){
-try{
 const r=await fetch(`${PROXY}/gemini/generate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-model,
+model:'gemini-2.0-flash-exp-image-generation',
 contents:[{parts:[{text:prompt}]}],
 generationConfig:{temperature:state.entropy,responseModalities:["TEXT","IMAGE"]}
 })});
-if(!r.ok){const t=await r.text();console.warn(`Gemini ${model} attempt ${attempt+1}: ${r.status} ${t}`);continue;}
+if(!r.ok){const t=await r.text();throw new Error('Gemini: '+r.status+' '+t);}
 const j=await r.json();
-if(j.error){console.warn(`Gemini ${model}: ${j.error.message}`);continue;}
 const parts=j.candidates?.[0]?.content?.parts||[];
 for(const p of parts){
 if(p.inlineData){
 return{url:`data:${p.inlineData.mimeType};base64,${p.inlineData.data}`,provider:'Gemini'};
 }
 }
-console.warn(`Gemini ${model}: no image in response (safety block or text-only)`);
-}catch(e){console.warn(`Gemini ${model} attempt ${attempt+1}:`,e.message);}
-}
-}
-throw new Error('Gemini: all models/retries failed');
+throw new Error('Gemini returned no image');
 }
 
 // Algorithmic canvas fallback
@@ -818,6 +875,8 @@ card.innerHTML=`<div class="img-error">⚠ ${result.error}<br><small>${result.pr
 const isFav=favorites.includes(result.url);
 const fname=`inkwell-${state.character.replace(/\s/g,'-')}-${i+1}.png`;
 card.innerHTML=`<img src="${result.url}" alt="${state.character} variation ${i+1}"><div class="img-actions"><span class="provider-badge">${result.provider}</span><span><button class="fav ${isFav?'active':''}" onclick="toggleFavorite('${result.url.replace(/'/g,"\\'")}',this)">${isFav?'♥':'♡'}</button><button class="dl" onclick="downloadImage('${result.url.replace(/'/g,"\\'")}','${fname}')">⬇</button></span></div>`;
+// Persist image to Trinity Graph
+persistGenerated('image',result.url,prompt,result.provider);
 }
 })
 );
@@ -883,6 +942,11 @@ output.innerHTML=`<div class="suno-card">
 // Store for copy
 window._sunoPrompt=sunoPrompt;
 postActions.innerHTML='';
+// Persist song prompt to Trinity Graph
+const songDataUrl='data:text/plain;base64,'+btoa(unescape(encodeURIComponent(sunoPrompt)));
+persistGenerated('audio',songDataUrl,sunoPrompt,'suno-prompt').then(ok=>{
+  if(ok){const s=document.createElement('span');s.style.cssText='font-size:.75em;color:var(--green);margin-left:8px';s.textContent='● saved to graph';postActions.appendChild(s);}
+});
 }
 
 function copySuno(){
