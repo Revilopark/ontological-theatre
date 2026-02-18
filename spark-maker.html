@@ -1,0 +1,2325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spark Maker — Ontological Theatre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --amber: #FFB86B;
+    --amber-dim: rgba(255,184,107,0.15);
+    --rose: #FF6B8A;
+    --rose-dim: rgba(255,107,138,0.15);
+    --purple: #8B6BFF;
+    --purple-dim: rgba(139,107,255,0.15);
+    --cold: #6BCEFF;
+    --bg: #0a0a0f;
+    --glass-bg: rgba(255,255,255,0.06);
+    --glass-border: rgba(255,255,255,0.1);
+    --glass-blur: blur(40px) saturate(1.8);
+    --text-primary: rgba(255,255,255,0.92);
+    --text-secondary: rgba(255,255,255,0.55);
+    --text-dim: rgba(255,255,255,0.3);
+    --radius: 20px;
+    --radius-sm: 12px;
+    --radius-xs: 8px;
+  }
+
+  html { font-size: 16px; }
+
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background gradient mesh */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 20%, rgba(255,107,138,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 80% 30%, rgba(139,107,255,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 70% 40% at 50% 80%, rgba(255,184,107,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Animated mesh blobs */
+  .bg-blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.12;
+    pointer-events: none;
+    z-index: 0;
+    animation: blobFloat 20s ease-in-out infinite;
+  }
+  .bg-blob-1 { width: 400px; height: 400px; background: var(--rose); top: -100px; left: -100px; animation-delay: 0s; }
+  .bg-blob-2 { width: 500px; height: 500px; background: var(--purple); top: 20%; right: -150px; animation-delay: -7s; }
+  .bg-blob-3 { width: 350px; height: 350px; background: var(--amber); bottom: 10%; left: 30%; animation-delay: -14s; }
+
+  @keyframes blobFloat {
+    0%, 100% { transform: translate(0,0) scale(1); }
+    33% { transform: translate(30px,-40px) scale(1.05); }
+    66% { transform: translate(-20px,20px) scale(0.95); }
+  }
+
+  /* Glass panel base */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .glass:hover::before { opacity: 1; }
+
+  .glass-amber { border-color: rgba(255,184,107,0.3); box-shadow: 0 0 30px rgba(255,184,107,0.08); }
+  .glass-rose { border-color: rgba(255,107,138,0.3); }
+  .glass-purple { border-color: rgba(139,107,255,0.3); }
+
+  /* Layout */
+  #app {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+  }
+
+  /* Header */
+  .site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    padding: 0 4px;
+  }
+
+  .site-logo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .site-logo-spark {
+    font-size: 26px;
+    font-weight: 200;
+    letter-spacing: -0.5px;
+    color: var(--text-primary);
+  }
+
+  .site-logo-spark span {
+    color: var(--amber);
+    font-weight: 400;
+  }
+
+  .site-logo-sub {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--glass-border);
+    border-radius: 100px;
+    padding: 4px;
+  }
+
+  .nav-tab {
+    padding: 8px 20px;
+    border-radius: 100px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    letter-spacing: 0.3px;
+  }
+
+  .nav-tab.active {
+    background: rgba(255,255,255,0.1);
+    color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  /* Views */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* Collision Chamber */
+  .chamber {
+    display: grid;
+    grid-template-columns: 1fr 280px 1fr;
+    grid-template-rows: auto auto;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .character-panel {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 500px;
+  }
+
+  .panel-title {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+
+  /* Form elements */
+  select, input[type="text"], textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius-xs);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 300;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.4)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+  }
+
+  select option { background: #1a1a2e; }
+
+  select:focus, input:focus, textarea:focus {
+    border-color: rgba(255,184,107,0.4);
+    box-shadow: 0 0 0 3px rgba(255,184,107,0.08);
+  }
+
+  /* Character card display */
+  .char-display {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .char-name {
+    font-size: 20px;
+    font-weight: 300;
+    color: var(--text-primary);
+    line-height: 1.2;
+  }
+
+  .char-meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .char-meta-tag {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 100px;
+    padding: 3px 10px;
+    font-size: 11px;
+  }
+
+  .char-traits-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .traits-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .trait-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .trait-bar-label {
+    width: 90px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .trait-bar-track {
+    flex: 1;
+    height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .trait-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .trait-bar-fill.rose { background: linear-gradient(90deg, var(--rose-dim), var(--rose)); }
+  .trait-bar-fill.purple { background: linear-gradient(90deg, var(--purple-dim), var(--purple)); }
+  .trait-bar-fill.amber { background: linear-gradient(90deg, var(--amber-dim), var(--amber)); }
+
+  .trait-bar-val {
+    width: 28px;
+    text-align: right;
+    color: var(--text-dim);
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+
+  .mini-chart-wrap {
+    height: 160px;
+    position: relative;
+  }
+
+  /* Collision Zone */
+  .collision-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 24px 16px;
+    min-height: 500px;
+  }
+
+  .collision-svg-wrap {
+    width: 240px;
+    height: 200px;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  #collision-svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .collide-btn {
+    background: linear-gradient(135deg, rgba(255,184,107,0.2), rgba(255,184,107,0.1));
+    border: 1px solid rgba(255,184,107,0.5);
+    border-radius: 100px;
+    color: var(--amber);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 14px 32px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 20px rgba(255,184,107,0.15), inset 0 1px 0 rgba(255,255,255,0.1);
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .collide-btn.visible {
+    opacity: 1;
+    pointer-events: auto;
+    animation: collideGlow 2s ease-in-out infinite;
+  }
+
+  .collide-btn:hover {
+    background: linear-gradient(135deg, rgba(255,184,107,0.3), rgba(255,184,107,0.15));
+    box-shadow: 0 0 40px rgba(255,184,107,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+    transform: scale(1.03);
+  }
+
+  .collide-btn:active { transform: scale(0.98); }
+
+  @keyframes collideGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(255,184,107,0.15), inset 0 1px 0 rgba(255,255,255,0.1); }
+    50% { box-shadow: 0 0 40px rgba(255,184,107,0.35), inset 0 1px 0 rgba(255,255,255,0.1); }
+  }
+
+  .collision-hint {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+
+  /* Place & Time bar */
+  .place-time-bar {
+    grid-column: 1 / -1;
+    padding: 20px 24px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .place-time-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 180px;
+  }
+
+  .place-time-group label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .custom-place-fields {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    flex: 2;
+    min-width: 280px;
+  }
+
+  .custom-place-fields.visible { display: flex; }
+
+  /* Buttons */
+  .btn {
+    padding: 10px 24px;
+    border-radius: 100px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255,255,255,0.06);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+  }
+
+  .btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+
+  .btn-amber {
+    border-color: rgba(255,184,107,0.4);
+    color: var(--amber);
+    background: rgba(255,184,107,0.08);
+  }
+
+  .btn-amber:hover {
+    background: rgba(255,184,107,0.15);
+    box-shadow: 0 0 20px rgba(255,184,107,0.2);
+  }
+
+  .btn-sm { padding: 7px 16px; font-size: 12px; }
+
+  /* Results section */
+  #results-section {
+    display: none;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 8px;
+    animation: fadeInUp 0.6s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  #results-section.visible { display: flex; }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Convergence Analysis */
+  .convergence-panel {
+    padding: 32px;
+    display: grid;
+    grid-template-columns: auto 1fr 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  .convergence-score-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 140px;
+  }
+
+  .score-ring {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid currentColor;
+    position: relative;
+    transition: border-color 0.5s ease, color 0.5s ease, box-shadow 0.5s ease;
+  }
+
+  .score-ring::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 50%;
+    background: radial-gradient(circle at center, currentColor, transparent 70%);
+    opacity: 0.1;
+  }
+
+  .score-number {
+    font-size: 36px;
+    font-weight: 200;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+
+  .score-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.6;
+  }
+
+  .score-descriptor {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+    font-style: italic;
+  }
+
+  .score-cold { color: var(--cold); box-shadow: 0 0 30px rgba(107,206,255,0.15); }
+  .score-warm { color: var(--purple); box-shadow: 0 0 30px rgba(139,107,255,0.2); }
+  .score-hot { color: var(--amber); box-shadow: 0 0 30px rgba(255,184,107,0.2); }
+  .score-explosive { color: var(--rose); box-shadow: 0 0 40px rgba(255,107,138,0.25); }
+
+  .convergence-analysis-col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .analysis-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .analysis-item-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .analysis-tag {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 100px;
+    border: 1px solid;
+  }
+
+  .analysis-tag.ity { color: var(--rose); border-color: rgba(255,107,138,0.4); background: rgba(255,107,138,0.08); }
+  .analysis-tag.pathy { color: var(--purple); border-color: rgba(139,107,255,0.4); background: rgba(139,107,255,0.08); }
+
+  .analysis-score-mini {
+    font-size: 18px;
+    font-weight: 200;
+    color: var(--amber);
+  }
+
+  .analysis-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .tension-resonance-col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .tr-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .tr-title {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .tr-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+  }
+
+  .tr-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .tr-dot.tension { background: var(--rose); }
+  .tr-dot.resonance { background: var(--purple); }
+
+  .tr-name {
+    flex: 1;
+    color: var(--text-secondary);
+    text-transform: capitalize;
+  }
+
+  .tr-diff {
+    color: var(--text-dim);
+    font-size: 11px;
+  }
+
+  /* Narrative Panel */
+  .narrative-panel {
+    padding: 40px;
+    border-left: 3px solid var(--amber);
+    background: rgba(255,184,107,0.03);
+  }
+
+  .narrative-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .narrative-title {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--amber);
+    opacity: 0.8;
+  }
+
+  .narrative-text {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 19px;
+    font-weight: 300;
+    line-height: 1.8;
+    color: rgba(255,255,255,0.88);
+    font-style: italic;
+  }
+
+  .narrative-loading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-secondary);
+    font-size: 14px;
+  }
+
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255,184,107,0.2);
+    border-top-color: var(--amber);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Spark Image Panel */
+  .spark-image-panel {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .spark-image-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .spark-image-title {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .spark-image-frame {
+    width: 100%;
+    aspect-ratio: 16/9;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .spark-image-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .spark-image-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+
+  .spark-image-placeholder svg { opacity: 0.3; }
+
+  /* Radar Charts Panel */
+  .radar-panel {
+    padding: 28px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: center;
+  }
+
+  .radar-wrap {
+    height: 300px;
+    position: relative;
+  }
+
+  .radar-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .legend-char {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .legend-char-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 400;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .legend-items {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .legend-item {
+    font-size: 11px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+  }
+
+  .legend-item::before {
+    content: '';
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+    opacity: 0.5;
+  }
+
+  /* Gallery */
+  .gallery-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .gallery-title {
+    font-size: 22px;
+    font-weight: 200;
+  }
+
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  .gallery-empty {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-dim);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .gallery-card {
+    padding: 0;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .gallery-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  .gallery-card-img {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    display: block;
+    background: rgba(255,255,255,0.03);
+  }
+
+  .gallery-card-img-placeholder {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: linear-gradient(135deg, rgba(255,107,138,0.1), rgba(139,107,255,0.1));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    letter-spacing: -2px;
+  }
+
+  .gallery-card-body {
+    padding: 16px 20px 20px;
+  }
+
+  .gallery-card-chars {
+    font-size: 15px;
+    font-weight: 300;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .gallery-card-chars span {
+    color: var(--amber);
+  }
+
+  .gallery-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--text-dim);
+    flex-wrap: wrap;
+  }
+
+  .gallery-score-badge {
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 400;
+  }
+
+  /* Spark Detail Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: rgba(15,15,25,0.95);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 40px;
+    position: relative;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+
+  .modal-close:hover { background: rgba(255,255,255,0.15); color: var(--text-primary); }
+
+  /* Spark burst animation */
+  .spark-burst {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  @keyframes sparkParticle {
+    0% { transform: translate(var(--sx), var(--sy)) scale(1); opacity: 1; }
+    100% { transform: translate(var(--ex), var(--ey)) scale(0); opacity: 0; }
+  }
+
+  /* Collision animation classes */
+  @keyframes circleA-drift {
+    0% { cx: 60; }
+    100% { cx: 110; }
+  }
+
+  @keyframes circleB-drift {
+    0% { cx: 180; }
+    100% { cx: 130; }
+  }
+
+  @keyframes circlePulse {
+    0%, 100% { r: 38; opacity: 0.8; }
+    50% { r: 42; opacity: 1; }
+  }
+
+  .circle-a { animation: circlePulse 2s ease-in-out infinite; }
+  .circle-b { animation: circlePulse 2s ease-in-out infinite 1s; }
+
+  /* Ad-hoc char section */
+  .adhoc-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .adhoc-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: var(--glass-border);
+    margin: 4px 0;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .chamber {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto;
+    }
+
+    .collision-zone { min-height: 200px; }
+
+    .convergence-panel {
+      grid-template-columns: 1fr;
+    }
+
+    .radar-panel {
+      grid-template-columns: 1fr;
+    }
+
+    .place-time-bar {
+      flex-direction: column;
+    }
+
+    .place-time-group { min-width: 100%; }
+  }
+
+  @media (max-width: 600px) {
+    #app { padding: 16px 14px 40px; }
+    .site-header { flex-direction: column; gap: 16px; }
+    .chamber { gap: 12px; }
+    .narrative-text { font-size: 16px; }
+  }
+
+  /* Utility */
+  .flex { display: flex; }
+  .flex-col { flex-direction: column; }
+  .gap-8 { gap: 8px; }
+  .gap-16 { gap: 16px; }
+  .mt-8 { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+  .hidden { display: none !important; }
+  .text-amber { color: var(--amber); }
+  .text-rose { color: var(--rose); }
+  .text-purple { color: var(--purple); }
+  .text-dim { color: var(--text-dim); }
+  .text-secondary { color: var(--text-secondary); }
+  .text-sm { font-size: 12px; }
+  .text-xs { font-size: 11px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+</style>
+</head>
+<body>
+
+<!-- Background blobs -->
+<div class="bg-blob bg-blob-1"></div>
+<div class="bg-blob bg-blob-2"></div>
+<div class="bg-blob bg-blob-3"></div>
+
+<div id="app">
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="site-logo">
+      <div class="site-logo-spark">✦ <span>Spark</span> Maker</div>
+      <div class="site-logo-sub">Ontological Theatre · Collision Engine</div>
+    </div>
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-view="chamber">Collision Chamber</button>
+      <button class="nav-tab" data-view="gallery">Spark Gallery</button>
+    </nav>
+  </header>
+
+  <!-- COLLISION CHAMBER VIEW -->
+  <div id="view-chamber" class="view active">
+
+    <!-- Main 3-column chamber -->
+    <div class="chamber">
+
+      <!-- Character A Panel -->
+      <div class="glass glass-rose character-panel" id="panel-a">
+        <div class="panel-title">Character A</div>
+
+        <select id="select-a" onchange="selectCharacter('a', this.value)">
+          <option value="">— Select a character —</option>
+        </select>
+
+        <div class="adhoc-section">
+          <div class="adhoc-label">Or describe ad-hoc</div>
+          <input type="text" id="adhoc-name-a" placeholder="Name..." oninput="buildAdhocChar('a')">
+          <textarea id="adhoc-bio-a" placeholder="Brief description..." rows="2" style="resize:none;" oninput="buildAdhocChar('a')"></textarea>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="char-display" id="char-display-a">
+          <div class="collision-hint" style="margin: auto 0;">
+            Select or describe a character to begin
+          </div>
+        </div>
+      </div>
+
+      <!-- Collision Zone -->
+      <div class="glass collision-zone" id="collision-zone">
+        <div class="collision-svg-wrap">
+          <svg id="collision-svg" viewBox="0 0 240 200" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="gradA" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#FF6B8A" stop-opacity="0.8"/>
+                <stop offset="100%" stop-color="#FF6B8A" stop-opacity="0.1"/>
+              </radialGradient>
+              <radialGradient id="gradB" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#8B6BFF" stop-opacity="0.8"/>
+                <stop offset="100%" stop-color="#8B6BFF" stop-opacity="0.1"/>
+              </radialGradient>
+              <radialGradient id="gradSpark" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#FFB86B" stop-opacity="1"/>
+                <stop offset="60%" stop-color="#FFB86B" stop-opacity="0.4"/>
+                <stop offset="100%" stop-color="#FFB86B" stop-opacity="0"/>
+              </radialGradient>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+
+            <!-- Character A circle -->
+            <circle id="svg-circle-a" cx="60" cy="100" r="38" fill="url(#gradA)" filter="url(#glow)" class="circle-a" opacity="0.5"/>
+            <circle id="svg-circle-a-outline" cx="60" cy="100" r="38" fill="none" stroke="#FF6B8A" stroke-width="1.5" opacity="0.5"/>
+
+            <!-- Character B circle -->
+            <circle id="svg-circle-b" cx="180" cy="100" r="38" fill="url(#gradB)" filter="url(#glow)" class="circle-b" opacity="0.5"/>
+            <circle id="svg-circle-b-outline" cx="180" cy="100" r="38" fill="none" stroke="#8B6BFF" stroke-width="1.5" opacity="0.5"/>
+
+            <!-- Spark burst (hidden initially) -->
+            <g id="spark-burst" opacity="0">
+              <circle cx="120" cy="100" r="50" fill="url(#gradSpark)"/>
+            </g>
+
+            <!-- Labels -->
+            <text id="svg-label-a" x="60" y="152" text-anchor="middle" fill="rgba(255,107,138,0.7)" font-size="10" font-family="-apple-system, sans-serif">A</text>
+            <text id="svg-label-b" x="180" y="152" text-anchor="middle" fill="rgba(139,107,255,0.7)" font-size="10" font-family="-apple-system, sans-serif">B</text>
+          </svg>
+        </div>
+
+        <button class="collide-btn" id="collide-btn" onclick="triggerCollision()">
+          ⚡ COLLIDE
+        </button>
+
+        <div class="collision-hint" id="collision-hint">
+          Select both characters to unlock collision
+        </div>
+      </div>
+
+      <!-- Character B Panel -->
+      <div class="glass glass-purple character-panel" id="panel-b">
+        <div class="panel-title">Character B</div>
+
+        <select id="select-b" onchange="selectCharacter('b', this.value)">
+          <option value="">— Select a character —</option>
+        </select>
+
+        <div class="adhoc-section">
+          <div class="adhoc-label">Or describe ad-hoc</div>
+          <input type="text" id="adhoc-name-b" placeholder="Name..." oninput="buildAdhocChar('b')">
+          <textarea id="adhoc-bio-b" placeholder="Brief description..." rows="2" style="resize:none;" oninput="buildAdhocChar('b')"></textarea>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="char-display" id="char-display-b">
+          <div class="collision-hint" style="margin: auto 0;">
+            Select or describe a character to begin
+          </div>
+        </div>
+      </div>
+
+      <!-- Place & Time Bar (full width) -->
+      <div class="glass place-time-bar">
+        <div class="place-time-group">
+          <label>Place</label>
+          <select id="select-place" onchange="onPlaceChange()">
+            <option value="The Crossroads - Clarksdale">The Crossroads · Clarksdale</option>
+            <option value="Dockery Farms">Dockery Farms</option>
+            <option value="Parchman Farm">Parchman Farm</option>
+            <option value="Highway 61">Highway 61</option>
+            <option value="Stovall Plantation">Stovall Plantation</option>
+            <option value="Three Forks - Quito">Three Forks · Quito</option>
+            <option value="Mound Bayou">Mound Bayou</option>
+            <option value="River Landing - Rosedale">River Landing · Rosedale</option>
+            <option value="Ground Zero Blues Club">Ground Zero Blues Club</option>
+            <option value="Custom">Custom place...</option>
+          </select>
+        </div>
+
+        <div class="place-time-group" style="max-width: 220px;">
+          <label>Era</label>
+          <select id="select-era">
+            <option value="Pre-Civil War (1800–1860)">Pre-Civil War · 1800–1860</option>
+            <option value="Reconstruction (1865–1877)">Reconstruction · 1865–1877</option>
+            <option value="Jim Crow Era (1877–1920)">Jim Crow Era · 1877–1920</option>
+            <option value="Great Migration (1910–1940)" selected>Great Migration · 1910–1940</option>
+            <option value="World War II (1940–1945)">World War II · 1940–1945</option>
+            <option value="Civil Rights Movement (1955–1968)">Civil Rights · 1955–1968</option>
+            <option value="Post-Civil Rights (1968–1990)">Post-Civil Rights · 1968–1990</option>
+            <option value="Contemporary (1990–Present)">Contemporary · 1990–Present</option>
+          </select>
+        </div>
+
+        <div class="custom-place-fields" id="custom-place-fields">
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="custom-place-name" placeholder="Place name..." style="flex:1;">
+            <input type="text" id="custom-place-desc" placeholder="Description / context..." style="flex:2;">
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.chamber -->
+
+    <!-- Results Section -->
+    <div id="results-section">
+
+      <!-- Convergence Analysis -->
+      <div class="glass convergence-panel" id="convergence-panel">
+        <div class="convergence-score-block">
+          <div class="score-ring score-cold" id="score-ring">
+            <div class="score-number" id="score-number">—</div>
+            <div class="score-label">Convergence</div>
+          </div>
+          <div class="score-descriptor" id="score-descriptor">awaiting collision</div>
+        </div>
+
+        <div class="convergence-analysis-col">
+          <div class="analysis-item">
+            <div class="analysis-item-header">
+              <span class="analysis-tag ity">-ity Complementarity</span>
+              <span class="analysis-score-mini" id="ity-score-display">—</span>
+            </div>
+            <div class="analysis-text" id="ity-analysis-text">—</div>
+          </div>
+          <div class="analysis-item">
+            <div class="analysis-item-header">
+              <span class="analysis-tag pathy">-pathy Resonance</span>
+              <span class="analysis-score-mini" id="pathy-score-display">—</span>
+            </div>
+            <div class="analysis-text" id="pathy-analysis-text">—</div>
+          </div>
+        </div>
+
+        <div class="tension-resonance-col">
+          <div class="tr-section">
+            <div class="tr-title">⚡ Top Tension Points</div>
+            <div id="tension-list"></div>
+          </div>
+          <div class="tr-section">
+            <div class="tr-title">✦ Top Resonance Points</div>
+            <div id="resonance-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spark Narrative -->
+      <div class="glass narrative-panel">
+        <div class="narrative-header">
+          <div class="narrative-title">✦ The Spark Narrative</div>
+          <button class="btn btn-sm btn-amber" onclick="regenerateNarrative()" id="regen-narrative-btn" style="display:none;">Regenerate</button>
+        </div>
+        <div id="narrative-content">
+          <div class="narrative-loading" id="narrative-loading" style="display:none;">
+            <div class="spinner"></div>
+            <span>Generating the collision narrative...</span>
+          </div>
+          <div class="narrative-text" id="narrative-text"></div>
+        </div>
+      </div>
+
+      <!-- Two column: image + radar -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+        <!-- Spark Image -->
+        <div class="glass spark-image-panel">
+          <div class="spark-image-header">
+            <div class="spark-image-title">✦ The Spark Image</div>
+            <button class="btn btn-sm btn-amber" onclick="regenerateImage()" id="regen-image-btn" style="display:none;">Regenerate</button>
+          </div>
+          <div class="spark-image-frame" id="spark-image-frame">
+            <div class="spark-image-placeholder" id="spark-image-placeholder">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <rect x="5" y="10" width="30" height="22" rx="3" stroke="white" stroke-width="1.5"/>
+                <circle cx="13" cy="18" r="3" stroke="white" stroke-width="1.5"/>
+                <path d="M5 27l8-7 6 6 5-4 11 10" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <span>Image will appear after collision</span>
+            </div>
+          </div>
+          <div class="narrative-loading" id="image-loading" style="display:none;">
+            <div class="spinner"></div>
+            <span>Rendering the spark...</span>
+          </div>
+        </div>
+
+        <!-- Radar Charts -->
+        <div class="glass radar-panel" id="radar-panel" style="display:none;">
+          <div class="radar-wrap">
+            <canvas id="overlay-radar"></canvas>
+          </div>
+          <div class="radar-legend" id="radar-legend"></div>
+        </div>
+
+      </div>
+
+      <!-- Save Spark button -->
+      <div style="display:flex;justify-content:center;gap:12px;">
+        <button class="btn btn-amber" onclick="saveSpark()" id="save-spark-btn">✦ Save this Spark</button>
+        <button class="btn" onclick="exportSpark()">Export JSON</button>
+      </div>
+
+    </div><!-- /#results-section -->
+
+  </div><!-- /#view-chamber -->
+
+  <!-- GALLERY VIEW -->
+  <div id="view-gallery" class="view">
+    <div class="gallery-header">
+      <div class="gallery-title">Spark Gallery</div>
+      <button class="btn btn-sm" onclick="clearGallery()" style="color:var(--rose);border-color:rgba(255,107,138,0.3);">Clear All</button>
+    </div>
+    <div class="gallery-grid" id="gallery-grid">
+      <div class="gallery-empty">No sparks yet.<br>Return to the Collision Chamber and create your first collision.</div>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<!-- Spark Detail Modal -->
+<div class="modal-overlay" id="spark-modal" onclick="closeModal(event)">
+  <div class="modal glass" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="document.getElementById('spark-modal').classList.remove('open')">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  STATE
+// ============================================================
+const state = {
+  charA: null,
+  charB: null,
+  collisionResult: null,
+  narrative: null,
+  sparkImageUrl: null,
+  radarChart: null,
+  miniChartA: null,
+  miniChartB: null,
+  animating: false
+};
+
+const ITY_FIELDS = ['materiality','vitality','interiority','criticality','connectivity','lucidity','necessity','reciprocity','totality','continuity','authenticity','luminosity','viscosity','permanence','workability','spontaneity','complexity','resilience','integrity','serendipity','clarity','certainty','sagacity','felicity','propensity','familiarity','synchronicity','ubiquity','curiosity','creativity'];
+
+const PATHY_FIELDS = ['empathy','sympathy','apathy','antipathy','telepathy','tactility','sensuosity','immediacy','gestural_energy','pathos','ethos','logos','nostalgia','melancholy','euphoria','anxiety','tranquility','intensity','fragility','audacity'];
+
+const RADAR_ITY_LABELS = ['materiality','vitality','interiority','criticality','connectivity','lucidity','necessity','reciprocity','totality','continuity','authenticity','luminosity'];
+
+// ============================================================
+//  INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  loadCharactersIntoSelects();
+  setupMouseTracking();
+  setupNavTabs();
+  renderGallery();
+  animateSVGIdle();
+});
+
+// ============================================================
+//  NAV TABS
+// ============================================================
+function setupNavTabs() {
+  document.querySelectorAll('.nav-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      tab.classList.add('active');
+      const viewId = 'view-' + tab.dataset.view;
+      document.getElementById(viewId).classList.add('active');
+      if (tab.dataset.view === 'gallery') renderGallery();
+    });
+  });
+}
+
+// ============================================================
+//  MOUSE TRACKING for glass highlight
+// ============================================================
+function setupMouseTracking() {
+  document.addEventListener('mousemove', e => {
+    document.querySelectorAll('.glass').forEach(el => {
+      const rect = el.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      el.style.setProperty('--mx', x + '%');
+      el.style.setProperty('--my', y + '%');
+    });
+  });
+}
+
+// ============================================================
+//  LOAD CHARACTERS from localStorage
+// ============================================================
+function loadCharactersIntoSelects() {
+  const raw = localStorage.getItem('character_studio_characters');
+  const chars = raw ? JSON.parse(raw) : [];
+  ['a','b'].forEach(side => {
+    const sel = document.getElementById('select-' + side);
+    while (sel.options.length > 1) sel.remove(1);
+    chars.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id || c.name;
+      opt.textContent = c.name + (c.era ? ' · ' + c.era.split('(')[0].trim() : '');
+      sel.appendChild(opt);
+    });
+  });
+  window._savedChars = chars;
+}
+
+function getCharById(idOrName) {
+  return (window._savedChars || []).find(c => (c.id === idOrName) || (c.name === idOrName)) || null;
+}
+
+// ============================================================
+//  CHARACTER SELECTION
+// ============================================================
+function selectCharacter(side, idOrName) {
+  if (!idOrName) {
+    state['char' + side.toUpperCase()] = null;
+    renderCharDisplay(side, null);
+    checkBothReady();
+    return;
+  }
+  const char = getCharById(idOrName);
+  if (!char) return;
+  document.getElementById('adhoc-name-' + side).value = '';
+  document.getElementById('adhoc-bio-' + side).value = '';
+  state['char' + side.toUpperCase()] = char;
+  renderCharDisplay(side, char);
+  checkBothReady();
+}
+
+function buildAdhocChar(side) {
+  const name = document.getElementById('adhoc-name-' + side).value.trim();
+  const bio = document.getElementById('adhoc-bio-' + side).value.trim();
+  if (!name) {
+    state['char' + side.toUpperCase()] = null;
+    renderCharDisplay(side, null);
+    checkBothReady();
+    return;
+  }
+  const char = generateAdhocFingerprint(name, bio);
+  document.getElementById('select-' + side).value = '';
+  state['char' + side.toUpperCase()] = char;
+  renderCharDisplay(side, char);
+  checkBothReady();
+}
+
+function generateAdhocFingerprint(name, bio) {
+  const seed = strHash(name + bio);
+  const rng = seededRng(seed);
+  const char = { name, biography: bio, era: '', lineage: 'Ad-hoc', id: 'adhoc-' + seed };
+  ITY_FIELDS.forEach(f => { char[f] = Math.round(rng() * 100) / 100; });
+  PATHY_FIELDS.forEach(f => { char[f] = Math.round(rng() * 100) / 100; });
+  return char;
+}
+
+function strHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) { h = (Math.imul(31, h) + str.charCodeAt(i)) | 0; }
+  return Math.abs(h);
+}
+
+function seededRng(seed) {
+  let s = seed;
+  return function() {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    return (s >>> 0) / 0xffffffff;
+  };
+}
+
+// ============================================================
+//  RENDER CHARACTER DISPLAY
+// ============================================================
+function renderCharDisplay(side, char) {
+  const container = document.getElementById('char-display-' + side);
+  const color = side === 'a' ? 'rose' : 'purple';
+
+  if (!char) {
+    container.innerHTML = `<div class="collision-hint" style="margin:auto 0;">Select or describe a character to begin</div>`;
+    if (state['miniChart' + side.toUpperCase()]) {
+      state['miniChart' + side.toUpperCase()].destroy();
+      state['miniChart' + side.toUpperCase()] = null;
+    }
+    const circle = document.getElementById('svg-circle-' + side);
+    const outline = document.getElementById('svg-circle-' + side + '-outline');
+    if (circle) { circle.style.opacity = '0.3'; outline.style.opacity = '0.3'; }
+    const label = document.getElementById('svg-label-' + side);
+    if (label) label.textContent = side.toUpperCase();
+    return;
+  }
+
+  const ityRanked = ITY_FIELDS.map(f => ({ f, v: char[f] || 0.5 })).sort((a,b) => b.v - a.v).slice(0,5);
+  const pathyRanked = PATHY_FIELDS.map(f => ({ f, v: char[f] || 0.5 })).sort((a,b) => b.v - a.v).slice(0,5);
+
+  container.innerHTML = `
+    <div class="char-name">${escHtml(char.name)}</div>
+    <div class="char-meta">
+      ${char.era ? `<span class="char-meta-tag">${escHtml(char.era.split('(')[0].trim())}</span>` : ''}
+      ${char.lineage ? `<span class="char-meta-tag">${escHtml(char.lineage)}</span>` : ''}
+    </div>
+    ${char.biography ? `<div class="text-secondary text-sm" style="line-height:1.5;font-style:italic;">${escHtml(char.biography.substring(0,120))}${char.biography.length > 120 ? '…' : ''}</div>` : ''}
+    <div class="char-traits-section">
+      <div class="traits-label">Top -ity Scores</div>
+      ${ityRanked.map(({f,v}) => traitBar(f, v, color)).join('')}
+    </div>
+    <div class="char-traits-section">
+      <div class="traits-label">Top -pathy Scores</div>
+      ${pathyRanked.map(({f,v}) => traitBar(f, v, color)).join('')}
+    </div>
+    <div class="mini-chart-wrap">
+      <canvas id="mini-chart-${side}"></canvas>
+    </div>
+  `;
+
+  const circle = document.getElementById('svg-circle-' + side);
+  const outline = document.getElementById('svg-circle-' + side + '-outline');
+  if (circle) { circle.style.opacity = '1'; outline.style.opacity = '1'; }
+
+  const label = document.getElementById('svg-label-' + side);
+  if (label) label.textContent = char.name.split(' ')[0].substring(0,10);
+
+  setTimeout(() => renderMiniChart(side, char, color), 50);
+}
+
+function traitBar(field, val, color) {
+  const pct = Math.round(val * 100);
+  return `
+    <div class="trait-bar-row">
+      <div class="trait-bar-label">${field}</div>
+      <div class="trait-bar-track">
+        <div class="trait-bar-fill ${color}" style="width:${pct}%"></div>
+      </div>
+      <div class="trait-bar-val">${pct}</div>
+    </div>
+  `;
+}
+
+// ============================================================
+//  MINI RADAR CHART
+// ============================================================
+function renderMiniChart(side, char, colorName) {
+  const canvas = document.getElementById('mini-chart-' + side);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (state['miniChart' + side.toUpperCase()]) {
+    state['miniChart' + side.toUpperCase()].destroy();
+  }
+  const fields = RADAR_ITY_LABELS.slice(0, 8);
+  const data = fields.map(f => Math.round((char[f] || 0.5) * 100));
+  const colors = {
+    rose: { line: '#FF6B8A', fill: 'rgba(255,107,138,0.15)' },
+    purple: { line: '#8B6BFF', fill: 'rgba(139,107,255,0.15)' }
+  };
+  const c = colors[colorName] || colors.rose;
+
+  state['miniChart' + side.toUpperCase()] = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: fields,
+      datasets: [{
+        data,
+        borderColor: c.line,
+        backgroundColor: c.fill,
+        borderWidth: 1.5,
+        pointBackgroundColor: c.line,
+        pointRadius: 2,
+        pointHoverRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { display: false, stepSize: 25 },
+          grid: { color: 'rgba(255,255,255,0.08)', lineWidth: 1 },
+          angleLines: { color: 'rgba(255,255,255,0.06)', lineWidth: 1 },
+          pointLabels: { color: 'rgba(255,255,255,0.4)', font: { size: 8 } }
+        }
+      }
+    }
+  });
+}
+
+// ============================================================
+//  CHECK BOTH READY
+// ============================================================
+function checkBothReady() {
+  const ready = !!(state.charA && state.charB);
+  const btn = document.getElementById('collide-btn');
+  const hint = document.getElementById('collision-hint');
+  btn.classList.toggle('visible', ready);
+  if (ready) {
+    hint.textContent = state.charA.name + ' meets ' + state.charB.name;
+  } else {
+    hint.textContent = 'Select both characters to unlock collision';
+  }
+}
+
+// ============================================================
+//  PLACE / ERA
+// ============================================================
+function onPlaceChange() {
+  const val = document.getElementById('select-place').value;
+  const custom = document.getElementById('custom-place-fields');
+  custom.classList.toggle('visible', val === 'Custom');
+}
+
+function getPlace() {
+  const val = document.getElementById('select-place').value;
+  if (val === 'Custom') {
+    const name = document.getElementById('custom-place-name').value.trim();
+    return name || 'Unknown Place';
+  }
+  return val;
+}
+
+function getEra() {
+  return document.getElementById('select-era').value;
+}
+
+// ============================================================
+//  CONVERGENCE ALGORITHM
+// ============================================================
+function convergenceScore(a, b) {
+  let itySum = 0;
+  ITY_FIELDS.forEach(f => { itySum += Math.abs((a[f]||0.5) - (b[f]||0.5)); });
+  const ityScore = itySum / ITY_FIELDS.length;
+
+  let dot = 0, magA = 0, magB = 0;
+  PATHY_FIELDS.forEach(f => {
+    const va = a[f]||0.5, vb = b[f]||0.5;
+    dot += va*vb; magA += va*va; magB += vb*vb;
+  });
+  const pathyScore = dot / (Math.sqrt(magA) * Math.sqrt(magB) || 1);
+
+  return { total: ityScore * 0.6 + pathyScore * 0.4, ityScore, pathyScore };
+}
+
+function getTopTension(a, b, n) {
+  n = n || 3;
+  return ITY_FIELDS.map(f => ({
+    f, diff: Math.abs((a[f]||0.5) - (b[f]||0.5)),
+    aVal: a[f]||0.5, bVal: b[f]||0.5
+  })).sort((x,y) => y.diff - x.diff).slice(0, n);
+}
+
+function getTopResonance(a, b, n) {
+  n = n || 3;
+  return PATHY_FIELDS.map(f => {
+    const va = a[f]||0.5, vb = b[f]||0.5;
+    const sim = 1 - Math.abs(va - vb);
+    return { f, sim, avg: (va+vb)/2, aVal: va, bVal: vb };
+  }).sort((x,y) => y.sim - x.sim).slice(0, n);
+}
+
+function scoreClass(score) {
+  if (score < 0.3) return 'score-cold';
+  if (score < 0.6) return 'score-warm';
+  if (score < 0.8) return 'score-hot';
+  return 'score-explosive';
+}
+
+function scoreDescriptor(score) {
+  if (score < 0.3) return 'cold — distant energies';
+  if (score < 0.6) return 'charged — latent tension';
+  if (score < 0.8) return 'igniting — catalytic meeting';
+  return 'explosive — irreversible collision';
+}
+
+function ityExplanation(tension, a, b) {
+  if (!tension || !tension.length) return '—';
+  const t = tension[0];
+  const aHigh = t.aVal > t.bVal;
+  return (aHigh ? a.name : b.name) + "'s high " + t.f + " meets " + (aHigh ? b.name : a.name) + "'s low " + t.f + " — " + ityTensionPhrase(t.f);
+}
+
+function ityTensionPhrase(field) {
+  const phrases = {
+    materiality: 'tension between the physical and the ethereal',
+    vitality: 'the vigorous encounters the restrained',
+    interiority: 'depth of inner life diverges radically',
+    criticality: 'one who questions everything meets one who accepts',
+    connectivity: 'the networked soul meets the solitary one',
+    lucidity: 'clarity of thought collides with productive ambiguity',
+    necessity: 'what must be done meets what might be left undone',
+    reciprocity: 'the giving nature confronts the self-contained',
+    totality: 'wholeness meets fragmentation',
+    continuity: 'tradition encounters rupture',
+    authenticity: 'the genuine confronts the performed',
+    luminosity: 'radiance meets shadow',
+    viscosity: 'the fluid soul meets resistance',
+    permanence: 'the eternal confronts the fleeting',
+    workability: 'pragmatism meets the ideal',
+    spontaneity: 'improvisation confronts deliberation',
+    complexity: 'nuance meets simplicity',
+    resilience: 'endurance confronts fragility',
+    integrity: 'wholeness meets contradiction',
+    serendipity: 'the accidental meets the intentional'
+  };
+  return phrases[field] || 'contrasting forces create unexpected friction';
+}
+
+function pathyExplanation(resonance, tension, a, b) {
+  if (!resonance || !resonance.length) return '—';
+  const r = resonance[0];
+  const pathyTension = PATHY_FIELDS.map(f => ({
+    f, diff: Math.abs((a[f]||0.5)-(b[f]||0.5))
+  })).sort((x,y) => y.diff-x.diff)[0];
+  return "Both share deep " + r.f.replace('_',' ') + " — yet diverge where it matters" + (pathyTension ? ', especially in ' + pathyTension.f.replace('_',' ') : '');
+}
+
+// ============================================================
+//  COLLISION TRIGGER + ANIMATION
+// ============================================================
+function triggerCollision() {
+  if (state.animating || !state.charA || !state.charB) return;
+  state.animating = true;
+
+  const btn = document.getElementById('collide-btn');
+  btn.disabled = true;
+  btn.textContent = '⚡ COLLIDING...';
+
+  animateCollision(function() {
+    const scores = convergenceScore(state.charA, state.charB);
+    const tension = getTopTension(state.charA, state.charB, 3);
+    const resonance = getTopResonance(state.charA, state.charB, 3);
+    state.collisionResult = { scores, tension, resonance, place: getPlace(), era: getEra() };
+
+    renderConvergencePanel(scores, tension, resonance);
+    showResultsSection();
+    renderOverlayRadar();
+    generateNarrative();
+    generateSparkImage();
+
+    state.animating = false;
+    btn.disabled = false;
+    btn.textContent = '⚡ COLLIDE AGAIN';
+  });
+}
+
+function animateCollision(onComplete) {
+  const circleA = document.getElementById('svg-circle-a');
+  const outlineA = document.getElementById('svg-circle-a-outline');
+  const labelA = document.getElementById('svg-label-a');
+  const circleB = document.getElementById('svg-circle-b');
+  const outlineB = document.getElementById('svg-circle-b-outline');
+  const labelB = document.getElementById('svg-label-b');
+  const burst = document.getElementById('spark-burst');
+
+  const duration = 1200;
+  const start = performance.now();
+
+  function step(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
+
+    const ax = 60 + (110 - 60) * ease;
+    const bx = 180 - (180 - 130) * ease;
+
+    circleA.setAttribute('cx', ax);
+    outlineA.setAttribute('cx', ax);
+    circleB.setAttribute('cx', bx);
+    outlineB.setAttribute('cx', bx);
+    labelA.setAttribute('x', ax);
+    labelB.setAttribute('x', bx);
+
+    if (t < 1) {
+      requestAnimationFrame(step);
+    } else {
+      burst.style.opacity = '1';
+      createSparkParticles();
+      setTimeout(function() {
+        burst.style.opacity = '0';
+        setTimeout(function() {
+          circleA.setAttribute('cx', 60); outlineA.setAttribute('cx', 60); labelA.setAttribute('x', 60);
+          circleB.setAttribute('cx', 180); outlineB.setAttribute('cx', 180); labelB.setAttribute('x', 180);
+          onComplete();
+        }, 300);
+      }, 600);
+    }
+  }
+
+  requestAnimationFrame(step);
+}
+
+function createSparkParticles() {
+  const svg = document.getElementById('collision-svg');
+  const existing = svg.querySelectorAll('.spark-particle');
+  existing.forEach(function(p) { p.remove(); });
+
+  for (let i = 0; i < 18; i++) {
+    const angle = (i / 18) * Math.PI * 2;
+    const dist = 40 + Math.random() * 50;
+    const ex = Math.cos(angle) * dist;
+    const ey = Math.sin(angle) * dist;
+    const size = 2 + Math.random() * 4;
+    const color = i % 3 === 0 ? '#FFB86B' : i % 3 === 1 ? '#FF6B8A' : '#8B6BFF';
+
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', 120);
+    circle.setAttribute('cy', 100);
+    circle.setAttribute('r', size);
+    circle.setAttribute('fill', color);
+    circle.classList.add('spark-particle');
+    svg.appendChild(circle);
+
+    const startTime = performance.now();
+    const animDuration = 500 + Math.random() * 300;
+
+    (function(el, exLocal, eyLocal, sizeLocal, dur) {
+      function animParticle(now) {
+        const t = Math.min((now - startTime) / dur, 1);
+        const easeOut = 1 - Math.pow(t, 2);
+        el.setAttribute('cx', 120 + exLocal * t);
+        el.setAttribute('cy', 100 + eyLocal * t);
+        el.setAttribute('r', sizeLocal * (1 - t * 0.8));
+        el.setAttribute('opacity', easeOut);
+        if (t < 1) requestAnimationFrame(animParticle);
+        else el.remove();
+      }
+      requestAnimationFrame(animParticle);
+    })(circle, ex, ey, size, animDuration);
+  }
+}
+
+function animateSVGIdle() {
+  const circleA = document.getElementById('svg-circle-a');
+  const circleB = document.getElementById('svg-circle-b');
+  if (!circleA) return;
+
+  let t = 0;
+  function breathe() {
+    if (state.animating) { requestAnimationFrame(breathe); return; }
+    t += 0.02;
+    const rA = 38 + Math.sin(t) * 3;
+    const rB = 38 + Math.sin(t + Math.PI) * 3;
+    circleA.setAttribute('r', rA);
+    circleB.setAttribute('r', rB);
+    requestAnimationFrame(breathe);
+  }
+  requestAnimationFrame(breathe);
+}
+
+// ============================================================
+//  RESULTS RENDERING
+// ============================================================
+function showResultsSection() {
+  const section = document.getElementById('results-section');
+  section.classList.add('visible');
+  setTimeout(function() { section.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 200);
+}
+
+function renderConvergencePanel(scores, tension, resonance) {
+  const total = scores.total;
+  const ring = document.getElementById('score-ring');
+  const num = document.getElementById('score-number');
+  const desc = document.getElementById('score-descriptor');
+
+  ring.className = 'score-ring ' + scoreClass(total);
+  num.textContent = total.toFixed(2);
+  desc.textContent = scoreDescriptor(total);
+
+  document.getElementById('ity-score-display').textContent = scores.ityScore.toFixed(2);
+  document.getElementById('pathy-score-display').textContent = scores.pathyScore.toFixed(2);
+  document.getElementById('ity-analysis-text').textContent = ityExplanation(tension, state.charA, state.charB);
+  document.getElementById('pathy-analysis-text').textContent = pathyExplanation(resonance, tension, state.charA, state.charB);
+
+  const tensionList = document.getElementById('tension-list');
+  tensionList.innerHTML = tension.map(function(t) {
+    return '<div class="tr-item"><div class="tr-dot tension"></div><div class="tr-name">' + escHtml(t.f) + '</div><div class="tr-diff">' + Math.round(t.aVal*100) + ' vs ' + Math.round(t.bVal*100) + '</div></div>';
+  }).join('');
+
+  const resonanceList = document.getElementById('resonance-list');
+  resonanceList.innerHTML = resonance.map(function(r) {
+    return '<div class="tr-item"><div class="tr-dot resonance"></div><div class="tr-name">' + escHtml(r.f.replace('_',' ')) + '</div><div class="tr-diff">' + Math.round(r.sim*100) + '% match</div></div>';
+  }).join('');
+}
+
+// ============================================================
+//  OVERLAY RADAR CHART
+// ============================================================
+function renderOverlayRadar() {
+  const panel = document.getElementById('radar-panel');
+  panel.style.display = 'grid';
+
+  const canvas = document.getElementById('overlay-radar');
+  const ctx = canvas.getContext('2d');
+  if (state.radarChart) state.radarChart.destroy();
+
+  const fields = RADAR_ITY_LABELS;
+  const dataA = fields.map(function(f) { return Math.round((state.charA[f] || 0.5) * 100); });
+  const dataB = fields.map(function(f) { return Math.round((state.charB[f] || 0.5) * 100); });
+
+  state.radarChart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: fields,
+      datasets: [
+        {
+          label: state.charA.name,
+          data: dataA,
+          borderColor: '#FF6B8A',
+          backgroundColor: 'rgba(255,107,138,0.12)',
+          borderWidth: 2,
+          pointBackgroundColor: '#FF6B8A',
+          pointRadius: 3,
+          pointHoverRadius: 5
+        },
+        {
+          label: state.charB.name,
+          data: dataB,
+          borderColor: '#8B6BFF',
+          backgroundColor: 'rgba(139,107,255,0.12)',
+          borderWidth: 2,
+          pointBackgroundColor: '#8B6BFF',
+          pointRadius: 3,
+          pointHoverRadius: 5
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(10,10,20,0.9)',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+          titleColor: 'rgba(255,255,255,0.9)',
+          bodyColor: 'rgba(255,255,255,0.6)'
+        }
+      },
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { display: false, stepSize: 25 },
+          grid: { color: 'rgba(255,255,255,0.07)', lineWidth: 1 },
+          angleLines: { color: 'rgba(255,255,255,0.05)', lineWidth: 1 },
+          pointLabels: { color: 'rgba(255,255,255,0.5)', font: { size: 10 } }
+        }
+      }
+    }
+  });
+
+  const legend = document.getElementById('radar-legend');
+  const tension = state.collisionResult.tension;
+  const resonance = state.collisionResult.resonance;
+
+  legend.innerHTML = `
+    <div class="legend-char">
+      <div class="legend-char-name">
+        <div class="legend-dot" style="background:#FF6B8A;"></div>
+        ${escHtml(state.charA.name)}
+      </div>
+      <div class="legend-items">
+        ${tension.map(function(t) { return '<div class="legend-item" style="color:var(--rose);">' + escHtml(t.f) + ' \u2192 ' + Math.round(t.aVal*100) + '</div>'; }).join('')}
+      </div>
+    </div>
+    <div class="legend-char">
+      <div class="legend-char-name">
+        <div class="legend-dot" style="background:#8B6BFF;"></div>
+        ${escHtml(state.charB.name)}
+      </div>
+      <div class="legend-items">
+        ${tension.map(function(t) { return '<div class="legend-item" style="color:var(--purple);">' + escHtml(t.f) + ' \u2192 ' + Math.round(t.bVal*100) + '</div>'; }).join('')}
+      </div>
+    </div>
+    <div style="margin-top:8px;">
+      <div class="tr-title" style="margin-bottom:8px;">Resonance Points</div>
+      ${resonance.map(function(r) { return '<div class="legend-item" style="color:var(--amber);">' + escHtml(r.f.replace('_',' ')) + ' \u00b7 ' + Math.round(r.sim*100) + '%</div>'; }).join('')}
+    </div>
+  `;
+}
+
+// ============================================================
+//  API — NARRATIVE GENERATION
+// ============================================================
+async function generateNarrative() {
+  const loading = document.getElementById('narrative-loading');
+  const text = document.getElementById('narrative-text');
+  const regenBtn = document.getElementById('regen-narrative-btn');
+
+  loading.style.display = 'flex';
+  text.textContent = '';
+  regenBtn.style.display = 'none';
+
+  const a = state.charA;
+  const b = state.charB;
+  const scores = state.collisionResult.scores;
+  const tension = state.collisionResult.tension;
+  const resonance = state.collisionResult.resonance;
+  const place = state.collisionResult.place;
+  const era = state.collisionResult.era;
+
+  const topItyA = ITY_FIELDS.map(f=>({f,v:a[f]||0.5})).sort((x,y)=>y.v-x.v).slice(0,3).map(x=>x.f).join(', ');
+  const topPathyA = PATHY_FIELDS.map(f=>({f,v:a[f]||0.5})).sort((x,y)=>y.v-x.v).slice(0,3).map(x=>x.f.replace('_',' ')).join(', ');
+  const topItyB = ITY_FIELDS.map(f=>({f,v:b[f]||0.5})).sort((x,y)=>y.v-x.v).slice(0,3).map(x=>x.f).join(', ');
+  const topPathyB = PATHY_FIELDS.map(f=>({f,v:b[f]||0.5})).sort((x,y)=>y.v-x.v).slice(0,3).map(x=>x.f.replace('_',' ')).join(', ');
+
+  const tensionStr = tension.map(t => t.f + ' (' + Math.round(t.aVal*100) + ' vs ' + Math.round(t.bVal*100) + ')').join('; ');
+  const resonanceStr = resonance.map(r => r.f.replace('_',' ') + ' (' + Math.round(r.sim*100) + '% match)').join('; ');
+
+  const prompt = `You are the narrator of the Ontological Theatre. Two characters have collided at ${place} during the ${era}.
+
+Character A: ${a.name}${a.biography ? ' — ' + a.biography : ''}. Top -ity traits: ${topItyA}. Top -pathy traits: ${topPathyA}.
+Character B: ${b.name}${b.biography ? ' — ' + b.biography : ''}. Top -ity traits: ${topItyB}. Top -pathy traits: ${topPathyB}.
+
+Convergence score: ${scores.total.toFixed(2)} (${scoreDescriptor(scores.total)}).
+The tension lies in: ${tensionStr}.
+The resonance lies in: ${resonanceStr}.
+
+Write a vivid, cinematic 200-word scene of the exact moment these two characters meet at ${place}. What happens? What is said? What changes? Make it deeply specific to this place and era. This is not fiction — this is the collision of two real ontological beings whose fundamental properties create something neither could alone. Write in present tense, literary style.`;
+
+  try {
+    const res = await fetch('https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gemini-2.0-flash',
+        contents: [{ parts: [{ text: prompt }] }]
+      })
+    });
+    const data = await res.json();
+    const narrative = (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text) || (data && data.text) || 'The narrative could not be generated.';
+    state.narrative = narrative;
+    text.textContent = narrative;
+    regenBtn.style.display = 'block';
+  } catch(e) {
+    text.textContent = 'Unable to generate narrative — the collision happened, but the words escaped us. ' + (e.message || '');
+    regenBtn.style.display = 'block';
+  } finally {
+    loading.style.display = 'none';
+  }
+}
+
+function regenerateNarrative() { generateNarrative(); }
+
+// ============================================================
+//  API — SPARK IMAGE GENERATION
+// ============================================================
+async function generateSparkImage() {
+  const frame = document.getElementById('spark-image-frame');
+  const loading = document.getElementById('image-loading');
+  const regenBtn = document.getElementById('regen-image-btn');
+
+  loading.style.display = 'flex';
+  regenBtn.style.display = 'none';
+  frame.innerHTML = '<div class="spark-image-placeholder"><div class="spinner"></div></div>';
+
+  const a = state.charA;
+  const b = state.charB;
+  const place = state.collisionResult.place;
+  const era = state.collisionResult.era;
+
+  const resonance = getTopResonance(a, b, 2);
+  const tension = getTopTension(a, b, 2);
+  const moodWords = resonance.map(function(r) { return r.f.replace('_',' '); }).join(', ');
+  const tensionWords = tension.map(function(t) { return t.f; }).join(', ');
+
+  const imgPrompt = 'Cinematic photorealistic scene: ' + a.name + ' and ' + b.name + ' meeting at ' + place + ' during the ' + era + '. The atmosphere carries ' + moodWords + ' and ' + tensionWords + '. Deep Mississippi Delta light, golden hour, documentary photography style. Two people, one fateful moment. Rich color, grain, profound emotion. No text, no watermarks, no logos.';
+
+  try {
+    const res = await fetch('https://awareness-proxy-328246068140.us-central1.run.app/fal/generate-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'fal-ai/flux/dev',
+        prompt: imgPrompt,
+        image_size: 'landscape_16_9',
+        num_inference_steps: 25
+      })
+    });
+    const data = await res.json();
+    const imgUrl = (data && data.images && data.images[0] && data.images[0].url) || (data && data.image && data.image.url) || (data && data.url) || null;
+
+    frame.innerHTML = '';
+    if (imgUrl) {
+      state.sparkImageUrl = imgUrl;
+      const img = document.createElement('img');
+      img.src = imgUrl;
+      img.alt = 'The Spark';
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+      frame.appendChild(img);
+      regenBtn.style.display = 'block';
+    } else {
+      frame.innerHTML = '<div class="spark-image-placeholder"><span>Image generation returned no result</span></div>';
+    }
+  } catch(e) {
+    frame.innerHTML = '<div class="spark-image-placeholder"><span>Image could not be rendered: ' + escHtml(e.message || '') + '</span></div>';
+    regenBtn.style.display = 'block';
+  } finally {
+    loading.style.display = 'none';
+  }
+}
+
+function regenerateImage() { generateSparkImage(); }
+
+// ============================================================
+//  SAVE & EXPORT
+// ============================================================
+function buildSparkRecord() {
+  if (!state.collisionResult) return null;
+  return {
+    id: 'spark-' + Date.now(),
+    timestamp: new Date().toISOString(),
+    charA: { name: state.charA.name, id: state.charA.id, biography: state.charA.biography },
+    charB: { name: state.charB.name, id: state.charB.id, biography: state.charB.biography },
+    place: state.collisionResult.place,
+    era: state.collisionResult.era,
+    scores: state.collisionResult.scores,
+    tension: state.collisionResult.tension,
+    resonance: state.collisionResult.resonance,
+    narrative: state.narrative,
+    imageUrl: state.sparkImageUrl
+  };
+}
+
+function saveSpark() {
+  const spark = buildSparkRecord();
+  if (!spark) return;
+  const sparks = getSparks();
+  // Avoid duplicate saves — check if same chars+place already saved in last minute
+  const now = Date.now();
+  const duplicate = sparks.find(function(s) {
+    return s.charA.name === spark.charA.name && s.charB.name === spark.charB.name && s.place === spark.place && (now - new Date(s.timestamp).getTime()) < 60000;
+  });
+  if (duplicate) {
+    alert('This spark was already saved!');
+    return;
+  }
+  sparks.unshift(spark);
+  localStorage.setItem('spark_gallery', JSON.stringify(sparks));
+  const btn = document.getElementById('save-spark-btn');
+  btn.textContent = '✓ Saved!';
+  setTimeout(function() { btn.textContent = '✦ Save this Spark'; }, 2000);
+}
+
+function exportSpark() {
+  const spark = buildSparkRecord();
+  if (!spark) return;
+  const blob = new Blob([JSON.stringify(spark, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'spark-' + (state.charA.name || 'A').replace(/\s+/g,'-') + '-' + (state.charB.name || 'B').replace(/\s+/g,'-') + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+//  GALLERY
+// ============================================================
+function getSparks() {
+  try { return JSON.parse(localStorage.getItem('spark_gallery') || '[]'); } catch(e) { return []; }
+}
+
+function renderGallery() {
+  const grid = document.getElementById('gallery-grid');
+  if (!grid) return;
+  const sparks = getSparks();
+
+  if (!sparks.length) {
+    grid.innerHTML = '<div class="gallery-empty">No sparks yet.<br>Return to the Collision Chamber and create your first collision.</div>';
+    return;
+  }
+
+  const badgeColors = {
+    'score-cold': '#6BCEFF',
+    'score-warm': '#8B6BFF',
+    'score-hot': '#FFB86B',
+    'score-explosive': '#FF6B8A'
+  };
+
+  grid.innerHTML = sparks.map(function(spark) {
+    const score = (spark.scores && spark.scores.total) ? spark.scores.total : 0;
+    const cls = scoreClass(score);
+    const bc = badgeColors[cls] || '#FFB86B';
+    const eraShort = (spark.era || '').split('(')[0].trim();
+
+    const imgHtml = spark.imageUrl
+      ? '<img class="gallery-card-img" src="' + escHtml(spark.imageUrl) + '" alt="Spark" loading="lazy">'
+      : '<div class="gallery-card-img-placeholder">\u26A1</div>';
+
+    return '<div class="glass gallery-card" onclick="openSparkDetail(\'' + escHtml(spark.id) + '\')">' +
+      imgHtml +
+      '<div class="gallery-card-body">' +
+        '<div class="gallery-card-chars">' + escHtml(spark.charA.name) + ' <span>\u00d7</span> ' + escHtml(spark.charB.name) + '</div>' +
+        '<div class="gallery-card-meta">' +
+          '<span>' + escHtml(spark.place) + '</span>' +
+          '<span>\u00b7</span>' +
+          '<span>' + escHtml(eraShort) + '</span>' +
+          '<span class="gallery-score-badge" style="color:' + bc + ';border:1px solid ' + bc + '33;background:' + bc + '11;">' + score.toFixed(2) + '</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function openSparkDetail(id) {
+  const sparks = getSparks();
+  const spark = sparks.find(function(s) { return s.id === id; });
+  if (!spark) return;
+
+  const score = (spark.scores && spark.scores.total) ? spark.scores.total : 0;
+  const cls = scoreClass(score);
+  const desc = scoreDescriptor(score);
+
+  const modal = document.getElementById('spark-modal');
+  const content = document.getElementById('modal-content');
+  const eraShort = (spark.era || '').split('(')[0].trim();
+  const dateStr = spark.timestamp ? new Date(spark.timestamp).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' }) : '';
+
+  let html = '<div style="margin-bottom:24px;">';
+  html += '<div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Spark Record' + (dateStr ? ' \u00b7 ' + dateStr : '') + '</div>';
+  html += '<div style="font-size:24px;font-weight:200;">' + escHtml(spark.charA.name) + ' <span style="color:var(--amber);">\u00d7</span> ' + escHtml(spark.charB.name) + '</div>';
+  html += '<div style="font-size:13px;color:var(--text-secondary);margin-top:6px;">' + escHtml(spark.place) + (eraShort ? ' \u00b7 ' + escHtml(eraShort) : '') + '</div>';
+  html += '</div>';
+
+  if (spark.imageUrl) {
+    html += '<img src="' + escHtml(spark.imageUrl) + '" style="width:100%;border-radius:12px;margin-bottom:20px;aspect-ratio:16/9;object-fit:cover;" alt="Spark">';
+  }
+
+  html += '<div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">';
+  html += '<div class="score-ring ' + cls + '" style="width:80px;height:80px;flex-shrink:0;">';
+  html += '<div class="score-number" style="font-size:22px;">' + score.toFixed(2) + '</div>';
+  html += '<div class="score-label">Conv.</div></div>';
+  html += '<div><div style="font-size:14px;color:var(--text-secondary);font-style:italic;">' + escHtml(desc) + '</div>';
+  if (spark.scores) {
+    html += '<div style="font-size:12px;color:var(--text-dim);margin-top:4px;">-ity: ' + (spark.scores.ityScore||0).toFixed(2) + ' \u00b7 -pathy: ' + (spark.scores.pathyScore||0).toFixed(2) + '</div>';
+  }
+  html += '</div></div>';
+
+  if (spark.tension && spark.tension.length) {
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">';
+    html += '<div><div class="tr-title" style="margin-bottom:8px;">\u26A1 Tension</div>';
+    html += spark.tension.map(function(t) { return '<div class="tr-item"><div class="tr-dot tension"></div><div class="tr-name">' + escHtml(t.f) + '</div><div class="tr-diff">' + Math.round((t.aVal||0)*100) + ' vs ' + Math.round((t.bVal||0)*100) + '</div></div>'; }).join('');
+    html += '</div>';
+    if (spark.resonance && spark.resonance.length) {
+      html += '<div><div class="tr-title" style="margin-bottom:8px;">\u2726 Resonance</div>';
+      html += spark.resonance.map(function(r) { return '<div class="tr-item"><div class="tr-dot resonance"></div><div class="tr-name">' + escHtml(r.f.replace('_',' ')) + '</div><div class="tr-diff">' + Math.round((r.sim||0)*100) + '%</div></div>'; }).join('');
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  if (spark.narrative) {
+    html += '<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:17px;line-height:1.8;color:rgba(255,255,255,0.85);font-style:italic;border-left:3px solid var(--amber);padding-left:20px;margin-bottom:20px;">' + escHtml(spark.narrative) + '</div>';
+  }
+
+  html += '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;">';
+  html += '<button class="btn btn-sm btn-amber" onclick="exportSparkById(\'' + escHtml(id) + '\')">Export JSON</button>';
+  html += '<button class="btn btn-sm" style="color:var(--rose);border-color:rgba(255,107,138,0.3);" onclick="deleteSparkById(\'' + escHtml(id) + '\')">Delete Spark</button>';
+  html += '</div>';
+
+  content.innerHTML = html;
+  modal.classList.add('open');
+}
+
+function exportSparkById(id) {
+  const sparks = getSparks();
+  const spark = sparks.find(function(s) { return s.id === id; });
+  if (!spark) return;
+  const blob = new Blob([JSON.stringify(spark, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'spark-' + (spark.charA.name||'A').replace(/\s+/g,'-') + '-' + (spark.charB.name||'B').replace(/\s+/g,'-') + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function deleteSparkById(id) {
+  let sparks = getSparks();
+  sparks = sparks.filter(function(s) { return s.id !== id; });
+  localStorage.setItem('spark_gallery', JSON.stringify(sparks));
+  document.getElementById('spark-modal').classList.remove('open');
+  renderGallery();
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('spark-modal')) {
+    document.getElementById('spark-modal').classList.remove('open');
+  }
+}
+
+function clearGallery() {
+  if (!confirm('Delete all saved sparks? This cannot be undone.')) return;
+  localStorage.removeItem('spark_gallery');
+  renderGallery();
+}
+
+// ============================================================
+//  UTILITY
+// ============================================================
+function escHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+</script>
+
+</body>
+</html>
