@@ -1,0 +1,1847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infinity Comic Reformatter</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   CSS — Dark theme, purple/cyan/gold accents
+   ═══════════════════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a28;--bg4:#222235;
+  --fg:#e0e0f0;--fg2:#a0a0c0;--fg3:#707090;
+  --purple:#9b59ff;--purple2:#7c3aed;--purple-glow:rgba(155,89,255,.15);
+  --cyan:#00d4ff;--cyan2:#0ab;--cyan-glow:rgba(0,212,255,.12);
+  --gold:#ffd700;--gold2:#e6c200;--gold-glow:rgba(255,215,0,.1);
+  --red:#ff4466;--green:#44ff88;
+  --radius:8px;--radius-lg:12px;
+  --shadow:0 4px 24px rgba(0,0,0,.5);
+  --transition:all .2s ease;
+  --font:'Segoe UI',system-ui,-apple-system,sans-serif;
+  --mono:'SF Mono','Fira Code','Cascadia Code',monospace;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.5}
+::selection{background:var(--purple);color:#fff}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--fg3)}
+
+/* ── Layout ── */
+#app{display:flex;flex-direction:column;height:100vh}
+header{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:52px;background:var(--bg2);border-bottom:1px solid var(--bg4);flex-shrink:0;z-index:100}
+header .logo{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700;letter-spacing:.5px}
+header .logo svg{width:28px;height:28px}
+header .logo span.accent{color:var(--purple)}
+header .actions{display:flex;gap:8px;align-items:center}
+
+/* ── Tabs ── */
+.tab-bar{display:flex;gap:2px;padding:0 20px;background:var(--bg2);border-bottom:1px solid var(--bg4);flex-shrink:0}
+.tab-btn{padding:10px 24px;background:none;border:none;color:var(--fg3);font-size:13px;font-weight:600;cursor:pointer;position:relative;transition:var(--transition);letter-spacing:.3px;text-transform:uppercase}
+.tab-btn:hover{color:var(--fg2)}
+.tab-btn.active{color:var(--cyan)}
+.tab-btn.active::after{content:'';position:absolute;bottom:0;left:12px;right:12px;height:2px;background:var(--cyan);border-radius:2px 2px 0 0}
+.tab-btn .badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;margin-left:6px;background:var(--purple);color:#fff;font-size:10px;border-radius:9px}
+
+/* ── Main content ── */
+.tab-content{flex:1;overflow:hidden;display:none;position:relative}
+.tab-content.active{display:flex}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid var(--bg4);background:var(--bg3);color:var(--fg);font-size:13px;font-weight:500;border-radius:var(--radius);cursor:pointer;transition:var(--transition);white-space:nowrap}
+.btn:hover{background:var(--bg4);border-color:var(--fg3)}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--purple2);border-color:var(--purple);color:#fff}
+.btn-primary:hover{background:var(--purple);box-shadow:0 0 20px var(--purple-glow)}
+.btn-cyan{background:rgba(0,212,255,.12);border-color:var(--cyan2);color:var(--cyan)}
+.btn-cyan:hover{background:rgba(0,212,255,.2)}
+.btn-gold{background:rgba(255,215,0,.1);border-color:var(--gold2);color:var(--gold)}
+.btn-gold:hover{background:rgba(255,215,0,.18)}
+.btn-danger{background:rgba(255,68,102,.1);border-color:var(--red);color:var(--red)}
+.btn-danger:hover{background:rgba(255,68,102,.2)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-icon{width:34px;height:34px;padding:0;justify-content:center}
+.btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+
+/* ── Inputs ── */
+input[type=text],input[type=number],select,textarea{background:var(--bg);border:1px solid var(--bg4);color:var(--fg);padding:8px 12px;border-radius:var(--radius);font-size:13px;font-family:var(--font);transition:var(--transition)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--purple);box-shadow:0 0 0 3px var(--purple-glow)}
+input[type=range]{-webkit-appearance:none;background:var(--bg4);height:4px;border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--cyan);cursor:pointer;border:2px solid var(--bg)}
+label{font-size:12px;color:var(--fg2);font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+
+/* ── Upload Tab ── */
+.upload-area{flex:1;display:flex;flex-direction:column;padding:24px;overflow-y:auto}
+.drop-zone{border:2px dashed var(--bg4);border-radius:var(--radius-lg);padding:60px 40px;text-align:center;transition:var(--transition);cursor:pointer;margin-bottom:24px;flex-shrink:0}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--purple);background:var(--purple-glow)}
+.drop-zone .icon{font-size:48px;margin-bottom:16px;opacity:.6}
+.drop-zone h3{font-size:18px;margin-bottom:8px;color:var(--fg)}
+.drop-zone p{color:var(--fg3);font-size:13px}
+.page-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;padding-bottom:20px}
+.page-card{background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:var(--transition);position:relative}
+.page-card:hover{border-color:var(--purple);transform:translateY(-2px);box-shadow:var(--shadow)}
+.page-card.selected{border-color:var(--cyan);box-shadow:0 0 20px var(--cyan-glow)}
+.page-card img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block}
+.page-card .info{padding:8px 10px;display:flex;justify-content:space-between;align-items:center}
+.page-card .info .name{font-size:12px;color:var(--fg2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.page-card .info .panel-count{font-size:11px;color:var(--cyan);font-weight:600}
+.page-card .remove-btn{position:absolute;top:6px;right:6px;width:24px;height:24px;background:rgba(0,0,0,.7);border:none;color:var(--red);border-radius:50%;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:14px}
+.page-card:hover .remove-btn{display:flex}
+.page-card .page-number{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.7);color:var(--gold);font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
+.page-card .status-icon{position:absolute;bottom:40px;right:6px;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px}
+.page-card .status-icon.done{background:rgba(68,255,136,.15);color:var(--green)}
+.page-card .status-icon.pending{background:rgba(255,215,0,.15);color:var(--gold)}
+
+/* ── Segment Tab ── */
+.segment-layout{flex:1;display:flex;overflow:hidden}
+.segment-canvas-area{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.segment-toolbar{display:flex;gap:8px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--bg4);align-items:center;flex-shrink:0;flex-wrap:wrap}
+.segment-toolbar .sep{width:1px;height:24px;background:var(--bg4)}
+.canvas-container{flex:1;position:relative;overflow:hidden;background:var(--bg);display:flex;align-items:center;justify-content:center}
+.canvas-container canvas{position:absolute;top:0;left:0}
+#imageCanvas{z-index:1}
+#overlayCanvas{z-index:2;cursor:crosshair}
+.segment-sidebar{width:300px;background:var(--bg2);border-left:1px solid var(--bg4);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.segment-sidebar h3{padding:12px 16px;font-size:13px;color:var(--fg2);border-bottom:1px solid var(--bg4);text-transform:uppercase;letter-spacing:.5px;display:flex;justify-content:space-between;align-items:center}
+.panel-list{flex:1;overflow-y:auto;padding:8px}
+.panel-item{display:flex;align-items:center;gap:10px;padding:10px;margin-bottom:4px;background:var(--bg3);border:1px solid transparent;border-radius:var(--radius);cursor:pointer;transition:var(--transition)}
+.panel-item:hover{border-color:var(--bg4)}
+.panel-item.selected{border-color:var(--cyan);background:var(--cyan-glow)}
+.panel-item .panel-thumb{width:48px;height:48px;border-radius:4px;overflow:hidden;flex-shrink:0;background:var(--bg)}
+.panel-item .panel-thumb img{width:100%;height:100%;object-fit:cover}
+.panel-item .panel-info{flex:1;min-width:0}
+.panel-item .panel-info .panel-id{font-size:12px;font-weight:600;color:var(--fg)}
+.panel-item .panel-info .panel-type{font-size:11px;color:var(--fg3)}
+.panel-item .panel-actions{display:flex;gap:4px}
+.panel-item .panel-actions button{width:24px;height:24px;border:none;background:none;color:var(--fg3);cursor:pointer;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px}
+.panel-item .panel-actions button:hover{background:var(--bg4);color:var(--fg)}
+
+/* ── Panel Inspector ── */
+.panel-inspector{padding:12px 16px;border-top:1px solid var(--bg4);flex-shrink:0;max-height:280px;overflow-y:auto}
+.inspector-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.inspector-row label{width:80px;flex-shrink:0;font-size:11px}
+.inspector-row input,.inspector-row select{flex:1}
+.inspector-row input[type=number]{width:60px;flex:none}
+.importance-stars{display:flex;gap:2px}
+.importance-stars .star{width:20px;height:20px;cursor:pointer;color:var(--bg4);font-size:16px;background:none;border:none;transition:var(--transition)}
+.importance-stars .star.active{color:var(--gold)}
+
+/* ── Format Tab ── */
+.format-layout{flex:1;display:flex;overflow:hidden}
+.format-controls{width:300px;background:var(--bg2);border-right:1px solid var(--bg4);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;padding:16px}
+.format-controls h3{font-size:13px;color:var(--fg2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--bg4)}
+.format-controls .section{margin-bottom:20px}
+.format-controls .section label{display:block;margin-bottom:6px}
+.preset-btns{display:flex;gap:6px;margin-bottom:16px}
+.preset-btn{flex:1;padding:10px 8px;background:var(--bg3);border:1px solid var(--bg4);color:var(--fg2);border-radius:var(--radius);cursor:pointer;text-align:center;transition:var(--transition);font-size:12px}
+.preset-btn:hover{border-color:var(--fg3)}
+.preset-btn.active{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-glow)}
+.preset-btn .preset-icon{font-size:20px;display:block;margin-bottom:4px}
+.preset-btn .preset-label{font-weight:600}
+.preset-btn .preset-size{font-size:10px;color:var(--fg3);margin-top:2px}
+.format-preview-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.format-preview-toolbar{display:flex;gap:8px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--bg4);align-items:center;flex-shrink:0}
+.preview-scroll{flex:1;overflow-y:auto;display:flex;justify-content:center;background:repeating-conic-gradient(var(--bg3) 0% 25%,var(--bg) 0% 50%) 0 0/20px 20px}
+#previewContainer{position:relative;margin:20px auto}
+#previewCanvas{display:block;max-width:100%}
+
+/* ── Export Tab ── */
+.export-area{flex:1;display:flex;flex-direction:column;align-items:center;padding:40px 24px;overflow-y:auto}
+.export-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:960px;width:100%;margin-bottom:32px}
+.export-card{background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--radius-lg);padding:28px;transition:var(--transition)}
+.export-card:hover{border-color:var(--purple);box-shadow:var(--shadow)}
+.export-card .card-icon{font-size:36px;margin-bottom:16px}
+.export-card h3{font-size:16px;margin-bottom:8px}
+.export-card p{color:var(--fg3);font-size:13px;margin-bottom:20px;line-height:1.6}
+.export-card .card-options{margin-bottom:16px}
+.export-card .card-options label{display:block;margin-bottom:8px;font-size:12px}
+.export-progress{width:100%;max-width:960px}
+.progress-bar{width:100%;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-top:8px}
+.progress-bar .fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--cyan));border-radius:3px;transition:width .3s ease;width:0}
+
+/* ── Toast ── */
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 20px;background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--radius);box-shadow:var(--shadow);font-size:13px;animation:toastIn .3s ease;max-width:360px;display:flex;align-items:center;gap:10px}
+.toast.success{border-color:var(--green);color:var(--green)}
+.toast.error{border-color:var(--red);color:var(--red)}
+.toast.info{border-color:var(--cyan);color:var(--cyan)}
+@keyframes toastIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(20px)}}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s ease}
+.modal{background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--radius-lg);padding:28px;max-width:480px;width:90%;box-shadow:var(--shadow)}
+.modal h2{font-size:18px;margin-bottom:16px}
+.modal .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* ── Loading spinner ── */
+.spinner{width:20px;height:20px;border:2px solid var(--bg4);border-top-color:var(--cyan);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Empty state ── */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:var(--fg3);text-align:center;flex:1}
+.empty-state .icon{font-size:48px;margin-bottom:16px;opacity:.4}
+.empty-state h3{font-size:16px;color:var(--fg2);margin-bottom:8px}
+.empty-state p{font-size:13px;max-width:360px}
+
+/* ── Slider group ── */
+.slider-group{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.slider-group input[type=range]{flex:1}
+.slider-group .value{font-size:12px;color:var(--cyan);font-family:var(--mono);min-width:40px;text-align:right}
+
+/* ── Color picker row ── */
+.color-row{display:flex;align-items:center;gap:8px}
+.color-row input[type=color]{width:32px;height:32px;border:none;background:none;cursor:pointer;padding:0}
+
+/* ── Page nav in segment ── */
+.page-nav{display:flex;align-items:center;gap:8px}
+.page-nav select{min-width:160px}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  .segment-sidebar{width:240px}
+  .format-controls{width:240px}
+  .tab-btn{padding:8px 14px;font-size:12px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- ═══ Header ═══ -->
+  <header>
+    <div class="logo">
+      <svg viewBox="0 0 28 28" fill="none"><rect x="2" y="2" width="24" height="24" rx="4" stroke="var(--purple)" stroke-width="2"/><line x1="14" y1="2" x2="14" y2="26" stroke="var(--cyan)" stroke-width="1.5" stroke-dasharray="3 2"/><line x1="2" y1="14" x2="26" y2="14" stroke="var(--cyan)" stroke-width="1.5" stroke-dasharray="3 2"/><circle cx="8" cy="8" r="2" fill="var(--gold)"/><circle cx="20" cy="20" r="2" fill="var(--gold)"/></svg>
+      <span>Infinity <span class="accent">Comic</span> Reformatter</span>
+    </div>
+    <div class="actions">
+      <button class="btn btn-sm" onclick="saveProject()" title="Save project">💾 Save</button>
+      <button class="btn btn-sm" onclick="loadProject()" title="Load project">📂 Load</button>
+      <button class="btn btn-sm btn-danger" onclick="clearAll()" title="Clear all">🗑️ Clear</button>
+    </div>
+  </header>
+
+  <!-- ═══ Tab Bar ═══ -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="upload">📤 Upload<span class="badge" id="pageCountBadge" style="display:none">0</span></button>
+    <button class="tab-btn" data-tab="segment">🔲 Segment</button>
+    <button class="tab-btn" data-tab="format">📐 Format</button>
+    <button class="tab-btn" data-tab="export">📦 Export</button>
+  </div>
+
+  <!-- ═══ Upload Tab ═══ -->
+  <div class="tab-content active" id="tab-upload">
+    <div class="upload-area">
+      <div class="drop-zone" id="dropZone">
+        <div class="icon">📄</div>
+        <h3>Drop comic pages here</h3>
+        <p>or click to browse — supports PNG, JPG, WebP</p>
+        <input type="file" id="fileInput" multiple accept="image/*" style="display:none">
+      </div>
+      <div class="page-grid" id="pageGrid"></div>
+    </div>
+  </div>
+
+  <!-- ═══ Segment Tab ═══ -->
+  <div class="tab-content" id="tab-segment">
+    <div class="segment-layout">
+      <div class="segment-canvas-area">
+        <div class="segment-toolbar">
+          <div class="page-nav">
+            <button class="btn btn-sm" onclick="segNavPrev()">◀</button>
+            <select id="segPageSelect" onchange="segSelectPage(this.value)"></select>
+            <button class="btn btn-sm" onclick="segNavNext()">▶</button>
+          </div>
+          <div class="sep"></div>
+          <button class="btn btn-sm btn-primary" onclick="detectPanels()" id="detectBtn">🤖 Detect Panels</button>
+          <button class="btn btn-sm btn-cyan" onclick="detectAllPages()">🤖 Detect All</button>
+          <div class="sep"></div>
+          <button class="btn btn-sm" onclick="setSegMode('select')" id="modeSelectBtn">☝️ Select</button>
+          <button class="btn btn-sm" onclick="setSegMode('draw')" id="modeDrawBtn">✏️ Draw</button>
+          <div class="sep"></div>
+          <button class="btn btn-sm btn-danger" onclick="deleteSelectedPanel()">🗑️ Delete</button>
+          <button class="btn btn-sm" onclick="autoSortPanels()">🔢 Auto-sort</button>
+        </div>
+        <div class="canvas-container" id="canvasContainer">
+          <canvas id="imageCanvas"></canvas>
+          <canvas id="overlayCanvas"></canvas>
+          <div class="empty-state" id="segEmptyState">
+            <div class="icon">🔲</div>
+            <h3>No page selected</h3>
+            <p>Upload pages first, then select one to start segmenting panels</p>
+          </div>
+        </div>
+      </div>
+      <div class="segment-sidebar">
+        <h3>Panels <span id="panelCountLabel">0</span></h3>
+        <div class="panel-list" id="panelList"></div>
+        <div class="panel-inspector" id="panelInspector" style="display:none">
+          <h3 style="font-size:12px;color:var(--fg2);margin-bottom:10px;padding:0;border:none">INSPECTOR</h3>
+          <div class="inspector-row">
+            <label>Type</label>
+            <select id="inspType" onchange="updateInspector()">
+              <option value="regular">Regular</option>
+              <option value="splash">Splash</option>
+              <option value="wide">Wide</option>
+              <option value="tall">Tall</option>
+              <option value="inset">Inset</option>
+              <option value="bleed">Full Bleed</option>
+            </select>
+          </div>
+          <div class="inspector-row">
+            <label>Composition</label>
+            <select id="inspComposition" onchange="updateInspector()">
+              <option value="action">Action</option>
+              <option value="dialogue">Dialogue</option>
+              <option value="establishing">Establishing</option>
+              <option value="closeup">Close-up</option>
+              <option value="reaction">Reaction</option>
+              <option value="transition">Transition</option>
+            </select>
+          </div>
+          <div class="inspector-row">
+            <label>Importance</label>
+            <div class="importance-stars" id="inspStars"></div>
+          </div>
+          <div class="inspector-row">
+            <label>Focal X</label>
+            <input type="range" id="inspFocalX" min="0" max="1" step="0.01" oninput="updateInspector()">
+            <span class="value" id="inspFocalXVal">0.5</span>
+          </div>
+          <div class="inspector-row">
+            <label>Focal Y</label>
+            <input type="range" id="inspFocalY" min="0" max="1" step="0.01" oninput="updateInspector()">
+            <span class="value" id="inspFocalYVal">0.5</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Format Tab ═══ -->
+  <div class="tab-content" id="tab-format">
+    <div class="format-layout">
+      <div class="format-controls">
+        <h3>Device Preview</h3>
+        <div class="preset-btns">
+          <div class="preset-btn active" data-preset="phone" onclick="setPreset('phone')">
+            <span class="preset-icon">📱</span>
+            <span class="preset-label">Phone</span>
+            <span class="preset-size">390px</span>
+          </div>
+          <div class="preset-btn" data-preset="tablet" onclick="setPreset('tablet')">
+            <span class="preset-icon">📱</span>
+            <span class="preset-label">Tablet</span>
+            <span class="preset-size">768px</span>
+          </div>
+          <div class="preset-btn" data-preset="desktop" onclick="setPreset('desktop')">
+            <span class="preset-icon">🖥️</span>
+            <span class="preset-label">Desktop</span>
+            <span class="preset-size">1200px</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>Layout</h3>
+          <label>Panel Gap</label>
+          <div class="slider-group">
+            <input type="range" id="panelGap" min="0" max="80" value="16" oninput="onFormatChange()">
+            <span class="value" id="panelGapVal">16px</span>
+          </div>
+          <label>Page Gap</label>
+          <div class="slider-group">
+            <input type="range" id="pageGap" min="0" max="200" value="60" oninput="onFormatChange()">
+            <span class="value" id="pageGapVal">60px</span>
+          </div>
+          <label>Horizontal Padding</label>
+          <div class="slider-group">
+            <input type="range" id="hPadding" min="0" max="100" value="0" oninput="onFormatChange()">
+            <span class="value" id="hPaddingVal">0px</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>Sizing Rules</h3>
+          <label>Splash Width</label>
+          <div class="slider-group">
+            <input type="range" id="splashW" min="50" max="100" value="100" oninput="onFormatChange()">
+            <span class="value" id="splashWVal">100%</span>
+          </div>
+          <label>Action Width</label>
+          <div class="slider-group">
+            <input type="range" id="actionW" min="50" max="100" value="90" oninput="onFormatChange()">
+            <span class="value" id="actionWVal">90%</span>
+          </div>
+          <label>Dialogue Width</label>
+          <div class="slider-group">
+            <input type="range" id="dialogueW" min="50" max="100" value="75" oninput="onFormatChange()">
+            <span class="value" id="dialogueWVal">75%</span>
+          </div>
+          <label>Regular Width</label>
+          <div class="slider-group">
+            <input type="range" id="regularW" min="50" max="100" value="85" oninput="onFormatChange()">
+            <span class="value" id="regularWVal">85%</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>Background</h3>
+          <div class="color-row">
+            <label>Color</label>
+            <input type="color" id="bgColor" value="#0a0a0f" oninput="onFormatChange()">
+            <span id="bgColorVal" style="font-size:12px;color:var(--fg3)">#0a0a0f</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>Importance Scaling</h3>
+          <label>Min Height Factor</label>
+          <div class="slider-group">
+            <input type="range" id="minHeightFactor" min="0.3" max="1" step="0.05" value="0.6" oninput="onFormatChange()">
+            <span class="value" id="minHeightFactorVal">0.6</span>
+          </div>
+          <label>Max Height Factor</label>
+          <div class="slider-group">
+            <input type="range" id="maxHeightFactor" min="1" max="2" step="0.05" value="1.4" oninput="onFormatChange()">
+            <span class="value" id="maxHeightFactorVal">1.4</span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="renderPreview()" style="width:100%">🔄 Render Preview</button>
+      </div>
+      <div class="format-preview-area">
+        <div class="format-preview-toolbar">
+          <span style="font-size:12px;color:var(--fg3)">Preview</span>
+          <span style="flex:1"></span>
+          <span style="font-size:12px;color:var(--fg3)" id="previewDims">—</span>
+        </div>
+        <div class="preview-scroll" id="previewScroll">
+          <div id="previewContainer">
+            <canvas id="previewCanvas"></canvas>
+            <div class="empty-state" id="formatEmptyState">
+              <div class="icon">📐</div>
+              <h3>No panels to format</h3>
+              <p>Segment some pages first, then click Render Preview</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Export Tab ═══ -->
+  <div class="tab-content" id="tab-export">
+    <div class="export-area">
+      <div class="export-cards">
+        <div class="export-card">
+          <div class="card-icon">🖼️</div>
+          <h3>Single Image</h3>
+          <p>Export the entire infinite scroll as one tall PNG or JPEG image. Best for sharing or uploading to webtoon platforms.</p>
+          <div class="card-options">
+            <label>Format</label>
+            <select id="exportImgFmt"><option value="png">PNG</option><option value="jpeg">JPEG (smaller)</option></select>
+            <br><br>
+            <label>JPEG Quality</label>
+            <div class="slider-group">
+              <input type="range" id="exportJpegQuality" min="50" max="100" value="92" oninput="document.getElementById('jpegQVal').textContent=this.value+'%'">
+              <span class="value" id="jpegQVal">92%</span>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="exportSingleImage()">📥 Export Image</button>
+        </div>
+        <div class="export-card">
+          <div class="card-icon">📚</div>
+          <h3>Image Sequence</h3>
+          <p>Export each panel as a separate numbered image. Perfect for batch uploading to platforms with panel-by-panel readers.</p>
+          <div class="card-options">
+            <label>Format</label>
+            <select id="exportSeqFmt"><option value="png">PNG</option><option value="jpeg">JPEG</option></select>
+            <br><br>
+            <label>Naming</label>
+            <input type="text" id="exportSeqPrefix" value="panel" placeholder="Prefix" style="width:100%">
+          </div>
+          <button class="btn btn-cyan" onclick="exportImageSequence()">📥 Export Sequence</button>
+        </div>
+        <div class="export-card">
+          <div class="card-icon">🌐</div>
+          <h3>Standalone HTML</h3>
+          <p>Generate a self-contained HTML file with embedded images and smooth scrolling. Share as a file — no server needed.</p>
+          <div class="card-options">
+            <label>Title</label>
+            <input type="text" id="exportHtmlTitle" value="My Infinity Comic" style="width:100%">
+          </div>
+          <button class="btn btn-gold" onclick="exportStandaloneHTML()">📥 Export HTML</button>
+        </div>
+      </div>
+      <div class="export-progress" id="exportProgress" style="display:none">
+        <span id="exportProgressLabel" style="font-size:13px;color:var(--fg2)">Exporting...</span>
+        <div class="progress-bar"><div class="fill" id="exportProgressFill"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Toast container ═══ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ═══ Hidden file input for project load ═══ -->
+<input type="file" id="projectFileInput" accept=".json" style="display:none">
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   Infinity Comic Reformatter — Application Logic
+   ═══════════════════════════════════════════════════════════════════════ */
+
+// ─── Constants ───────────────────────────────────────────────────────
+const GEMINI_URL = 'https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+const STORAGE_KEY = 'infinity-comic-state';
+const PRESETS = { phone: 390, tablet: 768, desktop: 1200 };
+const PANEL_COLORS = [
+  '#9b59ff','#00d4ff','#ffd700','#ff4466','#44ff88',
+  '#ff8844','#44aaff','#ff44aa','#88ff44','#aa44ff'
+];
+
+const SEGMENTATION_PROMPT = `Analyze this comic book page and identify all panels. Return ONLY valid JSON with no extra text.
+
+For each panel, provide:
+- id: sequential number starting from 1
+- bounds: {x, y, w, h} as fractions of the full image (0-1 range)
+- type: "regular", "splash", "wide", "tall", "inset", or "bleed"
+- importance: 1-5 (5 = most important, splash/key moments are 5, transitions are 1)
+- focalPoint: {x, y} as fractions within the PANEL bounds (0-1) indicating the visual center of interest
+- composition: "action", "dialogue", "establishing", "closeup", "reaction", or "transition"
+
+Order panels in reading order (left-to-right, top-to-bottom for Western comics).
+
+Return format:
+{"panels":[{"id":1,"bounds":{"x":0,"y":0,"w":0.5,"h":0.33},"type":"regular","importance":3,"focalPoint":{"x":0.5,"y":0.4},"composition":"dialogue"}]}`;
+
+// ─── App State ───────────────────────────────────────────────────────
+const state = {
+  pages: [],            // {id, name, dataUrl, width, height, panels:[]}
+  currentPageIndex: -1,
+  selectedPanelId: null,
+  segMode: 'select',    // 'select' | 'draw'
+  drawStart: null,
+  preset: 'phone',
+  settings: {
+    panelGap: 16,
+    pageGap: 60,
+    hPadding: 0,
+    bgColor: '#0a0a0f',
+    splashW: 100,
+    actionW: 90,
+    dialogueW: 75,
+    regularW: 85,
+    minHeightFactor: 0.6,
+    maxHeightFactor: 1.4,
+  },
+  lastRenderedData: null, // cached render data for export
+};
+
+let nextPageId = 1;
+let nextPanelId = 1;
+
+// Canvas refs
+let imageCanvas, imageCtx, overlayCanvas, overlayCtx;
+let canvasContainer;
+let displayScale = 1;
+let canvasOffsetX = 0, canvasOffsetY = 0;
+
+// Drag state for overlay
+let dragState = null; // {type:'move'|'resize'|'draw', panelId, startX, startY, origBounds, handle}
+
+// ─── Initialization ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  imageCanvas = document.getElementById('imageCanvas');
+  imageCtx = imageCanvas.getContext('2d');
+  overlayCanvas = document.getElementById('overlayCanvas');
+  overlayCtx = overlayCanvas.getContext('2d');
+  canvasContainer = document.getElementById('canvasContainer');
+
+  initTabs();
+  initUpload();
+  initOverlay();
+  initInspectorStars();
+  loadFromStorage();
+  refreshUI();
+});
+
+// ─── Tab System ──────────────────────────────────────────────────────
+function initTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      if (btn.dataset.tab === 'segment') refreshSegmentView();
+      if (btn.dataset.tab === 'format') renderPreview();
+    });
+  });
+}
+
+// ─── Upload System ───────────────────────────────────────────────────
+function initUpload() {
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+  });
+  fileInput.addEventListener('change', e => { handleFiles(e.target.files); e.target.value = ''; });
+}
+
+function handleFiles(files) {
+  const imageFiles = [...files].filter(f => f.type.startsWith('image/'));
+  if (!imageFiles.length) return toast('No image files found', 'error');
+
+  let loaded = 0;
+  imageFiles.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        state.pages.push({
+          id: nextPageId++,
+          name: file.name,
+          dataUrl: e.target.result,
+          width: img.naturalWidth,
+          height: img.naturalHeight,
+          panels: []
+        });
+        loaded++;
+        if (loaded === imageFiles.length) {
+          toast(`Added ${loaded} page${loaded > 1 ? 's' : ''}`, 'success');
+          refreshUI();
+          saveToStorage();
+        }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function removePage(id) {
+  state.pages = state.pages.filter(p => p.id !== id);
+  if (state.currentPageIndex >= state.pages.length) state.currentPageIndex = state.pages.length - 1;
+  refreshUI();
+  saveToStorage();
+}
+
+// ─── UI Refresh ──────────────────────────────────────────────────────
+function refreshUI() {
+  refreshPageGrid();
+  refreshPageBadge();
+  refreshSegPageSelect();
+  refreshSegmentView();
+}
+
+function refreshPageGrid() {
+  const grid = document.getElementById('pageGrid');
+  grid.innerHTML = '';
+  state.pages.forEach((page, idx) => {
+    const card = document.createElement('div');
+    card.className = 'page-card' + (idx === state.currentPageIndex ? ' selected' : '');
+    const hasPanels = page.panels.length > 0;
+    card.innerHTML = `
+      <span class="page-number">#${idx + 1}</span>
+      <img src="${page.dataUrl}" alt="${page.name}" loading="lazy">
+      ${hasPanels ? `<span class="status-icon done">✓</span>` : `<span class="status-icon pending">…</span>`}
+      <button class="remove-btn" onclick="event.stopPropagation();removePage(${page.id})">✕</button>
+      <div class="info">
+        <span class="name">${page.name}</span>
+        <span class="panel-count">${page.panels.length} panels</span>
+      </div>`;
+    card.addEventListener('click', () => {
+      state.currentPageIndex = idx;
+      switchToTab('segment');
+      refreshUI();
+    });
+    grid.appendChild(card);
+  });
+}
+
+function refreshPageBadge() {
+  const badge = document.getElementById('pageCountBadge');
+  if (state.pages.length > 0) {
+    badge.style.display = '';
+    badge.textContent = state.pages.length;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function refreshSegPageSelect() {
+  const sel = document.getElementById('segPageSelect');
+  sel.innerHTML = '';
+  if (!state.pages.length) {
+    sel.innerHTML = '<option>No pages</option>';
+    return;
+  }
+  state.pages.forEach((p, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `Page ${i + 1}: ${p.name}`;
+    opt.selected = i === state.currentPageIndex;
+    sel.appendChild(opt);
+  });
+}
+
+function switchToTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(t => {
+    t.classList.toggle('active', t.id === 'tab-' + name);
+  });
+}
+
+// ─── Segment View ────────────────────────────────────────────────────
+function refreshSegmentView() {
+  const page = state.pages[state.currentPageIndex];
+  const emptyState = document.getElementById('segEmptyState');
+
+  if (!page) {
+    imageCanvas.width = 0; imageCanvas.height = 0;
+    overlayCanvas.width = 0; overlayCanvas.height = 0;
+    emptyState.style.display = '';
+    refreshPanelList();
+    return;
+  }
+  emptyState.style.display = 'none';
+
+  const img = new Image();
+  img.onload = () => {
+    fitCanvasToContainer(img);
+    imageCtx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height);
+    drawOverlay();
+  };
+  img.src = page.dataUrl;
+}
+
+function fitCanvasToContainer(img) {
+  const rect = canvasContainer.getBoundingClientRect();
+  const cw = rect.width;
+  const ch = rect.height;
+  const iw = img.naturalWidth;
+  const ih = img.naturalHeight;
+
+  const scale = Math.min(cw / iw, ch / ih, 1);
+  const dw = Math.floor(iw * scale);
+  const dh = Math.floor(ih * scale);
+
+  displayScale = scale;
+  canvasOffsetX = Math.floor((cw - dw) / 2);
+  canvasOffsetY = Math.floor((ch - dh) / 2);
+
+  imageCanvas.width = dw;
+  imageCanvas.height = dh;
+  imageCanvas.style.left = canvasOffsetX + 'px';
+  imageCanvas.style.top = canvasOffsetY + 'px';
+
+  overlayCanvas.width = dw;
+  overlayCanvas.height = dh;
+  overlayCanvas.style.left = canvasOffsetX + 'px';
+  overlayCanvas.style.top = canvasOffsetY + 'px';
+}
+
+function drawOverlay() {
+  const page = state.pages[state.currentPageIndex];
+  if (!page) return;
+
+  const w = overlayCanvas.width;
+  const h = overlayCanvas.height;
+  overlayCtx.clearRect(0, 0, w, h);
+
+  page.panels.forEach((panel, idx) => {
+    const bx = panel.bounds.x * w;
+    const by = panel.bounds.y * h;
+    const bw = panel.bounds.w * w;
+    const bh = panel.bounds.h * h;
+    const color = PANEL_COLORS[idx % PANEL_COLORS.length];
+    const isSelected = panel.id === state.selectedPanelId;
+
+    // Fill
+    overlayCtx.fillStyle = isSelected ? hexToRgba(color, 0.25) : hexToRgba(color, 0.12);
+    overlayCtx.fillRect(bx, by, bw, bh);
+
+    // Border
+    overlayCtx.strokeStyle = color;
+    overlayCtx.lineWidth = isSelected ? 3 : 2;
+    if (isSelected) overlayCtx.setLineDash([]);
+    else overlayCtx.setLineDash([]);
+    overlayCtx.strokeRect(bx, by, bw, bh);
+
+    // Label
+    const label = `${panel.id}`;
+    overlayCtx.font = 'bold 12px ' + getComputedStyle(document.body).fontFamily;
+    const tm = overlayCtx.measureText(label);
+    overlayCtx.fillStyle = color;
+    overlayCtx.fillRect(bx, by, tm.width + 10, 20);
+    overlayCtx.fillStyle = '#fff';
+    overlayCtx.fillText(label, bx + 5, by + 14);
+
+    // Importance stars
+    const stars = '★'.repeat(panel.importance) + '☆'.repeat(5 - panel.importance);
+    overlayCtx.font = '10px sans-serif';
+    overlayCtx.fillStyle = '#ffd700';
+    overlayCtx.fillText(stars, bx + 5, by + bh - 6);
+
+    // Focal point
+    if (panel.focalPoint) {
+      const fx = bx + panel.focalPoint.x * bw;
+      const fy = by + panel.focalPoint.y * bh;
+      overlayCtx.beginPath();
+      overlayCtx.arc(fx, fy, 6, 0, Math.PI * 2);
+      overlayCtx.fillStyle = 'rgba(255,215,0,0.8)';
+      overlayCtx.fill();
+      overlayCtx.strokeStyle = '#000';
+      overlayCtx.lineWidth = 1;
+      overlayCtx.stroke();
+      // Crosshair
+      overlayCtx.beginPath();
+      overlayCtx.moveTo(fx - 10, fy); overlayCtx.lineTo(fx + 10, fy);
+      overlayCtx.moveTo(fx, fy - 10); overlayCtx.lineTo(fx, fy + 10);
+      overlayCtx.strokeStyle = 'rgba(255,215,0,0.5)';
+      overlayCtx.lineWidth = 1;
+      overlayCtx.stroke();
+    }
+
+    // Resize handles if selected
+    if (isSelected) {
+      const handles = getResizeHandles(bx, by, bw, bh);
+      handles.forEach(h => {
+        overlayCtx.fillStyle = '#fff';
+        overlayCtx.fillRect(h.x - 4, h.y - 4, 8, 8);
+        overlayCtx.strokeStyle = color;
+        overlayCtx.lineWidth = 1.5;
+        overlayCtx.strokeRect(h.x - 4, h.y - 4, 8, 8);
+      });
+    }
+  });
+
+  // Draw in progress
+  if (dragState && dragState.type === 'draw' && dragState.currentX != null) {
+    const x1 = Math.min(dragState.startX, dragState.currentX);
+    const y1 = Math.min(dragState.startY, dragState.currentY);
+    const dw = Math.abs(dragState.currentX - dragState.startX);
+    const dh = Math.abs(dragState.currentY - dragState.startY);
+    overlayCtx.strokeStyle = '#fff';
+    overlayCtx.lineWidth = 2;
+    overlayCtx.setLineDash([6, 4]);
+    overlayCtx.strokeRect(x1, y1, dw, dh);
+    overlayCtx.setLineDash([]);
+  }
+
+  refreshPanelList();
+}
+
+function getResizeHandles(x, y, w, h) {
+  return [
+    { id: 'tl', x, y },
+    { id: 'tr', x: x + w, y },
+    { id: 'bl', x, y: y + h },
+    { id: 'br', x: x + w, y: y + h },
+    { id: 'tm', x: x + w/2, y },
+    { id: 'bm', x: x + w/2, y: y + h },
+    { id: 'ml', x, y: y + h/2 },
+    { id: 'mr', x: x + w, y: y + h/2 },
+  ];
+}
+
+// ─── Overlay Interaction ─────────────────────────────────────────────
+function initOverlay() {
+  overlayCanvas.addEventListener('mousedown', onOverlayMouseDown);
+  overlayCanvas.addEventListener('mousemove', onOverlayMouseMove);
+  overlayCanvas.addEventListener('mouseup', onOverlayMouseUp);
+  overlayCanvas.addEventListener('mouseleave', onOverlayMouseUp);
+}
+
+function getCanvasCoords(e) {
+  const rect = overlayCanvas.getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+function onOverlayMouseDown(e) {
+  const pos = getCanvasCoords(e);
+  const page = state.pages[state.currentPageIndex];
+  if (!page) return;
+
+  const w = overlayCanvas.width;
+  const h = overlayCanvas.height;
+
+  if (state.segMode === 'draw') {
+    dragState = { type: 'draw', startX: pos.x, startY: pos.y, currentX: pos.x, currentY: pos.y };
+    return;
+  }
+
+  // Check resize handles on selected panel
+  if (state.selectedPanelId != null) {
+    const panel = page.panels.find(p => p.id === state.selectedPanelId);
+    if (panel) {
+      const bx = panel.bounds.x * w, by = panel.bounds.y * h;
+      const bw = panel.bounds.w * w, bh = panel.bounds.h * h;
+      const handles = getResizeHandles(bx, by, bw, bh);
+      for (const handle of handles) {
+        if (Math.abs(pos.x - handle.x) < 8 && Math.abs(pos.y - handle.y) < 8) {
+          dragState = {
+            type: 'resize', panelId: panel.id, handle: handle.id,
+            startX: pos.x, startY: pos.y,
+            origBounds: { ...panel.bounds }
+          };
+          return;
+        }
+      }
+    }
+  }
+
+  // Check panel hit
+  for (let i = page.panels.length - 1; i >= 0; i--) {
+    const panel = page.panels[i];
+    const bx = panel.bounds.x * w, by = panel.bounds.y * h;
+    const bw = panel.bounds.w * w, bh = panel.bounds.h * h;
+    if (pos.x >= bx && pos.x <= bx + bw && pos.y >= by && pos.y <= by + bh) {
+      state.selectedPanelId = panel.id;
+      dragState = {
+        type: 'move', panelId: panel.id,
+        startX: pos.x, startY: pos.y,
+        origBounds: { ...panel.bounds }
+      };
+      drawOverlay();
+      showInspector(panel);
+      return;
+    }
+  }
+
+  // Clicked empty space
+  state.selectedPanelId = null;
+  hideInspector();
+  drawOverlay();
+}
+
+function onOverlayMouseMove(e) {
+  if (!dragState) return;
+  const pos = getCanvasCoords(e);
+  const page = state.pages[state.currentPageIndex];
+  if (!page) return;
+
+  const w = overlayCanvas.width;
+  const h = overlayCanvas.height;
+
+  if (dragState.type === 'draw') {
+    dragState.currentX = pos.x;
+    dragState.currentY = pos.y;
+    drawOverlay();
+    return;
+  }
+
+  const panel = page.panels.find(p => p.id === dragState.panelId);
+  if (!panel) return;
+
+  const dx = (pos.x - dragState.startX) / w;
+  const dy = (pos.y - dragState.startY) / h;
+  const ob = dragState.origBounds;
+
+  if (dragState.type === 'move') {
+    panel.bounds.x = clamp(ob.x + dx, 0, 1 - ob.w);
+    panel.bounds.y = clamp(ob.y + dy, 0, 1 - ob.h);
+  } else if (dragState.type === 'resize') {
+    const hid = dragState.handle;
+    let nx = ob.x, ny = ob.y, nw = ob.w, nh = ob.h;
+    if (hid.includes('l')) { nx = ob.x + dx; nw = ob.w - dx; }
+    if (hid.includes('r')) { nw = ob.w + dx; }
+    if (hid.includes('t')) { ny = ob.y + dy; nh = ob.h - dy; }
+    if (hid.includes('b')) { nh = ob.h + dy; }
+    if (nw < 0.02) { nw = 0.02; }
+    if (nh < 0.02) { nh = 0.02; }
+    panel.bounds.x = clamp(nx, 0, 0.98);
+    panel.bounds.y = clamp(ny, 0, 0.98);
+    panel.bounds.w = clamp(nw, 0.02, 1 - panel.bounds.x);
+    panel.bounds.h = clamp(nh, 0.02, 1 - panel.bounds.y);
+  }
+
+  drawOverlay();
+}
+
+function onOverlayMouseUp(e) {
+  if (!dragState) return;
+
+  if (dragState.type === 'draw') {
+    const w = overlayCanvas.width;
+    const h = overlayCanvas.height;
+    const x1 = Math.min(dragState.startX, dragState.currentX || dragState.startX) / w;
+    const y1 = Math.min(dragState.startY, dragState.currentY || dragState.startY) / h;
+    const bw = Math.abs((dragState.currentX || dragState.startX) - dragState.startX) / w;
+    const bh = Math.abs((dragState.currentY || dragState.startY) - dragState.startY) / h;
+
+    if (bw > 0.02 && bh > 0.02) {
+      const page = state.pages[state.currentPageIndex];
+      if (page) {
+        const newPanel = createPanel({
+          bounds: { x: x1, y: y1, w: bw, h: bh }
+        });
+        page.panels.push(newPanel);
+        state.selectedPanelId = newPanel.id;
+        showInspector(newPanel);
+        saveToStorage();
+      }
+    }
+  } else {
+    saveToStorage();
+  }
+
+  dragState = null;
+  drawOverlay();
+}
+
+function createPanel(overrides = {}) {
+  return {
+    id: nextPanelId++,
+    bounds: { x: 0, y: 0, w: 0.5, h: 0.5 },
+    type: 'regular',
+    importance: 3,
+    focalPoint: { x: 0.5, y: 0.5 },
+    composition: 'action',
+    ...overrides
+  };
+}
+
+// ─── Panel List ──────────────────────────────────────────────────────
+function refreshPanelList() {
+  const page = state.pages[state.currentPageIndex];
+  const list = document.getElementById('panelList');
+  const countLabel = document.getElementById('panelCountLabel');
+
+  if (!page || !page.panels.length) {
+    list.innerHTML = '<div class="empty-state" style="padding:20px"><p style="font-size:12px">No panels detected yet</p></div>';
+    countLabel.textContent = '0';
+    return;
+  }
+
+  countLabel.textContent = page.panels.length;
+  list.innerHTML = '';
+
+  page.panels.forEach(panel => {
+    const item = document.createElement('div');
+    item.className = 'panel-item' + (panel.id === state.selectedPanelId ? ' selected' : '');
+    const color = PANEL_COLORS[(panel.id - 1) % PANEL_COLORS.length];
+    item.innerHTML = `
+      <div class="panel-thumb" style="border:2px solid ${color}">
+        <canvas width="48" height="48" data-panel-id="${panel.id}"></canvas>
+      </div>
+      <div class="panel-info">
+        <div class="panel-id" style="color:${color}">Panel ${panel.id}</div>
+        <div class="panel-type">${panel.type} · ${panel.composition} · ${'★'.repeat(panel.importance)}</div>
+      </div>
+      <div class="panel-actions">
+        <button onclick="event.stopPropagation();movePanel(${panel.id},-1)" title="Move up">▲</button>
+        <button onclick="event.stopPropagation();movePanel(${panel.id},1)" title="Move down">▼</button>
+        <button onclick="event.stopPropagation();removePanel(${panel.id})" title="Delete" style="color:var(--red)">✕</button>
+      </div>`;
+    item.addEventListener('click', () => {
+      state.selectedPanelId = panel.id;
+      showInspector(panel);
+      drawOverlay();
+    });
+    list.appendChild(item);
+
+    // Draw panel thumbnail
+    requestAnimationFrame(() => {
+      const thumbCanvas = item.querySelector(`canvas[data-panel-id="${panel.id}"]`);
+      if (thumbCanvas && page.dataUrl) {
+        drawPanelThumb(thumbCanvas, page, panel);
+      }
+    });
+  });
+}
+
+function drawPanelThumb(canvas, page, panel) {
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.onload = () => {
+    const sx = panel.bounds.x * img.naturalWidth;
+    const sy = panel.bounds.y * img.naturalHeight;
+    const sw = panel.bounds.w * img.naturalWidth;
+    const sh = panel.bounds.h * img.naturalHeight;
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, 48, 48);
+  };
+  img.src = page.dataUrl;
+}
+
+function removePanel(id) {
+  const page = state.pages[state.currentPageIndex];
+  if (!page) return;
+  page.panels = page.panels.filter(p => p.id !== id);
+  if (state.selectedPanelId === id) { state.selectedPanelId = null; hideInspector(); }
+  drawOverlay();
+  saveToStorage();
+}
+
+function movePanel(id, dir) {
+  const page = state.pages[state.currentPageIndex];
+  if (!page) return;
+  const idx = page.panels.findIndex(p => p.id === id);
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= page.panels.length) return;
+  [page.panels[idx], page.panels[newIdx]] = [page.panels[newIdx], page.panels[idx]];
+  drawOverlay();
+  saveToStorage();
+}
+
+function deleteSelectedPanel() {
+  if (state.selectedPanelId != null) removePanel(state.selectedPanelId);
+}
+
+function autoSortPanels() {
+  const page = state.pages[state.currentPageIndex];
+  if (!page) return;
+  // Sort by reading order: top-to-bottom, then left-to-right
+  page.panels.sort((a, b) => {
+    const ay = a.bounds.y + a.bounds.h / 2;
+    const by_ = b.bounds.y + b.bounds.h / 2;
+    const rowDiff = Math.abs(ay - by_);
+    if (rowDiff < 0.08) {
+      // Same row, sort by X
+      return (a.bounds.x + a.bounds.w / 2) - (b.bounds.x + b.bounds.w / 2);
+    }
+    return ay - by_;
+  });
+  // Renumber
+  page.panels.forEach((p, i) => p.id = i + 1);
+  nextPanelId = Math.max(nextPanelId, page.panels.length + 1);
+  drawOverlay();
+  saveToStorage();
+  toast('Panels sorted in reading order', 'success');
+}
+
+// ─── Inspector ───────────────────────────────────────────────────────
+function initInspectorStars() {
+  const container = document.getElementById('inspStars');
+  for (let i = 1; i <= 5; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'star';
+    btn.textContent = '★';
+    btn.dataset.value = i;
+    btn.addEventListener('click', () => {
+      const page = state.pages[state.currentPageIndex];
+      const panel = page?.panels.find(p => p.id === state.selectedPanelId);
+      if (panel) {
+        panel.importance = i;
+        showInspector(panel);
+        drawOverlay();
+        saveToStorage();
+      }
+    });
+    container.appendChild(btn);
+  }
+}
+
+function showInspector(panel) {
+  document.getElementById('panelInspector').style.display = '';
+  document.getElementById('inspType').value = panel.type;
+  document.getElementById('inspComposition').value = panel.composition;
+  document.getElementById('inspFocalX').value = panel.focalPoint?.x ?? 0.5;
+  document.getElementById('inspFocalY').value = panel.focalPoint?.y ?? 0.5;
+  document.getElementById('inspFocalXVal').textContent = (panel.focalPoint?.x ?? 0.5).toFixed(2);
+  document.getElementById('inspFocalYVal').textContent = (panel.focalPoint?.y ?? 0.5).toFixed(2);
+  document.querySelectorAll('#inspStars .star').forEach(s => {
+    s.classList.toggle('active', parseInt(s.dataset.value) <= panel.importance);
+  });
+}
+
+function hideInspector() {
+  document.getElementById('panelInspector').style.display = 'none';
+}
+
+function updateInspector() {
+  const page = state.pages[state.currentPageIndex];
+  const panel = page?.panels.find(p => p.id === state.selectedPanelId);
+  if (!panel) return;
+  panel.type = document.getElementById('inspType').value;
+  panel.composition = document.getElementById('inspComposition').value;
+  panel.focalPoint = {
+    x: parseFloat(document.getElementById('inspFocalX').value),
+    y: parseFloat(document.getElementById('inspFocalY').value)
+  };
+  document.getElementById('inspFocalXVal').textContent = panel.focalPoint.x.toFixed(2);
+  document.getElementById('inspFocalYVal').textContent = panel.focalPoint.y.toFixed(2);
+  drawOverlay();
+  saveToStorage();
+}
+
+// ─── Segment Navigation ─────────────────────────────────────────────
+function segSelectPage(idx) {
+  state.currentPageIndex = parseInt(idx);
+  state.selectedPanelId = null;
+  hideInspector();
+  refreshSegmentView();
+}
+
+function segNavPrev() {
+  if (state.currentPageIndex > 0) segSelectPage(state.currentPageIndex - 1);
+}
+
+function segNavNext() {
+  if (state.currentPageIndex < state.pages.length - 1) segSelectPage(state.currentPageIndex + 1);
+}
+
+function setSegMode(mode) {
+  state.segMode = mode;
+  document.getElementById('modeSelectBtn').classList.toggle('btn-cyan', mode === 'select');
+  document.getElementById('modeDrawBtn').classList.toggle('btn-cyan', mode === 'draw');
+  overlayCanvas.style.cursor = mode === 'draw' ? 'crosshair' : 'default';
+}
+
+// ─── Gemini Panel Detection ─────────────────────────────────────────
+async function detectPanels() {
+  const page = state.pages[state.currentPageIndex];
+  if (!page) return toast('No page selected', 'error');
+
+  const btn = document.getElementById('detectBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Detecting...';
+
+  try {
+    const base64 = page.dataUrl.split(',')[1];
+    const mimeType = page.dataUrl.split(';')[0].split(':')[1];
+
+    const response = await fetch(GEMINI_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gemini-2.0-flash',
+        contents: [{
+          parts: [
+            { text: SEGMENTATION_PROMPT },
+            { inline_data: { mime_type: mimeType, data: base64 } }
+          ]
+        }]
+      })
+    });
+
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error('No response text from Gemini');
+
+    // Parse JSON — handle potential markdown code blocks
+    let jsonStr = text;
+    const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (codeBlockMatch) jsonStr = codeBlockMatch[1];
+    jsonStr = jsonStr.trim();
+
+    const parsed = JSON.parse(jsonStr);
+    if (!parsed.panels || !Array.isArray(parsed.panels)) throw new Error('Invalid panel data');
+
+    // Merge detected panels
+    page.panels = parsed.panels.map(p => ({
+      id: nextPanelId++,
+      bounds: {
+        x: clamp(p.bounds?.x ?? 0, 0, 1),
+        y: clamp(p.bounds?.y ?? 0, 0, 1),
+        w: clamp(p.bounds?.w ?? 0.1, 0.02, 1),
+        h: clamp(p.bounds?.h ?? 0.1, 0.02, 1)
+      },
+      type: p.type || 'regular',
+      importance: clamp(p.importance ?? 3, 1, 5),
+      focalPoint: {
+        x: clamp(p.focalPoint?.x ?? 0.5, 0, 1),
+        y: clamp(p.focalPoint?.y ?? 0.5, 0, 1)
+      },
+      composition: p.composition || 'action'
+    }));
+
+    toast(`Detected ${page.panels.length} panels`, 'success');
+    drawOverlay();
+    saveToStorage();
+    refreshPageGrid();
+  } catch (err) {
+    console.error('Detection error:', err);
+    toast('Detection failed: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🤖 Detect Panels';
+  }
+}
+
+async function detectAllPages() {
+  if (!state.pages.length) return toast('No pages to process', 'error');
+
+  const originalIdx = state.currentPageIndex;
+  let successCount = 0;
+
+  for (let i = 0; i < state.pages.length; i++) {
+    if (state.pages[i].panels.length > 0) continue; // Skip already segmented
+    state.currentPageIndex = i;
+    refreshSegPageSelect();
+    refreshSegmentView();
+
+    try {
+      await detectPanelsForPage(state.pages[i]);
+      successCount++;
+    } catch (err) {
+      console.error(`Failed page ${i + 1}:`, err);
+    }
+
+    // Small delay to avoid rate limiting
+    if (i < state.pages.length - 1) await sleep(500);
+  }
+
+  state.currentPageIndex = originalIdx;
+  refreshUI();
+  toast(`Detected panels on ${successCount} pages`, 'success');
+}
+
+async function detectPanelsForPage(page) {
+  const base64 = page.dataUrl.split(',')[1];
+  const mimeType = page.dataUrl.split(';')[0].split(':')[1];
+
+  const response = await fetch(GEMINI_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'gemini-2.0-flash',
+      contents: [{
+        parts: [
+          { text: SEGMENTATION_PROMPT },
+          { inline_data: { mime_type: mimeType, data: base64 } }
+        ]
+      }]
+    })
+  });
+
+  if (!response.ok) throw new Error(`API error: ${response.status}`);
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('No response text');
+
+  let jsonStr = text;
+  const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (codeBlockMatch) jsonStr = codeBlockMatch[1];
+
+  const parsed = JSON.parse(jsonStr.trim());
+  if (!parsed.panels?.length) throw new Error('No panels detected');
+
+  page.panels = parsed.panels.map(p => ({
+    id: nextPanelId++,
+    bounds: {
+      x: clamp(p.bounds?.x ?? 0, 0, 1),
+      y: clamp(p.bounds?.y ?? 0, 0, 1),
+      w: clamp(p.bounds?.w ?? 0.1, 0.02, 1),
+      h: clamp(p.bounds?.h ?? 0.1, 0.02, 1)
+    },
+    type: p.type || 'regular',
+    importance: clamp(p.importance ?? 3, 1, 5),
+    focalPoint: {
+      x: clamp(p.focalPoint?.x ?? 0.5, 0, 1),
+      y: clamp(p.focalPoint?.y ?? 0.5, 0, 1)
+    },
+    composition: p.composition || 'action'
+  }));
+
+  saveToStorage();
+}
+
+// ─── Format / Preview ────────────────────────────────────────────────
+function readSettings() {
+  state.settings.panelGap = parseInt(document.getElementById('panelGap').value);
+  state.settings.pageGap = parseInt(document.getElementById('pageGap').value);
+  state.settings.hPadding = parseInt(document.getElementById('hPadding').value);
+  state.settings.bgColor = document.getElementById('bgColor').value;
+  state.settings.splashW = parseInt(document.getElementById('splashW').value);
+  state.settings.actionW = parseInt(document.getElementById('actionW').value);
+  state.settings.dialogueW = parseInt(document.getElementById('dialogueW').value);
+  state.settings.regularW = parseInt(document.getElementById('regularW').value);
+  state.settings.minHeightFactor = parseFloat(document.getElementById('minHeightFactor').value);
+  state.settings.maxHeightFactor = parseFloat(document.getElementById('maxHeightFactor').value);
+}
+
+function onFormatChange() {
+  // Update display values
+  const ids = ['panelGap','pageGap','hPadding','splashW','actionW','dialogueW','regularW','minHeightFactor','maxHeightFactor'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    const valEl = document.getElementById(id + 'Val');
+    if (!el || !valEl) return;
+    if (['splashW','actionW','dialogueW','regularW'].includes(id)) {
+      valEl.textContent = el.value + '%';
+    } else if (['minHeightFactor','maxHeightFactor'].includes(id)) {
+      valEl.textContent = el.value;
+    } else {
+      valEl.textContent = el.value + 'px';
+    }
+  });
+  document.getElementById('bgColorVal').textContent = document.getElementById('bgColor').value;
+  readSettings();
+}
+
+function setPreset(preset) {
+  state.preset = preset;
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.preset === preset));
+  renderPreview();
+}
+
+function getWidthFactor(panel) {
+  const s = state.settings;
+  switch (panel.composition) {
+    case 'dialogue': return s.dialogueW / 100;
+    case 'action': return s.actionW / 100;
+    default: break;
+  }
+  switch (panel.type) {
+    case 'splash': case 'bleed': return s.splashW / 100;
+    default: return s.regularW / 100;
+  }
+}
+
+function getHeightFactor(panel) {
+  const s = state.settings;
+  // Map importance 1-5 to minHeightFactor..maxHeightFactor
+  const t = (panel.importance - 1) / 4;
+  return s.minHeightFactor + t * (s.maxHeightFactor - s.minHeightFactor);
+}
+
+async function renderPreview() {
+  readSettings();
+  const s = state.settings;
+  const outputWidth = PRESETS[state.preset] || 390;
+  const usableWidth = outputWidth - s.hPadding * 2;
+
+  // Gather all panels across all pages
+  const allPanels = [];
+  for (const page of state.pages) {
+    for (const panel of page.panels) {
+      allPanels.push({ panel, page });
+    }
+  }
+
+  if (!allPanels.length) {
+    document.getElementById('formatEmptyState').style.display = '';
+    document.getElementById('previewCanvas').style.display = 'none';
+    document.getElementById('previewDims').textContent = '—';
+    return;
+  }
+  document.getElementById('formatEmptyState').style.display = 'none';
+  document.getElementById('previewCanvas').style.display = 'block';
+
+  // Calculate total height
+  let totalHeight = s.hPadding; // top padding
+  const layout = [];
+  let lastPageId = null;
+
+  for (const { panel, page } of allPanels) {
+    if (lastPageId !== null && lastPageId !== page.id) {
+      totalHeight += s.pageGap;
+    }
+    lastPageId = page.id;
+
+    const wFactor = getWidthFactor(panel);
+    const hFactor = getHeightFactor(panel);
+    const panelW = usableWidth * wFactor;
+
+    // Calculate panel aspect ratio from source
+    const srcW = panel.bounds.w * page.width;
+    const srcH = panel.bounds.h * page.height;
+    const aspect = srcW / srcH;
+    const panelH = (panelW / aspect) * hFactor;
+
+    const x = s.hPadding + (usableWidth - panelW) / 2;
+    const y = totalHeight;
+
+    layout.push({ panel, page, x, y, w: panelW, h: panelH });
+    totalHeight += panelH + s.panelGap;
+  }
+
+  totalHeight += s.hPadding - s.panelGap; // bottom padding, remove last gap
+
+  // Render
+  const canvas = document.getElementById('previewCanvas');
+  canvas.width = outputWidth;
+  canvas.height = Math.max(totalHeight, 100);
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = s.bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Load all page images
+  const imageCache = new Map();
+  await Promise.all(state.pages.map(page => new Promise(resolve => {
+    if (imageCache.has(page.id)) return resolve();
+    const img = new Image();
+    img.onload = () => { imageCache.set(page.id, img); resolve(); };
+    img.onerror = resolve;
+    img.src = page.dataUrl;
+  })));
+
+  // Draw panels
+  for (const item of layout) {
+    const img = imageCache.get(item.page.id);
+    if (!img) continue;
+
+    const sx = item.panel.bounds.x * img.naturalWidth;
+    const sy = item.panel.bounds.y * img.naturalHeight;
+    const sw = item.panel.bounds.w * img.naturalWidth;
+    const sh = item.panel.bounds.h * img.naturalHeight;
+
+    // Content-aware cropping using focal point
+    const fp = item.panel.focalPoint || { x: 0.5, y: 0.5 };
+    const srcAspect = sw / sh;
+    const destAspect = item.w / item.h;
+
+    let cropX = sx, cropY = sy, cropW = sw, cropH = sh;
+    if (srcAspect > destAspect) {
+      // Source wider — crop horizontally
+      cropW = sh * destAspect;
+      cropX = sx + (fp.x * sw) - (cropW / 2);
+      cropX = clamp(cropX, sx, sx + sw - cropW);
+    } else if (srcAspect < destAspect) {
+      // Source taller — crop vertically
+      cropH = sw / destAspect;
+      cropY = sy + (fp.y * sh) - (cropH / 2);
+      cropY = clamp(cropY, sy, sy + sh - cropH);
+    }
+
+    ctx.drawImage(img, cropX, cropY, cropW, cropH, item.x, item.y, item.w, item.h);
+  }
+
+  // Cache layout for export
+  state.lastRenderedData = { layout, outputWidth, totalHeight, imageCache };
+
+  document.getElementById('previewDims').textContent = `${outputWidth} × ${Math.round(totalHeight)}px`;
+  document.getElementById('previewContainer').style.width = outputWidth + 'px';
+}
+
+// ─── Export Functions ────────────────────────────────────────────────
+async function exportSingleImage() {
+  await renderPreview();
+  if (!state.lastRenderedData) return toast('Nothing to export', 'error');
+
+  showExportProgress('Generating image...');
+  await sleep(50);
+
+  const canvas = document.getElementById('previewCanvas');
+  const fmt = document.getElementById('exportImgFmt').value;
+  const quality = parseInt(document.getElementById('exportJpegQuality').value) / 100;
+
+  const mimeType = fmt === 'jpeg' ? 'image/jpeg' : 'image/png';
+  const ext = fmt === 'jpeg' ? 'jpg' : 'png';
+
+  setExportProgress(50);
+
+  canvas.toBlob(blob => {
+    setExportProgress(90);
+    downloadBlob(blob, `infinity-comic.${ext}`);
+    setExportProgress(100);
+    setTimeout(hideExportProgress, 1000);
+    toast('Image exported!', 'success');
+  }, mimeType, quality);
+}
+
+async function exportImageSequence() {
+  const allPanels = [];
+  for (const page of state.pages) {
+    for (const panel of page.panels) {
+      allPanels.push({ panel, page });
+    }
+  }
+  if (!allPanels.length) return toast('No panels to export', 'error');
+
+  showExportProgress('Exporting panels...');
+
+  const fmt = document.getElementById('exportSeqFmt').value;
+  const prefix = document.getElementById('exportSeqPrefix').value || 'panel';
+  const mimeType = fmt === 'jpeg' ? 'image/jpeg' : 'image/png';
+  const ext = fmt === 'jpeg' ? 'jpg' : 'png';
+
+  // Load images
+  const imageCache = new Map();
+  await Promise.all(state.pages.map(page => new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => { imageCache.set(page.id, img); resolve(); };
+    img.onerror = resolve;
+    img.src = page.dataUrl;
+  })));
+
+  // Generate panel images and trigger downloads
+  for (let i = 0; i < allPanels.length; i++) {
+    const { panel, page } = allPanels[i];
+    const img = imageCache.get(page.id);
+    if (!img) continue;
+
+    setExportProgress(Math.round((i / allPanels.length) * 100));
+
+    const sx = panel.bounds.x * img.naturalWidth;
+    const sy = panel.bounds.y * img.naturalHeight;
+    const sw = panel.bounds.w * img.naturalWidth;
+    const sh = panel.bounds.h * img.naturalHeight;
+
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = Math.round(sw);
+    tempCanvas.height = Math.round(sh);
+    const tctx = tempCanvas.getContext('2d');
+    tctx.drawImage(img, sx, sy, sw, sh, 0, 0, tempCanvas.width, tempCanvas.height);
+
+    const blob = await new Promise(resolve => tempCanvas.toBlob(resolve, mimeType, 0.92));
+    const num = String(i + 1).padStart(3, '0');
+    downloadBlob(blob, `${prefix}_${num}.${ext}`);
+
+    await sleep(100); // Stagger downloads
+  }
+
+  setExportProgress(100);
+  setTimeout(hideExportProgress, 1000);
+  toast(`Exported ${allPanels.length} panels`, 'success');
+}
+
+async function exportStandaloneHTML() {
+  await renderPreview();
+  if (!state.lastRenderedData) return toast('Nothing to export', 'error');
+
+  showExportProgress('Generating HTML...');
+  setExportProgress(20);
+
+  const title = document.getElementById('exportHtmlTitle').value || 'Infinity Comic';
+  const s = state.settings;
+
+  // Gather panel image data
+  const panelImages = [];
+  const imageCache = state.lastRenderedData.imageCache;
+
+  for (const item of state.lastRenderedData.layout) {
+    const img = imageCache.get(item.page.id);
+    if (!img) continue;
+
+    const sx = item.panel.bounds.x * img.naturalWidth;
+    const sy = item.panel.bounds.y * img.naturalHeight;
+    const sw = item.panel.bounds.w * img.naturalWidth;
+    const sh = item.panel.bounds.h * img.naturalHeight;
+
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = Math.round(sw);
+    tempCanvas.height = Math.round(sh);
+    const tctx = tempCanvas.getContext('2d');
+    tctx.drawImage(img, sx, sy, sw, sh, 0, 0, tempCanvas.width, tempCanvas.height);
+
+    const dataUrl = tempCanvas.toDataURL('image/jpeg', 0.88);
+    const wFactor = getWidthFactor(item.panel);
+
+    panelImages.push({
+      dataUrl,
+      widthPercent: Math.round(wFactor * 100),
+      type: item.panel.type,
+      composition: item.panel.composition,
+      importance: item.panel.importance
+    });
+  }
+
+  setExportProgress(60);
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>${escapeHtml(title)}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:${s.bgColor};display:flex;flex-direction:column;align-items:center;padding:${s.hPadding}px 0;min-height:100vh}
+.panel{max-width:100%;margin-bottom:${s.panelGap}px}
+.panel img{width:100%;height:auto;display:block}
+</style>
+</head>
+<body>
+${panelImages.map(p => `<div class="panel" style="width:min(${p.widthPercent}%,100%)"><img src="${p.dataUrl}" alt="Panel"></div>`).join('\n')}
+</body>
+</html>`;
+
+  setExportProgress(90);
+
+  const blob = new Blob([html], { type: 'text/html' });
+  downloadBlob(blob, `${title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.html`);
+
+  setExportProgress(100);
+  setTimeout(hideExportProgress, 1000);
+  toast('HTML exported!', 'success');
+}
+
+function showExportProgress(label) {
+  document.getElementById('exportProgress').style.display = '';
+  document.getElementById('exportProgressLabel').textContent = label;
+  setExportProgress(0);
+}
+
+function setExportProgress(pct) {
+  document.getElementById('exportProgressFill').style.width = pct + '%';
+}
+
+function hideExportProgress() {
+  document.getElementById('exportProgress').style.display = 'none';
+}
+
+// ─── Project Save/Load ───────────────────────────────────────────────
+function saveProject() {
+  const data = {
+    version: 1,
+    pages: state.pages.map(p => ({
+      id: p.id,
+      name: p.name,
+      dataUrl: p.dataUrl,
+      width: p.width,
+      height: p.height,
+      panels: p.panels
+    })),
+    settings: state.settings,
+    preset: state.preset
+  };
+
+  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+  downloadBlob(blob, 'infinity-comic-project.json');
+  toast('Project saved', 'success');
+}
+
+function loadProject() {
+  const input = document.getElementById('projectFileInput');
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!data.pages) throw new Error('Invalid project file');
+        state.pages = data.pages;
+        state.settings = { ...state.settings, ...data.settings };
+        state.preset = data.preset || 'phone';
+        state.currentPageIndex = state.pages.length > 0 ? 0 : -1;
+        state.selectedPanelId = null;
+        nextPageId = Math.max(...state.pages.map(p => p.id), 0) + 1;
+        const allPanelIds = state.pages.flatMap(p => p.panels.map(pp => pp.id));
+        nextPanelId = Math.max(...allPanelIds, 0) + 1;
+
+        // Restore UI settings
+        applySettingsToUI();
+        setPreset(state.preset);
+        refreshUI();
+        toast('Project loaded', 'success');
+      } catch (err) {
+        toast('Failed to load: ' + err.message, 'error');
+      }
+    };
+    reader.readAsText(file);
+    input.value = '';
+  };
+  input.click();
+}
+
+function applySettingsToUI() {
+  const s = state.settings;
+  document.getElementById('panelGap').value = s.panelGap;
+  document.getElementById('pageGap').value = s.pageGap;
+  document.getElementById('hPadding').value = s.hPadding;
+  document.getElementById('bgColor').value = s.bgColor;
+  document.getElementById('splashW').value = s.splashW;
+  document.getElementById('actionW').value = s.actionW;
+  document.getElementById('dialogueW').value = s.dialogueW;
+  document.getElementById('regularW').value = s.regularW;
+  document.getElementById('minHeightFactor').value = s.minHeightFactor;
+  document.getElementById('maxHeightFactor').value = s.maxHeightFactor;
+  onFormatChange();
+}
+
+function clearAll() {
+  if (!confirm('Clear all pages and panels?')) return;
+  state.pages = [];
+  state.currentPageIndex = -1;
+  state.selectedPanelId = null;
+  nextPageId = 1;
+  nextPanelId = 1;
+  localStorage.removeItem(STORAGE_KEY);
+  hideInspector();
+  refreshUI();
+  toast('All cleared', 'info');
+}
+
+// ─── localStorage Persistence ────────────────────────────────────────
+function saveToStorage() {
+  try {
+    const data = {
+      pages: state.pages,
+      settings: state.settings,
+      preset: state.preset,
+      currentPageIndex: state.currentPageIndex,
+      nextPageId, nextPanelId
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.warn('localStorage save failed (likely quota exceeded):', e.message);
+  }
+}
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.pages) state.pages = data.pages;
+    if (data.settings) state.settings = { ...state.settings, ...data.settings };
+    if (data.preset) state.preset = data.preset;
+    if (data.currentPageIndex != null) state.currentPageIndex = data.currentPageIndex;
+    if (data.nextPageId) nextPageId = data.nextPageId;
+    if (data.nextPanelId) nextPanelId = data.nextPanelId;
+    applySettingsToUI();
+    setPreset(state.preset);
+  } catch (e) {
+    console.warn('localStorage load failed:', e.message);
+  }
+}
+
+// ─── Utilities ───────────────────────────────────────────────────────
+function clamp(v, min, max) { return Math.min(Math.max(v, min), max); }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+function toast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  const icons = { success: '✓', error: '✕', info: 'ℹ' };
+  el.innerHTML = `<span>${icons[type] || 'ℹ'}</span><span>${escapeHtml(message)}</span>`;
+  container.appendChild(el);
+  setTimeout(() => {
+    el.style.animation = 'toastOut .3s ease forwards';
+    setTimeout(() => el.remove(), 300);
+  }, 3500);
+}
+</script>
+</body>
+</html>

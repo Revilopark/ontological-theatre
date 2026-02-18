@@ -1,0 +1,2886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inkwell Garment Studio</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --bg3: #1a1a26;
+    --bg4: #22222f;
+    --border: #2a2a3a;
+    --gold: #D4A04A;
+    --gold2: #e8b85c;
+    --gold-dim: #8a6520;
+    --text: #e8e0d4;
+    --text2: #a09080;
+    --text3: #605040;
+    --accent-purple: #7a5a9e;
+    --accent-blue: #4a6b9e;
+    --accent-teal: #4a9e8a;
+    --accent-rose: #9e4a6b;
+    --font: 'Courier New', 'Courier', monospace;
+    --radius: 2px;
+  }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); overflow-x: hidden; }
+  #root { min-height: 100vh; }
+  button { font-family: var(--font); cursor: pointer; }
+  input, select, textarea { font-family: var(--font); background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--gold-dim); }
+
+  .inkwell-header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .inkwell-logo {
+    display: flex;
+    flex-direction: column;
+  }
+  .inkwell-logo-title {
+    color: var(--gold);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+  .inkwell-logo-sub {
+    color: var(--text3);
+    font-size: 8px;
+    letter-spacing: 3px;
+    margin-top: 2px;
+    text-transform: uppercase;
+  }
+  .inkwell-tabs {
+    display: flex;
+    gap: 4px;
+  }
+  .inkwell-tab {
+    padding: 7px 16px;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text3);
+    transition: all 0.2s;
+  }
+  .inkwell-tab:hover { color: var(--text2); border-color: var(--gold-dim); }
+  .inkwell-tab.active {
+    background: var(--gold);
+    color: var(--bg);
+    border-color: var(--gold);
+    font-weight: 700;
+  }
+
+  .panel {
+    padding: 24px;
+    min-height: calc(100vh - 56px);
+  }
+  .panel-title {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 18px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 14px;
+  }
+  .card-title {
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .btn {
+    padding: 8px 16px;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    transition: all 0.2s;
+  }
+  .btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+  .btn.primary {
+    background: var(--gold);
+    color: var(--bg);
+    border-color: var(--gold);
+    font-weight: 700;
+  }
+  .btn.primary:hover { background: var(--gold2); border-color: var(--gold2); }
+
+  .fabric-chip {
+    padding: 8px 12px;
+    font-size: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--text2);
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.15s;
+    width: 100%;
+  }
+  .fabric-chip:hover { border-color: var(--gold-dim); color: var(--text); }
+  .fabric-chip.selected { background: var(--bg3); border-color: var(--gold); color: var(--gold); }
+
+  .seam-chip {
+    padding: 7px 10px;
+    font-size: 9px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--text2);
+    text-align: left;
+    width: 100%;
+    transition: all 0.15s;
+    letter-spacing: 1px;
+  }
+  .seam-chip:hover { border-color: var(--accent-purple); }
+  .seam-chip.selected { background: var(--bg3); border-color: var(--accent-purple); color: var(--text); }
+
+  .garment-chip {
+    padding: 7px 10px;
+    font-size: 9px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--text2);
+    transition: all 0.15s;
+    letter-spacing: 1px;
+  }
+  .garment-chip:hover { border-color: var(--accent-teal); }
+  .garment-chip.selected { background: var(--bg3); border-color: var(--accent-teal); color: var(--accent-teal); }
+
+  .bar-track {
+    height: 4px;
+    background: var(--bg4);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  .stat-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+  }
+  .stat-label {
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .stat-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .bom-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+  .bom-table th {
+    padding: 6px 8px;
+    background: var(--bg4);
+    color: var(--text3);
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-align: left;
+    font-weight: 400;
+    text-transform: uppercase;
+  }
+  .bom-table td { padding: 5px 8px; border-bottom: 1px solid var(--border); }
+  .bom-table tr:last-child td { border-bottom: none; }
+  .bom-table .total-row td { background: var(--bg3); color: var(--gold); font-weight: 700; border-top: 1px solid var(--gold-dim); }
+
+  .trinity-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    font-size: 8px;
+    letter-spacing: 1px;
+    border: 1px solid var(--border);
+    color: var(--text3);
+    margin: 2px;
+  }
+
+  .drape-canvas {
+    display: block;
+    margin: 0 auto;
+    background: transparent;
+  }
+
+  .generate-img-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .generate-img-box img { max-width: 100%; max-height: 500px; display: block; margin: 0 auto; }
+
+  .export-section { page-break-inside: avoid; }
+  @media print {
+    .inkwell-header, .inkwell-tabs { display: none !important; }
+    .export-print-only { display: block !important; }
+    body { background: white; color: black; }
+  }
+  .export-print-only { display: none; }
+
+  .glow-ring {
+    animation: pulseRing 2s ease-in-out infinite;
+  }
+  @keyframes pulseRing {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+  .shimmer {
+    background: linear-gradient(90deg, transparent 0%, rgba(212,160,74,0.15) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmerAnim 2s linear infinite;
+  }
+  @keyframes shimmerAnim {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .fade-in { animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  .gold-border-anim {
+    border-color: var(--gold) !important;
+    box-shadow: 0 0 8px rgba(212,160,74,0.3);
+    animation: goldPulse 1s ease-in-out;
+  }
+  @keyframes goldPulse {
+    0% { box-shadow: 0 0 0 rgba(212,160,74,0); }
+    50% { box-shadow: 0 0 16px rgba(212,160,74,0.5); }
+    100% { box-shadow: 0 0 8px rgba(212,160,74,0.3); }
+  }
+
+  .tooltip {
+    position: relative;
+    display: inline-block;
+  }
+  .tooltip-text {
+    visibility: hidden;
+    background: var(--bg4);
+    color: var(--text);
+    font-size: 9px;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    z-index: 200;
+    pointer-events: none;
+  }
+  .tooltip:hover .tooltip-text { visibility: visible; }
+
+  .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 18px 0;
+  }
+
+  .loading-dots::after {
+    content: '';
+    animation: loadingDots 1.2s steps(4, end) infinite;
+  }
+  @keyframes loadingDots {
+    0% { content: ''; }
+    25% { content: '.'; }
+    50% { content: '..'; }
+    75% { content: '...'; }
+  }
+
+  .filter-btn {
+    padding: 5px 12px;
+    font-size: 8px;
+    letter-spacing: 2px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text3);
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover { color: var(--text2); border-color: var(--text3); }
+  .filter-btn.active { background: var(--bg3); border-color: var(--gold); color: var(--gold); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+
+  .swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 1px;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .overflow-y { overflow-y: auto; }
+  .h-full { height: 100%; }
+  .flex { display: flex; }
+  .flex-col { flex-direction: column; }
+  .gap-2 { gap: 8px; }
+  .gap-3 { gap: 12px; }
+  .mb-2 { margin-bottom: 8px; }
+  .mb-3 { margin-bottom: 12px; }
+  .text-gold { color: var(--gold); }
+  .text-dim { color: var(--text3); }
+  .text-sm { font-size: 10px; }
+  .text-xs { font-size: 9px; }
+  .text-2xs { font-size: 8px; }
+  .fw-7 { font-weight: 700; }
+  .ls-2 { letter-spacing: 2px; }
+  .ls-3 { letter-spacing: 3px; }
+  .w-full { width: 100%; }
+  .ta-c { text-align: center; }
+  .p-3 { padding: 12px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+// ─────────────────────────────────────────────
+// DATA: FABRICS (25+)
+// ─────────────────────────────────────────────
+const FABRICS = [
+  // WOVENS
+  {
+    id: "cotton_poplin",
+    name: "Cotton Poplin",
+    category: "Wovens",
+    gsm: 110,
+    drapeCoeff: 0.42,
+    stretch: 5,
+    costPerMeter: 3.80,
+    handfeel: "crisp",
+    thermal: "breathable",
+    color: "#f5efe0",
+    compatibleSeams: ["plain", "french", "bound", "blind_hem"],
+    compatibleGarments: ["blouse", "dress", "shirt", "skirt"],
+    trinity: {
+      ity: { materiality: 6, luminosity: 5, viscosity: 2, permanence: 6, workability: 9 },
+      pathy: { tactility: 5, sensuosity: 4, immediacy: 7, gestural_energy: 4 },
+      fundamentals: { authenticity: 7, felicity: 6, propensity: 7 }
+    }
+  },
+  {
+    id: "cotton_twill",
+    name: "Cotton Twill",
+    category: "Wovens",
+    gsm: 250,
+    drapeCoeff: 0.35,
+    stretch: 3,
+    costPerMeter: 5.40,
+    handfeel: "structured",
+    thermal: "moderate",
+    color: "#d4c4a8",
+    compatibleSeams: ["plain", "flat_fell", "lapped", "bound"],
+    compatibleGarments: ["pants", "jacket", "skirt", "shorts"],
+    trinity: {
+      ity: { materiality: 8, luminosity: 3, viscosity: 2, permanence: 8, workability: 7 },
+      pathy: { tactility: 6, sensuosity: 3, immediacy: 5, gestural_energy: 5 },
+      fundamentals: { authenticity: 8, felicity: 5, propensity: 6 }
+    }
+  },
+  {
+    id: "cotton_sateen",
+    name: "Cotton Sateen",
+    category: "Wovens",
+    gsm: 140,
+    drapeCoeff: 0.68,
+    stretch: 4,
+    costPerMeter: 6.20,
+    handfeel: "smooth",
+    thermal: "moderate",
+    color: "#f0e8d0",
+    compatibleSeams: ["french", "plain", "rolled_hem", "blind_hem"],
+    compatibleGarments: ["blouse", "dress", "skirt", "pants"],
+    trinity: {
+      ity: { materiality: 6, luminosity: 7, viscosity: 4, permanence: 6, workability: 7 },
+      pathy: { tactility: 8, sensuosity: 7, immediacy: 6, gestural_energy: 5 },
+      fundamentals: { authenticity: 6, felicity: 8, propensity: 7 }
+    }
+  },
+  {
+    id: "oxford_cloth",
+    name: "Oxford Cloth",
+    category: "Wovens",
+    gsm: 180,
+    drapeCoeff: 0.30,
+    stretch: 3,
+    costPerMeter: 4.90,
+    handfeel: "textured",
+    thermal: "breathable",
+    color: "#e8e0d8",
+    compatibleSeams: ["plain", "french", "flat_fell"],
+    compatibleGarments: ["shirt", "blouse", "dress"],
+    trinity: {
+      ity: { materiality: 7, luminosity: 4, viscosity: 2, permanence: 7, workability: 8 },
+      pathy: { tactility: 6, sensuosity: 4, immediacy: 6, gestural_energy: 4 },
+      fundamentals: { authenticity: 8, felicity: 5, propensity: 7 }
+    }
+  },
+  {
+    id: "chambray",
+    name: "Chambray",
+    category: "Wovens",
+    gsm: 135,
+    drapeCoeff: 0.52,
+    stretch: 4,
+    costPerMeter: 4.20,
+    handfeel: "soft",
+    thermal: "breathable",
+    color: "#b8c8d8",
+    compatibleSeams: ["plain", "french", "flat_fell"],
+    compatibleGarments: ["shirt", "dress", "skirt", "jacket"],
+    trinity: {
+      ity: { materiality: 6, luminosity: 5, viscosity: 3, permanence: 6, workability: 8 },
+      pathy: { tactility: 6, sensuosity: 5, immediacy: 6, gestural_energy: 5 },
+      fundamentals: { authenticity: 7, felicity: 6, propensity: 7 }
+    }
+  },
+  {
+    id: "flannel",
+    name: "Flannel",
+    category: "Wovens",
+    gsm: 200,
+    drapeCoeff: 0.48,
+    stretch: 5,
+    costPerMeter: 6.80,
+    handfeel: "soft",
+    thermal: "warm",
+    color: "#c8b8a8",
+    compatibleSeams: ["plain", "french", "bound"],
+    compatibleGarments: ["shirt", "pants", "jacket", "coat"],
+    trinity: {
+      ity: { materiality: 7, luminosity: 2, viscosity: 4, permanence: 7, workability: 7 },
+      pathy: { tactility: 9, sensuosity: 7, immediacy: 5, gestural_energy: 4 },
+      fundamentals: { authenticity: 8, felicity: 7, propensity: 6 }
+    }
+  },
+  {
+    id: "canvas",
+    name: "Canvas",
+    category: "Wovens",
+    gsm: 320,
+    drapeCoeff: 0.20,
+    stretch: 2,
+    costPerMeter: 5.80,
+    handfeel: "stiff",
+    thermal: "moderate",
+    color: "#d8c8a0",
+    compatibleSeams: ["plain", "flat_fell", "lapped", "welt"],
+    compatibleGarments: ["jacket", "bag", "vest", "coat"],
+    trinity: {
+      ity: { materiality: 9, luminosity: 2, viscosity: 1, permanence: 9, workability: 5 },
+      pathy: { tactility: 4, sensuosity: 2, immediacy: 4, gestural_energy: 6 },
+      fundamentals: { authenticity: 9, felicity: 3, propensity: 5 }
+    }
+  },
+  {
+    id: "gabardine",
+    name: "Gabardine",
+    category: "Wovens",
+    gsm: 230,
+    drapeCoeff: 0.55,
+    stretch: 4,
+    costPerMeter: 9.50,
+    handfeel: "smooth",
+    thermal: "moderate",
+    color: "#a8a0b0",
+    compatibleSeams: ["plain", "welt", "bound", "lapped"],
+    compatibleGarments: ["pants", "blazer", "coat", "skirt"],
+    trinity: {
+      ity: { materiality: 7, luminosity: 5, viscosity: 4, permanence: 8, workability: 7 },
+      pathy: { tactility: 7, sensuosity: 6, immediacy: 6, gestural_energy: 5 },
+      fundamentals: { authenticity: 7, felicity: 7, propensity: 7 }
+    }
+  },
+  {
+    id: "seersucker",
+    name: "Seersucker",
+    category: "Wovens",
+    gsm: 120,
+    drapeCoeff: 0.38,
+    stretch: 4,
+    costPerMeter: 5.20,
+    handfeel: "textured",
+    thermal: "very breathable",
+    color: "#d8e8f0",
+    compatibleSeams: ["plain", "french", "zigzag"],
+    compatibleGarments: ["shirt", "dress", "shorts", "blazer"],
+    trinity: {
+      ity: { materiality: 5, luminosity: 5, viscosity: 3, permanence: 5, workability: 8 },
+      pathy: { tactility: 6, sensuosity: 5, immediacy: 8, gestural_energy: 6 },
+      fundamentals: { authenticity: 7, felicity: 7, propensity: 8 }
+    }
+  },
+  // KNITS
+  {
+    id: "cotton_jersey",
+    name: "Cotton Jersey",
+    category: "Knits",
+    gsm: 180,
+    drapeCoeff: 0.72,
+    stretch: 50,
+    costPerMeter: 4.20,
+    handfeel: "soft",
+    thermal: "breathable",
+    color: "#e8d8b8",
+    compatibleSeams: ["overlock", "flatlock", "coverstitch", "zigzag"],
+    compatibleGarments: ["t_shirt", "dress", "crop_top", "tank"],
+    trinity: {
+      ity: { materiality: 6, luminosity: 3, viscosity: 5, permanence: 5, workability: 8 },
+      pathy: { tactility: 8, sensuosity: 6, immediacy: 8, gestural_energy: 7 },
+      fundamentals: { authenticity: 7, felicity: 7, propensity: 8 }
+    }
+  },
+  {
+    id: "modal_rib",
+    name: "Modal Rib Knit",
+    category: "Knits",
+    gsm: 220,
+    drapeCoeff: 0.81,
+    stretch: 80,
+    costPerMeter: 7.40,
+    handfeel: "silky-soft",
+    thermal: "breathable",
+    color: "#d9d0c8",
+    compatibleSeams: ["overlock", "coverstitch", "flatlock"],
+    compatibleGarments: ["t_shirt", "crop_top", "tank", "dress"],
+    trinity: {
+      ity: { materiality: 5, luminosity: 6, viscosity: 7, permanence: 5, workability: 7 },
+      pathy: { tactility: 9, sensuosity: 9, immediacy: 8, gestural_energy: 7 },
+      fundamentals: { authenticity: 6, felicity: 9, propensity: 8 }
+    }
+  },
+  {
+    id: "french_terry",
+    name: "French Terry",
+    category: "Knits",
+    gsm: 280,
+    drapeCoeff: 0.62,
+    stretch: 40,
+    costPerMeter: 6.90,
+    handfeel: "plush",
+    thermal: "warm",
+    color: "#e0d0c0",
+    compatibleSeams: ["overlock", "coverstitch", "flatlock"],
+    compatibleGarments: ["hoodie", "jogger", "crop_top", "dress"],
+    trinity: {
+      ity: { materiality: 7, luminosity: 2, viscosity: 5, permanence: 6, workability: 7 },
+      pathy: { tactility: 9, sensuosity: 8, immediacy: 6, gestural_energy: 6 },
+      fundamentals: { authenticity: 7, felicity: 8, propensity: 7 }
+    }
+  },
+  {
+    id: "ponte",
+    name: "Ponte",
+    category: "Knits",
+    gsm: 300,
+    drapeCoeff: 0.55,
+    stretch: 30,
+    costPerMeter: 8.20,
+    handfeel: "structured",
+    thermal: "moderate",
+    color: "#282828",
+    compatibleSeams: ["overlock", "coverstitch", "plain", "zigzag"],
+    compatibleGarments: ["pants", "dress", "blazer", "skirt"],
+    trinity: {
+      ity: { materiality: 8, luminosity: 3, viscosity: 4, permanence: 8, workability: 6 },
+      pathy: { tactility: 6, sensuosity: 5, immediacy: 6, gestural_energy: 5 },
+      fundamentals: { authenticity: 7, felicity: 6, propensity: 7 }
+    }
+  },
+  {
+    id: "interlock",
+    name: "Interlock",
+    category: "Knits",
+    gsm: 200,
+    drapeCoeff: 0.65,
+    stretch: 35,
+    costPerMeter: 5.60,
+    handfeel: "smooth",
+    thermal: "breathable",
+    color: "#f0e8d8",
+    compatibleSeams: ["overlock", "coverstitch", "flatlock"],
+    compatibleGarments: ["t_shirt", "dress", "crop_top", "leggings"],
+    trinity: {
+      ity: { materiality: 6, luminosity: 4, viscosity: 5, permanence: 5, workability: 8 },
+      pathy: { tactility: 7, sensuosity: 7, immediacy: 7, gestural_energy: 6 },
+      fundamentals: { authenticity: 6, felicity: 7, propensity: 8 }
+    }
+  },
+  {
+    id: "waffle_knit",
+    name: "Waffle Knit",
+    category: "Knits",
+    gsm: 240,
+    drapeCoeff: 0.50,
+    stretch: 45,
+    costPerMeter: 6.40,
+    handfeel: "textured",
+    thermal: "warm",
+    color: "#ddd0b8",
+    compatibleSeams: ["overlock", "coverstitch"],
+    compatibleGarments: ["t_shirt", "hoodie", "cardigan", "tank"],
+    trinity: {
+      ity: { materiality: 6, luminosity: 3, viscosity: 5, permanence: 6, workability: 7 },
+      pathy: { tactility: 8, sensuosity: 7, immediacy: 7, gestural_energy: 6 },
+      fundamentals: { authenticity: 7, felicity: 7, propensity: 7 }
+    }
+  },
+  {
+    id: "velour",
+    name: "Velour",
+    category: "Knits",
+    gsm: 320,
+    drapeCoeff: 0.75,
+    stretch: 40,
+    costPerMeter: 9.80,
+    handfeel: "plush",
+    thermal: "warm",
+    color: "#b09898",
+    compatibleSeams: ["overlock", "coverstitch", "flatlock"],
+    compatibleGarments: ["hoodie", "jogger", "dress", "cardigan"],
+    trinity: {
+      ity: { materiality: 7, luminosity: 6, viscosity: 6, permanence: 6, workability: 6 },
+      pathy: { tactility: 10, sensuosity: 9, immediacy: 7, gestural_energy: 6 },
+      fundamentals: { authenticity: 6, felicity: 9, propensity: 7 }
+    }
+  },
+  // LUXURY
+  {
+    id: "silk_charmeuse",
+    name: "Silk Charmeuse",
+    category: "Luxury",
+    gsm: 75,
+    drapeCoeff: 0.94,
+    stretch: 10,
+    costPerMeter: 28.00,
+    handfeel: "liquid",
+    thermal: "moderate",
+    color: "#f5e6d3",
+    compatibleSeams: ["french", "rolled_hem", "plain"],
+    compatibleGarments: ["blouse", "dress", "skirt", "jumpsuit"],
+    trinity: {
+      ity: { materiality: 4, luminosity: 10, viscosity: 9, permanence: 4, workability: 4 },
+      pathy: { tactility: 10, sensuosity: 10, immediacy: 9, gestural_energy: 9 },
+      fundamentals: { authenticity: 8, felicity: 10, propensity: 9 }
+    }
+  },
+  {
+    id: "wool_crepe",
+    name: "Wool Crepe",
+    category: "Luxury",
+    gsm: 260,
+    drapeCoeff: 0.70,
+    stretch: 8,
+    costPerMeter: 22.00,
+    handfeel: "crepe",
+    thermal: "warm",
+    color: "#c8c0b8",
+    compatibleSeams: ["plain", "french", "bound", "welt"],
+    compatibleGarments: ["blazer", "coat", "skirt", "dress"],
+    trinity: {
+      ity: { materiality: 8, luminosity: 5, viscosity: 5, permanence: 8, workability: 5 },
+      pathy: { tactility: 7, sensuosity: 7, immediacy: 6, gestural_energy: 5 },
+      fundamentals: { authenticity: 9, felicity: 7, propensity: 6 }
+    }
+  },
+  {
+    id: "cashmere",
+    name: "Cashmere",
+    category: "Luxury",
+    gsm: 190,
+    drapeCoeff: 0.85,
+    stretch: 15,
+    costPerMeter: 65.00,
+    handfeel: "cloud",
+    thermal: "very warm",
+    color: "#e8ddd0",
+    compatibleSeams: ["plain", "french", "blind_hem"],
+    compatibleGarments: ["coat", "cardigan", "vest", "dress"],
+    trinity: {
+      ity: { materiality: 5, luminosity: 6, viscosity: 8, permanence: 6, workability: 4 },
+      pathy: { tactility: 10, sensuosity: 10, immediacy: 8, gestural_energy: 7 },
+      fundamentals: { authenticity: 10, felicity: 10, propensity: 8 }
+    }
+  },
+  {
+    id: "velvet",
+    name: "Velvet",
+    category: "Luxury",
+    gsm: 400,
+    drapeCoeff: 0.78,
+    stretch: 6,
+    costPerMeter: 18.00,
+    handfeel: "plush",
+    thermal: "warm",
+    color: "#382848",
+    compatibleSeams: ["plain", "bound", "french"],
+    compatibleGarments: ["blazer", "dress", "skirt", "coat"],
+    trinity: {
+      ity: { materiality: 8, luminosity: 9, viscosity: 6, permanence: 7, workability: 4 },
+      pathy: { tactility: 10, sensuosity: 9, immediacy: 8, gestural_energy: 6 },
+      fundamentals: { authenticity: 8, felicity: 9, propensity: 7 }
+    }
+  },
+  {
+    id: "organza",
+    name: "Organza",
+    category: "Luxury",
+    gsm: 30,
+    drapeCoeff: 0.25,
+    stretch: 2,
+    costPerMeter: 14.00,
+    handfeel: "crisp",
+    thermal: "none",
+    color: "#f8f0e0",
+    compatibleSeams: ["french", "rolled_hem", "plain"],
+    compatibleGarments: ["dress", "blouse", "skirt"],
+    trinity: {
+      ity: { materiality: 2, luminosity: 9, viscosity: 2, permanence: 3, workability: 4 },
+      pathy: { tactility: 4, sensuosity: 8, immediacy: 9, gestural_energy: 8 },
+      fundamentals: { authenticity: 6, felicity: 9, propensity: 8 }
+    }
+  },
+  {
+    id: "chiffon",
+    name: "Chiffon",
+    category: "Luxury",
+    gsm: 50,
+    drapeCoeff: 0.90,
+    stretch: 5,
+    costPerMeter: 12.00,
+    handfeel: "ethereal",
+    thermal: "none",
+    color: "#f0ece8",
+    compatibleSeams: ["french", "rolled_hem", "plain"],
+    compatibleGarments: ["dress", "blouse", "skirt", "jumpsuit"],
+    trinity: {
+      ity: { materiality: 2, luminosity: 8, viscosity: 8, permanence: 3, workability: 3 },
+      pathy: { tactility: 6, sensuosity: 9, immediacy: 10, gestural_energy: 9 },
+      fundamentals: { authenticity: 6, felicity: 9, propensity: 9 }
+    }
+  },
+  {
+    id: "taffeta",
+    name: "Taffeta",
+    category: "Luxury",
+    gsm: 90,
+    drapeCoeff: 0.45,
+    stretch: 2,
+    costPerMeter: 15.00,
+    handfeel: "crisp",
+    thermal: "none",
+    color: "#d8c8e8",
+    compatibleSeams: ["french", "plain", "rolled_hem"],
+    compatibleGarments: ["dress", "skirt", "blazer"],
+    trinity: {
+      ity: { materiality: 4, luminosity: 8, viscosity: 3, permanence: 4, workability: 5 },
+      pathy: { tactility: 5, sensuosity: 8, immediacy: 8, gestural_energy: 7 },
+      fundamentals: { authenticity: 6, felicity: 8, propensity: 7 }
+    }
+  },
+  // TECHNICAL
+  {
+    id: "neoprene",
+    name: "Neoprene",
+    category: "Technical",
+    gsm: 500,
+    drapeCoeff: 0.20,
+    stretch: 25,
+    costPerMeter: 12.50,
+    handfeel: "rubbery",
+    thermal: "insulating",
+    color: "#181820",
+    compatibleSeams: ["flatlock", "overlock", "plain"],
+    compatibleGarments: ["jacket", "skirt", "dress", "shorts"],
+    trinity: {
+      ity: { materiality: 9, luminosity: 2, viscosity: 3, permanence: 9, workability: 4 },
+      pathy: { tactility: 5, sensuosity: 3, immediacy: 6, gestural_energy: 7 },
+      fundamentals: { authenticity: 4, felicity: 3, propensity: 6 }
+    }
+  },
+  {
+    id: "ripstop",
+    name: "Ripstop Nylon",
+    category: "Technical",
+    gsm: 70,
+    drapeCoeff: 0.38,
+    stretch: 5,
+    costPerMeter: 7.20,
+    handfeel: "crinkle",
+    thermal: "wind resistant",
+    color: "#d0d8e0",
+    compatibleSeams: ["plain", "flat_fell", "bound", "safety_stitch"],
+    compatibleGarments: ["jacket", "vest", "shorts", "pants"],
+    trinity: {
+      ity: { materiality: 6, luminosity: 4, viscosity: 2, permanence: 8, workability: 6 },
+      pathy: { tactility: 4, sensuosity: 3, immediacy: 7, gestural_energy: 8 },
+      fundamentals: { authenticity: 5, felicity: 4, propensity: 7 }
+    }
+  },
+  {
+    id: "scuba",
+    name: "Scuba",
+    category: "Technical",
+    gsm: 280,
+    drapeCoeff: 0.30,
+    stretch: 35,
+    costPerMeter: 9.90,
+    handfeel: "smooth",
+    thermal: "moderate",
+    color: "#303040",
+    compatibleSeams: ["overlock", "flatlock", "plain", "coverstitch"],
+    compatibleGarments: ["dress", "skirt", "jacket", "blazer"],
+    trinity: {
+      ity: { materiality: 8, luminosity: 4, viscosity: 4, permanence: 8, workability: 6 },
+      pathy: { tactility: 5, sensuosity: 4, immediacy: 6, gestural_energy: 6 },
+      fundamentals: { authenticity: 4, felicity: 5, propensity: 7 }
+    }
+  },
+  {
+    id: "power_mesh",
+    name: "Power Mesh",
+    category: "Technical",
+    gsm: 80,
+    drapeCoeff: 0.85,
+    stretch: 90,
+    costPerMeter: 6.80,
+    handfeel: "stretchy",
+    thermal: "none",
+    color: "#f0e8e0",
+    compatibleSeams: ["flatlock", "coverstitch", "zigzag", "safety_stitch"],
+    compatibleGarments: ["leggings", "crop_top", "tank", "dress"],
+    trinity: {
+      ity: { materiality: 3, luminosity: 5, viscosity: 8, permanence: 4, workability: 5 },
+      pathy: { tactility: 5, sensuosity: 6, immediacy: 9, gestural_energy: 9 },
+      fundamentals: { authenticity: 3, felicity: 6, propensity: 9 }
+    }
+  }
+];
+
+const FABRIC_CATEGORIES = ["All", "Wovens", "Knits", "Luxury", "Technical"];
+
+// ─────────────────────────────────────────────
+// DATA: SEAM TYPES (15+)
+// ─────────────────────────────────────────────
+const SEAMS = [
+  {
+    id: "overlock",
+    name: "Overlock",
+    code: "504",
+    spi: 12,
+    seamWidth: "5mm",
+    strength: "high",
+    icon: "⟿",
+    desc: "Industrial overlock; trims & secures raw edges simultaneously. Standard knit construction.",
+    cost: 0.08,
+    timePerMeter: 0.5
+  },
+  {
+    id: "flatlock",
+    name: "Flatlock",
+    code: "607",
+    spi: 10,
+    seamWidth: "6mm",
+    strength: "high",
+    icon: "═",
+    desc: "Flat, no bulk; ideal for athletic wear. Decorative ladder on reverse.",
+    cost: 0.12,
+    timePerMeter: 0.7
+  },
+  {
+    id: "french",
+    name: "French Seam",
+    code: "—",
+    spi: 12,
+    seamWidth: "10mm",
+    strength: "very high",
+    icon: "◫",
+    desc: "Self-enclosed; zero raw edge exposure. Ideal for silk, chiffon, transparent fabrics.",
+    cost: 0.20,
+    timePerMeter: 1.2
+  },
+  {
+    id: "flat_fell",
+    name: "Flat Fell",
+    code: "—",
+    spi: 14,
+    seamWidth: "12mm",
+    strength: "very high",
+    icon: "▤",
+    desc: "Double top-stitched, fully enclosed. Denim standard. Reversible, highly durable.",
+    cost: 0.22,
+    timePerMeter: 1.5
+  },
+  {
+    id: "plain",
+    name: "Plain Seam",
+    code: "301",
+    spi: 11,
+    seamWidth: "15mm",
+    strength: "medium",
+    icon: "─",
+    desc: "Basic lockstitch; universal woven construction. Usually serged separately.",
+    cost: 0.06,
+    timePerMeter: 0.4
+  },
+  {
+    id: "rolled_hem",
+    name: "Rolled Hem",
+    code: "209",
+    spi: 16,
+    seamWidth: "3mm",
+    strength: "low",
+    icon: "↺",
+    desc: "Narrow, rolled finish. Signature of silk and chiffon edges; extremely delicate.",
+    cost: 0.18,
+    timePerMeter: 1.0
+  },
+  {
+    id: "coverstitch",
+    name: "Coverstitch",
+    code: "406",
+    spi: 10,
+    seamWidth: "6mm",
+    strength: "high",
+    icon: "⊞",
+    desc: "Two-needle top, looper under. Standard knit hem & seam finish. Stretchy.",
+    cost: 0.10,
+    timePerMeter: 0.6
+  },
+  {
+    id: "chain_stitch",
+    name: "Chain Stitch",
+    code: "401",
+    spi: 10,
+    seamWidth: "4mm",
+    strength: "high",
+    icon: "⛓",
+    desc: "Single looper chain; high elasticity. Denim yokes, knit outseams. Prone to chain-out.",
+    cost: 0.09,
+    timePerMeter: 0.5
+  },
+  {
+    id: "blind_hem",
+    name: "Blind Hem",
+    code: "103",
+    spi: 8,
+    seamWidth: "8mm",
+    strength: "medium",
+    icon: "⋯",
+    desc: "Near-invisible hem from face side. Tailored trousers and skirts standard.",
+    cost: 0.14,
+    timePerMeter: 0.8
+  },
+  {
+    id: "zigzag",
+    name: "Zigzag Stitch",
+    code: "304",
+    spi: 10,
+    seamWidth: "5mm",
+    strength: "medium",
+    icon: "∿",
+    desc: "Zigzag lockstitch; basic stretch seam alternative. Entry-level knit or appliqué.",
+    cost: 0.07,
+    timePerMeter: 0.5
+  },
+  {
+    id: "serged",
+    name: "Serged Edge",
+    code: "503",
+    spi: 12,
+    seamWidth: "4mm",
+    strength: "medium",
+    icon: "≋",
+    desc: "3-thread overlock for edge finishing only, not joining. Follows plain seam.",
+    cost: 0.06,
+    timePerMeter: 0.3
+  },
+  {
+    id: "bound",
+    name: "Bound Seam",
+    code: "—",
+    spi: 11,
+    seamWidth: "10mm",
+    strength: "very high",
+    icon: "⌈",
+    desc: "Bias tape binds raw edge. Couture, tailoring, unlined jackets. Premium finish.",
+    cost: 0.28,
+    timePerMeter: 1.8
+  },
+  {
+    id: "lapped",
+    name: "Lapped Seam",
+    code: "—",
+    spi: 12,
+    seamWidth: "8mm",
+    strength: "high",
+    icon: "⊐",
+    desc: "One layer laps over other, single or double topstitch. Flat, functional.",
+    cost: 0.12,
+    timePerMeter: 0.7
+  },
+  {
+    id: "welt",
+    name: "Welt Seam",
+    code: "—",
+    spi: 12,
+    seamWidth: "10mm",
+    strength: "very high",
+    icon: "⊏",
+    desc: "Felled seam variant; pressed one direction, single top stitch. Tailored garments.",
+    cost: 0.16,
+    timePerMeter: 0.9
+  },
+  {
+    id: "safety_stitch",
+    name: "Safety Stitch",
+    code: "516",
+    spi: 10,
+    seamWidth: "6mm",
+    strength: "very high",
+    icon: "⊕",
+    desc: "Combines chain stitch + 3-thread overlock in single pass. Outerwear, workwear.",
+    cost: 0.14,
+    timePerMeter: 0.6
+  }
+];
+
+// ─────────────────────────────────────────────
+// DATA: GARMENT TYPES (17)
+// ─────────────────────────────────────────────
+const GARMENT_TYPES = [
+  { id: "t_shirt",    name: "T-Shirt",    icon: "👕", fabricYards: 1.8, cmBase: 2.5,  complexity: "low" },
+  { id: "dress",      name: "Dress",      icon: "👗", fabricYards: 2.8, cmBase: 5.5,  complexity: "medium" },
+  { id: "jacket",     name: "Jacket",     icon: "🧥", fabricYards: 3.2, cmBase: 9.0,  complexity: "high" },
+  { id: "skirt",      name: "Skirt",      icon: "🩱", fabricYards: 1.5, cmBase: 3.0,  complexity: "low" },
+  { id: "pants",      name: "Pants",      icon: "👖", fabricYards: 2.4, cmBase: 6.0,  complexity: "medium" },
+  { id: "blouse",     name: "Blouse",     icon: "👚", fabricYards: 2.0, cmBase: 4.5,  complexity: "medium" },
+  { id: "hoodie",     name: "Hoodie",     icon: "🧤", fabricYards: 2.6, cmBase: 6.5,  complexity: "medium" },
+  { id: "blazer",     name: "Blazer",     icon: "🧣", fabricYards: 2.8, cmBase: 12.0, complexity: "high" },
+  { id: "coat",       name: "Coat",       icon: "🧤", fabricYards: 4.0, cmBase: 14.0, complexity: "very high" },
+  { id: "jogger",     name: "Jogger",     icon: "👖", fabricYards: 2.2, cmBase: 5.0,  complexity: "medium" },
+  { id: "crop_top",   name: "Crop Top",   icon: "👙", fabricYards: 1.2, cmBase: 2.0,  complexity: "low" },
+  { id: "tank",       name: "Tank",       icon: "🩱", fabricYards: 1.4, cmBase: 2.0,  complexity: "low" },
+  { id: "jumpsuit",   name: "Jumpsuit",   icon: "🧦", fabricYards: 3.0, cmBase: 7.5,  complexity: "high" },
+  { id: "shorts",     name: "Shorts",     icon: "🩲", fabricYards: 1.4, cmBase: 3.5,  complexity: "low" },
+  { id: "vest",       name: "Vest",       icon: "🦺", fabricYards: 1.6, cmBase: 4.5,  complexity: "medium" },
+  { id: "cardigan",   name: "Cardigan",   icon: "🧶", fabricYards: 2.4, cmBase: 5.5,  complexity: "medium" },
+  { id: "leggings",   name: "Leggings",   icon: "🩲", fabricYards: 1.8, cmBase: 3.5,  complexity: "low" }
+];
+
+// ─────────────────────────────────────────────
+// DATA: LABOR RATES BY REGION
+// ─────────────────────────────────────────────
+const LABOR_REGIONS = [
+  { id: "bangladesh", name: "Bangladesh",   multiplier: 0.55, minWage: 0.32, currency: "BDT" },
+  { id: "vietnam",    name: "Vietnam",      multiplier: 0.70, minWage: 0.50, currency: "VND" },
+  { id: "china",      name: "China",        multiplier: 1.00, minWage: 0.82, currency: "CNY" },
+  { id: "portugal",   name: "Portugal",     multiplier: 2.80, minWage: 3.50, currency: "EUR" },
+  { id: "italy",      name: "Italy",        multiplier: 5.50, minWage: 8.00, currency: "EUR" },
+  { id: "usa",        name: "USA",          multiplier: 8.00, minWage: 12.50, currency: "USD" }
+];
+
+// ─────────────────────────────────────────────
+// DATA: MARKUP TIERS
+// ─────────────────────────────────────────────
+const MARKUP_TIERS = [
+  { id: "wholesale",  name: "Wholesale",    markup: 2.2, moq: 500,  desc: "Retailer wholesale price" },
+  { id: "boutique",   name: "Boutique",     markup: 3.5, moq: 100,  desc: "Independent boutique MSRP" },
+  { id: "premium",    name: "Premium",      markup: 5.0, moq: 50,   desc: "Premium brand MSRP" },
+  { id: "luxury",     name: "Luxury",       markup: 8.0, moq: 12,   desc: "Luxury/designer retail" }
+];
+
+// ─────────────────────────────────────────────
+// DATA: TRINITY GRAPH NODES
+// ─────────────────────────────────────────────
+const TRINITY_NODES = [
+  { id: "fiber",      x: 80,  y: 50,  label: "Fiber",       color: "#7e6545" },
+  { id: "weave",      x: 220, y: 40,  label: "Weave/Knit",  color: "#5a4a7e" },
+  { id: "weight",     x: 360, y: 50,  label: "GSM Weight",  color: "#3a6a5a" },
+  { id: "drape",      x: 150, y: 150, label: "Drape",       color: "#7e4a35" },
+  { id: "seam",       x: 290, y: 150, label: "Seam Type",   color: "#3a4a7e" },
+  { id: "ity",        x: 60,  y: 260, label: "-ity",        color: "#8a5a20" },
+  { id: "pathy",      x: 190, y: 280, label: "-pathy",      color: "#5a207a" },
+  { id: "human",      x: 320, y: 260, label: "Human Factor",color: "#7e3a4a" },
+  { id: "cost",       x: 380, y: 350, label: "Cost Model",  color: "#3a6a3a" },
+  { id: "techpack",   x: 200, y: 370, label: "Tech Pack",   color: "#2a2a3a" }
+];
+
+const TRINITY_EDGES = [
+  ["fiber","drape"],["weave","drape"],["weight","drape"],
+  ["drape","seam"],["seam","ity"],["seam","pathy"],
+  ["drape","ity"],["drape","pathy"],
+  ["ity","human"],["pathy","human"],["pathy","techpack"],
+  ["human","cost"],["human","techpack"],["cost","techpack"],["ity","techpack"]
+];
+
+// ─────────────────────────────────────────────
+// UTILITY FUNCTIONS
+// ─────────────────────────────────────────────
+function getFabricById(id) { return FABRICS.find(f => f.id === id); }
+function getSeamById(id) { return SEAMS.find(s => s.id === id); }
+function getGarmentById(id) { return GARMENT_TYPES.find(g => g.id === id); }
+
+function calcBOM(fabric, garment, seam, region, markup) {
+  if (!fabric || !garment) return null;
+  const g = getGarmentById(garment);
+  const f = getFabricById(fabric);
+  const s = seam ? getSeamById(seam) : SEAMS[0];
+  const r = LABOR_REGIONS.find(x => x.id === region) || LABOR_REGIONS[2];
+  const m = MARKUP_TIERS.find(x => x.id === markup) || MARKUP_TIERS[0];
+
+  const fabricCost = f.costPerMeter * g.fabricYards * 0.9144; // yards to meters
+  const trimCost = 0.08 + 0.04 + 0.15 + 0.05 + 0.12; // label+care+hangtag+polybag+thread
+  const fabricTotal = fabricCost + trimCost;
+  const cmBase = g.cmBase;
+  const cmCost = cmBase * r.multiplier;
+  const totalFOB = fabricTotal + cmCost;
+  const msrp = totalFOB * m.markup;
+
+  const items = [
+    { item: f.name + " Fabric", qty: `${(g.fabricYards * 0.9144).toFixed(1)}m`, unitCost: f.costPerMeter, total: fabricCost },
+    { item: "Main Label", qty: "1 pc", unitCost: 0.08, total: 0.08 },
+    { item: "Care Label", qty: "1 pc", unitCost: 0.04, total: 0.04 },
+    { item: (s ? s.name : "Overlock") + " Thread", qty: "200m", unitCost: 0.12, total: 0.12 },
+    { item: "Hang Tag", qty: "1 pc", unitCost: 0.15, total: 0.15 },
+    { item: "Poly Bag", qty: "1 pc", unitCost: 0.05, total: 0.05 }
+  ];
+  return { items, fabricTotal, cmCost, totalFOB, msrp, region: r, markup: m, garment: g, fabric: f, seam: s };
+}
+
+// ─────────────────────────────────────────────
+// PANEL 1: Fabric Explorer
+// ─────────────────────────────────────────────
+function FabricExplorer({ selectedFabric, onSelectFabric }) {
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("name");
+
+  const filtered = useMemo(() => {
+    let list = FABRICS;
+    if (categoryFilter !== "All") list = list.filter(f => f.category === categoryFilter);
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(f => f.name.toLowerCase().includes(q) || f.handfeel.toLowerCase().includes(q) || f.thermal.toLowerCase().includes(q));
+    }
+    return [...list].sort((a,b) => {
+      if (sortBy === "gsm") return a.gsm - b.gsm;
+      if (sortBy === "cost") return a.costPerMeter - b.costPerMeter;
+      if (sortBy === "drape") return b.drapeCoeff - a.drapeCoeff;
+      return a.name.localeCompare(b.name);
+    });
+  }, [categoryFilter, searchQuery, sortBy]);
+
+  const selected = selectedFabric ? getFabricById(selectedFabric) : null;
+
+  return (
+    <div className="panel" style={{ display:"grid", gridTemplateColumns:"260px 1fr", gap:"24px", alignItems:"start" }}>
+      {/* Left: Filter + List */}
+      <div>
+        <div className="panel-title">Fabric Explorer</div>
+
+        {/* Search */}
+        <input
+          type="text"
+          placeholder="Search fabrics..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          style={{ width:"100%", padding:"7px 10px", fontSize:"9px", letterSpacing:"1px", marginBottom:"10px", border:"1px solid var(--border)", background:"var(--bg2)", color:"var(--text)" }}
+        />
+
+        {/* Category filter */}
+        <div style={{ display:"flex", flexWrap:"wrap", gap:"4px", marginBottom:"12px" }}>
+          {FABRIC_CATEGORIES.map(cat => (
+            <button key={cat} className={`filter-btn ${categoryFilter === cat ? "active" : ""}`}
+              onClick={() => setCategoryFilter(cat)}>{cat}</button>
+          ))}
+        </div>
+
+        {/* Sort */}
+        <div style={{ display:"flex", gap:"4px", marginBottom:"14px" }}>
+          <span style={{ fontSize:"8px", color:"var(--text3)", letterSpacing:"1px", lineHeight:"22px" }}>SORT:</span>
+          {[["name","Name"],["gsm","GSM"],["cost","Cost"],["drape","Drape"]].map(([k,l]) => (
+            <button key={k} className={`filter-btn ${sortBy === k ? "active" : ""}`}
+              onClick={() => setSortBy(k)} style={{ padding:"4px 8px" }}>{l}</button>
+          ))}
+        </div>
+
+        {/* Fabric list */}
+        <div style={{ display:"flex", flexDirection:"column", gap:"3px", maxHeight:"calc(100vh - 260px)", overflowY:"auto" }}>
+          {filtered.map(f => (
+            <button key={f.id} className={`fabric-chip ${selectedFabric === f.id ? "selected" : ""}`}
+              onClick={() => onSelectFabric(f.id)}>
+              <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+                <div className="swatch" style={{ background: f.color }} />
+                <div>
+                  <div style={{ fontSize:"10px", fontWeight: selectedFabric===f.id?"700":"400" }}>{f.name}</div>
+                  <div style={{ fontSize:"8px", color:"var(--text3)" }}>{f.category}</div>
+                </div>
+              </div>
+              <div style={{ textAlign:"right" }}>
+                <div style={{ fontSize:"9px", color:"var(--text3)" }}>{f.gsm}gsm</div>
+                <div style={{ fontSize:"9px", color:"var(--gold-dim)" }}>${f.costPerMeter.toFixed(2)}/m</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Right: Detail Panel */}
+      <div className="fade-in">
+        {!selected ? (
+          <div style={{ padding:"60px 0", textAlign:"center", color:"var(--text3)", fontSize:"11px" }}>
+            <div style={{ fontSize:"32px", marginBottom:"16px", opacity:0.3 }}>◈</div>
+            <div style={{ letterSpacing:"3px" }}>SELECT A FABRIC TO INSPECT</div>
+          </div>
+        ) : (
+          <div>
+            {/* Header */}
+            <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:"20px" }}>
+              <div>
+                <div style={{ fontSize:"20px", fontWeight:"700", color:"var(--text)", letterSpacing:"2px", marginBottom:"4px" }}>{selected.name}</div>
+                <div style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"3px" }}>{selected.category.toUpperCase()} · {selected.gsm}gsm · ${selected.costPerMeter.toFixed(2)}/meter</div>
+              </div>
+              <div style={{ width:"48px", height:"48px", background:selected.color, border:"1px solid var(--border)", flexShrink:0 }} />
+            </div>
+
+            {/* Core Properties */}
+            <div className="grid-4" style={{ marginBottom:"16px" }}>
+              {[
+                ["Drape Coeff", selected.drapeCoeff.toFixed(2)],
+                ["Stretch", `${selected.stretch}%`],
+                ["Handfeel", selected.handfeel],
+                ["Thermal", selected.thermal],
+                ["GSM Weight", `${selected.gsm}g`],
+                ["Cost/Meter", `$${selected.costPerMeter.toFixed(2)}`],
+                ["Compatible Seams", `${selected.compatibleSeams.length} types`],
+                ["Garment Uses", `${selected.compatibleGarments.length} types`]
+              ].map(([l,v]) => (
+                <div key={l} className="stat-box">
+                  <div className="stat-label">{l}</div>
+                  <div className="stat-value" style={{ fontSize:"12px" }}>{v}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Drape Visual Bar */}
+            <div className="card" style={{ marginBottom:"16px" }}>
+              <div className="card-title">Drape Coefficient — {selected.drapeCoeff.toFixed(2)}</div>
+              <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
+                <div style={{ flex:1 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", fontSize:"8px", color:"var(--text3)", marginBottom:"6px" }}>
+                    <span>STIFF (0)</span><span>FLOWING (1)</span>
+                  </div>
+                  <div className="bar-track" style={{ height:"8px" }}>
+                    <div className="bar-fill" style={{ width:`${selected.drapeCoeff*100}%`, background:`linear-gradient(90deg, #4a6b9e, #D4A04A)` }}/>
+                  </div>
+                </div>
+                <div style={{ fontSize:"24px", fontWeight:"700", color:"var(--gold)", width:"52px", textAlign:"right" }}>
+                  {selected.drapeCoeff.toFixed(2)}
+                </div>
+              </div>
+            </div>
+
+            {/* Compatible Seams */}
+            <div className="grid-2" style={{ marginBottom:"16px" }}>
+              <div className="card">
+                <div className="card-title">Compatible Seams</div>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:"4px" }}>
+                  {selected.compatibleSeams.map(sid => {
+                    const s = getSeamById(sid);
+                    return s ? (
+                      <span key={sid} style={{ padding:"3px 8px", fontSize:"8px", letterSpacing:"1px", background:"var(--bg3)", border:"1px solid var(--border)", color:"var(--text2)" }}>
+                        {s.icon} {s.name}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+              <div className="card">
+                <div className="card-title">Compatible Garments</div>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:"4px" }}>
+                  {selected.compatibleGarments.map(gid => {
+                    const g = getGarmentById(gid);
+                    return g ? (
+                      <span key={gid} style={{ padding:"3px 8px", fontSize:"8px", letterSpacing:"1px", background:"var(--bg3)", border:"1px solid var(--border)", color:"var(--accent-teal)" }}>
+                        {g.name}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Trinity Mapping */}
+            <div className="card">
+              <div className="card-title">Trinity Mapping</div>
+              <div className="grid-3" style={{ gap:"12px" }}>
+                {/* -ity */}
+                <div>
+                  <div style={{ fontSize:"9px", color:"var(--gold)", letterSpacing:"2px", marginBottom:"8px" }}>-ITY AXES</div>
+                  {Object.entries(selected.trinity.ity).map(([k,v]) => (
+                    <div key={k} style={{ marginBottom:"6px" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", fontSize:"8px", marginBottom:"2px" }}>
+                        <span style={{ color:"var(--text3)", textTransform:"capitalize" }}>{k.replace("_"," ")}</span>
+                        <span style={{ color:"var(--text2)" }}>{v}/10</span>
+                      </div>
+                      <div className="bar-track">
+                        <div className="bar-fill" style={{ width:`${v*10}%`, background:"var(--gold-dim)" }}/>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* -pathy */}
+                <div>
+                  <div style={{ fontSize:"9px", color:"var(--accent-purple)", letterSpacing:"2px", marginBottom:"8px" }}>-PATHY AXES</div>
+                  {Object.entries(selected.trinity.pathy).map(([k,v]) => (
+                    <div key={k} style={{ marginBottom:"6px" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", fontSize:"8px", marginBottom:"2px" }}>
+                        <span style={{ color:"var(--text3)", textTransform:"capitalize" }}>{k.replace("_"," ")}</span>
+                        <span style={{ color:"var(--text2)" }}>{v}/10</span>
+                      </div>
+                      <div className="bar-track">
+                        <div className="bar-fill" style={{ width:`${v*10}%`, background:"var(--accent-purple)" }}/>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Fundamentals */}
+                <div>
+                  <div style={{ fontSize:"9px", color:"var(--accent-teal)", letterSpacing:"2px", marginBottom:"8px" }}>FUNDAMENTALS</div>
+                  {Object.entries(selected.trinity.fundamentals).map(([k,v]) => (
+                    <div key={k} style={{ marginBottom:"6px" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", fontSize:"8px", marginBottom:"2px" }}>
+                        <span style={{ color:"var(--text3)", textTransform:"capitalize" }}>{k}</span>
+                        <span style={{ color:"var(--text2)" }}>{v}/10</span>
+                      </div>
+                      <div className="bar-track">
+                        <div className="bar-fill" style={{ width:`${v*10}%`, background:"var(--accent-teal)" }}/>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// PANEL 2: Tech Pack Builder
+// ─────────────────────────────────────────────
+function TechPackBuilder({ selectedFabric, onSelectFabric, selectedGarment, onSelectGarment, selectedSeam, onSelectSeam }) {
+  const [region, setRegion] = useState("china");
+  const [markupTier, setMarkupTier] = useState("wholesale");
+  const [moqOverride, setMoqOverride] = useState(null);
+  const [showPrint, setShowPrint] = useState(false);
+
+  const bom = useMemo(() => calcBOM(selectedFabric, selectedGarment, selectedSeam, region, markupTier), [selectedFabric, selectedGarment, selectedSeam, region, markupTier]);
+
+  const fabric = selectedFabric ? getFabricById(selectedFabric) : null;
+  const garment = selectedGarment ? getGarmentById(selectedGarment) : null;
+  const seam = selectedSeam ? getSeamById(selectedSeam) : null;
+
+  return (
+    <div className="panel" style={{ display:"grid", gridTemplateColumns:"280px 1fr", gap:"24px", alignItems:"start" }}>
+      {/* Left: Configuration */}
+      <div>
+        <div className="panel-title">Tech Pack Builder</div>
+
+        {/* Garment Type */}
+        <div style={{ marginBottom:"16px" }}>
+          <div className="card-title" style={{ marginBottom:"8px" }}>Garment Type</div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"4px" }}>
+            {GARMENT_TYPES.map(g => (
+              <button key={g.id} className={`garment-chip ${selectedGarment === g.id ? "selected" : ""}`}
+                onClick={() => onSelectGarment(g.id)}
+                style={{ textAlign:"left" }}>
+                <div style={{ fontSize:"10px" }}>{g.name}</div>
+                <div style={{ fontSize:"8px", color:"var(--text3)" }}>{g.complexity}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Fabric */}
+        <div style={{ marginBottom:"16px" }}>
+          <div className="card-title" style={{ marginBottom:"8px" }}>Fabric</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:"3px", maxHeight:"180px", overflowY:"auto" }}>
+            {FABRICS.map(f => (
+              <button key={f.id} className={`fabric-chip ${selectedFabric === f.id ? "selected" : ""}`}
+                onClick={() => { onSelectFabric(f.id); if (f.compatibleSeams.length > 0) onSelectSeam(f.compatibleSeams[0]); }}>
+                <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
+                  <div className="swatch" style={{ background:f.color, width:"10px", height:"10px" }}/>
+                  <span style={{ fontSize:"9px" }}>{f.name}</span>
+                </div>
+                <span style={{ fontSize:"8px", color:"var(--text3)" }}>${f.costPerMeter.toFixed(2)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Seam */}
+        {fabric && (
+          <div style={{ marginBottom:"16px" }}>
+            <div className="card-title" style={{ marginBottom:"8px" }}>Seam Construction</div>
+            <div style={{ display:"flex", flexDirection:"column", gap:"3px" }}>
+              {fabric.compatibleSeams.map(sid => {
+                const s = getSeamById(sid);
+                return s ? (
+                  <button key={sid} className={`seam-chip ${selectedSeam === sid ? "selected" : ""}`}
+                    onClick={() => onSelectSeam(sid)}>
+                    <span style={{ marginRight:"6px" }}>{s.icon}</span>
+                    <span>{s.name}</span>
+                    <span style={{ float:"right", color:"var(--text3)", fontSize:"8px" }}>{s.spi}spi</span>
+                  </button>
+                ) : null;
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Region */}
+        <div style={{ marginBottom:"16px" }}>
+          <div className="card-title" style={{ marginBottom:"8px" }}>Manufacturing Region</div>
+          {LABOR_REGIONS.map(r => (
+            <button key={r.id}
+              onClick={() => setRegion(r.id)}
+              style={{
+                display:"flex", justifyContent:"space-between", alignItems:"center",
+                width:"100%", padding:"7px 10px", marginBottom:"3px", fontSize:"9px",
+                border:`1px solid ${region === r.id ? "var(--gold)" : "var(--border)"}`,
+                background: region === r.id ? "var(--bg3)" : "var(--bg2)",
+                color: region === r.id ? "var(--gold)" : "var(--text2)",
+                textAlign:"left", letterSpacing:"1px"
+              }}>
+              <span>{r.name}</span>
+              <span style={{ color:"var(--text3)", fontSize:"8px" }}>×{r.multiplier.toFixed(2)}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Markup */}
+        <div>
+          <div className="card-title" style={{ marginBottom:"8px" }}>Markup Tier</div>
+          {MARKUP_TIERS.map(m => (
+            <button key={m.id}
+              onClick={() => setMarkupTier(m.id)}
+              style={{
+                display:"flex", justifyContent:"space-between", alignItems:"center",
+                width:"100%", padding:"7px 10px", marginBottom:"3px", fontSize:"9px",
+                border:`1px solid ${markupTier === m.id ? "var(--accent-teal)" : "var(--border)"}`,
+                background: markupTier === m.id ? "var(--bg3)" : "var(--bg2)",
+                color: markupTier === m.id ? "var(--accent-teal)" : "var(--text2)",
+                textAlign:"left", letterSpacing:"1px"
+              }}>
+              <div>
+                <div>{m.name}</div>
+                <div style={{ fontSize:"8px", color:"var(--text3)" }}>{m.desc}</div>
+              </div>
+              <div style={{ textAlign:"right" }}>
+                <div style={{ fontSize:"11px", fontWeight:"700" }}>×{m.markup}</div>
+                <div style={{ fontSize:"8px", color:"var(--text3)" }}>MOQ {m.moq}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Right: Tech Pack Output */}
+      <div className="fade-in">
+        {!bom ? (
+          <div style={{ padding:"60px", textAlign:"center", color:"var(--text3)", fontSize:"11px" }}>
+            <div style={{ fontSize:"32px", marginBottom:"16px", opacity:0.3 }}>⌖</div>
+            <div style={{ letterSpacing:"3px" }}>SELECT GARMENT + FABRIC</div>
+            <div style={{ fontSize:"9px", marginTop:"8px" }}>Configure left panel to generate tech pack</div>
+          </div>
+        ) : (
+          <div>
+            {/* Tech Pack Header */}
+            <div style={{ background:"var(--bg2)", border:"1px solid var(--border)", padding:"16px 20px", marginBottom:"16px" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                <div>
+                  <div style={{ fontSize:"13px", fontWeight:"700", letterSpacing:"4px", color:"var(--gold)" }}>TECH PACK</div>
+                  <div style={{ fontSize:"8px", color:"var(--text3)", letterSpacing:"2px", marginTop:"2px" }}>INKWELL GARMENT STUDIO × IAM</div>
+                </div>
+                <button className="btn" onClick={() => window.print()} style={{ fontSize:"8px" }}>
+                  ⬡ Export PDF
+                </button>
+              </div>
+              <hr className="section-divider" />
+              <div className="grid-2" style={{ gap:"16px" }}>
+                <div>
+                  <div style={{ fontSize:"8px", color:"var(--text3)", letterSpacing:"2px", marginBottom:"6px" }}>STYLE INFORMATION</div>
+                  {[
+                    ["Style", bom.garment.name],
+                    ["Fabric", bom.fabric.name],
+                    ["Weight", `${bom.fabric.gsm}gsm`],
+                    ["Stretch", `${bom.fabric.stretch}%`],
+                    ["Handfeel", bom.fabric.handfeel],
+                    ["Drape Coeff", bom.fabric.drapeCoeff.toFixed(2)]
+                  ].map(([l,v]) => (
+                    <div key={l} style={{ display:"flex", justifyContent:"space-between", fontSize:"10px", padding:"3px 0", borderBottom:"1px solid var(--border)" }}>
+                      <span style={{ color:"var(--text3)" }}>{l}</span>
+                      <span style={{ color:"var(--text)", fontWeight:"600" }}>{v}</span>
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <div style={{ fontSize:"8px", color:"var(--text3)", letterSpacing:"2px", marginBottom:"6px" }}>CONSTRUCTION</div>
+                  {bom.seam && [
+                    ["Main Seam", bom.seam.name],
+                    ["Stitch Code", bom.seam.code],
+                    ["SPI", bom.seam.spi],
+                    ["SA Width", bom.seam.seamWidth],
+                    ["Strength", bom.seam.strength],
+                    ["CM Cost (seam)", `$${bom.seam.cost.toFixed(2)}/m`]
+                  ].map(([l,v]) => (
+                    <div key={l} style={{ display:"flex", justifyContent:"space-between", fontSize:"10px", padding:"3px 0", borderBottom:"1px solid var(--border)" }}>
+                      <span style={{ color:"var(--text3)" }}>{l}</span>
+                      <span style={{ color:"var(--text)", fontWeight:"600" }}>{v}</span>
+                    </div>
+                  ))}
+                  {!bom.seam && <div style={{ fontSize:"9px", color:"var(--text3)" }}>Select seam from left panel</div>}
+                </div>
+              </div>
+            </div>
+
+            {/* BOM */}
+            <div className="card" style={{ marginBottom:"16px" }}>
+              <div className="card-title">Bill of Materials</div>
+              <table className="bom-table">
+                <thead>
+                  <tr><th>Item</th><th>Qty</th><th>Unit Cost</th><th>Total</th></tr>
+                </thead>
+                <tbody>
+                  {bom.items.map((row, i) => (
+                    <tr key={i}>
+                      <td style={{ color:"var(--text)" }}>{row.item}</td>
+                      <td style={{ color:"var(--text2)" }}>{row.qty}</td>
+                      <td style={{ color:"var(--text2)" }}>${row.unitCost.toFixed(2)}</td>
+                      <td style={{ color:"var(--text)", fontWeight:"600" }}>${row.total.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td colSpan="3" style={{ color:"var(--text2)", fontStyle:"italic" }}>CM Cost ({bom.region.name})</td>
+                    <td style={{ color:"var(--text)", fontWeight:"600" }}>${bom.cmCost.toFixed(2)}</td>
+                  </tr>
+                  <tr className="total-row">
+                    <td colSpan="3" style={{ letterSpacing:"2px", color:"var(--gold)" }}>TOTAL FOB</td>
+                    <td style={{ fontWeight:"700", fontSize:"13px", color:"var(--gold)" }}>${bom.totalFOB.toFixed(2)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pricing Model */}
+            <div className="grid-2" style={{ marginBottom:"16px" }}>
+              <div className="card">
+                <div className="card-title">Pricing — {bom.markup.name}</div>
+                {[
+                  ["FOB Cost", `$${bom.totalFOB.toFixed(2)}`],
+                  ["Markup", `×${bom.markup.markup}`],
+                  ["MSRP / Retail", `$${bom.msrp.toFixed(2)}`],
+                  ["Margin", `${(((bom.msrp - bom.totalFOB) / bom.msrp) * 100).toFixed(0)}%`]
+                ].map(([l,v]) => (
+                  <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", fontSize:"10px", borderBottom:"1px solid var(--border)" }}>
+                    <span style={{ color:"var(--text3)" }}>{l}</span>
+                    <span style={{ color: l === "MSRP / Retail" ? "var(--gold)" : "var(--text)", fontWeight: l.includes("MSRP") ? "700":"400" }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="card">
+                <div className="card-title">Production Planning</div>
+                {[
+                  ["MOQ", `${bom.markup.moq} units`],
+                  ["Fabric / Order", `${(bom.garment.fabricYards * 0.9144 * bom.markup.moq).toFixed(0)}m`],
+                  ["Complexity", bom.garment.complexity],
+                  ["Region", bom.region.name],
+                  ["Labor ×", bom.region.multiplier.toFixed(2)],
+                  ["Lead Time Est.", bom.garment.complexity === "low" ? "45 days" : bom.garment.complexity === "medium" ? "60 days" : "90 days"]
+                ].map(([l,v]) => (
+                  <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", fontSize:"10px", borderBottom:"1px solid var(--border)" }}>
+                    <span style={{ color:"var(--text3)" }}>{l}</span>
+                    <span style={{ color:"var(--text)", fontWeight:"400" }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Seam Spec */}
+            {bom.seam && (
+              <div className="card">
+                <div className="card-title">Seam Specification — {bom.seam.name}</div>
+                <div style={{ display:"flex", gap:"16px", alignItems:"flex-start" }}>
+                  <div style={{ fontSize:"40px", opacity:0.7, lineHeight:1 }}>{bom.seam.icon}</div>
+                  <div style={{ flex:1 }}>
+                    <p style={{ fontSize:"10px", color:"var(--text2)", lineHeight:"1.7", marginBottom:"10px" }}>{bom.seam.desc}</p>
+                    <div style={{ display:"flex", gap:"12px", flexWrap:"wrap" }}>
+                      {[
+                        ["Code", bom.seam.code], ["SPI", bom.seam.spi],
+                        ["Width", bom.seam.seamWidth], ["Strength", bom.seam.strength],
+                        ["Time/m", `${bom.seam.timePerMeter}min`], ["Cost/m", `$${bom.seam.cost.toFixed(2)}`]
+                      ].map(([l,v]) => (
+                        <div key={l} className="stat-box" style={{ padding:"6px 10px" }}>
+                          <div className="stat-label">{l}</div>
+                          <div className="stat-value" style={{ fontSize:"11px" }}>{v}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// PANEL 3: Drape Simulator
+// ─────────────────────────────────────────────
+function DrapeSimulatorPanel({ selectedFabric, onSelectFabric }) {
+  const fabric = selectedFabric ? getFabricById(selectedFabric) : null;
+
+  return (
+    <div className="panel" style={{ display:"grid", gridTemplateColumns:"220px 1fr 220px", gap:"24px", alignItems:"start" }}>
+      {/* Left: Fabric Picker */}
+      <div>
+        <div className="panel-title">Drape Simulator</div>
+        <div style={{ display:"flex", flexDirection:"column", gap:"3px", maxHeight:"calc(100vh - 160px)", overflowY:"auto" }}>
+          {FABRICS.map(f => (
+            <button key={f.id} className={`fabric-chip ${selectedFabric === f.id ? "selected" : ""}`}
+              onClick={() => onSelectFabric(f.id)}>
+              <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
+                <div className="swatch" style={{ background:f.color }}/>
+                <div>
+                  <div style={{ fontSize:"9px" }}>{f.name}</div>
+                  <div style={{ fontSize:"8px", color:"var(--text3)" }}>{f.category}</div>
+                </div>
+              </div>
+              <div style={{ fontSize:"9px", color:"var(--text3)" }}>{f.drapeCoeff.toFixed(2)}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Center: Drape Canvas */}
+      <div>
+        <div style={{ display:"flex", justifyContent:"center", alignItems:"center", minHeight:"340px", background:"var(--bg2)", border:"1px solid var(--border)", padding:"20px" }}>
+          <DrapeSimulator fabricId={selectedFabric} />
+        </div>
+
+        {/* Legend */}
+        <div style={{ marginTop:"12px", display:"flex", justifyContent:"center", gap:"24px", fontSize:"8px", color:"var(--text3)", letterSpacing:"1px" }}>
+          <span>DRAPE 0.0 = STIFF</span>
+          <span>■ ANIMATED WIND SIMULATION</span>
+          <span>DRAPE 1.0 = FLOWING</span>
+        </div>
+
+        {!fabric && (
+          <div style={{ textAlign:"center", marginTop:"24px", color:"var(--text3)", fontSize:"10px", letterSpacing:"2px" }}>
+            ← SELECT A FABRIC
+          </div>
+        )}
+      </div>
+
+      {/* Right: Properties */}
+      <div>
+        {fabric ? (
+          <div className="fade-in">
+            <div style={{ marginBottom:"16px" }}>
+              <div style={{ width:"100%", height:"80px", background:fabric.color, border:"1px solid var(--border)", marginBottom:"8px", position:"relative", overflow:"hidden" }}>
+                <div className="shimmer" style={{ position:"absolute", inset:0 }}/>
+              </div>
+              <div style={{ fontSize:"14px", fontWeight:"700", color:"var(--text)", letterSpacing:"1px" }}>{fabric.name}</div>
+              <div style={{ fontSize:"9px", color:"var(--text3)" }}>{fabric.category}</div>
+            </div>
+
+            <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+              {[
+                { label:"Drape Coefficient", value:fabric.drapeCoeff, max:1, fmt: v=>`${v.toFixed(2)}`, color:"var(--gold)" },
+                { label:"Stretch", value:fabric.stretch/100, max:1, fmt: v=>`${fabric.stretch}%`, color:"var(--accent-teal)" },
+                { label:"GSM (÷500)", value:fabric.gsm/500, max:1, fmt: v=>`${fabric.gsm}g/m²`, color:"var(--accent-blue)" },
+                { label:"Cost/Meter", value:fabric.costPerMeter/70, max:1, fmt: v=>`$${fabric.costPerMeter.toFixed(2)}`, color:"var(--accent-rose)" }
+              ].map(({ label, value, fmt, color }) => (
+                <div key={label} className="stat-box">
+                  <div className="stat-label">{label}</div>
+                  <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+                    <div style={{ flex:1 }}>
+                      <div className="bar-track" style={{ height:"6px" }}>
+                        <div className="bar-fill" style={{ width:`${Math.min(100, value*100)}%`, background:color }}/>
+                      </div>
+                    </div>
+                    <div style={{ fontSize:"11px", fontWeight:"700", color, minWidth:"44px", textAlign:"right" }}>{fmt(value)}</div>
+                  </div>
+                </div>
+              ))}
+
+              <div className="stat-box">
+                <div className="stat-label">Handfeel</div>
+                <div style={{ fontSize:"14px", fontWeight:"700", color:"var(--text)", textTransform:"capitalize" }}>{fabric.handfeel}</div>
+              </div>
+              <div className="stat-box">
+                <div className="stat-label">Thermal</div>
+                <div style={{ fontSize:"12px", fontWeight:"700", color:"var(--text)", textTransform:"capitalize" }}>{fabric.thermal}</div>
+              </div>
+
+              <div className="stat-box">
+                <div className="card-title" style={{ marginBottom:"6px" }}>Fold Behavior</div>
+                <div style={{ fontSize:"9px", color:"var(--text2)", lineHeight:"1.7" }}>
+                  {fabric.drapeCoeff < 0.3 ? "Holds shape rigidly. Defined folds only at stress points." :
+                   fabric.drapeCoeff < 0.55 ? "Moderate drape. Soft folds; light movement." :
+                   fabric.drapeCoeff < 0.75 ? "Good drape. Fluid, cascading movement." :
+                   fabric.drapeCoeff < 0.88 ? "High drape. Body-skimming, bias-cut friendly." :
+                   "Exceptional drape. Liquid movement; pool and cascade."}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div style={{ padding:"40px 0", textAlign:"center", color:"var(--text3)", fontSize:"9px", letterSpacing:"2px" }}>
+            SELECT FABRIC<br/>TO SEE PROPERTIES
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// PANEL 4: Trinity Analysis (Chart.js)
+// ─────────────────────────────────────────────
+function TrinityAnalysisPanel({ selectedFabric }) {
+  const ityChartRef = useRef(null);
+  const pathyChartRef = useRef(null);
+  const ityChartInstance = useRef(null);
+  const pathyChartInstance = useRef(null);
+  const [compareFabrics, setCompareFabrics] = useState([]);
+  const [activeViz, setActiveViz] = useState("radar");
+
+  // Colors for overlaid fabrics
+  const COMPARE_COLORS = [
+    { border:"#D4A04A", bg:"rgba(212,160,74,0.15)", point:"#D4A04A" },
+    { border:"#7a5a9e", bg:"rgba(122,90,158,0.15)", point:"#7a5a9e" },
+    { border:"#4a9e8a", bg:"rgba(74,158,138,0.15)", point:"#4a9e8a" }
+  ];
+
+  const getFabricsToShow = useCallback(() => {
+    const ids = new Set();
+    if (selectedFabric) ids.add(selectedFabric);
+    compareFabrics.forEach(id => ids.add(id));
+    return [...ids].map(id => getFabricById(id)).filter(Boolean).slice(0, 3);
+  }, [selectedFabric, compareFabrics]);
+
+  useEffect(() => {
+    const fabrics = getFabricsToShow();
+    if (!fabrics.length) return;
+
+    const ityLabels = ["Materiality","Luminosity","Viscosity","Permanence","Workability"];
+    const pathyLabels = ["Tactility","Sensuosity","Immediacy","Gestural Energy"];
+
+    const baseConfig = (labels, datasets) => ({
+      type: "radar",
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+          r: {
+            min: 0, max: 10,
+            ticks: { display:false, stepSize:2 },
+            grid: { color:"rgba(255,255,255,0.06)" },
+            angleLines: { color:"rgba(255,255,255,0.08)" },
+            pointLabels: { color:"#a09080", font:{ family:"'Courier New',monospace", size:9 } }
+          }
+        },
+        plugins: {
+          legend: { display: fabrics.length > 1, labels: { color:"#a09080", font:{ family:"'Courier New',monospace", size:9 }, boxWidth:10 } },
+          tooltip: { backgroundColor:"#1a1a26", titleColor:"#D4A04A", bodyColor:"#e8e0d4", borderColor:"#2a2a3a", borderWidth:1 }
+        },
+        animation: { duration:600 }
+      }
+    });
+
+    // ITY chart
+    if (ityChartRef.current) {
+      const ityDatasets = fabrics.map((f, i) => ({
+        label: f.name,
+        data: [f.trinity.ity.materiality, f.trinity.ity.luminosity, f.trinity.ity.viscosity, f.trinity.ity.permanence, f.trinity.ity.workability],
+        borderColor: COMPARE_COLORS[i].border,
+        backgroundColor: COMPARE_COLORS[i].bg,
+        pointBackgroundColor: COMPARE_COLORS[i].point,
+        pointRadius: 4, borderWidth: 2
+      }));
+      if (ityChartInstance.current) ityChartInstance.current.destroy();
+      ityChartInstance.current = new Chart(ityChartRef.current, baseConfig(ityLabels, ityDatasets));
+    }
+
+    // PATHY chart
+    if (pathyChartRef.current) {
+      const pathyDatasets = fabrics.map((f, i) => ({
+        label: f.name,
+        data: [f.trinity.pathy.tactility, f.trinity.pathy.sensuosity, f.trinity.pathy.immediacy, f.trinity.pathy.gestural_energy],
+        borderColor: COMPARE_COLORS[i].border,
+        backgroundColor: COMPARE_COLORS[i].bg,
+        pointBackgroundColor: COMPARE_COLORS[i].point,
+        pointRadius: 4, borderWidth: 2
+      }));
+      if (pathyChartInstance.current) pathyChartInstance.current.destroy();
+      pathyChartInstance.current = new Chart(pathyChartRef.current, baseConfig(pathyLabels, pathyDatasets));
+    }
+
+    return () => {
+      if (ityChartInstance.current) ityChartInstance.current.destroy();
+      if (pathyChartInstance.current) pathyChartInstance.current.destroy();
+    };
+  }, [selectedFabric, compareFabrics]);
+
+  const toggleCompare = (id) => {
+    setCompareFabrics(prev => {
+      if (prev.includes(id)) return prev.filter(x => x !== id);
+      if (prev.length >= 2) return [...prev.slice(1), id];
+      return [...prev, id];
+    });
+  };
+
+  const fabrics = getFabricsToShow();
+  const primary = selectedFabric ? getFabricById(selectedFabric) : null;
+
+  return (
+    <div className="panel" style={{ display:"grid", gridTemplateColumns:"200px 1fr", gap:"24px", alignItems:"start" }}>
+      {/* Left: fabric selector for comparison */}
+      <div>
+        <div className="panel-title">Trinity Analysis</div>
+        <div style={{ fontSize:"8px", color:"var(--text3)", letterSpacing:"1px", marginBottom:"8px" }}>
+          PRIMARY: {primary ? primary.name : "—"}
+        </div>
+        <div style={{ fontSize:"8px", color:"var(--text3)", letterSpacing:"1px", marginBottom:"8px" }}>
+          COMPARE (up to 2 more):
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:"3px", maxHeight:"calc(100vh - 200px)", overflowY:"auto" }}>
+          {FABRICS.filter(f => f.id !== selectedFabric).map((f, i) => {
+            const isCompared = compareFabrics.includes(f.id);
+            const ci = compareFabrics.indexOf(f.id);
+            return (
+              <button key={f.id}
+                onClick={() => toggleCompare(f.id)}
+                style={{
+                  display:"flex", alignItems:"center", gap:"6px",
+                  padding:"6px 8px", fontSize:"9px",
+                  border:`1px solid ${isCompared ? COMPARE_COLORS[ci+1]?.border || "var(--gold)" : "var(--border)"}`,
+                  background: isCompared ? "var(--bg3)" : "var(--bg2)",
+                  color: isCompared ? "var(--text)" : "var(--text3)",
+                  textAlign:"left"
+                }}>
+                <div className="swatch" style={{ background:f.color, width:"10px", height:"10px" }}/>
+                <span style={{ flex:1 }}>{f.name}</span>
+                {isCompared && <span style={{ fontSize:"8px", color:COMPARE_COLORS[ci+1]?.border }}>●</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Right: Charts + Trinity Graph */}
+      <div className="fade-in">
+        {!primary ? (
+          <div style={{ padding:"60px", textAlign:"center", color:"var(--text3)" }}>
+            <div style={{ fontSize:"32px", marginBottom:"16px", opacity:0.3 }}>◭</div>
+            <div style={{ fontSize:"11px", letterSpacing:"3px" }}>SELECT A FABRIC IN EXPLORER</div>
+          </div>
+        ) : (
+          <div>
+            {/* Fabric Legend */}
+            <div style={{ display:"flex", gap:"12px", marginBottom:"20px", flexWrap:"wrap" }}>
+              {fabrics.map((f, i) => (
+                <div key={f.id} style={{ display:"flex", alignItems:"center", gap:"6px", padding:"6px 12px", border:`1px solid ${COMPARE_COLORS[i].border}`, background:"var(--bg2)" }}>
+                  <div style={{ width:"10px", height:"10px", background:COMPARE_COLORS[i].border }}/>
+                  <span style={{ fontSize:"9px", color:COMPARE_COLORS[i].border, letterSpacing:"1px" }}>{f.name}</span>
+                  <span style={{ fontSize:"8px", color:"var(--text3)" }}>{f.gsm}gsm</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Radar Charts */}
+            <div className="grid-2" style={{ marginBottom:"24px" }}>
+              <div className="card">
+                <div className="card-title" style={{ color:"var(--gold)", letterSpacing:"3px" }}>-ITY AXES</div>
+                <div style={{ fontSize:"8px", color:"var(--text3)", marginBottom:"10px" }}>Materiality · Luminosity · Viscosity · Permanence · Workability</div>
+                <canvas ref={ityChartRef} style={{ maxHeight:"240px" }} />
+              </div>
+              <div className="card">
+                <div className="card-title" style={{ color:"var(--accent-purple)", letterSpacing:"3px" }}>-PATHY AXES</div>
+                <div style={{ fontSize:"8px", color:"var(--text3)", marginBottom:"10px" }}>Tactility · Sensuosity · Immediacy · Gestural Energy</div>
+                <canvas ref={pathyChartRef} style={{ maxHeight:"240px" }} />
+              </div>
+            </div>
+
+            {/* Trinity Graph */}
+            <div className="card" style={{ marginBottom:"16px" }}>
+              <div className="card-title" style={{ letterSpacing:"3px" }}>TRINITY KNOWLEDGE GRAPH</div>
+              <div style={{ height:"420px" }}>
+                <AnimatedTrinityGraph activeFabric={selectedFabric} />
+              </div>
+            </div>
+
+            {/* Fundamentals Comparison */}
+            {fabrics.length > 0 && (
+              <div className="card">
+                <div className="card-title">Fundamentals Comparison</div>
+                <div style={{ overflowX:"auto" }}>
+                  <table style={{ width:"100%", borderCollapse:"collapse", fontSize:"10px" }}>
+                    <thead>
+                      <tr>
+                        <th style={{ padding:"6px 10px", textAlign:"left", background:"var(--bg4)", color:"var(--text3)", fontSize:"8px", letterSpacing:"2px", fontWeight:400 }}>Fabric</th>
+                        {["Authenticity","Felicity","Propensity"].map(h => (
+                          <th key={h} style={{ padding:"6px 10px", textAlign:"center", background:"var(--bg4)", color:"var(--text3)", fontSize:"8px", letterSpacing:"2px", fontWeight:400 }}>{h}</th>
+                        ))}
+                        <th style={{ padding:"6px 10px", textAlign:"center", background:"var(--bg4)", color:"var(--text3)", fontSize:"8px", letterSpacing:"2px", fontWeight:400 }}>Score</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {fabrics.map((f, i) => {
+                        const fund = f.trinity.fundamentals;
+                        const score = (fund.authenticity + fund.felicity + fund.propensity) / 3;
+                        return (
+                          <tr key={f.id} style={{ borderBottom:"1px solid var(--border)" }}>
+                            <td style={{ padding:"8px 10px", color:COMPARE_COLORS[i].border, fontWeight:"700" }}>{f.name}</td>
+                            {[fund.authenticity, fund.felicity, fund.propensity].map((v, j) => (
+                              <td key={j} style={{ padding:"8px 10px", textAlign:"center" }}>
+                                <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"3px" }}>
+                                  <span style={{ fontWeight:"700", color:"var(--text)" }}>{v}</span>
+                                  <div style={{ width:"60px", height:"3px", background:"var(--bg4)" }}>
+                                    <div style={{ height:"100%", width:`${v*10}%`, background:COMPARE_COLORS[i].border }}/>
+                                  </div>
+                                </div>
+                              </td>
+                            ))}
+                            <td style={{ padding:"8px 10px", textAlign:"center", fontWeight:"700", color:"var(--gold)" }}>{score.toFixed(1)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// PANEL 5: Generate (Fal.ai)
+// ─────────────────────────────────────────────
+function GeneratePanel({ selectedFabric, selectedGarment, selectedSeam }) {
+  const [prompt, setPrompt] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [imageUrl, setImageUrl] = useState(null);
+  const [error, setError] = useState(null);
+  const [customPrompt, setCustomPrompt] = useState(false);
+  const [editedPrompt, setEditedPrompt] = useState("");
+  const [lastGenParams, setLastGenParams] = useState(null);
+
+  useEffect(() => {
+    if (selectedFabric || selectedGarment) {
+      const p = buildArtiquityPrompt(selectedFabric, selectedGarment, selectedSeam);
+      setPrompt(p);
+      if (!customPrompt) setEditedPrompt(p);
+    }
+  }, [selectedFabric, selectedGarment, selectedSeam, customPrompt]);
+
+  const fabric = selectedFabric ? getFabricById(selectedFabric) : null;
+  const garment = selectedGarment ? getGarmentById(selectedGarment) : null;
+
+  const generate = async () => {
+    if (!editedPrompt) return;
+    setGenerating(true);
+    setError(null);
+    setImageUrl(null);
+
+    try {
+      const response = await fetch("https://awareness-proxy-328246068140.us-central1.run.app/fal/generate-sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "fal-ai/flux/dev",
+          prompt: editedPrompt,
+          image_size: "portrait_4_3",
+          num_images: 1
+        })
+      });
+
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+      const data = await response.json();
+      const url = data?.images?.[0]?.url || data?.image?.url || data?.url || data?.output?.[0];
+      if (!url) throw new Error("No image URL in response");
+
+      setImageUrl(url);
+      setLastGenParams({ fabric: fabric?.name, garment: garment?.name, prompt: editedPrompt });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  return (
+    <div className="panel" style={{ display:"grid", gridTemplateColumns:"340px 1fr", gap:"24px", alignItems:"start" }}>
+      {/* Left: Configuration */}
+      <div>
+        <div className="panel-title">Generate</div>
+
+        {/* Selection Summary */}
+        <div className="card" style={{ marginBottom:"16px" }}>
+          <div className="card-title">Current Selection</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", fontSize:"10px", padding:"4px 0", borderBottom:"1px solid var(--border)" }}>
+              <span style={{ color:"var(--text3)" }}>Fabric</span>
+              <span style={{ color: fabric ? "var(--gold)" : "var(--text3)", fontWeight: fabric ? "700" : "400" }}>
+                {fabric ? fabric.name : "— none selected —"}
+              </span>
+            </div>
+            <div style={{ display:"flex", justifyContent:"space-between", fontSize:"10px", padding:"4px 0", borderBottom:"1px solid var(--border)" }}>
+              <span style={{ color:"var(--text3)" }}>Garment</span>
+              <span style={{ color: garment ? "var(--accent-teal)" : "var(--text3)", fontWeight: garment ? "700" : "400" }}>
+                {garment ? garment.name : "— none selected —"}
+              </span>
+            </div>
+            <div style={{ display:"flex", justifyContent:"space-between", fontSize:"10px", padding:"4px 0" }}>
+              <span style={{ color:"var(--text3)" }}>Seam</span>
+              <span style={{ color:"var(--text2)" }}>{selectedSeam ? getSeamById(selectedSeam)?.name : "— none —"}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick garment + fabric selectors */}
+        <div className="card" style={{ marginBottom:"16px" }}>
+          <div className="card-title">Quick Select Garment</div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"3px" }}>
+            {GARMENT_TYPES.slice(0,10).map(g => (
+              <button key={g.id} className={`garment-chip ${selectedGarment === g.id ? "selected" : ""}`}
+                onClick={() => {
+                  window._setGarment && window._setGarment(g.id);
+                }} style={{ fontSize:"8px", padding:"5px 8px" }}>
+                {g.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Prompt */}
+        <div className="card" style={{ marginBottom:"16px" }}>
+          <div className="card-title" style={{ display:"flex", justifyContent:"space-between" }}>
+            <span>Artiquity Prompt</span>
+            <button className="btn" style={{ padding:"2px 8px", fontSize:"7px" }}
+              onClick={() => setCustomPrompt(!customPrompt)}>
+              {customPrompt ? "Auto" : "Edit"}
+            </button>
+          </div>
+          <textarea
+            value={editedPrompt}
+            onChange={e => { setEditedPrompt(e.target.value); setCustomPrompt(true); }}
+            rows={8}
+            style={{
+              width:"100%", padding:"8px", fontSize:"9px", lineHeight:"1.6",
+              border:"1px solid var(--border)", background:"var(--bg3)", color:"var(--text2)",
+              resize:"vertical", marginTop:"6px"
+            }}
+          />
+          {!customPrompt && <div style={{ fontSize:"8px", color:"var(--text3)", marginTop:"4px" }}>Auto-generated from selection. Click Edit to customize.</div>}
+        </div>
+
+        <button className="btn primary" onClick={generate}
+          disabled={generating || !editedPrompt}
+          style={{ width:"100%", padding:"12px", fontSize:"10px", letterSpacing:"3px", opacity: generating ? 0.7 : 1 }}>
+          {generating ? <span className="loading-dots">GENERATING</span> : "◈ GENERATE IMAGE"}
+        </button>
+
+        {error && (
+          <div style={{ marginTop:"12px", padding:"10px", background:"rgba(158,74,107,0.15)", border:"1px solid var(--accent-rose)", fontSize:"9px", color:"#e06080" }}>
+            ⚠ {error}
+          </div>
+        )}
+      </div>
+
+      {/* Right: Image Output */}
+      <div>
+        <div style={{ marginBottom:"12px" }}>
+          <div style={{ fontSize:"9px", letterSpacing:"3px", color:"var(--text3)", textTransform:"uppercase" }}>
+            Generated Image
+          </div>
+        </div>
+
+        <div className="generate-img-box" style={{ minHeight:"400px" }}>
+          {generating && (
+            <div style={{ textAlign:"center" }}>
+              <div style={{ fontSize:"32px", marginBottom:"16px", animation:"pulseRing 1.5s ease-in-out infinite", opacity:0.6 }}>◈</div>
+              <div style={{ fontSize:"10px", color:"var(--text3)", letterSpacing:"3px" }}>
+                <span className="loading-dots">GENERATING</span>
+              </div>
+              <div style={{ fontSize:"8px", color:"var(--text3)", marginTop:"8px" }}>
+                Fal.ai FLUX/dev · portrait_4_3
+              </div>
+            </div>
+          )}
+          {imageUrl && !generating && (
+            <div style={{ width:"100%" }}>
+              <img src={imageUrl} alt="Generated garment" style={{ maxWidth:"100%", display:"block", margin:"0 auto" }} />
+            </div>
+          )}
+          {!imageUrl && !generating && (
+            <div style={{ textAlign:"center", padding:"40px" }}>
+              <div style={{ fontSize:"48px", marginBottom:"16px", opacity:0.15 }}>◈</div>
+              <div style={{ fontSize:"10px", color:"var(--text3)", letterSpacing:"3px" }}>AWAITING GENERATION</div>
+              <div style={{ fontSize:"9px", color:"var(--text3)", marginTop:"8px" }}>
+                Select fabric + garment, then click Generate
+              </div>
+            </div>
+          )}
+        </div>
+
+        {lastGenParams && imageUrl && (
+          <div className="card" style={{ marginTop:"12px" }}>
+            <div className="card-title">Generation Details</div>
+            <div style={{ display:"flex", gap:"8px", flexWrap:"wrap" }}>
+              {[
+                ["Fabric", lastGenParams.fabric || "—"],
+                ["Garment", lastGenParams.garment || "—"],
+                ["Model", "FLUX/dev"],
+                ["Size", "portrait_4_3"]
+              ].map(([l,v]) => (
+                <div key={l} className="stat-box" style={{ padding:"6px 10px" }}>
+                  <div className="stat-label">{l}</div>
+                  <div className="stat-value" style={{ fontSize:"10px" }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// PANEL 6: Export
+// ─────────────────────────────────────────────
+function ExportPanel({ selectedFabric, selectedGarment, selectedSeam }) {
+  const [region, setRegion] = useState("china");
+  const [markupTier, setMarkupTier] = useState("wholesale");
+
+  const bom = useMemo(() => calcBOM(selectedFabric, selectedGarment, selectedSeam, region, markupTier),
+    [selectedFabric, selectedGarment, selectedSeam, region, markupTier]);
+
+  const fabric = selectedFabric ? getFabricById(selectedFabric) : null;
+  const garment = selectedGarment ? getGarmentById(selectedGarment) : null;
+  const seam = selectedSeam ? getSeamById(selectedSeam) : null;
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  return (
+    <div className="panel">
+      <div className="panel-title" style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <span>Export — Tech Pack Summary</span>
+        <div style={{ display:"flex", gap:"8px" }}>
+          <select value={region} onChange={e => setRegion(e.target.value)}
+            style={{ padding:"5px 8px", fontSize:"9px", letterSpacing:"1px" }}>
+            {LABOR_REGIONS.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+          </select>
+          <select value={markupTier} onChange={e => setMarkupTier(e.target.value)}
+            style={{ padding:"5px 8px", fontSize:"9px", letterSpacing:"1px" }}>
+            {MARKUP_TIERS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+          </select>
+          <button className="btn primary" onClick={() => window.print()} style={{ padding:"6px 14px", fontSize:"8px" }}>
+            ⬡ Print / Save PDF
+          </button>
+        </div>
+      </div>
+
+      {!bom ? (
+        <div style={{ padding:"60px", textAlign:"center", color:"var(--text3)" }}>
+          <div style={{ fontSize:"32px", marginBottom:"16px", opacity:0.3 }}>⬡</div>
+          <div style={{ fontSize:"11px", letterSpacing:"3px" }}>CONFIGURE TECH PACK BUILDER FIRST</div>
+          <div style={{ fontSize:"9px", marginTop:"8px" }}>Select garment type and fabric to generate export</div>
+        </div>
+      ) : (
+        <div style={{ maxWidth:"900px", margin:"0 auto" }}>
+          {/* Printable Tech Pack Layout */}
+          <div style={{ background:"var(--bg2)", border:"1px solid var(--border)", padding:"32px", marginBottom:"24px" }}>
+            {/* Header */}
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"24px", paddingBottom:"16px", borderBottom:"2px solid var(--gold)" }}>
+              <div>
+                <div style={{ fontSize:"22px", fontWeight:"700", letterSpacing:"5px", color:"var(--gold)" }}>INKWELL GARMENT STUDIO</div>
+                <div style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"3px", marginTop:"3px" }}>TECHNICAL SPECIFICATION SHEET</div>
+              </div>
+              <div style={{ textAlign:"right", fontSize:"9px", color:"var(--text3)" }}>
+                <div>Date: {today}</div>
+                <div>Style: {garment?.name} — {fabric?.name}</div>
+                <div style={{ marginTop:"4px", color:"var(--text2)", fontSize:"8px", letterSpacing:"1px" }}>
+                  INKWELL × IAM SYSTEM
+                </div>
+              </div>
+            </div>
+
+            {/* Style Info Grid */}
+            <div className="grid-3" style={{ gap:"16px", marginBottom:"24px" }}>
+              <div>
+                <div style={{ fontSize:"8px", color:"var(--gold)", letterSpacing:"2px", marginBottom:"8px" }}>STYLE INFORMATION</div>
+                {[
+                  ["Style Name", garment?.name || "—"],
+                  ["Category", garment?.complexity || "—"],
+                  ["Fabric", fabric?.name || "—"],
+                  ["Fabric Category", fabric?.category || "—"],
+                  ["GSM", fabric ? `${fabric.gsm}g/m²` : "—"],
+                  ["Drape Coefficient", fabric ? fabric.drapeCoeff.toFixed(2) : "—"]
+                ].map(([l,v]) => (
+                  <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"3px 0", fontSize:"9px", borderBottom:"1px solid var(--border)" }}>
+                    <span style={{ color:"var(--text3)" }}>{l}</span>
+                    <span style={{ color:"var(--text)", fontWeight:"600" }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <div style={{ fontSize:"8px", color:"var(--gold)", letterSpacing:"2px", marginBottom:"8px" }}>FABRIC PROPERTIES</div>
+                {[
+                  ["Handfeel", fabric?.handfeel || "—"],
+                  ["Thermal", fabric?.thermal || "—"],
+                  ["Stretch", fabric ? `${fabric.stretch}%` : "—"],
+                  ["Cost/Meter", fabric ? `$${fabric.costPerMeter.toFixed(2)}` : "—"],
+                  ["Stretch Type", fabric && fabric.stretch > 40 ? "4-way" : fabric && fabric.stretch > 15 ? "2-way" : "minimal"],
+                  ["Color", fabric?.color || "—"]
+                ].map(([l,v]) => (
+                  <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"3px 0", fontSize:"9px", borderBottom:"1px solid var(--border)" }}>
+                    <span style={{ color:"var(--text3)" }}>{l}</span>
+                    <span style={{ color:"var(--text)", fontWeight:"600" }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <div style={{ fontSize:"8px", color:"var(--gold)", letterSpacing:"2px", marginBottom:"8px" }}>CONSTRUCTION</div>
+                {[
+                  ["Seam Type", seam?.name || "—"],
+                  ["Stitch Code", seam?.code || "—"],
+                  ["SPI", seam?.spi || "—"],
+                  ["Seam Width", seam?.seamWidth || "—"],
+                  ["Seam Strength", seam?.strength || "—"],
+                  ["Complexity", garment?.complexity || "—"]
+                ].map(([l,v]) => (
+                  <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"3px 0", fontSize:"9px", borderBottom:"1px solid var(--border)" }}>
+                    <span style={{ color:"var(--text3)" }}>{l}</span>
+                    <span style={{ color:"var(--text)", fontWeight:"600" }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* BOM */}
+            <div style={{ marginBottom:"24px" }}>
+              <div style={{ fontSize:"8px", color:"var(--gold)", letterSpacing:"2px", marginBottom:"10px" }}>BILL OF MATERIALS</div>
+              <table className="bom-table" style={{ background:"var(--bg3)" }}>
+                <thead>
+                  <tr>
+                    <th>Component</th>
+                    <th>Quantity</th>
+                    <th>Unit Cost (USD)</th>
+                    <th>Line Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bom.items.map((row, i) => (
+                    <tr key={i}>
+                      <td style={{ color:"var(--text)" }}>{row.item}</td>
+                      <td style={{ color:"var(--text2)" }}>{row.qty}</td>
+                      <td style={{ color:"var(--text2)" }}>${row.unitCost.toFixed(3)}</td>
+                      <td style={{ color:"var(--text)", fontWeight:"600" }}>${row.total.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td colSpan="3" style={{ color:"var(--text2)", fontStyle:"italic" }}>
+                      Cut & Make ({bom.region.name}, ×{bom.region.multiplier})
+                    </td>
+                    <td style={{ color:"var(--text)", fontWeight:"700" }}>${bom.cmCost.toFixed(2)}</td>
+                  </tr>
+                  <tr className="total-row">
+                    <td colSpan="3">TOTAL COST OF GOODS (FOB)</td>
+                    <td style={{ fontSize:"14px" }}>${bom.totalFOB.toFixed(2)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pricing & Production */}
+            <div className="grid-2" style={{ gap:"16px", marginBottom:"24px" }}>
+              <div>
+                <div style={{ fontSize:"8px", color:"var(--gold)", letterSpacing:"2px", marginBottom:"8px" }}>PRICING ({bom.markup.name.toUpperCase()})</div>
+                {[
+                  ["FOB Cost", `$${bom.totalFOB.toFixed(2)}`],
+                  ["Markup Factor", `×${bom.markup.markup}`],
+                  ["MSRP (Retail)", `$${bom.msrp.toFixed(2)}`],
+                  ["Gross Margin", `${(((bom.msrp - bom.totalFOB) / bom.msrp) * 100).toFixed(1)}%`],
+                  ["Gross Profit/Unit", `$${(bom.msrp - bom.totalFOB).toFixed(2)}`]
+                ].map(([l,v]) => (
+                  <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", fontSize:"10px", borderBottom:"1px solid var(--border)" }}>
+                    <span style={{ color:"var(--text3)" }}>{l}</span>
+                    <span style={{ color: l.includes("MSRP") ? "var(--gold)" : "var(--text)", fontWeight: l.includes("MSRP") || l.includes("Margin") ? "700" : "400" }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <div style={{ fontSize:"8px", color:"var(--gold)", letterSpacing:"2px", marginBottom:"8px" }}>PRODUCTION PLAN</div>
+                {[
+                  ["MOQ", `${bom.markup.moq} units`],
+                  ["Total Fabric Required", `${(bom.garment.fabricYards * 0.9144 * bom.markup.moq).toFixed(0)}m`],
+                  ["Mfg. Region", bom.region.name],
+                  ["Complexity", bom.garment.complexity],
+                  ["Est. Lead Time", bom.garment.complexity === "low" ? "45 days" : bom.garment.complexity === "medium" ? "60 days" : "90 days"],
+                  ["MOQ Fabric Cost", `$${(bom.fabric.costPerMeter * bom.garment.fabricYards * 0.9144 * bom.markup.moq).toFixed(0)}`]
+                ].map(([l,v]) => (
+                  <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", fontSize:"10px", borderBottom:"1px solid var(--border)" }}>
+                    <span style={{ color:"var(--text3)" }}>{l}</span>
+                    <span style={{ color:"var(--text)" }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Trinity Summary */}
+            {fabric && (
+              <div>
+                <div style={{ fontSize:"8px", color:"var(--gold)", letterSpacing:"2px", marginBottom:"10px" }}>TRINITY MATERIAL PROFILE — {fabric.name.toUpperCase()}</div>
+                <div className="grid-3" style={{ gap:"12px" }}>
+                  {[
+                    { title:"-ITY AXES", data:fabric.trinity.ity, color:"var(--gold-dim)" },
+                    { title:"-PATHY AXES", data:fabric.trinity.pathy, color:"var(--accent-purple)" },
+                    { title:"FUNDAMENTALS", data:fabric.trinity.fundamentals, color:"var(--accent-teal)" }
+                  ].map(({ title, data, color }) => (
+                    <div key={title} className="card" style={{ padding:"10px" }}>
+                      <div style={{ fontSize:"8px", color, letterSpacing:"2px", marginBottom:"8px" }}>{title}</div>
+                      {Object.entries(data).map(([k, v]) => (
+                        <div key={k} style={{ marginBottom:"5px" }}>
+                          <div style={{ display:"flex", justifyContent:"space-between", fontSize:"8px", marginBottom:"2px" }}>
+                            <span style={{ color:"var(--text3)", textTransform:"capitalize" }}>{k.replace(/_/g," ")}</span>
+                            <span style={{ color:"var(--text2)" }}>{v}/10</span>
+                          </div>
+                          <div className="bar-track">
+                            <div className="bar-fill" style={{ width:`${v*10}%`, background:color }}/>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div style={{ marginTop:"24px", paddingTop:"12px", borderTop:"1px solid var(--border)", display:"flex", justifyContent:"space-between", fontSize:"8px", color:"var(--text3)" }}>
+              <span>INKWELL GARMENT STUDIO — TECH PACK ENGINE v2.0</span>
+              <span>{today} · {garment?.name} · {fabric?.name}</span>
+              <span>IAM × ARTIQUITY × TRINITY</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// COMPONENT: Animated Trinity SVG Graph
+// ─────────────────────────────────────────────
+function AnimatedTrinityGraph({ activeFabric }) {
+  const [pulse, setPulse] = useState(0);
+  const [activeNodes, setActiveNodes] = useState(new Set());
+
+  useEffect(() => {
+    if (!activeFabric) { setActiveNodes(new Set()); return; }
+    setPulse(p => p + 1);
+    // Cascade node activation
+    const sequence = ["fiber","weave","weight","drape","seam","ity","pathy","human","cost","techpack"];
+    let timers = [];
+    sequence.forEach((id, i) => {
+      timers.push(setTimeout(() => {
+        setActiveNodes(prev => new Set([...prev, id]));
+      }, i * 80));
+    });
+    return () => timers.forEach(clearTimeout);
+  }, [activeFabric]);
+
+  const getNode = (id) => TRINITY_NODES.find(n => n.id === id);
+  const f = activeFabric ? getFabricById(activeFabric) : null;
+
+  return (
+    <svg viewBox="0 0 460 420" style={{ width:"100%", height:"100%" }}>
+      <defs>
+        <filter id="glow-gold">
+          <feGaussianBlur stdDeviation="4" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-soft">
+          <feGaussianBlur stdDeviation="2" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <radialGradient id="techpack-grad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#D4A04A" stopOpacity="0.4"/>
+          <stop offset="100%" stopColor="#2a2a3a" stopOpacity="0.9"/>
+        </radialGradient>
+      </defs>
+
+      {/* Edges */}
+      {TRINITY_EDGES.map(([a, b], i) => {
+        const na = getNode(a), nb = getNode(b);
+        if (!na || !nb) return null;
+        const active = activeNodes.has(a) && activeNodes.has(b);
+        return (
+          <line key={i}
+            x1={na.x + 25} y1={na.y + 12}
+            x2={nb.x + 25} y2={nb.y + 12}
+            stroke={active ? "#D4A04A" : "#2a2a3a"}
+            strokeWidth={active ? 1.5 : 1}
+            strokeDasharray={active ? "none" : "3,4"}
+            opacity={active ? 0.7 : 0.25}
+            style={{ transition: "all 0.4s ease" }}
+          />
+        );
+      })}
+
+      {/* Nodes */}
+      {TRINITY_NODES.map(node => {
+        const isActive = activeNodes.has(node.id);
+        const isTechPack = node.id === "techpack";
+        const r = isTechPack ? 30 : 22;
+        return (
+          <g key={node.id} style={{ transition: "all 0.3s" }}>
+            {isActive && (
+              <circle cx={node.x+25} cy={node.y+12} r={r+8}
+                fill="none" stroke={node.color} strokeWidth="1"
+                opacity="0.3" className="glow-ring"
+              />
+            )}
+            <circle
+              cx={node.x+25} cy={node.y+12}
+              r={r}
+              fill={isTechPack && isActive ? "url(#techpack-grad)" : node.color}
+              opacity={isActive ? 0.9 : 0.25}
+              filter={isActive && isTechPack ? "url(#glow-gold)" : isActive ? "url(#glow-soft)" : "none"}
+              style={{ transition: "all 0.4s ease" }}
+            />
+            {node.label.split("/").map((part, li) => (
+              <text key={li}
+                x={node.x+25} y={node.y+12+(li*10)-(node.label.includes("/")?5:0)}
+                textAnchor="middle"
+                fill={isActive ? (isTechPack ? "#D4A04A" : "white") : "#555"}
+                fontSize="8"
+                fontFamily="'Courier New', monospace"
+                fontWeight={isActive ? "700" : "400"}
+                style={{ transition: "fill 0.3s" }}
+              >{part}</text>
+            ))}
+          </g>
+        );
+      })}
+
+      {/* Fabric label when active */}
+      {f && (
+        <text x="230" y="408" textAnchor="middle"
+          fill="#D4A04A" fontSize="9" fontFamily="'Courier New', monospace" letterSpacing="2">
+          {f.name.toUpperCase()} · {f.gsm}gsm · drape {f.drapeCoeff.toFixed(2)}
+        </text>
+      )}
+    </svg>
+  );
+}
+
+// ─────────────────────────────────────────────
+// COMPONENT: Drape Simulator (Canvas)
+// ─────────────────────────────────────────────
+function DrapeSimulator({ fabricId }) {
+  const canvasRef = useRef(null);
+  const animRef = useRef(null);
+  const [animPhase, setAnimPhase] = useState(0);
+
+  useEffect(() => {
+    let phase = 0;
+    const animate = () => {
+      phase += 0.02;
+      setAnimPhase(phase);
+      animRef.current = requestAnimationFrame(animate);
+    };
+    animRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animRef.current);
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const f = fabricId ? getFabricById(fabricId) : null;
+    const dc = f ? f.drapeCoeff : 0.5;
+    const col = f ? f.color : "#888";
+    const gsm = f ? f.gsm : 180;
+
+    ctx.clearRect(0, 0, 240, 300);
+
+    // Mannequin silhouette (simplified torso outline)
+    ctx.beginPath();
+    ctx.strokeStyle = "#2a2a4a";
+    ctx.lineWidth = 1;
+    // neck
+    ctx.moveTo(105, 20); ctx.lineTo(105, 45);
+    ctx.moveTo(135, 20); ctx.lineTo(135, 45);
+    // shoulders
+    ctx.moveTo(105, 45); ctx.bezierCurveTo(90, 50, 70, 60, 65, 75);
+    ctx.moveTo(135, 45); ctx.bezierCurveTo(150, 50, 170, 60, 175, 75);
+    // bust / chest
+    ctx.moveTo(65, 75); ctx.bezierCurveTo(62, 100, 60, 120, 65, 140);
+    ctx.moveTo(175, 75); ctx.bezierCurveTo(178, 100, 180, 120, 175, 140);
+    // waist
+    ctx.moveTo(65, 140); ctx.bezierCurveTo(62, 155, 68, 165, 75, 170);
+    ctx.moveTo(175, 140); ctx.bezierCurveTo(178, 155, 172, 165, 165, 170);
+    // hip
+    ctx.moveTo(75, 170); ctx.bezierCurveTo(70, 175, 65, 185, 68, 200);
+    ctx.moveTo(165, 170); ctx.bezierCurveTo(170, 175, 175, 185, 172, 200);
+    ctx.stroke();
+
+    if (!f) {
+      ctx.fillStyle = "#333";
+      ctx.font = "10px 'Courier New'";
+      ctx.textAlign = "center";
+      ctx.fillText("Select fabric", 120, 270);
+      return;
+    }
+
+    // Fabric drape simulation
+    const numFolds = Math.round(3 + dc * 9);
+    const amplitude = dc * 22;
+    const topY = 45;
+    const bottomY = 260;
+    const bodyLen = bottomY - topY;
+    const cx = 120;
+    const halfW = 55;
+
+    // Convert color hex to rgba
+    function hexToRgb(hex) {
+      const r = parseInt(hex.slice(1,3),16),
+            g = parseInt(hex.slice(3,5),16),
+            b = parseInt(hex.slice(5,7),16);
+      return {r,g,b};
+    }
+    const rgb = hexToRgb(col.length === 7 ? col : "#c0b090");
+    const colStr = `rgba(${rgb.r},${rgb.g},${rgb.b},0.85)`;
+    const colLight = `rgba(${Math.min(255,rgb.r+40)},${Math.min(255,rgb.g+40)},${Math.min(255,rgb.b+40)},0.5)`;
+    const colDark = `rgba(${Math.max(0,rgb.r-40)},${Math.max(0,rgb.g-40)},${Math.max(0,rgb.b-40)},0.9)`;
+
+    // Build drape path
+    ctx.beginPath();
+    ctx.moveTo(cx - halfW, topY);
+
+    // Left edge
+    for (let i = 0; i <= bodyLen; i += 4) {
+      const t = i / bodyLen;
+      const wind = Math.sin(animPhase + t * Math.PI * 2) * dc * 6;
+      const fold = Math.sin(t * Math.PI * numFolds * 0.7 + animPhase * 0.5) * amplitude * Math.sqrt(t);
+      const taper = halfW * (1 - t * 0.08);
+      ctx.lineTo(cx - taper + fold * 0.4 + wind, topY + i);
+    }
+
+    const bW = halfW * (1 + dc * 0.3);
+    ctx.lineTo(cx + bW, bottomY);
+
+    // Right edge (reverse)
+    for (let i = bodyLen; i >= 0; i -= 4) {
+      const t = i / bodyLen;
+      const wind = Math.sin(animPhase + t * Math.PI * 2 + 1) * dc * 6;
+      const fold = Math.sin(t * Math.PI * numFolds * 0.7 + 1.5 + animPhase * 0.5) * amplitude * Math.sqrt(t);
+      const taper = halfW * (1 - t * 0.08);
+      ctx.lineTo(cx + taper + fold * 0.4 + wind, topY + i);
+    }
+
+    ctx.closePath();
+
+    // Gradient fill
+    const grad = ctx.createLinearGradient(cx - halfW, topY, cx + halfW, bottomY);
+    grad.addColorStop(0, colLight);
+    grad.addColorStop(0.4, colStr);
+    grad.addColorStop(1, colDark);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Fold lines
+    for (let fold = 1; fold < numFolds; fold++) {
+      const y = topY + (bodyLen / numFolds) * fold;
+      const wave = Math.sin(fold + animPhase * 0.3) * 10 * dc;
+      ctx.beginPath();
+      ctx.moveTo(cx - halfW + wave, y);
+      ctx.quadraticCurveTo(cx, y + amplitude * 0.4, cx + halfW + wave, y);
+      ctx.strokeStyle = colDark;
+      ctx.lineWidth = 0.6;
+      ctx.globalAlpha = 0.4;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // Outline
+    ctx.strokeStyle = colDark;
+    ctx.lineWidth = 1.2;
+    ctx.globalAlpha = 0.7;
+
+    ctx.beginPath();
+    ctx.moveTo(cx - halfW, topY);
+    for (let i = 0; i <= bodyLen; i += 4) {
+      const t = i / bodyLen;
+      const wind = Math.sin(animPhase + t * Math.PI * 2) * dc * 6;
+      const fold = Math.sin(t * Math.PI * numFolds * 0.7 + animPhase * 0.5) * amplitude * Math.sqrt(t);
+      const taper = halfW * (1 - t * 0.08);
+      ctx.lineTo(cx - taper + fold * 0.4 + wind, topY + i);
+    }
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(cx + halfW * (1 + dc * 0.3), bottomY);
+    for (let i = bodyLen; i >= 0; i -= 4) {
+      const t = i / bodyLen;
+      const wind = Math.sin(animPhase + t * Math.PI * 2 + 1) * dc * 6;
+      const fold = Math.sin(t * Math.PI * numFolds * 0.7 + 1.5 + animPhase * 0.5) * amplitude * Math.sqrt(t);
+      const taper = halfW * (1 - t * 0.08);
+      ctx.lineTo(cx + taper + fold * 0.4 + wind, topY + i);
+    }
+    ctx.stroke();
+
+    ctx.globalAlpha = 1;
+
+    // Labels
+    ctx.fillStyle = "#888";
+    ctx.font = "8px 'Courier New'";
+    ctx.textAlign = "center";
+    ctx.fillText(`Drape: ${dc.toFixed(2)}  |  ${gsm}gsm`, cx, bottomY + 18);
+    ctx.fillStyle = "#D4A04A";
+    ctx.font = "9px 'Courier New'";
+    ctx.fillText(f.name, cx, bottomY + 32);
+
+  }, [fabricId, animPhase]);
+
+  return (
+    <canvas ref={canvasRef} width={240} height={300} className="drape-canvas" />
+  );
+}
+
+// ─────────────────────────────────────────────
+// MAIN APP
+// ─────────────────────────────────────────────
+function App() {
+  const [activeTab, setActiveTab] = useState("explore");
+  const [selectedFabric, setSelectedFabric] = useState(null);
+  const [selectedGarment, setSelectedGarment] = useState(null);
+  const [selectedSeam, setSelectedSeam] = useState(null);
+
+  // Expose setters for cross-panel access
+  useEffect(() => {
+    window._setGarment = setSelectedGarment;
+    window._setFabric = (id) => {
+      setSelectedFabric(id);
+      const f = getFabricById(id);
+      if (f && f.compatibleSeams.length > 0) setSelectedSeam(f.compatibleSeams[0]);
+    };
+    return () => { delete window._setGarment; delete window._setFabric; };
+  }, []);
+
+  const handleFabricSelect = useCallback((id) => {
+    setSelectedFabric(id);
+    const f = getFabricById(id);
+    if (f && f.compatibleSeams.length > 0) setSelectedSeam(f.compatibleSeams[0]);
+  }, []);
+
+  const TABS = [
+    { id:"explore",  label:"Fabric Explorer" },
+    { id:"techpack", label:"Tech Pack" },
+    { id:"drape",    label:"Drape Simulator" },
+    { id:"trinity",  label:"Trinity Analysis" },
+    { id:"generate", label:"Generate" },
+    { id:"export",   label:"Export" }
+  ];
+
+  return (
+    <div style={{ minHeight:"100vh", background:"var(--bg)" }}>
+      {/* Header */}
+      <header className="inkwell-header">
+        <div className="inkwell-logo">
+          <div className="inkwell-logo-title">Inkwell Garment Studio</div>
+          <div className="inkwell-logo-sub">Trinity Graph · IAM · Tech Pack Engine · Fal.ai</div>
+        </div>
+
+        {/* Selection Pills */}
+        <div style={{ display:"flex", gap:"6px", alignItems:"center" }}>
+          {selectedFabric && (
+            <div style={{ padding:"4px 10px", fontSize:"8px", letterSpacing:"1px", border:"1px solid var(--gold-dim)", color:"var(--gold)", display:"flex", alignItems:"center", gap:"6px" }}>
+              <div style={{ width:"8px", height:"8px", background: getFabricById(selectedFabric)?.color || "transparent" }} />
+              {getFabricById(selectedFabric)?.name}
+            </div>
+          )}
+          {selectedGarment && (
+            <div style={{ padding:"4px 10px", fontSize:"8px", letterSpacing:"1px", border:"1px solid var(--accent-teal)", color:"var(--accent-teal)" }}>
+              {getGarmentById(selectedGarment)?.name}
+            </div>
+          )}
+          {selectedFabric && (
+            <button onClick={() => { setSelectedFabric(null); setSelectedGarment(null); setSelectedSeam(null); }}
+              style={{ padding:"4px 8px", fontSize:"8px", border:"1px solid var(--border)", background:"transparent", color:"var(--text3)", letterSpacing:"1px" }}>
+              ✕ Clear
+            </button>
+          )}
+        </div>
+
+        {/* Tab Nav */}
+        <nav className="inkwell-tabs">
+          {TABS.map(tab => (
+            <button key={tab.id}
+              className={`inkwell-tab ${activeTab === tab.id ? "active" : ""}`}
+              onClick={() => setActiveTab(tab.id)}>
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      </header>
+
+      {/* Panel Content */}
+      <main>
+        {activeTab === "explore" && (
+          <FabricExplorer
+            selectedFabric={selectedFabric}
+            onSelectFabric={handleFabricSelect}
+          />
+        )}
+        {activeTab === "techpack" && (
+          <TechPackBuilder
+            selectedFabric={selectedFabric}
+            onSelectFabric={handleFabricSelect}
+            selectedGarment={selectedGarment}
+            onSelectGarment={setSelectedGarment}
+            selectedSeam={selectedSeam}
+            onSelectSeam={setSelectedSeam}
+          />
+        )}
+        {activeTab === "drape" && (
+          <DrapeSimulatorPanel
+            selectedFabric={selectedFabric}
+            onSelectFabric={handleFabricSelect}
+          />
+        )}
+        {activeTab === "trinity" && (
+          <TrinityAnalysisPanel
+            selectedFabric={selectedFabric}
+          />
+        )}
+        {activeTab === "generate" && (
+          <GeneratePanel
+            selectedFabric={selectedFabric}
+            selectedGarment={selectedGarment}
+            selectedSeam={selectedSeam}
+          />
+        )}
+        {activeTab === "export" && (
+          <ExportPanel
+            selectedFabric={selectedFabric}
+            selectedGarment={selectedGarment}
+            selectedSeam={selectedSeam}
+          />
+        )}
+      </main>
+    </div>
+  );
+}
+
+// Mount
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(React.createElement(App));
+
+// ─────────────────────────────────────────────
+// UTILITY: build Artiquity prompt
+// ─────────────────────────────────────────────
+function buildArtiquityPrompt(fabric, garment, seam) {
+  const f = getFabricById(fabric);
+  const g = getGarmentById(garment);
+  const s = seam ? getSeamById(seam) : null;
+  if (!f || !g) return "";
+
+  const ity = f.trinity.ity;
+  const pathy = f.trinity.pathy;
+  const fund = f.trinity.fundamentals;
+
+  const dominant_ity = Object.entries(ity).sort((a,b)=>b[1]-a[1])[0][0];
+  const dominant_pathy = Object.entries(pathy).sort((a,b)=>b[1]-a[1])[0][0];
+
+  const ity_desc = {
+    materiality: "materially present, weight-forward",
+    luminosity: "luminous, light-catching, shimmering",
+    viscosity: "fluid, flowing, viscous movement",
+    permanence: "permanent, structured, architecturally resolved",
+    workability: "responsive, hand-worked, craft-evident"
+  };
+  const pathy_desc = {
+    tactility: "tactile invitation, skin-aware",
+    sensuosity: "sensuous, body-celebrating",
+    immediacy: "immediate, emotionally present",
+    gestural_energy: "gestural, movement-filled, kinetic"
+  };
+
+  return `Editorial fashion photograph of a ${g.name.toLowerCase()} crafted from ${f.name} (${f.gsm}gsm, drape coefficient ${f.drapeCoeff.toFixed(2)}). The garment is ${ity_desc[dominant_ity]}, with ${pathy_desc[dominant_pathy]} qualities. Fabric feel: ${f.handfeel}. Thermal character: ${f.thermal}. ${s ? `Construction: ${s.name} (${s.code}), ${s.seamWidth} seam allowance.` : ''} Artiquity aesthetic: authenticity ${fund.authenticity}/10, felicity ${fund.felicity}/10, propensity ${fund.propensity}/10. Shot on large format film, natural light, architectural space. Inkwell Studio editorial.`;
+}
+
+</script>
+</body>
+</html>
