@@ -2940,21 +2940,35 @@ Be precise and accurate. Base all ontology IDs on what you actually observe in t
     }
     if (!imageBase64) throw new Error('No image data');
 
-    const response = await fetch(`${PROXY_URL}/api/gemini`, {
+    // Strip data URL prefix for raw base64
+    const base64Data = imageBase64.replace(/^data:image\/[^;]+;base64,/, '');
+    const mimeMatch = imageBase64.match(/^data:(image\/[^;]+);/);
+    const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+
+    const response = await fetch(`${PROXY_URL}/gemini/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'gemini-2.0-flash',
-        prompt: ANALYSIS_PROMPT,
-        image: imageBase64,
+        contents: [{
+          parts: [
+            { text: ANALYSIS_PROMPT },
+            { inline_data: { mime_type: mimeType, data: base64Data } }
+          ]
+        }]
       }),
     });
 
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errText}`);
+    }
     const data = await response.json();
 
-    // Extract JSON from response
-    const text = data.text || data.response || data.content || JSON.stringify(data);
+    // Extract JSON from Gemini response
+    const candidates = data.candidates || [];
+    const rawText = candidates[0]?.content?.parts?.[0]?.text || JSON.stringify(data);
+    const text = rawText;
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('No JSON in response');
     const analysis = JSON.parse(jsonMatch[0]);
@@ -4039,12 +4053,14 @@ Be precise and accurate. Base all ontology IDs on what you actually observe in t
     document.getElementById('generated-image').style.display = 'none';
 
     try {
-      const response = await fetch(`${PROXY_URL}/api/fal`, {
+      const response = await fetch(`${PROXY_URL}/fal/generate-sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'fal-ai/flux/dev',
           prompt: prompt,
+          image_size: 'landscape_16_9',
+          num_images: 1,
         }),
       });
 
