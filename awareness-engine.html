@@ -688,22 +688,31 @@ if(!url)throw new Error('No image URL from DALL-E');
 return{url,provider:'DALL-E 3'};
 }
 
-// Gemini image generation
+// Gemini image generation (with retry)
 async function generateGemini(prompt){
+const models=['gemini-2.0-flash-preview-image-generation','gemini-2.0-flash-exp-image-generation'];
+for(const model of models){
+for(let attempt=0;attempt<2;attempt++){
+try{
 const r=await fetch(`${PROXY}/gemini/generate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-model:'gemini-2.0-flash-exp-image-generation',
+model,
 contents:[{parts:[{text:prompt}]}],
 generationConfig:{temperature:state.entropy,responseModalities:["TEXT","IMAGE"]}
 })});
-if(!r.ok){const t=await r.text();throw new Error('Gemini: '+r.status+' '+t);}
+if(!r.ok){const t=await r.text();console.warn(`Gemini ${model} attempt ${attempt+1}: ${r.status} ${t}`);continue;}
 const j=await r.json();
+if(j.error){console.warn(`Gemini ${model}: ${j.error.message}`);continue;}
 const parts=j.candidates?.[0]?.content?.parts||[];
 for(const p of parts){
 if(p.inlineData){
 return{url:`data:${p.inlineData.mimeType};base64,${p.inlineData.data}`,provider:'Gemini'};
 }
 }
-throw new Error('Gemini returned no image');
+console.warn(`Gemini ${model}: no image in response (safety block or text-only)`);
+}catch(e){console.warn(`Gemini ${model} attempt ${attempt+1}:`,e.message);}
+}
+}
+throw new Error('Gemini: all models/retries failed');
 }
 
 // Algorithmic canvas fallback
