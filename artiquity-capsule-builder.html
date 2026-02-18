@@ -1,0 +1,4476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Artiquity — Capsule Builder & Regenerator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    /* ═══════════════════════════════════════════════════════════════
+       CSS VARIABLES & RESET
+    ═══════════════════════════════════════════════════════════════ */
+    :root {
+      --bg-void:        #0a0a0f;
+      --bg-deep:        #0f0f1a;
+      --bg-surface:     #14141f;
+      --bg-raised:      #1a1a2a;
+      --bg-hover:       #20203a;
+      --bg-active:      #25254a;
+
+      --purple-dim:     #3d1a6e;
+      --purple-mid:     #6d28d9;
+      --purple-bright:  #7c3aed;
+      --purple-glow:    #a78bfa;
+      --purple-pale:    #ddd6fe;
+
+      --cyan-dim:       #0c4a6e;
+      --cyan-mid:       #0891b2;
+      --cyan-bright:    #06b6d4;
+      --cyan-glow:      #67e8f9;
+      --cyan-pale:      #cffafe;
+
+      --gold-dim:       #78350f;
+      --gold-mid:       #d97706;
+      --gold-bright:    #f59e0b;
+      --gold-glow:      #fcd34d;
+      --gold-pale:      #fef3c7;
+
+      --red-mid:        #dc2626;
+      --red-bright:     #ef4444;
+      --green-mid:      #059669;
+      --green-bright:   #10b981;
+      --orange-mid:     #d97706;
+      --orange-bright:  #f97316;
+
+      --text-primary:   #f0f0ff;
+      --text-secondary: #a0a0c0;
+      --text-muted:     #606080;
+      --text-disabled:  #404060;
+
+      --border-dim:     #2a2a4a;
+      --border-mid:     #3a3a5a;
+      --border-bright:  #4a4a6a;
+
+      --radius-sm:      4px;
+      --radius-md:      8px;
+      --radius-lg:      12px;
+      --radius-xl:      16px;
+      --radius-full:    9999px;
+
+      --shadow-sm:  0 1px 3px rgba(0,0,0,0.5);
+      --shadow-md:  0 4px 12px rgba(0,0,0,0.4);
+      --shadow-lg:  0 8px 32px rgba(0,0,0,0.5);
+      --shadow-purple: 0 0 20px rgba(124,58,237,0.3);
+      --shadow-cyan:   0 0 20px rgba(6,182,212,0.3);
+      --shadow-gold:   0 0 20px rgba(245,158,11,0.3);
+
+      --font-sans:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono:  'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+      --transition-fast:   0.15s ease;
+      --transition-mid:    0.3s ease;
+      --transition-slow:   0.5s ease;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { font-size: 14px; scrollbar-width: thin; scrollbar-color: var(--border-bright) var(--bg-deep); }
+
+    body {
+      background: var(--bg-void);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-deep); }
+    ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       HEADER
+    ═══════════════════════════════════════════════════════════════ */
+    .app-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 0 24px;
+      height: 56px;
+      background: var(--bg-deep);
+      border-bottom: 1px solid var(--border-dim);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 100;
+    }
+
+    .logo-mark {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--purple-bright), var(--cyan-bright));
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      box-shadow: var(--shadow-purple);
+    }
+
+    .logo-text {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, var(--purple-glow), var(--cyan-glow));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .logo-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .header-status {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .artist-name-input {
+      background: var(--bg-raised);
+      border: 1px solid var(--border-dim);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      padding: 6px 12px;
+      width: 200px;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .artist-name-input:focus {
+      outline: none;
+      border-color: var(--purple-bright);
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.2);
+    }
+
+    .artist-name-input::placeholder { color: var(--text-disabled); }
+
+    .artwork-count-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--bg-raised);
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-dim);
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .count-num {
+      font-weight: 700;
+      color: var(--purple-glow);
+    }
+
+    .save-indicator {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green-bright);
+      box-shadow: 0 0 6px var(--green-bright);
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+    }
+    .save-indicator.visible { opacity: 1; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TAB NAVIGATION
+    ═══════════════════════════════════════════════════════════════ */
+    .tab-nav {
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      background: var(--bg-deep);
+      border-bottom: 1px solid var(--border-dim);
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      position: relative;
+      white-space: nowrap;
+      margin-bottom: -1px;
+    }
+
+    .tab-btn:hover { color: var(--text-primary); background: var(--bg-raised); }
+
+    .tab-btn.active {
+      color: var(--purple-glow);
+      border-bottom-color: var(--purple-bright);
+    }
+
+    .tab-icon { font-size: 14px; }
+
+    .tab-badge {
+      background: var(--purple-dim);
+      color: var(--purple-glow);
+      border-radius: var(--radius-full);
+      padding: 1px 6px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       MAIN CONTENT
+    ═══════════════════════════════════════════════════════════════ */
+    .app-main {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .tab-panel {
+      display: none;
+      height: 100%;
+      overflow-y: auto;
+    }
+
+    .tab-panel.active { display: flex; flex-direction: column; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       INGEST TAB
+    ═══════════════════════════════════════════════════════════════ */
+    .ingest-layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .ingest-sidebar {
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-dim);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-dim);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+    }
+
+    .drop-zone {
+      margin: 16px;
+      border: 2px dashed var(--border-mid);
+      border-radius: var(--radius-lg);
+      padding: 32px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition-mid);
+      background: var(--bg-raised);
+      position: relative;
+    }
+
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--purple-bright);
+      background: rgba(124,58,237,0.05);
+      box-shadow: var(--shadow-purple);
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .drop-icon {
+      font-size: 36px;
+      margin-bottom: 8px;
+      opacity: 0.6;
+    }
+
+    .drop-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .drop-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .thumbnail-grid {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px 16px;
+    }
+
+    .thumbnail-grid-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .artwork-thumb {
+      position: relative;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      aspect-ratio: 1;
+      background: var(--bg-raised);
+      border: 1px solid var(--border-dim);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      group: true;
+    }
+
+    .artwork-thumb:hover {
+      border-color: var(--purple-bright);
+      box-shadow: var(--shadow-purple);
+      transform: scale(1.02);
+    }
+
+    .artwork-thumb.selected {
+      border-color: var(--cyan-bright);
+      box-shadow: var(--shadow-cyan);
+    }
+
+    .artwork-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .artwork-thumb-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(10,10,15,0.9) 0%, transparent 50%);
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+    }
+
+    .artwork-thumb:hover .artwork-thumb-overlay { opacity: 1; }
+
+    .thumb-title {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .thumb-status {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 9px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .status-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .status-dot.pending { background: var(--text-disabled); }
+    .status-dot.analyzing { background: var(--gold-bright); animation: pulse 1s infinite; }
+    .status-dot.done { background: var(--green-bright); }
+    .status-dot.error { background: var(--red-bright); }
+
+    .thumb-remove {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 18px;
+      height: 18px;
+      background: rgba(10,10,15,0.8);
+      border: none;
+      border-radius: 50%;
+      color: var(--text-muted);
+      font-size: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+    }
+
+    .artwork-thumb:hover .thumb-remove { opacity: 1; }
+    .thumb-remove:hover { background: var(--red-mid); color: white; }
+
+    .sidebar-actions {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border-dim);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       INGEST DETAIL PANEL
+    ═══════════════════════════════════════════════════════════════ */
+    .ingest-detail {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .detail-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-dim);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .detail-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 12px;
+      opacity: 0.5;
+    }
+
+    .empty-icon { font-size: 48px; }
+    .empty-title { font-size: 16px; font-weight: 600; color: var(--text-secondary); }
+    .empty-sub { font-size: 13px; color: var(--text-muted); text-align: center; max-width: 280px; }
+
+    .artwork-detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .artwork-preview {
+      grid-column: 1 / -1;
+      aspect-ratio: 16/9;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: var(--bg-raised);
+      border: 1px solid var(--border-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .artwork-preview img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .analysis-chips {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip {
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 500;
+      border: 1px solid;
+    }
+
+    .chip-medium { background: rgba(6,182,212,0.1); border-color: var(--cyan-mid); color: var(--cyan-glow); }
+    .chip-technique { background: rgba(124,58,237,0.1); border-color: var(--purple-mid); color: var(--purple-glow); }
+    .chip-tool { background: rgba(16,185,129,0.1); border-color: var(--green-mid); color: var(--green-bright); }
+    .chip-surface { background: rgba(245,158,11,0.1); border-color: var(--gold-mid); color: var(--gold-glow); }
+    .chip-movement { background: rgba(239,68,68,0.1); border-color: var(--red-mid); color: var(--red-bright); }
+
+    .analysis-section {
+      margin-bottom: 16px;
+    }
+
+    .analysis-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chip-framework-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .chip-card {
+      background: var(--bg-raised);
+      border: 1px solid var(--border-dim);
+      border-radius: var(--radius-md);
+      padding: 10px;
+    }
+
+    .chip-card-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 4px;
+    }
+
+    .chip-card.contextual .chip-card-label { color: var(--cyan-bright); }
+    .chip-card.historical .chip-card-label { color: var(--red-bright); }
+    .chip-card.intentional .chip-card-label { color: var(--gold-bright); }
+    .chip-card.procedural .chip-card-label { color: var(--green-bright); }
+
+    .chip-card-content {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .score-bar-group { margin-bottom: 10px; }
+
+    .score-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .score-bar-label {
+      width: 120px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+
+    .score-bar-track {
+      flex: 1;
+      height: 4px;
+      background: var(--bg-hover);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.6s ease;
+    }
+
+    .score-bar-value {
+      width: 32px;
+      text-align: right;
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .ity-bar .score-bar-fill { background: linear-gradient(90deg, var(--purple-mid), var(--purple-glow)); }
+    .pathy-bar .score-bar-fill { background: linear-gradient(90deg, var(--cyan-mid), var(--cyan-glow)); }
+
+    /* ═══════════════════════════════════════════════════════════════
+       CAPSULE TAB
+    ═══════════════════════════════════════════════════════════════ */
+    .capsule-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto auto;
+      gap: 16px;
+      padding: 20px;
+      overflow-y: auto;
+      height: 100%;
+    }
+
+    .capsule-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-dim);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+    }
+
+    .capsule-card.full-width { grid-column: 1 / -1; }
+
+    .capsule-card-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-dim);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .capsule-card-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+
+    .icon-ethos { background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(245,158,11,0.05)); border: 1px solid rgba(245,158,11,0.3); }
+    .icon-dna   { background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(124,58,237,0.05)); border: 1px solid rgba(124,58,237,0.3); }
+    .icon-matrix{ background: linear-gradient(135deg, rgba(6,182,212,0.2), rgba(6,182,212,0.05)); border: 1px solid rgba(6,182,212,0.3); }
+    .icon-drift { background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.05)); border: 1px solid rgba(16,185,129,0.3); }
+    .icon-ethics{ background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(239,68,68,0.05)); border: 1px solid rgba(239,68,68,0.3); }
+
+    .capsule-card-title { font-size: 14px; font-weight: 700; }
+    .capsule-card-sub { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+    .capsule-card-body { padding: 16px; }
+
+    .trinity-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .trinity-item {
+      background: var(--bg-raised);
+      border: 1px solid var(--border-dim);
+      border-radius: var(--radius-md);
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .trinity-name { font-size: 11px; color: var(--text-secondary); }
+
+    .trinity-score {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .trinity-bar {
+      height: 2px;
+      background: var(--bg-hover);
+      border-radius: 1px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+
+    .trinity-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--gold-mid), var(--gold-glow));
+    }
+
+    .ethos-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 12px;
+    }
+
+    .ethos-tag {
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      background: rgba(245,158,11,0.1);
+      border: 1px solid rgba(245,158,11,0.2);
+      color: var(--gold-glow);
+    }
+
+    .ethos-description {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      font-style: italic;
+      border-left: 2px solid var(--gold-mid);
+      padding-left: 10px;
+    }
+
+    .radar-container {
+      position: relative;
+      width: 100%;
+      max-width: 280px;
+      margin: 0 auto;
+    }
+
+    .palette-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .palette-swatch {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255,255,255,0.1);
+      cursor: pointer;
+      transition: transform var(--transition-fast);
+      position: relative;
+    }
+
+    .palette-swatch:hover { transform: scale(1.2); z-index: 1; }
+
+    .palette-swatch::after {
+      content: attr(data-hex);
+      position: absolute;
+      bottom: calc(100% + 4px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-raised);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius-sm);
+      padding: 2px 6px;
+      font-size: 9px;
+      font-family: var(--font-mono);
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+    }
+
+    .palette-swatch:hover::after { opacity: 1; }
+
+    .material-matrix-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .material-section-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .material-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .material-bar-label {
+      font-size: 10px;
+      color: var(--text-secondary);
+      width: 80px;
+      flex-shrink: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .material-bar-track {
+      flex: 1;
+      height: 6px;
+      background: var(--bg-hover);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .material-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .media-fill   { background: linear-gradient(90deg, var(--cyan-mid), var(--cyan-bright)); }
+    .tool-fill    { background: linear-gradient(90deg, var(--green-mid), var(--green-bright)); }
+    .surface-fill { background: linear-gradient(90deg, var(--gold-mid), var(--gold-bright)); }
+
+    .material-count {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      width: 16px;
+      text-align: right;
+    }
+
+    .lora-params {
+      margin-top: 12px;
+      padding: 10px;
+      background: var(--bg-deep);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-dim);
+    }
+
+    .lora-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .lora-param-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 3px;
+    }
+
+    .lora-param-name { font-size: 11px; color: var(--text-secondary); font-family: var(--font-mono); }
+    .lora-param-val  { font-size: 11px; color: var(--cyan-glow); font-family: var(--font-mono); font-weight: 700; }
+
+    .timeline {
+      position: relative;
+      padding-left: 20px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--purple-bright), transparent);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: 16px;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -16px;
+      top: 4px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--purple-bright);
+      border: 2px solid var(--bg-surface);
+    }
+
+    .timeline-date { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); }
+    .timeline-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+    .constraint-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .constraint-card {
+      background: var(--bg-raised);
+      border: 1px solid var(--border-dim);
+      border-radius: var(--radius-md);
+      padding: 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .constraint-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    .constraint-content { flex: 1; }
+    .constraint-type { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 3px; }
+    .constraint-type.prohibited { color: var(--red-bright); }
+    .constraint-type.required   { color: var(--green-bright); }
+    .constraint-type.advisory   { color: var(--gold-bright); }
+
+    .constraint-text {
+      font-size: 12px;
+      color: var(--text-secondary);
+      background: transparent;
+      border: none;
+      width: 100%;
+      resize: none;
+      font-family: var(--font-sans);
+      line-height: 1.5;
+    }
+
+    .constraint-text:focus { outline: none; color: var(--text-primary); }
+
+    .constraint-delete {
+      background: transparent;
+      border: none;
+      color: var(--text-disabled);
+      cursor: pointer;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .constraint-delete:hover { color: var(--red-bright); }
+
+    .add-constraint-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       GRAPH TAB
+    ═══════════════════════════════════════════════════════════════ */
+    .graph-layout {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .graph-canvas-container {
+      position: relative;
+      overflow: hidden;
+      background: var(--bg-void);
+    }
+
+    #graph-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .graph-controls {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .graph-legend {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      background: rgba(10,10,15,0.9);
+      border: 1px solid var(--border-dim);
+      border-radius: var(--radius-md);
+      padding: 10px;
+      backdrop-filter: blur(10px);
+    }
+
+    .legend-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 6px; }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 3px;
+    }
+
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .legend-label { font-size: 10px; color: var(--text-secondary); }
+
+    .graph-detail-panel {
+      background: var(--bg-surface);
+      border-left: 1px solid var(--border-dim);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .detail-panel-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-dim);
+    }
+
+    .detail-panel-title { font-size: 13px; font-weight: 700; }
+    .detail-panel-type  { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+    .detail-panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+
+    .node-select-hint {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 8px;
+      opacity: 0.4;
+    }
+
+    .hint-icon { font-size: 32px; }
+    .hint-text { font-size: 12px; color: var(--text-muted); text-align: center; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       REGENERATE TAB
+    ═══════════════════════════════════════════════════════════════ */
+    .regenerate-layout {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .mimesis-banner {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-dim);
+      padding: 12px 20px;
+    }
+
+    .mimesis-flow {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      overflow-x: auto;
+    }
+
+    .mimesis-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 16px;
+      position: relative;
+    }
+
+    .mimesis-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    .mimesis-sub {
+      font-size: 10px;
+      color: var(--text-disabled);
+    }
+
+    .mimesis-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--bg-raised);
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .mimesis-arrow {
+      font-size: 18px;
+      color: var(--text-disabled);
+      flex-shrink: 0;
+      padding: 0 4px;
+    }
+
+    .mimesis-m1 .mimesis-label { color: var(--cyan-bright); }
+    .mimesis-m2 .mimesis-label { color: var(--purple-glow); }
+    .mimesis-m3 .mimesis-label { color: var(--gold-bright); }
+
+    .regenerate-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      overflow: hidden;
+    }
+
+    .regen-left {
+      padding: 20px;
+      border-right: 1px solid var(--border-dim);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+
+    .regen-right {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+
+    .regen-section-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .prompt-input-area {
+      width: 100%;
+      background: var(--bg-raised);
+      border: 1px solid var(--border-dim);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      padding: 10px 12px;
+      resize: vertical;
+      min-height: 80px;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .prompt-input-area:focus {
+      outline: none;
+      border-color: var(--purple-bright);
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.2);
+    }
+
+    .pipeline-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .pipeline-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px;
+      background: var(--bg-raised);
+      border: 1px solid var(--border-dim);
+      border-radius: var(--radius-md);
+      transition: all var(--transition-mid);
+    }
+
+    .pipeline-step.active {
+      border-color: var(--purple-bright);
+      background: rgba(124,58,237,0.05);
+      box-shadow: var(--shadow-purple);
+    }
+
+    .pipeline-step.complete {
+      border-color: var(--green-mid);
+      background: rgba(16,185,129,0.03);
+    }
+
+    .pipeline-step.error {
+      border-color: var(--red-mid);
+      background: rgba(239,68,68,0.05);
+    }
+
+    .step-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--bg-hover);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      margin-top: 1px;
+      transition: all var(--transition-mid);
+    }
+
+    .pipeline-step.active .step-num {
+      background: var(--purple-bright);
+      color: white;
+      box-shadow: 0 0 10px rgba(124,58,237,0.5);
+    }
+
+    .pipeline-step.complete .step-num {
+      background: var(--green-mid);
+      color: white;
+    }
+
+    .step-content { flex: 1; min-width: 0; }
+    .step-title { font-size: 12px; font-weight: 700; color: var(--text-primary); }
+    .step-desc  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .step-output {
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--cyan-glow);
+      font-family: var(--font-mono);
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .step-spinner {
+      width: 14px; height: 14px;
+      border: 2px solid var(--border-mid);
+      border-top-color: var(--purple-bright);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+
+    .assembled-prompt-box {
+      background: var(--bg-deep);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--cyan-pale);
+      line-height: 1.6;
+      word-break: break-word;
+    }
+
+    .generated-image-container {
+      aspect-ratio: 1;
+      background: var(--bg-raised);
+      border: 1px solid var(--border-dim);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .generated-image-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .gen-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0.3;
+    }
+
+    .gen-placeholder-icon { font-size: 48px; }
+    .gen-placeholder-text { font-size: 12px; color: var(--text-muted); }
+
+    .provenance-box {
+      background: var(--bg-raised);
+      border: 1px solid var(--border-dim);
+      border-radius: var(--radius-md);
+      padding: 12px;
+    }
+
+    .provenance-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .provenance-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .provenance-key   { font-size: 10px; color: var(--text-muted); width: 80px; flex-shrink: 0; font-family: var(--font-mono); }
+    .provenance-value { font-size: 10px; color: var(--text-secondary); word-break: break-all; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       EXPORT TAB
+    ═══════════════════════════════════════════════════════════════ */
+    .export-layout {
+      padding: 24px;
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+      overflow-y: auto;
+    }
+
+    .export-header {
+      margin-bottom: 24px;
+    }
+
+    .export-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .export-sub   { font-size: 13px; color: var(--text-secondary); }
+
+    .export-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .export-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-dim);
+      border-radius: var(--radius-xl);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .export-card-icon { font-size: 32px; }
+    .export-card-title { font-size: 15px; font-weight: 700; }
+    .export-card-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; flex: 1; }
+
+    .export-preview {
+      background: var(--bg-deep);
+      border: 1px solid var(--border-dim);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      max-height: 120px;
+      overflow: hidden;
+      line-height: 1.4;
+    }
+
+    .ontology-viewer {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-dim);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .ontology-viewer-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-dim);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .ontology-tabs {
+      display: flex;
+      gap: 2px;
+      padding: 8px;
+      border-bottom: 1px solid var(--border-dim);
+      overflow-x: auto;
+    }
+
+    .ont-tab {
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 500;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .ont-tab.active { background: var(--bg-hover); color: var(--text-primary); }
+
+    .ontology-content {
+      padding: 12px;
+      overflow-x: auto;
+    }
+
+    .ont-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    .ont-table th {
+      text-align: left;
+      padding: 6px 8px;
+      background: var(--bg-raised);
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .ont-table td {
+      padding: 5px 8px;
+      border-top: 1px solid var(--border-dim);
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      vertical-align: middle;
+    }
+
+    .ont-table tr:hover td { background: var(--bg-raised); }
+
+    /* ═══════════════════════════════════════════════════════════════
+       BUTTONS
+    ═══════════════════════════════════════════════════════════════ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--purple-bright);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--purple-glow);
+      box-shadow: var(--shadow-purple);
+    }
+
+    .btn-secondary {
+      background: var(--bg-raised);
+      color: var(--text-primary);
+      border: 1px solid var(--border-mid);
+    }
+
+    .btn-secondary:hover { background: var(--bg-hover); border-color: var(--border-bright); }
+
+    .btn-cyan {
+      background: var(--cyan-bright);
+      color: var(--bg-void);
+    }
+
+    .btn-cyan:hover { background: var(--cyan-glow); box-shadow: var(--shadow-cyan); }
+
+    .btn-gold {
+      background: var(--gold-bright);
+      color: var(--bg-void);
+    }
+
+    .btn-gold:hover { background: var(--gold-glow); box-shadow: var(--shadow-gold); }
+
+    .btn-danger {
+      background: var(--red-mid);
+      color: white;
+    }
+
+    .btn-danger:hover { background: var(--red-bright); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-dim);
+    }
+
+    .btn-ghost:hover { background: var(--bg-raised); color: var(--text-primary); }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .btn-sm { padding: 5px 10px; font-size: 11px; }
+    .btn-lg { padding: 11px 20px; font-size: 14px; }
+    .btn-full { width: 100%; }
+
+    .btn-icon {
+      padding: 6px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-raised);
+      border: 1px solid var(--border-dim);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all var(--transition-fast);
+    }
+
+    .btn-icon:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+    /* ═══════════════════════════════════════════════════════════════
+       FORM ELEMENTS
+    ═══════════════════════════════════════════════════════════════ */
+    .form-group { margin-bottom: 12px; }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: var(--bg-raised);
+      border: 1px solid var(--border-dim);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      padding: 7px 10px;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--purple-bright);
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.2);
+    }
+
+    .form-input::placeholder { color: var(--text-disabled); }
+
+    .form-select {
+      width: 100%;
+      background: var(--bg-raised);
+      border: 1px solid var(--border-dim);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      padding: 7px 10px;
+      cursor: pointer;
+    }
+
+    .form-select:focus {
+      outline: none;
+      border-color: var(--purple-bright);
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.2);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TOAST NOTIFICATIONS
+    ═══════════════════════════════════════════════════════════════ */
+    #toast-container {
+      position: fixed;
+      top: 70px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    .toast {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--bg-raised);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      max-width: 320px;
+      pointer-events: all;
+      animation: toast-in 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .toast.success { border-left: 3px solid var(--green-bright); }
+    .toast.error   { border-left: 3px solid var(--red-bright); }
+    .toast.info    { border-left: 3px solid var(--cyan-bright); }
+    .toast.warning { border-left: 3px solid var(--gold-bright); }
+
+    .toast-icon { font-size: 16px; flex-shrink: 0; }
+    .toast-text { font-size: 12px; color: var(--text-primary); line-height: 1.4; }
+    .toast-sub  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       LOADING OVERLAY
+    ═══════════════════════════════════════════════════════════════ */
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10,10,15,0.8);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      z-index: 50;
+      backdrop-filter: blur(4px);
+    }
+
+    .loading-spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border-mid);
+      border-top-color: var(--purple-bright);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .loading-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .loading-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       PROGRESS BAR
+    ═══════════════════════════════════════════════════════════════ */
+    .progress-bar {
+      height: 3px;
+      background: var(--bg-hover);
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 6px 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--purple-bright), var(--cyan-bright));
+      border-radius: 2px;
+      transition: width 0.5s ease;
+    }
+
+    .progress-fill.indeterminate {
+      width: 40% !important;
+      animation: progress-slide 1.5s ease infinite;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       GRAPH NODES
+    ═══════════════════════════════════════════════════════════════ */
+    .node-label {
+      fill: var(--text-secondary);
+      font-size: 10px;
+      font-family: var(--font-sans);
+      pointer-events: none;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       ANALYZE PROGRESS
+    ═══════════════════════════════════════════════════════════════ */
+    .analyze-progress {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border-dim);
+    }
+
+    .analyze-status {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       ANIMATIONS
+    ═══════════════════════════════════════════════════════════════ */
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateX(20px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes toast-out {
+      from { opacity: 1; transform: translateX(0); }
+      to   { opacity: 0; transform: translateX(20px); }
+    }
+
+    @keyframes progress-slide {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(350%); }
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in { animation: fade-in 0.4s ease; }
+
+    @keyframes glow-pulse {
+      0%, 100% { box-shadow: 0 0 10px rgba(124,58,237,0.3); }
+      50% { box-shadow: 0 0 25px rgba(124,58,237,0.6); }
+    }
+
+    .glow-pulse { animation: glow-pulse 2s ease infinite; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       DIVIDERS & UTILITIES
+    ═══════════════════════════════════════════════════════════════ */
+    .divider {
+      height: 1px;
+      background: var(--border-dim);
+      margin: 12px 0;
+    }
+
+    .flex-row { display: flex; align-items: center; gap: 8px; }
+    .flex-col  { display: flex; flex-direction: column; gap: 8px; }
+    .flex-1   { flex: 1; }
+    .text-center { text-align: center; }
+    .text-right  { text-align: right; }
+    .text-mono   { font-family: var(--font-mono); }
+    .text-muted  { color: var(--text-muted); }
+    .text-sm     { font-size: 11px; }
+    .text-xs     { font-size: 10px; }
+    .mb-0 { margin-bottom: 0; }
+    .mt-auto { margin-top: auto; }
+
+    .section-heading {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-heading::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-dim);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       ANALYSIS COMPLETE PANEL (after analysis in ingest tab)
+    ═══════════════════════════════════════════════════════════════ */
+    .capsule-ready-banner {
+      background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(6,182,212,0.05));
+      border: 1px solid var(--purple-dim);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 16px 12px;
+    }
+
+    .capsule-ready-icon { font-size: 24px; }
+    .capsule-ready-text { flex: 1; }
+    .capsule-ready-title { font-size: 13px; font-weight: 700; color: var(--purple-glow); }
+    .capsule-ready-sub   { font-size: 11px; color: var(--text-muted); }
+
+    /* ═══════════════════════════════════════════════════════════════
+       ONTOLOGY REFERENCE PANEL
+    ═══════════════════════════════════════════════════════════════ */
+    .ont-id-tag {
+      display: inline-block;
+      padding: 1px 5px;
+      background: rgba(124,58,237,0.15);
+      border: 1px solid rgba(124,58,237,0.3);
+      border-radius: 3px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--purple-glow);
+      margin-right: 3px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       D3 GRAPH STYLES
+    ═══════════════════════════════════════════════════════════════ */
+    .link-line {
+      stroke-opacity: 0.4;
+      fill: none;
+    }
+
+    .node-circle {
+      cursor: pointer;
+      stroke-width: 2;
+      stroke: transparent;
+      transition: stroke 0.2s;
+    }
+
+    .node-circle:hover, .node-circle.selected {
+      stroke: white;
+      stroke-opacity: 0.8;
+    }
+
+    .edge-label {
+      fill: var(--text-disabled);
+      font-size: 8px;
+      font-family: var(--font-mono);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HEADER
+  ═══════════════════════════════════════════════════════════════ -->
+  <header class="app-header">
+    <div class="logo-mark">
+      <div class="logo-icon">⬡</div>
+      <div>
+        <div class="logo-text">Artiquity</div>
+        <div class="logo-sub">Capsule Builder & Regenerator</div>
+      </div>
+    </div>
+
+    <div style="width:1px;height:32px;background:var(--border-dim);margin:0 8px;"></div>
+
+    <input type="text" id="artist-name" class="artist-name-input" placeholder="Artist name…" />
+
+    <div class="header-status">
+      <div class="artwork-count-badge">
+        <span id="artwork-count" class="count-num">0</span>
+        <span>works</span>
+      </div>
+      <div id="save-indicator" class="save-indicator" title="Saved"></div>
+      <button class="btn btn-sm btn-ghost" onclick="clearAll()" title="Clear all data">✕ Clear</button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TAB NAVIGATION
+  ═══════════════════════════════════════════════════════════════ -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="ingest" onclick="switchTab('ingest')">
+      <span class="tab-icon">⬆</span> Ingest
+    </button>
+    <button class="tab-btn" data-tab="capsule" onclick="switchTab('capsule')">
+      <span class="tab-icon">◈</span> Capsule
+      <span class="tab-badge" id="capsule-tab-badge" style="display:none">0</span>
+    </button>
+    <button class="tab-btn" data-tab="graph" onclick="switchTab('graph')">
+      <span class="tab-icon">⬡</span> Graph
+    </button>
+    <button class="tab-btn" data-tab="regenerate" onclick="switchTab('regenerate')">
+      <span class="tab-icon">✦</span> Regenerate
+    </button>
+    <button class="tab-btn" data-tab="export" onclick="switchTab('export')">
+      <span class="tab-icon">↓</span> Export
+    </button>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MAIN CONTENT
+  ═══════════════════════════════════════════════════════════════ -->
+  <main class="app-main">
+
+    <!-- ────────────────── INGEST TAB ────────────────── -->
+    <section id="tab-ingest" class="tab-panel active">
+      <div class="ingest-layout">
+
+        <!-- Left Sidebar: Upload + Thumbnails -->
+        <div class="ingest-sidebar">
+          <div class="sidebar-header">
+            <span class="sidebar-title">Oeuvre Library</span>
+            <button class="btn btn-sm btn-ghost" onclick="document.getElementById('file-input').click()">+ Add</button>
+          </div>
+
+          <div class="drop-zone" id="drop-zone">
+            <input type="file" id="file-input" multiple accept="image/*" />
+            <div class="drop-icon">🖼</div>
+            <div class="drop-title">Drop artworks here</div>
+            <div class="drop-sub">PNG, JPG, WEBP, GIF — multiple files</div>
+          </div>
+
+          <div class="thumbnail-grid" id="thumbnail-grid">
+            <div class="thumbnail-grid-inner" id="thumbnail-grid-inner">
+              <!-- Thumbnails rendered here -->
+            </div>
+          </div>
+
+          <div id="capsule-ready-container" style="display:none">
+            <div class="capsule-ready-banner">
+              <span class="capsule-ready-icon">◈</span>
+              <div class="capsule-ready-text">
+                <div class="capsule-ready-title">Capsule Ready</div>
+                <div class="capsule-ready-sub" id="capsule-ready-sub">Analysis complete</div>
+              </div>
+              <button class="btn btn-sm btn-primary" onclick="switchTab('capsule')">View →</button>
+            </div>
+          </div>
+
+          <div class="analyze-progress" id="analyze-progress" style="display:none">
+            <div class="analyze-status" id="analyze-status">Analyzing…</div>
+            <div class="progress-bar"><div class="progress-fill" id="analyze-progress-fill" style="width:0%"></div></div>
+          </div>
+
+          <div class="sidebar-actions">
+            <button class="btn btn-primary btn-full" id="analyze-btn" onclick="analyzeOeuvre()" disabled>
+              ◈ Analyze Oeuvre
+            </button>
+            <button class="btn btn-secondary btn-full" onclick="buildCapsule()" id="build-capsule-btn" disabled>
+              Build Capsule
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Artwork Detail -->
+        <div class="ingest-detail" id="ingest-detail">
+          <div id="artwork-detail-empty" class="empty-state">
+            <div class="empty-icon">🖼</div>
+            <div class="empty-title">No artwork selected</div>
+            <div class="empty-sub">Upload images and click a thumbnail to inspect its analysis</div>
+          </div>
+
+          <div id="artwork-detail-content" style="display:none; height:100%; overflow-y:auto; padding:20px;">
+            <!-- Artwork detail rendered here -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ────────────────── CAPSULE TAB ────────────────── -->
+    <section id="tab-capsule" class="tab-panel">
+      <div id="capsule-empty" class="empty-state" style="height:100%">
+        <div class="empty-icon">◈</div>
+        <div class="empty-title">No capsule built yet</div>
+        <div class="empty-sub">Upload artworks, analyze them, then click "Build Capsule" to generate the artist capsule</div>
+        <button class="btn btn-primary mt-auto" onclick="switchTab('ingest')" style="margin-top:16px">← Go to Ingest</button>
+      </div>
+
+      <div id="capsule-content" class="capsule-layout" style="display:none">
+
+        <!-- Core Ethos Signature -->
+        <div class="capsule-card">
+          <div class="capsule-card-header">
+            <div class="capsule-card-icon icon-ethos">✦</div>
+            <div>
+              <div class="capsule-card-title">Core Ethos Signature</div>
+              <div class="capsule-card-sub">Philosophical & aesthetic identity</div>
+            </div>
+          </div>
+          <div class="capsule-card-body">
+            <div class="analysis-section-title">🎯 Key Themes</div>
+            <div class="ethos-tags" id="ethos-themes"></div>
+
+            <div class="analysis-section-title">💫 Aesthetic Principles</div>
+            <div class="ethos-description" id="ethos-description">–</div>
+
+            <div class="divider"></div>
+            <div class="analysis-section-title">Trinity Fundamentals</div>
+            <div class="trinity-grid" id="trinity-grid"></div>
+          </div>
+        </div>
+
+        <!-- Aesthetic DNA Vector -->
+        <div class="capsule-card">
+          <div class="capsule-card-header">
+            <div class="capsule-card-icon icon-dna">◎</div>
+            <div>
+              <div class="capsule-card-title">Aesthetic DNA Vector</div>
+              <div class="capsule-card-sub">Style signature across oeuvre</div>
+            </div>
+          </div>
+          <div class="capsule-card-body">
+            <div class="radar-container">
+              <canvas id="dna-radar" style="max-height:240px"></canvas>
+            </div>
+            <div class="analysis-section-title" style="margin-top:12px">🎨 Dominant Palette</div>
+            <div class="palette-row" id="palette-swatches"></div>
+            <div class="divider"></div>
+            <div id="dna-profile" class="text-sm text-muted"></div>
+          </div>
+        </div>
+
+        <!-- Material Matrix -->
+        <div class="capsule-card">
+          <div class="capsule-card-header">
+            <div class="capsule-card-icon icon-matrix">⬡</div>
+            <div>
+              <div class="capsule-card-title">Material Matrix</div>
+              <div class="capsule-card-sub">Frequency-weighted material use</div>
+            </div>
+          </div>
+          <div class="capsule-card-body">
+            <div class="material-matrix-grid">
+              <div>
+                <div class="material-section-title" style="color:var(--cyan-glow)">Media</div>
+                <div id="media-freq-bars"></div>
+              </div>
+              <div>
+                <div class="material-section-title" style="color:var(--green-bright)">Tools</div>
+                <div id="tool-freq-bars"></div>
+              </div>
+              <div>
+                <div class="material-section-title" style="color:var(--gold-glow)">Surfaces</div>
+                <div id="surface-freq-bars"></div>
+              </div>
+            </div>
+            <div class="lora-params">
+              <div class="lora-title">LoRA Parameters (computed)</div>
+              <div id="lora-params-content"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Temporal Drift -->
+        <div class="capsule-card">
+          <div class="capsule-card-header">
+            <div class="capsule-card-icon icon-drift">⏱</div>
+            <div>
+              <div class="capsule-card-title">Temporal Drift Map</div>
+              <div class="capsule-card-sub">Evolution of style over time</div>
+            </div>
+          </div>
+          <div class="capsule-card-body" id="temporal-drift-body">
+            <div id="temporal-drift-content"></div>
+          </div>
+        </div>
+
+        <!-- Ethical Constraints - full width -->
+        <div class="capsule-card full-width">
+          <div class="capsule-card-header">
+            <div class="capsule-card-icon icon-ethics">⚖</div>
+            <div>
+              <div class="capsule-card-title">Ethical Constraint Engine</div>
+              <div class="capsule-card-sub">Configurable rules for regeneration</div>
+            </div>
+            <button class="btn btn-sm btn-ghost ml-auto" onclick="addConstraint()" style="margin-left:auto">+ Add Rule</button>
+          </div>
+          <div class="capsule-card-body">
+            <div class="constraint-cards" id="constraint-cards"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ────────────────── GRAPH TAB ────────────────── -->
+    <section id="tab-graph" class="tab-panel">
+      <div class="graph-layout">
+        <div class="graph-canvas-container" id="graph-canvas-container">
+          <svg id="graph-svg"></svg>
+
+          <div class="graph-controls">
+            <button class="btn-icon" onclick="graphZoomIn()" title="Zoom in">＋</button>
+            <button class="btn-icon" onclick="graphZoomOut()" title="Zoom out">－</button>
+            <button class="btn-icon" onclick="graphReset()" title="Reset view">⊙</button>
+          </div>
+
+          <div class="graph-legend">
+            <div class="legend-title">Node Types</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div><span class="legend-label">Artist</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#06b6d4"></div><span class="legend-label">Medium</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div><span class="legend-label">Tool</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#7c3aed"></div><span class="legend-label">Technique</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div><span class="legend-label">Style</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#e2e8f0"></div><span class="legend-label">Artwork</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div><span class="legend-label">Movement</span></div>
+          </div>
+
+          <div id="graph-empty" class="empty-state" style="position:absolute;inset:0;height:auto">
+            <div class="empty-icon">⬡</div>
+            <div class="empty-title">No knowledge graph yet</div>
+            <div class="empty-sub">Build the capsule first to visualize the graph</div>
+          </div>
+        </div>
+
+        <div class="graph-detail-panel">
+          <div class="detail-panel-header">
+            <div class="detail-panel-title">Node Inspector</div>
+            <div class="detail-panel-type">Select a node to inspect</div>
+          </div>
+          <div class="detail-panel-body" id="graph-node-detail">
+            <div class="node-select-hint">
+              <div class="hint-icon">☞</div>
+              <div class="hint-text">Click any node in the graph to view its properties and -ity/-pathy scores</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ────────────────── REGENERATE TAB ────────────────── -->
+    <section id="tab-regenerate" class="tab-panel">
+      <div class="regenerate-layout">
+
+        <!-- Mimesis Banner -->
+        <div class="mimesis-banner">
+          <div class="mimesis-flow">
+            <div class="mimesis-node mimesis-m1">
+              <div class="mimesis-label">Mimesis₁</div>
+              <div class="mimesis-sub">Prefiguration</div>
+              <div style="display:flex;gap:4px;margin-top:4px;">
+                <div class="mimesis-step">① Entity Resolution</div>
+                <div class="mimesis-step">② Tag Aggregation</div>
+              </div>
+            </div>
+            <div class="mimesis-arrow">→</div>
+            <div class="mimesis-node mimesis-m2">
+              <div class="mimesis-label">Mimesis₂</div>
+              <div class="mimesis-sub">Configuration</div>
+              <div style="display:flex;gap:4px;margin-top:4px;">
+                <div class="mimesis-step">③ LoRA Merge</div>
+                <div class="mimesis-step">④ Prompt Assembly</div>
+              </div>
+            </div>
+            <div class="mimesis-arrow">→</div>
+            <div class="mimesis-node mimesis-m3">
+              <div class="mimesis-label">Mimesis₃</div>
+              <div class="mimesis-sub">Refiguration</div>
+              <div style="display:flex;gap:4px;margin-top:4px;">
+                <div class="mimesis-step">⑤ Trinity Injection</div>
+                <div class="mimesis-step">⑥ Viewer Encounter</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Body: Left (prompt + pipeline) | Right (result) -->
+        <div class="regenerate-body">
+          <div class="regen-left">
+            <div>
+              <div class="regen-section-title">Natural Language Prompt</div>
+              <textarea class="prompt-input-area" id="regen-prompt" rows="3"
+                placeholder="Describe what to generate… e.g. 'moody oil painting with heavy impasto and chiaroscuro, figure emerging from dark'"
+              ></textarea>
+              <div class="flex-row" style="margin-top:8px;gap:6px">
+                <button class="btn btn-primary btn-lg flex-1" id="run-pipeline-btn" onclick="runPipeline()">
+                  ✦ Run Pipeline
+                </button>
+                <button class="btn btn-secondary btn-lg" onclick="clearPipeline()" title="Reset pipeline">↺</button>
+              </div>
+            </div>
+
+            <div>
+              <div class="regen-section-title">5-Step Pipeline</div>
+              <div class="pipeline-steps" id="pipeline-steps">
+                <div class="pipeline-step" id="step-1">
+                  <div class="step-num">1</div>
+                  <div class="step-content">
+                    <div class="step-title">Entity Resolution</div>
+                    <div class="step-desc">Parse prompt → resolve to ontology IDs</div>
+                  </div>
+                </div>
+                <div class="pipeline-step" id="step-2">
+                  <div class="step-num">2</div>
+                  <div class="step-content">
+                    <div class="step-title">Tag Aggregation</div>
+                    <div class="step-desc">Merge capsule tags with prompt → weighted array</div>
+                  </div>
+                </div>
+                <div class="pipeline-step" id="step-3">
+                  <div class="step-num">3</div>
+                  <div class="step-content">
+                    <div class="step-title">LoRA Parameter Merge</div>
+                    <div class="step-desc">Compute final params from medium base + technique modifiers</div>
+                  </div>
+                </div>
+                <div class="pipeline-step" id="step-4">
+                  <div class="step-num">4</div>
+                  <div class="step-content">
+                    <div class="step-title">Prompt Assembly</div>
+                    <div class="step-desc">Build synthesized prompt string from template</div>
+                  </div>
+                </div>
+                <div class="pipeline-step" id="step-5">
+                  <div class="step-num">5</div>
+                  <div class="step-content">
+                    <div class="step-title">Trinity Graph Injection</div>
+                    <div class="step-desc">Project new nodes/edges into knowledge graph</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div id="assembled-prompt-section" style="display:none">
+              <div class="regen-section-title">Assembled Prompt</div>
+              <div class="assembled-prompt-box" id="assembled-prompt-text">–</div>
+              <div style="margin-top:8px">
+                <button class="btn btn-cyan btn-full btn-lg" id="generate-btn" onclick="generateImage()">
+                  ⬡ Generate Image
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="regen-right">
+            <div>
+              <div class="regen-section-title">Generated Work</div>
+              <div class="generated-image-container" id="generated-image-container">
+                <div class="gen-placeholder" id="gen-placeholder">
+                  <div class="gen-placeholder-icon">✦</div>
+                  <div class="gen-placeholder-text">Run the pipeline to generate</div>
+                </div>
+                <div id="gen-loading" style="display:none" class="loading-overlay">
+                  <div class="loading-spinner"></div>
+                  <div class="loading-text">Generating with Flux…</div>
+                </div>
+                <img id="generated-image" style="display:none" alt="Generated artwork" />
+              </div>
+            </div>
+
+            <div id="provenance-section" style="display:none">
+              <div class="regen-section-title">Provenance</div>
+              <div class="provenance-box" id="provenance-box"></div>
+            </div>
+
+            <div id="trinity-inject-section" style="display:none">
+              <div class="regen-section-title">Trinity Graph Injection Preview</div>
+              <div id="trinity-inject-preview" style="font-size:11px;color:var(--text-secondary);line-height:1.7"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ────────────────── EXPORT TAB ────────────────── -->
+    <section id="tab-export" class="tab-panel">
+      <div class="export-layout">
+        <div class="export-header">
+          <div class="export-title">Export & Share</div>
+          <div class="export-sub">Export your artist capsule in multiple formats for downstream use</div>
+        </div>
+
+        <div class="export-cards">
+          <div class="export-card">
+            <div class="export-card-icon">{ }</div>
+            <div class="export-card-title">ArtWork JSON Schema</div>
+            <div class="export-card-desc">Full capsule as structured JSON per the Artiquity ontology. Import into any compatible system.</div>
+            <div class="export-preview" id="json-preview">–</div>
+            <button class="btn btn-secondary" onclick="exportJSON()">↓ Export JSON</button>
+          </div>
+
+          <div class="export-card">
+            <div class="export-card-icon">⬡</div>
+            <div class="export-card-title">Cypher Graph (Neo4j)</div>
+            <div class="export-card-desc">Knowledge graph exported as Cypher statements. Import directly into Neo4j for full graph analysis.</div>
+            <div class="export-preview" id="cypher-preview">–</div>
+            <button class="btn btn-secondary" onclick="exportCypher()">↓ Export Cypher</button>
+          </div>
+
+          <div class="export-card">
+            <div class="export-card-icon">✦</div>
+            <div class="export-card-title">Capsule Summary (Markdown)</div>
+            <div class="export-card-desc">Human-readable capsule summary in Markdown format, suitable for documentation or sharing.</div>
+            <div class="export-preview" id="md-preview">–</div>
+            <button class="btn btn-secondary" onclick="exportMarkdown()">↓ Export Markdown</button>
+          </div>
+        </div>
+
+        <!-- Ontology Reference Viewer -->
+        <div class="ontology-viewer">
+          <div class="ontology-viewer-header">📖 Ontology Reference</div>
+          <div class="ontology-tabs">
+            <button class="ont-tab active" onclick="showOntTab('media', this)">Media (12)</button>
+            <button class="ont-tab" onclick="showOntTab('tools', this)">Tools (12)</button>
+            <button class="ont-tab" onclick="showOntTab('surfaces', this)">Surfaces (11)</button>
+            <button class="ont-tab" onclick="showOntTab('techniques', this)">Techniques (14)</button>
+            <button class="ont-tab" onclick="showOntTab('trinity', this)">Trinity (8)</button>
+            <button class="ont-tab" onclick="showOntTab('ity', this)">-ity (14)</button>
+            <button class="ont-tab" onclick="showOntTab('pathy', this)">-pathy (9)</button>
+          </div>
+          <div class="ontology-content" id="ontology-content">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TOAST CONTAINER
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="toast-container"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       JAVASCRIPT
+  ═══════════════════════════════════════════════════════════════ -->
+  <script>
+  'use strict';
+
+  // ═══════════════════════════════════════════════════════════════════
+  // CONSTANTS
+  // ═══════════════════════════════════════════════════════════════════
+
+  const PROXY_URL = 'https://awareness-proxy-328246068140.us-central1.run.app';
+
+  // Full Artiquity Ontology (embedded)
+  const ONTOLOGY = {
+    media: {
+      MED_OIL: { name: 'Oil Paint',     texture: 0.85, luminosity: 0.75, edge: 0.60, viscosity: 0.90, permanence: 0.95, workability: 0.85, layerability: 0.90, tooth: 0.50, absorbency: 0.20, texture_grain: 0.70, qualityWord: 'luminous oil', mediumWord: 'oil paint' },
+      MED_WC:  { name: 'Watercolor',    texture: 0.40, luminosity: 0.95, edge: 0.90, viscosity: 0.15, permanence: 0.60, workability: 0.50, layerability: 0.70, tooth: 0.80, absorbency: 0.90, texture_grain: 0.30, qualityWord: 'translucent watercolor', mediumWord: 'watercolor' },
+      MED_ACR: { name: 'Acrylic',       texture: 0.60, luminosity: 0.70, edge: 0.50, viscosity: 0.50, permanence: 0.80, workability: 0.70, layerability: 0.80, tooth: 0.50, absorbency: 0.40, texture_grain: 0.50, qualityWord: 'bold acrylic', mediumWord: 'acrylic paint' },
+      MED_GOU: { name: 'Gouache',       texture: 0.30, luminosity: 0.60, edge: 0.30, viscosity: 0.40, permanence: 0.65, workability: 0.75, layerability: 0.60, tooth: 0.60, absorbency: 0.70, texture_grain: 0.25, qualityWord: 'opaque gouache', mediumWord: 'gouache' },
+      MED_PAS: { name: 'Pastel',        texture: 0.70, luminosity: 0.80, edge: 0.80, viscosity: 0.10, permanence: 0.55, workability: 0.90, layerability: 0.65, tooth: 0.90, absorbency: 0.95, texture_grain: 0.80, qualityWord: 'soft pastel', mediumWord: 'pastel' },
+      MED_GRA: { name: 'Graphite',      texture: 0.50, luminosity: 0.50, edge: 0.40, viscosity: 0.20, permanence: 0.75, workability: 0.95, layerability: 0.70, tooth: 0.85, absorbency: 0.60, texture_grain: 0.55, qualityWord: 'fine graphite', mediumWord: 'graphite' },
+      MED_CHA: { name: 'Charcoal',      texture: 0.80, luminosity: 0.30, edge: 0.70, viscosity: 0.10, permanence: 0.45, workability: 0.95, layerability: 0.80, tooth: 0.90, absorbency: 0.85, texture_grain: 0.85, qualityWord: 'expressive charcoal', mediumWord: 'charcoal' },
+      MED_INK: { name: 'Ink',           texture: 0.40, luminosity: 0.20, edge: 0.20, viscosity: 0.25, permanence: 0.85, workability: 0.30, layerability: 0.60, tooth: 0.40, absorbency: 0.70, texture_grain: 0.20, qualityWord: 'precise ink', mediumWord: 'ink' },
+      MED_DIG: { name: 'Digital',       texture: 0.50, luminosity: 0.80, edge: 0.50, viscosity: 0.00, permanence: 1.00, workability: 1.00, layerability: 1.00, tooth: 0.00, absorbency: 0.00, texture_grain: 0.30, qualityWord: 'digital', mediumWord: 'digital art' },
+      MED_MIX: { name: 'Mixed Media',   texture: 0.90, luminosity: 0.60, edge: 0.60, viscosity: 0.50, permanence: 0.70, workability: 0.80, layerability: 0.85, tooth: 0.70, absorbency: 0.60, texture_grain: 0.90, qualityWord: 'textured mixed media', mediumWord: 'mixed media' },
+      MED_ENC: { name: 'Encaustic',     texture: 0.95, luminosity: 0.85, edge: 0.70, viscosity: 0.95, permanence: 0.90, workability: 0.40, layerability: 0.75, tooth: 0.30, absorbency: 0.10, texture_grain: 0.95, qualityWord: 'encaustic', mediumWord: 'encaustic wax' },
+      MED_FRE: { name: 'Fresco',        texture: 0.70, luminosity: 0.55, edge: 0.50, viscosity: 0.30, permanence: 0.98, workability: 0.20, layerability: 0.30, tooth: 0.95, absorbency: 0.95, texture_grain: 0.75, qualityWord: 'fresco', mediumWord: 'fresco' },
+    },
+    tools: {
+      TOOL_BR_RND: { name: 'Round Brush',     markWord: 'fluid rounded marks' },
+      TOOL_BR_FLT: { name: 'Flat Brush',      markWord: 'broad flat strokes' },
+      TOOL_BR_FAN: { name: 'Fan Brush',       markWord: 'feathered fan strokes' },
+      TOOL_BR_FIL: { name: 'Filbert Brush',   markWord: 'soft filbert strokes' },
+      TOOL_PK:     { name: 'Palette Knife',   markWord: 'bold palette knife impasto' },
+      TOOL_STYL:   { name: 'Stylus',          markWord: 'fine stylus lines' },
+      TOOL_AIR:    { name: 'Airbrush',        markWord: 'smooth airbrushed gradients' },
+      TOOL_SPG:    { name: 'Sponge',          markWord: 'textured sponge application' },
+      TOOL_RUL:    { name: 'Ruler/Mask',      markWord: 'crisp ruled edges' },
+      TOOL_SPR:    { name: 'Spray',           markWord: 'atmospheric spray texture' },
+      TOOL_FNG:    { name: 'Fingers',         markWord: 'intimate finger-blended marks' },
+      TOOL_ROL:    { name: 'Roller',          markWord: 'even roller coverage' },
+    },
+    surfaces: {
+      SURF_CANV_STR: { name: 'Stretched Canvas' },
+      SURF_CANV_BRD: { name: 'Canvas Board' },
+      SURF_WCP:      { name: 'Watercolor Paper (cold)' },
+      SURF_WCP_HP:   { name: 'Watercolor Paper (hot)' },
+      SURF_DRP:      { name: 'Drawing Paper' },
+      SURF_WOOD:     { name: 'Wood Panel' },
+      SURF_IB:       { name: 'Illustration Board' },
+      SURF_PLW:      { name: 'Plywood' },
+      SURF_MET:      { name: 'Metal Sheet' },
+      SURF_FAB:      { name: 'Fabric/Textile' },
+      SURF_DIG:      { name: 'Digital Canvas' },
+    },
+    techniques: {
+      TECH_IMP: { name: 'Impasto',         modifiers: { texture: 0.4, physicality: 0.6 }, word: 'thick impasto', description: 'Heavy paint application creating 3D texture' },
+      TECH_GLA: { name: 'Glazing',         modifiers: { luminosity: 0.4, depth: 0.5 }, word: 'luminous glazing', description: 'Transparent paint layers for depth' },
+      TECH_WOW: { name: 'Wet-on-Wet',      modifiers: { edge_softness: 0.6, spontaneity: 0.4 }, word: 'wet-on-wet blending', description: 'Soft edges from wet-into-wet paint' },
+      TECH_DRY: { name: 'Dry Brush',       modifiers: { texture: 0.5, roughness: 0.5 }, word: 'dry brush texture', description: 'Dragged dry paint for broken texture' },
+      TECH_SCU: { name: 'Scumbling',       modifiers: { texture: 0.3, atmosphere: 0.4 }, word: 'atmospheric scumbling', description: 'Rough dry paint over dried layer' },
+      TECH_ALP: { name: 'Alla Prima',      modifiers: { spontaneity: 0.7, freshness: 0.6 }, word: 'alla prima directness', description: 'Completed in single wet session' },
+      TECH_SGR: { name: 'Sgraffito',       modifiers: { texture: 0.6, rawness: 0.5 }, word: 'sgraffito incising', description: 'Scratching into wet paint' },
+      TECH_MON: { name: 'Monotype',        modifiers: { texture: 0.4, uniqueness: 0.8 }, word: 'monotype transfer', description: 'Single transfer print' },
+      TECH_BAT: { name: 'Batik',           modifiers: { pattern: 0.7, resist: 0.8 }, word: 'wax batik resist', description: 'Wax resist dyeing technique' },
+      TECH_CHI: { name: 'Chiaroscuro',     modifiers: { contrast: 0.7, drama: 0.6 }, word: 'dramatic chiaroscuro', description: 'Strong light-dark contrast' },
+      TECH_SFU: { name: 'Sfumato',         modifiers: { edge_softness: 0.8, atmosphere: 0.7 }, word: 'sfumato mystery', description: 'Imperceptible tonal gradations' },
+      TECH_TEN: { name: 'Tenebrism',       modifiers: { darkness: 0.8, drama: 0.7 }, word: 'tenebrist darkness', description: 'Extreme dark shadow with spotlight' },
+      TECH_UND: { name: 'Underpainting',   modifiers: { depth: 0.4, luminosity: 0.3 }, word: 'underpainting depth', description: 'Preparatory tonal layer' },
+      TECH_POI: { name: 'Pointillism',     modifiers: { granularity: 0.8, vibration: 0.6 }, word: 'pointillist vibration', description: 'Dots of pure color' },
+    },
+    styleDimensions: ['texture', 'edge_quality', 'opacity', 'mark_making', 'color_temperature', 'value_range'],
+    trinity: ['Synchronicity', 'Felicity', 'Authenticity', 'Propensity', 'Fragility', 'Serendipity', 'Familiarity', 'Nostalgia'],
+    ityProperties: ['viscosity','opacity','luminosity','permanence','workability','precision','layerability','tooth','absorbency','texture_grain','balance','rhythm','focal_clarity','spatial_depth'],
+    pathyProperties: ['tactility','gestural_energy','emotional_resonance','viewer_engagement','haptic_feedback','immediacy','sensuosity','meditative_quality','spontaneity'],
+    promptTemplate: '[quality_modifier] [medium] [technique] [mark_character] [lighting_style] [color_temperature] [value_key] [surface_texture] [composition_format] [mood]',
+    lightingWords: ['dramatic side-lit', 'soft diffused light', 'raking oblique light', 'luminous backlit', 'harsh direct light', 'ambient atmospheric light', 'chiaroscuro lighting', 'sfumato haze'],
+    moodWords:     ['contemplative', 'turbulent', 'serene', 'melancholic', 'joyful', 'mysterious', 'transcendent', 'intimate', 'epic', 'fragile'],
+    colorTempWords:['warm ochre palette', 'cool blue-grey palette', 'neutral balanced palette', 'earthy sienna palette', 'vibrant saturated palette', 'muted desaturated palette'],
+    valueKeyWords: ['high-key luminous', 'low-key dark', 'mid-tone balanced', 'full-range tonal'],
+    compositionWords: ['rule-of-thirds', 'golden ratio', 'centered symmetry', 'dynamic diagonal', 'atmospheric perspective'],
+  };
+
+  // ═══════════════════════════════════════════════════════════════════
+  // APP STATE
+  // ═══════════════════════════════════════════════════════════════════
+
+  const AppState = {
+    artworks: [],          // Array of artwork objects
+    selectedArtworkId: null,
+    capsule: null,         // Built capsule
+    graphData: null,       // { nodes, links }
+    generatedImage: null,
+    assembledPrompt: '',
+    constraints: [
+      { id: 'c1', type: 'required',   text: 'Credit original artist in all derivative works' },
+      { id: 'c2', type: 'prohibited', text: 'No commercial reproduction without explicit license' },
+      { id: 'c3', type: 'advisory',   text: 'Preserve original color relationships in palette' },
+    ],
+    pipelineState: {
+      resolvedEntities: null,
+      aggregatedTags: null,
+      loraParams: null,
+      assembledPrompt: null,
+      trinityInjection: null,
+    },
+    dnaChart: null,        // Chart.js instance
+    graphSimulation: null, // D3 simulation
+    graphZoom: null,       // D3 zoom
+    graphSvg: null,        // D3 svg selection
+  };
+
+  // Artwork schema factory
+  function makeArtwork(id, file, imageData, thumbnailData) {
+    return {
+      id,
+      title: file.name.replace(/\.[^.]+$/, ''),
+      date: '',
+      medium: '',
+      imageData,       // full base64
+      thumbnailData,   // small base64 for display
+      status: 'pending',   // pending | analyzing | done | error
+      analysis: null,
+    };
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // LOCAL STORAGE
+  // ═══════════════════════════════════════════════════════════════════
+
+  function saveState() {
+    try {
+      const data = {
+        artistName: document.getElementById('artist-name').value,
+        artworks: AppState.artworks.map(a => ({
+          ...a,
+          imageData: undefined, // don't save full images (too large)
+          thumbnailData: a.thumbnailData, // save thumbnails
+        })),
+        capsule: AppState.capsule,
+        constraints: AppState.constraints,
+      };
+      localStorage.setItem('artiquity_capsule', JSON.stringify(data));
+      flashSave();
+    } catch(e) {
+      console.warn('Could not save to localStorage:', e);
+    }
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem('artiquity_capsule');
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (data.artistName) document.getElementById('artist-name').value = data.artistName;
+      if (data.artworks && data.artworks.length > 0) {
+        AppState.artworks = data.artworks.map(a => ({ ...a, imageData: null }));
+        renderThumbnails();
+        updateArtworkCount();
+        updateAnalyzeButton();
+        if (AppState.artworks.some(a => a.status === 'done')) {
+          document.getElementById('build-capsule-btn').disabled = false;
+        }
+      }
+      if (data.capsule) {
+        AppState.capsule = data.capsule;
+        renderCapsule();
+        buildGraphData();
+        renderGraph();
+        updateCapsuleTab();
+      }
+      if (data.constraints) {
+        AppState.constraints = data.constraints;
+      }
+    } catch(e) {
+      console.warn('Could not load state:', e);
+    }
+  }
+
+  function flashSave() {
+    const ind = document.getElementById('save-indicator');
+    ind.classList.add('visible');
+    setTimeout(() => ind.classList.remove('visible'), 1500);
+  }
+
+  function clearAll() {
+    if (!confirm('Clear all artworks and capsule data? This cannot be undone.')) return;
+    AppState.artworks = [];
+    AppState.selectedArtworkId = null;
+    AppState.capsule = null;
+    AppState.graphData = null;
+    AppState.generatedImage = null;
+    AppState.constraints = [
+      { id: 'c1', type: 'required',   text: 'Credit original artist in all derivative works' },
+      { id: 'c2', type: 'prohibited', text: 'No commercial reproduction without explicit license' },
+      { id: 'c3', type: 'advisory',   text: 'Preserve original color relationships in palette' },
+    ];
+    if (AppState.dnaChart) { AppState.dnaChart.destroy(); AppState.dnaChart = null; }
+    document.getElementById('artist-name').value = '';
+    document.getElementById('thumbnail-grid-inner').innerHTML = '';
+    document.getElementById('artwork-count').textContent = '0';
+    document.getElementById('analyze-btn').disabled = true;
+    document.getElementById('build-capsule-btn').disabled = true;
+    document.getElementById('capsule-ready-container').style.display = 'none';
+    document.getElementById('artwork-detail-empty').style.display = '';
+    document.getElementById('artwork-detail-content').style.display = 'none';
+    document.getElementById('capsule-empty').style.display = '';
+    document.getElementById('capsule-content').style.display = 'none';
+    document.getElementById('graph-empty').style.display = '';
+    document.getElementById('capsule-tab-badge').style.display = 'none';
+    if (AppState.graphSvg) AppState.graphSvg.selectAll('*').remove();
+    localStorage.removeItem('artiquity_capsule');
+    toast('Cleared', 'All data removed', 'info');
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // TAB SWITCHING
+  // ═══════════════════════════════════════════════════════════════════
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${name}`));
+    if (name === 'graph' && AppState.graphData) {
+      setTimeout(() => renderGraph(), 50);
+    }
+    if (name === 'export') {
+      renderExportPreviews();
+      showOntTab('media', document.querySelector('.ont-tab'));
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // TOAST NOTIFICATIONS
+  // ═══════════════════════════════════════════════════════════════════
+
+  function toast(title, sub = '', type = 'info', duration = 4000) {
+    const icons = { success: '✓', error: '✕', info: 'ℹ', warning: '⚠' };
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.innerHTML = `
+      <span class="toast-icon">${icons[type]}</span>
+      <div><div class="toast-text">${title}</div>${sub ? `<div class="toast-sub">${sub}</div>` : ''}</div>
+    `;
+    const container = document.getElementById('toast-container');
+    container.appendChild(el);
+    setTimeout(() => {
+      el.style.animation = 'toast-out 0.3s ease forwards';
+      setTimeout(() => el.remove(), 300);
+    }, duration);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // IMAGE PROCESSING UTILITIES
+  // ═══════════════════════════════════════════════════════════════════
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function resizeImageToThumbnail(file, maxSize = 200) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ratio = Math.min(maxSize / img.width, maxSize / img.height);
+          canvas.width  = img.width  * ratio;
+          canvas.height = img.height * ratio;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function resizeImageForAPI(file, maxSize = 512) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ratio = Math.min(maxSize / img.width, maxSize / img.height, 1);
+          canvas.width  = Math.round(img.width  * ratio);
+          canvas.height = Math.round(img.height * ratio);
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function extractDominantColors(imageDataURL, count = 6) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 50; canvas.height = 50;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, 50, 50);
+        const data = ctx.getImageData(0, 0, 50, 50).data;
+        const buckets = {};
+        for (let i = 0; i < data.length; i += 4) {
+          const r = Math.round(data[i]   / 32) * 32;
+          const g = Math.round(data[i+1] / 32) * 32;
+          const b = Math.round(data[i+2] / 32) * 32;
+          const k = `${r},${g},${b}`;
+          buckets[k] = (buckets[k] || 0) + 1;
+        }
+        const sorted = Object.entries(buckets).sort((a,b) => b[1] - a[1]).slice(0, count);
+        const colors = sorted.map(([k]) => {
+          const [r,g,b] = k.split(',').map(Number);
+          return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+        });
+        resolve(colors);
+      };
+      img.src = imageDataURL;
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // DRAG & DROP / FILE UPLOAD
+  // ═══════════════════════════════════════════════════════════════════
+
+  function initDropZone() {
+    const zone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+
+    ['dragenter','dragover'].forEach(evt => {
+      zone.addEventListener(evt, e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    });
+    ['dragleave','drop'].forEach(evt => {
+      zone.addEventListener(evt, e => { e.preventDefault(); zone.classList.remove('drag-over'); });
+    });
+    zone.addEventListener('drop', e => {
+      const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+      if (files.length) addFiles(files);
+    });
+    fileInput.addEventListener('change', e => {
+      const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
+      if (files.length) addFiles(files);
+      fileInput.value = '';
+    });
+  }
+
+  async function addFiles(files) {
+    for (const file of files) {
+      const id = `aw-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
+      const thumbUrl = await resizeImageToThumbnail(file);
+      const artwork = {
+        id, title: file.name.replace(/\.[^.]+$/, ''),
+        date: '', medium: '', status: 'pending',
+        thumbnailData: thumbUrl, imageFile: file,
+        imageData: null, analysis: null,
+      };
+      AppState.artworks.push(artwork);
+    }
+    renderThumbnails();
+    updateArtworkCount();
+    updateAnalyzeButton();
+    toast(`${files.length} artwork${files.length > 1 ? 's' : ''} added`, 'Ready to analyze', 'success');
+  }
+
+  function updateArtworkCount() {
+    document.getElementById('artwork-count').textContent = AppState.artworks.length;
+    const badge = document.getElementById('capsule-tab-badge');
+    if (AppState.artworks.length > 0) {
+      badge.textContent = AppState.artworks.length;
+      badge.style.display = '';
+    }
+  }
+
+  function updateAnalyzeButton() {
+    document.getElementById('analyze-btn').disabled = AppState.artworks.length === 0;
+  }
+
+  function removeArtwork(id) {
+    AppState.artworks = AppState.artworks.filter(a => a.id !== id);
+    if (AppState.selectedArtworkId === id) {
+      AppState.selectedArtworkId = null;
+      document.getElementById('artwork-detail-empty').style.display = '';
+      document.getElementById('artwork-detail-content').style.display = 'none';
+    }
+    renderThumbnails();
+    updateArtworkCount();
+    updateAnalyzeButton();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // THUMBNAIL RENDERING
+  // ═══════════════════════════════════════════════════════════════════
+
+  function renderThumbnails() {
+    const grid = document.getElementById('thumbnail-grid-inner');
+    grid.innerHTML = '';
+    AppState.artworks.forEach(artwork => {
+      const thumb = document.createElement('div');
+      thumb.className = `artwork-thumb${artwork.id === AppState.selectedArtworkId ? ' selected' : ''}`;
+      thumb.id = `thumb-${artwork.id}`;
+      thumb.onclick = () => selectArtwork(artwork.id);
+      thumb.innerHTML = `
+        <img src="${artwork.thumbnailData}" alt="${escHtml(artwork.title)}" />
+        <div class="artwork-thumb-overlay">
+          <div class="thumb-title">${escHtml(artwork.title)}</div>
+          <div class="thumb-status">
+            <div class="status-dot ${artwork.status}"></div>
+            <span>${artwork.status === 'done' ? (artwork.analysis?.medium ? ONTOLOGY.media[artwork.analysis.medium]?.name || artwork.analysis.medium : 'Analyzed') : artwork.status}</span>
+          </div>
+        </div>
+        <button class="thumb-remove" onclick="event.stopPropagation(); removeArtwork('${artwork.id}')" title="Remove">✕</button>
+      `;
+      grid.appendChild(thumb);
+    });
+  }
+
+  function selectArtwork(id) {
+    AppState.selectedArtworkId = id;
+    // Update selected state
+    document.querySelectorAll('.artwork-thumb').forEach(t => t.classList.remove('selected'));
+    const thumb = document.getElementById(`thumb-${id}`);
+    if (thumb) thumb.classList.add('selected');
+    renderArtworkDetail(id);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // ARTWORK DETAIL PANEL
+  // ═══════════════════════════════════════════════════════════════════
+
+  function renderArtworkDetail(id) {
+    const artwork = AppState.artworks.find(a => a.id === id);
+    if (!artwork) return;
+
+    document.getElementById('artwork-detail-empty').style.display = 'none';
+    const container = document.getElementById('artwork-detail-content');
+    container.style.display = 'block';
+
+    const a = artwork.analysis;
+    const chipHtml = a ? renderChipCards(a.chip) : '';
+    const ityHtml  = a ? renderScoreBars(a.ity, 'ity-bar') : '';
+    const pathyHtml= a ? renderScoreBars(a.pathy, 'pathy-bar') : '';
+    const chipTags = a ? renderAnalysisTags(artwork) : '';
+
+    container.innerHTML = `
+      <div class="artwork-preview" style="max-height:240px;margin-bottom:16px">
+        <img src="${artwork.thumbnailData}" alt="${escHtml(artwork.title)}" />
+      </div>
+
+      <div class="artwork-detail-grid">
+        <div class="form-group">
+          <label class="form-label">Title</label>
+          <input class="form-input" value="${escHtml(artwork.title)}" oninput="updateArtworkField('${id}','title',this.value)" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date / Period</label>
+          <input class="form-input" value="${escHtml(artwork.date)}" placeholder="e.g. 2023 or c.1890" oninput="updateArtworkField('${id}','date',this.value)" />
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Medium</label>
+          <select class="form-select" onchange="updateArtworkField('${id}','medium',this.value)">
+            <option value="">Auto / Unknown</option>
+            ${Object.entries(ONTOLOGY.media).map(([k,v]) => `<option value="${k}" ${artwork.medium === k || (a && a.medium === k) ? 'selected' : ''}>${v.name} (${k})</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      ${a ? `
+        <div class="section-heading">Analysis Chips</div>
+        <div class="analysis-chips" style="margin-bottom:12px">${chipTags}</div>
+
+        <div class="section-heading">CHIP Framework</div>
+        <div class="chip-framework-grid" style="margin-bottom:12px">${chipHtml}</div>
+
+        <div class="section-heading">-ity Properties</div>
+        <div class="score-bar-group" style="margin-bottom:12px">${ityHtml}</div>
+
+        <div class="section-heading">-pathy Properties</div>
+        <div class="score-bar-group">${pathyHtml}</div>
+
+        ${a.description ? `<div class="divider"></div><div class="ethos-description">${escHtml(a.description)}</div>` : ''}
+      ` : `
+        <div class="empty-state" style="height:auto;padding:32px;opacity:0.5">
+          <div class="empty-icon">🔬</div>
+          <div class="empty-title">Not analyzed yet</div>
+          <div class="empty-sub">Click "Analyze Oeuvre" to run AI analysis</div>
+        </div>
+      `}
+    `;
+  }
+
+  function renderAnalysisTags(artwork) {
+    const a = artwork.analysis;
+    if (!a) return '';
+    const tags = [];
+    if (a.medium) tags.push(`<span class="chip chip-medium">${ONTOLOGY.media[a.medium]?.name || a.medium}</span>`);
+    (a.techniques || []).forEach(t => tags.push(`<span class="chip chip-technique">${ONTOLOGY.techniques[t]?.name || t}</span>`));
+    (a.tools || []).forEach(t => tags.push(`<span class="chip chip-tool">${ONTOLOGY.tools[t]?.name || t}</span>`));
+    if (a.surface) tags.push(`<span class="chip chip-surface">${ONTOLOGY.surfaces[a.surface]?.name || a.surface}</span>`);
+    (a.chip?.historical?.movements || []).slice(0,3).forEach(m => tags.push(`<span class="chip chip-movement">${escHtml(m)}</span>`));
+    return tags.join('');
+  }
+
+  function renderChipCards(chip) {
+    if (!chip) return '';
+    return `
+      <div class="chip-card contextual">
+        <div class="chip-card-label">Contextual</div>
+        <div class="chip-card-content">
+          ${chip.contextual?.era ? `<b>Era:</b> ${escHtml(chip.contextual.era)}<br>` : ''}
+          ${chip.contextual?.geography ? `<b>Geo:</b> ${escHtml(chip.contextual.geography)}<br>` : ''}
+          ${chip.contextual?.culture ? escHtml(chip.contextual.culture) : '–'}
+        </div>
+      </div>
+      <div class="chip-card historical">
+        <div class="chip-card-label">Historical</div>
+        <div class="chip-card-content">
+          ${(chip.historical?.movements || []).slice(0,3).join(', ') || '–'}<br>
+          ${chip.historical?.lineage ? `<span style="color:var(--text-disabled)">↳ ${escHtml(chip.historical.lineage)}</span>` : ''}
+        </div>
+      </div>
+      <div class="chip-card intentional">
+        <div class="chip-card-label">Intentional</div>
+        <div class="chip-card-content">
+          ${chip.intentional?.purpose ? escHtml(chip.intentional.purpose) : '–'}<br>
+          ${(chip.intentional?.emotionalGoals || []).slice(0,2).join(' · ') || ''}
+        </div>
+      </div>
+      <div class="chip-card procedural">
+        <div class="chip-card-label">Procedural</div>
+        <div class="chip-card-content">
+          ${(chip.procedural?.methods || []).slice(0,3).join(', ') || '–'}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderScoreBars(obj, cls) {
+    if (!obj) return '';
+    return Object.entries(obj).map(([k, v]) => `
+      <div class="score-bar-row ${cls}">
+        <div class="score-bar-label">${k.replace(/_/g, ' ')}</div>
+        <div class="score-bar-track"><div class="score-bar-fill" style="width:${Math.round(v*100)}%"></div></div>
+        <div class="score-bar-value">${v.toFixed(2)}</div>
+      </div>
+    `).join('');
+  }
+
+  function updateArtworkField(id, field, value) {
+    const artwork = AppState.artworks.find(a => a.id === id);
+    if (artwork) {
+      artwork[field] = value;
+      // Update thumbnail label
+      if (field === 'title') {
+        const t = document.querySelector(`#thumb-${id} .thumb-title`);
+        if (t) t.textContent = value;
+      }
+      saveState();
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // ANALYSIS ENGINE
+  // ═══════════════════════════════════════════════════════════════════
+
+  const ANALYSIS_PROMPT = `You are an expert art analyst and art historian with deep knowledge of painting techniques, art history, and the Artiquity ontology system. Analyze this artwork image and respond ONLY with a valid JSON object matching EXACTLY this schema. All numeric values must be floats between 0.0 and 1.0 unless stated otherwise.
+
+{
+  "chip": {
+    "contextual": { "era": "string - art historical period", "geography": "string - region/country", "culture": "string - cultural context" },
+    "historical": { "movements": ["list of art movements"], "influences": ["list of influences"], "lineage": "string - artistic lineage" },
+    "intentional": { "purpose": "string - artwork's purpose", "symbolism": ["list of symbolic elements"], "emotionalGoals": ["list of emotional intentions"] },
+    "procedural": { "tools": ["list of tools used"], "materials": ["list of materials"], "methods": ["list of techniques"] }
+  },
+  "medium": "ONE OF: MED_OIL, MED_WC, MED_ACR, MED_GOU, MED_PAS, MED_GRA, MED_CHA, MED_INK, MED_DIG, MED_MIX, MED_ENC, MED_FRE",
+  "tools": ["FROM: TOOL_BR_RND, TOOL_BR_FLT, TOOL_BR_FAN, TOOL_BR_FIL, TOOL_PK, TOOL_STYL, TOOL_AIR, TOOL_SPG, TOOL_RUL, TOOL_SPR, TOOL_FNG, TOOL_ROL"],
+  "techniques": ["FROM: TECH_IMP, TECH_GLA, TECH_WOW, TECH_DRY, TECH_SCU, TECH_ALP, TECH_SGR, TECH_MON, TECH_BAT, TECH_CHI, TECH_SFU, TECH_TEN, TECH_UND, TECH_POI"],
+  "surface": "ONE OF: SURF_CANV_STR, SURF_CANV_BRD, SURF_WCP, SURF_WCP_HP, SURF_DRP, SURF_WOOD, SURF_IB, SURF_PLW, SURF_MET, SURF_FAB, SURF_DIG",
+  "styleAttributes": { "texture": 0.0, "edge_quality": 0.0, "opacity": 0.0, "mark_making": 0.0, "color_temperature": 0.0, "value_range": 0.0 },
+  "composition": { "rule": "string", "focal_strategy": "string", "spatial_depth": 0.0, "format": "portrait|landscape|square" },
+  "ity": { "viscosity": 0.0, "opacity": 0.0, "luminosity": 0.0, "permanence": 0.0, "workability": 0.0, "precision": 0.0, "layerability": 0.0, "tooth": 0.0, "absorbency": 0.0, "texture_grain": 0.0, "balance": 0.0, "rhythm": 0.0, "focal_clarity": 0.0, "spatial_depth": 0.0 },
+  "pathy": { "tactility": 0.0, "gestural_energy": 0.0, "emotional_resonance": 0.0, "viewer_engagement": 0.0, "haptic_feedback": 0.0, "immediacy": 0.0, "sensuosity": 0.0, "meditative_quality": 0.0, "spontaneity": 0.0 },
+  "trinity": { "Synchronicity": 0.0, "Felicity": 0.0, "Authenticity": 0.0, "Propensity": 0.0, "Fragility": 0.0, "Serendipity": 0.0, "Familiarity": 0.0, "Nostalgia": 0.0 },
+  "description": "Brief evocative description of this specific work",
+  "dominantColors": ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5"]
+}
+
+Be precise and accurate. Base all ontology IDs on what you actually observe in the image. Return ONLY the JSON, no markdown, no commentary.`;
+
+  async function analyzeArtwork(artwork) {
+    artwork.status = 'analyzing';
+    renderThumbnails();
+
+    // Get image data for API
+    let imageBase64 = artwork.imageData;
+    if (!imageBase64 && artwork.imageFile) {
+      imageBase64 = await resizeImageForAPI(artwork.imageFile);
+      artwork.imageData = imageBase64;
+    }
+    if (!imageBase64) throw new Error('No image data');
+
+    const response = await fetch(`${PROXY_URL}/api/gemini`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gemini-2.0-flash',
+        prompt: ANALYSIS_PROMPT,
+        image: imageBase64,
+      }),
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+
+    // Extract JSON from response
+    const text = data.text || data.response || data.content || JSON.stringify(data);
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON in response');
+    const analysis = JSON.parse(jsonMatch[0]);
+
+    // Normalize analysis fields
+    analysis.ity    = analysis.ity    || {};
+    analysis.pathy  = analysis.pathy  || {};
+    analysis.trinity= analysis.trinity|| {};
+    analysis.styleAttributes = analysis.styleAttributes || {};
+    analysis.chip   = analysis.chip   || {};
+    analysis.tools  = analysis.tools  || [];
+    analysis.techniques = analysis.techniques || [];
+    analysis.dominantColors = analysis.dominantColors || [];
+
+    // Fill missing ity/pathy from medium defaults
+    const med = ONTOLOGY.media[analysis.medium] || {};
+    const ityKeys = ONTOLOGY.ityProperties;
+    ityKeys.forEach(k => {
+      if (analysis.ity[k] == null) analysis.ity[k] = med[k] || 0.5;
+    });
+
+    return analysis;
+  }
+
+  async function analyzeOeuvre() {
+    const pending = AppState.artworks.filter(a => a.status !== 'done');
+    if (!pending.length) { toast('All analyzed', 'All artworks already analyzed', 'info'); return; }
+
+    const btn = document.getElementById('analyze-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Analyzing…';
+    document.getElementById('analyze-progress').style.display = 'block';
+
+    let done = 0;
+    const total = pending.length;
+
+    for (const artwork of pending) {
+      document.getElementById('analyze-status').textContent = `Analyzing "${artwork.title}"… (${done+1}/${total})`;
+      document.getElementById('analyze-progress-fill').style.width = `${(done/total)*100}%`;
+      try {
+        artwork.analysis = await analyzeArtwork(artwork);
+        artwork.status = 'done';
+        // Extract dominant colors
+        if (artwork.thumbnailData) {
+          try { artwork.analysis.dominantColors = await extractDominantColors(artwork.thumbnailData); } catch(e) {}
+        }
+        if (AppState.selectedArtworkId === artwork.id) renderArtworkDetail(artwork.id);
+        toast(`✓ ${artwork.title}`, 'Analysis complete', 'success', 2000);
+      } catch(e) {
+        artwork.status = 'error';
+        artwork.analysis = generateFallbackAnalysis(artwork);
+        artwork.status = 'done';
+        console.warn('Analysis error, using fallback:', e);
+        toast(`${artwork.title}`, 'Used fallback analysis', 'warning', 2000);
+      }
+      done++;
+      renderThumbnails();
+      if (AppState.selectedArtworkId === artwork.id) renderArtworkDetail(artwork.id);
+    }
+
+    document.getElementById('analyze-progress-fill').style.width = '100%';
+    setTimeout(() => document.getElementById('analyze-progress').style.display = 'none', 1000);
+
+    btn.disabled = false;
+    btn.textContent = '◈ Analyze Oeuvre';
+    document.getElementById('build-capsule-btn').disabled = false;
+
+    // Auto-build capsule
+    buildCapsule();
+
+    document.getElementById('capsule-ready-container').style.display = 'block';
+    document.getElementById('capsule-ready-sub').textContent = `${total} work${total>1?'s':''} analyzed — capsule built`;
+    saveState();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // FALLBACK ANALYSIS (when API fails)
+  // ═══════════════════════════════════════════════════════════════════
+
+  function generateFallbackAnalysis(artwork) {
+    const medKeys = Object.keys(ONTOLOGY.media);
+    const medium = medKeys[Math.floor(Math.random() * 4)]; // bias toward first 4 (most common)
+    const med = ONTOLOGY.media[medium];
+    return {
+      chip: {
+        contextual: { era: 'Contemporary', geography: 'Unknown', culture: 'Western' },
+        historical: { movements: ['Contemporary Art'], influences: [], lineage: 'Modern tradition' },
+        intentional: { purpose: 'Aesthetic expression', symbolism: [], emotionalGoals: ['Expression', 'Communication'] },
+        procedural: { tools: ['Brush'], materials: [med.name], methods: ['Direct painting'] },
+      },
+      medium,
+      tools: ['TOOL_BR_RND', 'TOOL_BR_FLT'],
+      techniques: ['TECH_ALP'],
+      surface: 'SURF_CANV_STR',
+      styleAttributes: {
+        texture: med.texture, edge_quality: med.edge, opacity: 1 - med.luminosity,
+        mark_making: 0.6, color_temperature: 0.5, value_range: 0.7,
+      },
+      composition: { rule: 'rule of thirds', focal_strategy: 'single point', spatial_depth: 0.6, format: 'landscape' },
+      ity: {
+        viscosity: med.viscosity || 0.5, opacity: 0.7, luminosity: med.luminosity,
+        permanence: med.permanence || 0.7, workability: med.workability || 0.7,
+        precision: 0.6, layerability: med.layerability || 0.7, tooth: med.tooth || 0.5,
+        absorbency: med.absorbency || 0.5, texture_grain: med.texture_grain || 0.5,
+        balance: 0.65, rhythm: 0.6, focal_clarity: 0.7, spatial_depth: 0.6,
+      },
+      pathy: {
+        tactility: 0.6, gestural_energy: 0.6, emotional_resonance: 0.65,
+        viewer_engagement: 0.6, haptic_feedback: 0.5, immediacy: 0.6,
+        sensuosity: 0.55, meditative_quality: 0.5, spontaneity: 0.55,
+      },
+      trinity: {
+        Synchronicity: 0.6, Felicity: 0.65, Authenticity: 0.7,
+        Propensity: 0.55, Fragility: 0.5, Serendipity: 0.6,
+        Familiarity: 0.6, Nostalgia: 0.5,
+      },
+      description: 'Artwork awaiting detailed analysis.',
+      dominantColors: ['#8b4513', '#d2691e', '#f5deb3', '#696969', '#2f4f4f'],
+    };
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // CAPSULE BUILDER
+  // ═══════════════════════════════════════════════════════════════════
+
+  function buildCapsule() {
+    const analyzed = AppState.artworks.filter(a => a.analysis);
+    if (!analyzed.length) { toast('No analyzed works', 'Run analysis first', 'warning'); return; }
+
+    const capsule = {
+      artistName: document.getElementById('artist-name').value || 'Unknown Artist',
+      builtAt: new Date().toISOString(),
+      artworkCount: analyzed.length,
+      coreEthos: buildCoreEthos(analyzed),
+      aestheticDNA: buildAestheticDNA(analyzed),
+      materialMatrix: buildMaterialMatrix(analyzed),
+      temporalDrift: buildTemporalDrift(analyzed),
+    };
+
+    AppState.capsule = capsule;
+    renderCapsule();
+    buildGraphData();
+    renderGraph();
+    updateCapsuleTab();
+    saveState();
+    toast('Capsule built', `${analyzed.length} artworks integrated`, 'success');
+  }
+
+  function buildCoreEthos(artworks) {
+    // Aggregate trinity scores
+    const trinityAvg = {};
+    ONTOLOGY.trinity.forEach(k => {
+      const vals = artworks.map(a => a.analysis?.trinity?.[k] || 0.5);
+      trinityAvg[k] = avg(vals);
+    });
+
+    // Aggregate intentional data
+    const allPurposes  = artworks.map(a => a.analysis?.chip?.intentional?.purpose).filter(Boolean);
+    const allSymbolism = artworks.flatMap(a => a.analysis?.chip?.intentional?.symbolism || []);
+    const allGoals     = artworks.flatMap(a => a.analysis?.chip?.intentional?.emotionalGoals || []);
+    const allMovements = artworks.flatMap(a => a.analysis?.chip?.historical?.movements || []);
+
+    const themes = uniqueTopN([...allSymbolism, ...allGoals, ...allMovements], 8);
+    const principles = allPurposes.length > 0
+      ? `${allPurposes.slice(0,2).join('. ')}. The oeuvre exhibits ${themes.slice(0,3).join(', ')}.`
+      : 'A practice rooted in authentic visual exploration and material consciousness.';
+
+    return { trinity: trinityAvg, themes, principles };
+  }
+
+  function buildAestheticDNA(artworks) {
+    const dims = ONTOLOGY.styleDimensions;
+    const averaged = {};
+    dims.forEach(d => {
+      const vals = artworks.map(a => a.analysis?.styleAttributes?.[d] || 0.5);
+      averaged[d] = avg(vals);
+    });
+
+    // Ity/pathy averages
+    const ityAvg = {};
+    ONTOLOGY.ityProperties.forEach(k => {
+      ityAvg[k] = avg(artworks.map(a => a.analysis?.ity?.[k] || 0.5));
+    });
+    const pathyAvg = {};
+    ONTOLOGY.pathyProperties.forEach(k => {
+      pathyAvg[k] = avg(artworks.map(a => a.analysis?.pathy?.[k] || 0.5));
+    });
+
+    // Aggregate dominant colors
+    const allColors = artworks.flatMap(a => a.analysis?.dominantColors || []);
+    const colorFreq = {};
+    allColors.forEach(c => { colorFreq[c] = (colorFreq[c]||0)+1; });
+    const dominantColors = Object.entries(colorFreq).sort((a,b)=>b[1]-a[1]).map(([c])=>c).slice(0,8);
+
+    // Profile strings
+    const textureLevel = averaged.texture > 0.7 ? 'highly textured' : averaged.texture > 0.4 ? 'moderately textured' : 'smooth';
+    const edgeQuality  = averaged.edge_quality > 0.7 ? 'crisp defined edges' : averaged.edge_quality > 0.4 ? 'varied edge quality' : 'soft atmospheric edges';
+    const markMaking   = averaged.mark_making > 0.7 ? 'bold expressive marks' : averaged.mark_making > 0.4 ? 'deliberate mark-making' : 'refined subtle marks';
+
+    return { styleAttributes: averaged, ityAvg, pathyAvg, dominantColors,
+             textureLevel, edgeQuality, markMaking };
+  }
+
+  function buildMaterialMatrix(artworks) {
+    const mediaFreq = {}; const toolFreq = {}; const surfaceFreq = {};
+    artworks.forEach(a => {
+      if (a.analysis?.medium) mediaFreq[a.analysis.medium]   = (mediaFreq[a.analysis.medium]||0)+1;
+      (a.analysis?.tools||[]).forEach(t => { toolFreq[t]    = (toolFreq[t]||0)+1; });
+      if (a.analysis?.surface) surfaceFreq[a.analysis.surface] = (surfaceFreq[a.analysis.surface]||0)+1;
+    });
+
+    // Compute LoRA parameters
+    const topMedium = Object.entries(mediaFreq).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'MED_OIL';
+    const topTechs  = artworks.flatMap(a => a.analysis?.techniques||[]);
+    const techFreq  = {};
+    topTechs.forEach(t => { techFreq[t] = (techFreq[t]||0)+1; });
+
+    const loraParams = computeLoraParams(topMedium, techFreq, artworks.length);
+
+    return { mediaFrequency: mediaFreq, toolFrequency: toolFreq, surfaceFrequency: surfaceFreq, loraParams };
+  }
+
+  function computeLoraParams(mediumId, techFreq, totalWorks) {
+    const med = ONTOLOGY.media[mediumId] || {};
+    const params = {
+      texture:    med.texture    || 0.5,
+      luminosity: med.luminosity || 0.5,
+      edge:       med.edge       || 0.5,
+      viscosity:  med.viscosity  || 0.5,
+      layerability: med.layerability || 0.5,
+    };
+
+    // Apply technique modifiers
+    Object.entries(techFreq).forEach(([tid, count]) => {
+      const tech = ONTOLOGY.techniques[tid];
+      if (!tech) return;
+      const weight = count / totalWorks;
+      Object.entries(tech.modifiers || {}).forEach(([prop, mod]) => {
+        if (params[prop] != null) params[prop] = Math.min(1, params[prop] + mod * weight);
+      });
+    });
+
+    // Round to 3dp
+    return Object.fromEntries(Object.entries(params).map(([k,v]) => [k, Math.round(v*1000)/1000]));
+  }
+
+  function buildTemporalDrift(artworks) {
+    const dated = artworks.filter(a => a.date).sort((a,b) => a.date.localeCompare(b.date));
+    if (dated.length < 2) return [];
+    return dated.map(a => ({
+      date: a.date, title: a.title,
+      texture: a.analysis?.styleAttributes?.texture || 0.5,
+      gestural: a.analysis?.pathy?.gestural_energy || 0.5,
+      techniques: a.analysis?.techniques || [],
+    }));
+  }
+
+  function updateCapsuleTab() {
+    if (!AppState.capsule) return;
+    document.getElementById('capsule-empty').style.display = 'none';
+    document.getElementById('capsule-content').style.display = 'grid';
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // CAPSULE RENDERING
+  // ═══════════════════════════════════════════════════════════════════
+
+  function renderCapsule() {
+    const c = AppState.capsule;
+    if (!c) return;
+
+    // ── Core Ethos ──
+    const themeEl = document.getElementById('ethos-themes');
+    themeEl.innerHTML = (c.coreEthos.themes || []).map(t => `<span class="ethos-tag">${escHtml(t)}</span>`).join('');
+    document.getElementById('ethos-description').textContent = c.coreEthos.principles || '–';
+
+    const trinGrid = document.getElementById('trinity-grid');
+    trinGrid.innerHTML = ONTOLOGY.trinity.map(k => {
+      const v = c.coreEthos.trinity[k] || 0;
+      const pct = Math.round(v * 100);
+      const color = v > 0.7 ? 'var(--gold-glow)' : v > 0.4 ? 'var(--cyan-glow)' : 'var(--text-muted)';
+      return `
+        <div class="trinity-item">
+          <div>
+            <div class="trinity-name">${k}</div>
+            <div class="trinity-bar"><div class="trinity-bar-fill" style="width:${pct}%"></div></div>
+          </div>
+          <div class="trinity-score" style="color:${color}">${v.toFixed(2)}</div>
+        </div>
+      `;
+    }).join('');
+
+    // ── Aesthetic DNA ──
+    renderDNARadar();
+
+    const paletteEl = document.getElementById('palette-swatches');
+    paletteEl.innerHTML = (c.aestheticDNA.dominantColors || []).map(hex =>
+      `<div class="palette-swatch" style="background:${hex}" data-hex="${hex}" title="${hex}"></div>`
+    ).join('');
+
+    document.getElementById('dna-profile').textContent =
+      `${c.aestheticDNA.textureLevel} · ${c.aestheticDNA.edgeQuality} · ${c.aestheticDNA.markMaking}`;
+
+    // ── Material Matrix ──
+    renderFreqBars('media-freq-bars',   c.materialMatrix.mediaFrequency,   ONTOLOGY.media,     'media-fill');
+    renderFreqBars('tool-freq-bars',    c.materialMatrix.toolFrequency,     ONTOLOGY.tools,     'tool-fill');
+    renderFreqBars('surface-freq-bars', c.materialMatrix.surfaceFrequency,  ONTOLOGY.surfaces,  'surface-fill');
+
+    const loraEl = document.getElementById('lora-params-content');
+    loraEl.innerHTML = Object.entries(c.materialMatrix.loraParams || {}).map(([k,v]) => `
+      <div class="lora-param-row">
+        <span class="lora-param-name">${k}</span>
+        <span class="lora-param-val">${v.toFixed(3)}</span>
+      </div>
+    `).join('');
+
+    // ── Temporal Drift ──
+    renderTemporalDrift();
+
+    // ── Constraints ──
+    renderConstraints();
+  }
+
+  function renderDNARadar() {
+    const c = AppState.capsule;
+    if (!c) return;
+    const ctx = document.getElementById('dna-radar').getContext('2d');
+    if (AppState.dnaChart) AppState.dnaChart.destroy();
+
+    const dims = ONTOLOGY.styleDimensions;
+    const vals = dims.map(d => (c.aestheticDNA.styleAttributes[d] || 0));
+
+    AppState.dnaChart = new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: dims.map(d => d.replace(/_/g, ' ')),
+        datasets: [{
+          label: c.artistName,
+          data: vals,
+          backgroundColor: 'rgba(124,58,237,0.15)',
+          borderColor: 'rgba(124,58,237,0.8)',
+          pointBackgroundColor: 'rgba(6,182,212,0.9)',
+          pointBorderColor: 'rgba(6,182,212,0.5)',
+          pointRadius: 4,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          r: {
+            min: 0, max: 1,
+            ticks: { stepSize: 0.25, color: '#606080', backdropColor: 'transparent', font: { size: 9 } },
+            grid: { color: '#2a2a4a' },
+            pointLabels: { color: '#a0a0c0', font: { size: 10 } },
+            angleLines: { color: '#2a2a4a' },
+          },
+        },
+      },
+    });
+  }
+
+  function renderFreqBars(elId, freq, ontGroup, fillClass) {
+    const el = document.getElementById(elId);
+    if (!el || !freq) return;
+    const sorted = Object.entries(freq).sort((a,b) => b[1]-a[1]).slice(0,6);
+    const max = sorted[0]?.[1] || 1;
+    el.innerHTML = sorted.map(([id, count]) => {
+      const name = ontGroup[id]?.name || id;
+      const pct = (count / max) * 100;
+      return `
+        <div class="material-bar-row">
+          <div class="material-bar-label" title="${name}">${name}</div>
+          <div class="material-bar-track"><div class="material-bar-fill ${fillClass}" style="width:${pct}%"></div></div>
+          <div class="material-count">${count}</div>
+        </div>
+      `;
+    }).join('') || '<div style="color:var(--text-disabled);font-size:11px">–</div>';
+  }
+
+  function renderTemporalDrift() {
+    const c = AppState.capsule;
+    const el = document.getElementById('temporal-drift-content');
+    if (!c?.temporalDrift?.length) {
+      el.innerHTML = '<div class="empty-state" style="height:auto;opacity:0.5;padding:16px"><div class="empty-icon" style="font-size:24px">⏱</div><div class="empty-sub">Add dates to artworks to see temporal evolution</div></div>';
+      return;
+    }
+    el.innerHTML = `<div class="timeline">${c.temporalDrift.map(item => `
+      <div class="timeline-item">
+        <div class="timeline-date">${escHtml(item.date)}</div>
+        <div class="timeline-desc">
+          <b>${escHtml(item.title)}</b>
+          ${item.techniques.length ? `— ${item.techniques.map(t => ONTOLOGY.techniques[t]?.name || t).join(', ')}` : ''}
+        </div>
+      </div>
+    `).join('')}</div>`;
+  }
+
+  function renderConstraints() {
+    const el = document.getElementById('constraint-cards');
+    el.innerHTML = AppState.constraints.map(c => `
+      <div class="constraint-card">
+        <span class="constraint-icon">${c.type==='prohibited'?'🚫':c.type==='required'?'✅':'ℹ'}</span>
+        <div class="constraint-content">
+          <div class="constraint-type ${c.type}">${c.type.toUpperCase()}</div>
+          <textarea class="constraint-text" rows="2" oninput="updateConstraint('${c.id}',this.value)">${escHtml(c.text)}</textarea>
+        </div>
+        <button class="constraint-delete" onclick="deleteConstraint('${c.id}')" title="Remove">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function addConstraint(type = 'advisory') {
+    const id = `c${Date.now()}`;
+    AppState.constraints.push({ id, type, text: 'New constraint…' });
+    renderConstraints();
+    saveState();
+  }
+
+  function updateConstraint(id, text) {
+    const c = AppState.constraints.find(c => c.id === id);
+    if (c) { c.text = text; saveState(); }
+  }
+
+  function deleteConstraint(id) {
+    AppState.constraints = AppState.constraints.filter(c => c.id !== id);
+    renderConstraints();
+    saveState();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // KNOWLEDGE GRAPH
+  // ═══════════════════════════════════════════════════════════════════
+
+  const NODE_COLORS = {
+    artist:    '#f59e0b',
+    medium:    '#06b6d4',
+    tool:      '#10b981',
+    technique: '#7c3aed',
+    style:     '#f97316',
+    artwork:   '#e2e8f0',
+    movement:  '#ef4444',
+    surface:   '#a78bfa',
+  };
+
+  function buildGraphData() {
+    const c = AppState.capsule;
+    if (!c) return;
+    const analyzed = AppState.artworks.filter(a => a.analysis);
+
+    const nodes = [];
+    const links = [];
+    const nodeMap = new Set();
+
+    function addNode(id, label, type, data = {}) {
+      if (nodeMap.has(id)) return;
+      nodeMap.add(id);
+      nodes.push({ id, label, type, color: NODE_COLORS[type] || '#888', data });
+    }
+    function addLink(source, target, rel, weight = 1) {
+      links.push({ source, target, rel, weight });
+    }
+
+    // Artist node (center)
+    const artistId = 'ARTIST';
+    addNode(artistId, c.artistName || 'Artist', 'artist', { capsule: c });
+
+    // Process each artwork
+    analyzed.forEach(artwork => {
+      const awId = `AW_${artwork.id}`;
+      addNode(awId, artwork.title, 'artwork', { artwork, thumbnail: artwork.thumbnailData });
+      addLink(artistId, awId, 'CREATED');
+
+      const a = artwork.analysis;
+
+      // Medium
+      if (a.medium) {
+        const medId = `MED_${a.medium}`;
+        addNode(medId, ONTOLOGY.media[a.medium]?.name || a.medium, 'medium', ONTOLOGY.media[a.medium] || {});
+        addLink(awId, medId, 'USES_MEDIUM');
+        addLink(artistId, medId, 'USES_MEDIUM', 0.5);
+      }
+
+      // Techniques
+      (a.techniques || []).forEach(tid => {
+        const techId = `TECH_${tid}`;
+        addNode(techId, ONTOLOGY.techniques[tid]?.name || tid, 'technique', ONTOLOGY.techniques[tid] || {});
+        addLink(awId, techId, 'APPLIES_TECHNIQUE');
+        addLink(artistId, techId, 'APPLIES_TECHNIQUE', 0.4);
+      });
+
+      // Tools
+      (a.tools || []).slice(0,4).forEach(tid => {
+        const toolId = `TOOL_${tid}`;
+        addNode(toolId, ONTOLOGY.tools[tid]?.name || tid, 'tool', ONTOLOGY.tools[tid] || {});
+        addLink(awId, toolId, 'USES_TOOL');
+      });
+
+      // Surface
+      if (a.surface) {
+        const surId = `SURF_${a.surface}`;
+        addNode(surId, ONTOLOGY.surfaces[a.surface]?.name || a.surface, 'surface', {});
+        addLink(awId, surId, 'ON_SURFACE');
+      }
+
+      // Movements (from historical)
+      (a.chip?.historical?.movements || []).slice(0,3).forEach(m => {
+        const movId = `MOV_${m.replace(/\s+/g,'_').toUpperCase()}`;
+        addNode(movId, m, 'movement', {});
+        addLink(awId, movId, 'BELONGS_TO_TRADITION');
+        addLink(artistId, movId, 'BELONGS_TO_TRADITION', 0.6);
+      });
+
+      // Style dimensions (high-scoring)
+      Object.entries(a.styleAttributes || {}).forEach(([dim, val]) => {
+        if (val > 0.65) {
+          const styleId = `STYLE_${dim}`;
+          addNode(styleId, dim.replace(/_/g,' '), 'style', { value: val });
+          addLink(awId, styleId, 'EXHIBITS_STYLE', val);
+        }
+      });
+    });
+
+    AppState.graphData = { nodes, links };
+  }
+
+  let graphZoomBehavior = null;
+  let graphG = null;
+
+  function renderGraph() {
+    const data = AppState.graphData;
+    const container = document.getElementById('graph-canvas-container');
+    const svg = d3.select('#graph-svg');
+    svg.selectAll('*').remove();
+    AppState.graphSvg = svg;
+
+    if (!data || !data.nodes.length) {
+      document.getElementById('graph-empty').style.display = '';
+      return;
+    }
+    document.getElementById('graph-empty').style.display = 'none';
+
+    const W = container.clientWidth || 800;
+    const H = container.clientHeight || 600;
+
+    svg.attr('width', W).attr('height', H);
+
+    // Defs (arrow markers)
+    const defs = svg.append('defs');
+    defs.append('marker')
+      .attr('id', 'arrowhead')
+      .attr('viewBox', '0 -5 10 10')
+      .attr('refX', 18).attr('refY', 0)
+      .attr('markerWidth', 6).attr('markerHeight', 6)
+      .attr('orient', 'auto')
+      .append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', '#3a3a5a');
+
+    graphG = svg.append('g');
+
+    // Zoom
+    graphZoomBehavior = d3.zoom()
+      .scaleExtent([0.2, 4])
+      .on('zoom', e => graphG.attr('transform', e.transform));
+    svg.call(graphZoomBehavior);
+
+    // Links
+    const link = graphG.append('g').selectAll('line')
+      .data(data.links).join('line')
+      .attr('class', 'link-line')
+      .attr('stroke', d => d.rel === 'CREATED' ? '#3a3a5a' : '#2a3a5a')
+      .attr('stroke-width', d => Math.max(0.5, (d.weight||1) * 1.5))
+      .attr('marker-end', 'url(#arrowhead)');
+
+    const edgeLabels = graphG.append('g').selectAll('text')
+      .data(data.links.filter(d => d.weight >= 1)).join('text')
+      .attr('class', 'edge-label')
+      .text(d => d.rel.replace(/_/g,' '));
+
+    // Nodes
+    const nodeGroup = graphG.append('g').selectAll('g')
+      .data(data.nodes).join('g')
+      .attr('class', 'node-group')
+      .call(d3.drag()
+        .on('start', (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+        .on('drag',  (e, d) => { d.fx=e.x; d.fy=e.y; })
+        .on('end',   (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx=null; d.fy=null; })
+      )
+      .on('click', (e, d) => { e.stopPropagation(); selectGraphNode(d); });
+
+    // Node circles
+    nodeGroup.append('circle')
+      .attr('class', 'node-circle')
+      .attr('r', d => nodeRadius(d))
+      .attr('fill', d => d.color || '#888')
+      .attr('fill-opacity', d => d.type === 'artist' ? 0.95 : 0.75)
+      .attr('stroke', d => d.type === 'artist' ? '#fcd34d' : 'transparent')
+      .attr('stroke-width', d => d.type === 'artist' ? 2 : 0);
+
+    // Artwork thumbnails as foreignObject (simplified: just colored circle)
+    // Labels
+    nodeGroup.append('text')
+      .attr('class', 'node-label')
+      .attr('text-anchor', 'middle')
+      .attr('dy', d => nodeRadius(d) + 11)
+      .text(d => truncate(d.label, 14))
+      .attr('fill', d => d.type === 'artist' ? '#fcd34d' : '#a0a0c0')
+      .attr('font-size', d => d.type === 'artist' ? 11 : 9)
+      .attr('font-weight', d => d.type === 'artist' ? '700' : '400');
+
+    // Simulation
+    const sim = d3.forceSimulation(data.nodes)
+      .force('link', d3.forceLink(data.links).id(d=>d.id).distance(d => {
+        if (d.rel === 'CREATED') return 80;
+        if (d.source.type === 'artist') return 120;
+        return 60;
+      }).strength(0.5))
+      .force('charge', d3.forceManyBody().strength(d => d.type === 'artist' ? -600 : -200))
+      .force('center', d3.forceCenter(W/2, H/2))
+      .force('collision', d3.forceCollide().radius(d => nodeRadius(d) + 15))
+      .on('tick', () => {
+        link
+          .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+          .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+        edgeLabels
+          .attr('x', d => (d.source.x + d.target.x) / 2)
+          .attr('y', d => (d.source.y + d.target.y) / 2);
+        nodeGroup.attr('transform', d => `translate(${d.x},${d.y})`);
+      });
+
+    AppState.graphSimulation = sim;
+    AppState.graphZoom = graphZoomBehavior;
+  }
+
+  function nodeRadius(d) {
+    const sizes = { artist: 22, artwork: 14, medium: 12, technique: 11, tool: 10, style: 9, movement: 11, surface: 9 };
+    return sizes[d.type] || 10;
+  }
+
+  function selectGraphNode(d) {
+    // Highlight
+    d3.selectAll('.node-circle').classed('selected', false);
+    d3.selectAll('.node-group').filter(n => n.id === d.id).select('.node-circle').classed('selected', true);
+
+    renderNodeDetail(d);
+  }
+
+  function renderNodeDetail(d) {
+    const el = document.getElementById('graph-node-detail');
+    const title  = document.querySelector('.detail-panel-title');
+    const subEl  = document.querySelector('.detail-panel-type');
+    title.textContent  = d.label;
+    subEl.textContent  = d.type.toUpperCase();
+
+    let html = '';
+
+    if (d.type === 'medium') {
+      const med = d.data;
+      html = `
+        <div class="analysis-section-title">Material Properties</div>
+        ${renderScoreBars({ texture: med.texture||0, luminosity: med.luminosity||0, edge_retention: med.edge||0, viscosity: med.viscosity||0, permanence: med.permanence||0, layerability: med.layerability||0 }, 'ity-bar')}
+        <div class="divider"></div>
+        <div class="text-sm" style="color:var(--text-muted)">Prompt word: <span style="color:var(--cyan-glow)">${med.qualityWord || ''}</span></div>
+      `;
+    } else if (d.type === 'technique') {
+      const tech = d.data;
+      html = `
+        <div class="text-sm text-muted" style="margin-bottom:8px">${tech.description || ''}</div>
+        <div class="analysis-section-title">Modifiers</div>
+        ${Object.entries(tech.modifiers || {}).map(([k,v]) => `
+          <div class="score-bar-row ity-bar">
+            <div class="score-bar-label">+${k.replace(/_/g,' ')}</div>
+            <div class="score-bar-track"><div class="score-bar-fill" style="width:${v*100}%"></div></div>
+            <div class="score-bar-value">+${v.toFixed(1)}</div>
+          </div>
+        `).join('')}
+        <div class="divider"></div>
+        <div class="text-sm" style="color:var(--text-muted)">Prompt: <span style="color:var(--cyan-glow)">${tech.word || ''}</span></div>
+      `;
+    } else if (d.type === 'artwork') {
+      const a = d.data.artwork;
+      const analysis = a?.analysis;
+      html = `
+        ${a?.thumbnailData ? `<img src="${a.thumbnailData}" style="width:100%;border-radius:var(--radius-md);margin-bottom:10px" />` : ''}
+        ${a?.date ? `<div class="text-sm text-muted">Date: ${escHtml(a.date)}</div>` : ''}
+        ${analysis ? `
+          <div class="divider"></div>
+          <div class="analysis-section-title">Emotional Resonance</div>
+          ${renderScoreBars({ emotional_resonance: analysis.pathy?.emotional_resonance||0, viewer_engagement: analysis.pathy?.viewer_engagement||0, gestural_energy: analysis.pathy?.gestural_energy||0 }, 'pathy-bar')}
+          ${analysis.description ? `<div class="divider"></div><div class="ethos-description">${escHtml(analysis.description)}</div>` : ''}
+        ` : ''}
+      `;
+    } else if (d.type === 'artist') {
+      const c = AppState.capsule;
+      html = `
+        <div class="analysis-section-title">Trinity Fundamentals</div>
+        ${c ? ONTOLOGY.trinity.map(k => {
+          const v = c.coreEthos.trinity[k] || 0;
+          return `<div class="score-bar-row ity-bar">
+            <div class="score-bar-label">${k}</div>
+            <div class="score-bar-track"><div class="score-bar-fill" style="width:${v*100}%"></div></div>
+            <div class="score-bar-value">${v.toFixed(2)}</div>
+          </div>`;
+        }).join('') : ''}
+        <div class="divider"></div>
+        <div class="text-sm text-muted">${c?.artworkCount || 0} works analyzed</div>
+      `;
+    } else if (d.type === 'style') {
+      html = `
+        <div class="text-sm text-muted">Style dimension: <b style="color:var(--orange-bright)">${d.label}</b></div>
+        <div style="margin-top:8px">
+          <div class="score-bar-row" style="margin-bottom:4px">
+            <div class="score-bar-label">Strength</div>
+            <div class="score-bar-track"><div class="score-bar-fill" style="background:linear-gradient(90deg,var(--orange-mid),var(--orange-bright));width:${(d.data.value||0.5)*100}%"></div></div>
+            <div class="score-bar-value">${(d.data.value||0.5).toFixed(2)}</div>
+          </div>
+        </div>
+      `;
+    } else {
+      html = `<div class="text-sm text-muted">ID: <code>${d.id}</code></div>`;
+    }
+
+    el.innerHTML = html;
+  }
+
+  function graphZoomIn()  { d3.select('#graph-svg').transition().call(graphZoomBehavior.scaleBy, 1.3); }
+  function graphZoomOut() { d3.select('#graph-svg').transition().call(graphZoomBehavior.scaleBy, 0.77); }
+  function graphReset()   {
+    d3.select('#graph-svg').transition().duration(500)
+      .call(graphZoomBehavior.transform, d3.zoomIdentity);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // REGENERATION PIPELINE
+  // ═══════════════════════════════════════════════════════════════════
+
+  async function runPipeline() {
+    const userPrompt = document.getElementById('regen-prompt').value.trim();
+    if (!userPrompt) { toast('Enter a prompt', 'Describe what to generate', 'warning'); return; }
+
+    clearPipeline();
+    document.getElementById('run-pipeline-btn').disabled = true;
+    document.getElementById('assembled-prompt-section').style.display = 'none';
+
+    try {
+      // STEP 1: Entity Resolution
+      await runStep(1, async () => {
+        const entities = resolveEntities(userPrompt);
+        AppState.pipelineState.resolvedEntities = entities;
+        return `Resolved: ${entities.media.map(m=>m).join(', ')||'—'} | ${entities.techniques.map(t=>ONTOLOGY.techniques[t]?.name||t).join(', ')||'—'} | ${entities.styles.join(', ')||'—'}`;
+      });
+
+      // STEP 2: Tag Aggregation
+      await runStep(2, async () => {
+        const tags = aggregateTags(AppState.pipelineState.resolvedEntities, AppState.capsule);
+        AppState.pipelineState.aggregatedTags = tags;
+        return `${tags.length} tags weighted\n${tags.slice(0,5).map(t=>`${t.tag}(${t.weight.toFixed(2)})`).join(' · ')}…`;
+      });
+
+      // STEP 3: LoRA Parameter Merge
+      await runStep(3, async () => {
+        const params = mergeLoraParams(AppState.pipelineState.resolvedEntities, AppState.capsule);
+        AppState.pipelineState.loraParams = params;
+        return Object.entries(params).map(([k,v])=>`${k}:${v.toFixed(3)}`).join(' · ');
+      });
+
+      // STEP 4: Prompt Assembly
+      await runStep(4, async () => {
+        const prompt = assemblePrompt(
+          userPrompt,
+          AppState.pipelineState.resolvedEntities,
+          AppState.pipelineState.aggregatedTags,
+          AppState.pipelineState.loraParams,
+          AppState.capsule
+        );
+        AppState.pipelineState.assembledPrompt = prompt;
+        AppState.assembledPrompt = prompt;
+        return prompt.slice(0, 120) + (prompt.length > 120 ? '…' : '');
+      });
+
+      // STEP 5: Trinity Graph Injection
+      await runStep(5, async () => {
+        const injection = computeTrinityInjection(
+          AppState.pipelineState.resolvedEntities,
+          AppState.capsule
+        );
+        AppState.pipelineState.trinityInjection = injection;
+        return `+${injection.nodes.length} nodes · +${injection.edges.length} edges → graph ready`;
+      });
+
+      // Show assembled prompt and generate button
+      document.getElementById('assembled-prompt-text').textContent = AppState.assembledPrompt;
+      document.getElementById('assembled-prompt-section').style.display = 'block';
+
+      // Show trinity injection preview
+      const injEl = document.getElementById('trinity-inject-section');
+      injEl.style.display = 'block';
+      const inj = AppState.pipelineState.trinityInjection;
+      document.getElementById('trinity-inject-preview').innerHTML = `
+        <b style="color:var(--purple-glow)">New nodes:</b> ${inj.nodes.map(n=>`<span class="ont-id-tag">${n}</span>`).join(' ')}<br>
+        <b style="color:var(--cyan-glow)">New edges:</b> ${inj.edges.map(e=>`${e.from} → ${e.to} (${e.rel})`).join(', ')}
+      `;
+
+      toast('Pipeline complete', 'Ready to generate', 'success');
+    } catch(e) {
+      console.error(e);
+      toast('Pipeline error', e.message, 'error');
+    }
+
+    document.getElementById('run-pipeline-btn').disabled = false;
+  }
+
+  function resolveEntities(prompt) {
+    const lower = prompt.toLowerCase();
+    const entities = { media: [], techniques: [], styles: [], rawWords: [] };
+
+    // Detect media
+    const mediaKeywords = {
+      'oil': 'MED_OIL', 'watercolor': 'MED_WC', 'watercolour': 'MED_WC',
+      'acrylic': 'MED_ACR', 'gouache': 'MED_GOU', 'pastel': 'MED_PAS',
+      'graphite': 'MED_GRA', 'charcoal': 'MED_CHA', 'ink': 'MED_INK',
+      'digital': 'MED_DIG', 'mixed media': 'MED_MIX', 'encaustic': 'MED_ENC', 'fresco': 'MED_FRE',
+    };
+    Object.entries(mediaKeywords).forEach(([kw, id]) => {
+      if (lower.includes(kw)) entities.media.push(id);
+    });
+
+    // Detect techniques
+    const techKeywords = {
+      'impasto': 'TECH_IMP', 'glaz': 'TECH_GLA', 'wet on wet': 'TECH_WOW', 'wet-on-wet': 'TECH_WOW',
+      'dry brush': 'TECH_DRY', 'drybrush': 'TECH_DRY', 'scumbl': 'TECH_SCU',
+      'alla prima': 'TECH_ALP', 'sgraffito': 'TECH_SGR', 'monotype': 'TECH_MON',
+      'chiaroscuro': 'TECH_CHI', 'sfumato': 'TECH_SFU', 'tenebrism': 'TECH_TEN',
+      'tenebr': 'TECH_TEN', 'underpainting': 'TECH_UND', 'pointillis': 'TECH_POI',
+    };
+    Object.entries(techKeywords).forEach(([kw, id]) => {
+      if (lower.includes(kw)) entities.techniques.push(id);
+    });
+
+    // Detect styles
+    const styleKeywords = ['dramatic', 'moody', 'luminous', 'textured', 'gestural',
+      'expressive', 'serene', 'contemplative', 'vibrant', 'dark', 'light', 'bold',
+      'delicate', 'heavy', 'ethereal', 'raw', 'refined'];
+    styleKeywords.forEach(kw => { if (lower.includes(kw)) entities.styles.push(kw); });
+
+    // Extract raw words for prompt building
+    entities.rawWords = lower.match(/\b[a-z]+\b/g) || [];
+
+    return entities;
+  }
+
+  function aggregateTags(entities, capsule) {
+    const tags = [];
+    const addTag = (tag, weight) => {
+      const existing = tags.find(t => t.tag === tag);
+      if (existing) existing.weight = Math.min(1, existing.weight + weight);
+      else tags.push({ tag, weight });
+    };
+
+    // From resolved entities
+    entities.media.forEach(m => addTag(ONTOLOGY.media[m]?.mediumWord || m, 0.9));
+    entities.techniques.forEach(t => addTag(ONTOLOGY.techniques[t]?.word || t, 0.85));
+    entities.styles.forEach(s => addTag(s, 0.7));
+
+    // From capsule
+    if (capsule) {
+      const mat = capsule.materialMatrix;
+      // Top media from capsule
+      const topMedia = Object.entries(mat.mediaFrequency||{}).sort((a,b)=>b[1]-a[1])[0];
+      if (topMedia) addTag(ONTOLOGY.media[topMedia[0]]?.mediumWord || topMedia[0], 0.6);
+      // Top techniques
+      Object.entries(mat.toolFrequency||{}).slice(0,2).forEach(([t]) =>
+        addTag(ONTOLOGY.tools[t]?.markWord || t, 0.4));
+      // Aesthetic DNA
+      const dna = capsule.aestheticDNA;
+      if (dna.textureLevel !== 'moderately textured') addTag(dna.textureLevel, 0.5);
+      addTag(dna.edgeQuality, 0.45);
+      // Ethos themes
+      (capsule.coreEthos.themes || []).slice(0,2).forEach(th => addTag(th, 0.35));
+    }
+
+    return tags.sort((a,b) => b.weight - a.weight);
+  }
+
+  function mergeLoraParams(entities, capsule) {
+    const baseMedium = entities.media[0]
+      || (capsule ? Object.keys(capsule.materialMatrix.mediaFrequency||{})[0] : null)
+      || 'MED_OIL';
+    const med = ONTOLOGY.media[baseMedium] || ONTOLOGY.media.MED_OIL;
+
+    const params = {
+      texture:      med.texture || 0.5,
+      luminosity:   med.luminosity || 0.5,
+      edge:         med.edge || 0.5,
+      viscosity:    med.viscosity || 0.5,
+      layerability: med.layerability || 0.5,
+    };
+
+    // Apply technique modifiers
+    entities.techniques.forEach(tid => {
+      const tech = ONTOLOGY.techniques[tid];
+      if (!tech) return;
+      Object.entries(tech.modifiers || {}).forEach(([prop, mod]) => {
+        if (params[prop] != null) params[prop] = Math.min(1, params[prop] + mod * 0.7);
+      });
+    });
+
+    // Blend with capsule params if available
+    if (capsule?.materialMatrix?.loraParams) {
+      const cp = capsule.materialMatrix.loraParams;
+      Object.keys(params).forEach(k => {
+        if (cp[k] != null) params[k] = params[k] * 0.6 + cp[k] * 0.4;
+      });
+    }
+
+    return Object.fromEntries(Object.entries(params).map(([k,v]) => [k, Math.round(v*1000)/1000]));
+  }
+
+  function assemblePrompt(userPrompt, entities, tags, loraParams, capsule) {
+    const parts = [];
+
+    // Quality modifier
+    const qualityWords = ['masterwork', 'museum quality', 'fine art', 'museum-grade fine art'];
+    parts.push(qualityWords[Math.floor(Math.random()*qualityWords.length)]);
+
+    // Medium (from entities or capsule)
+    const medId = entities.media[0] || (capsule ? Object.keys(capsule.materialMatrix.mediaFrequency||{})[0] : 'MED_OIL');
+    parts.push(ONTOLOGY.media[medId]?.qualityWord || ONTOLOGY.media[medId]?.mediumWord || 'oil paint');
+
+    // Techniques
+    entities.techniques.slice(0,2).forEach(t => {
+      parts.push(ONTOLOGY.techniques[t]?.word || '');
+    });
+    if (!entities.techniques.length && capsule) {
+      // Use capsule's most-used technique
+      const techFreq = {};
+      AppState.artworks.forEach(a => (a.analysis?.techniques||[]).forEach(t=>{techFreq[t]=(techFreq[t]||0)+1;}));
+      const topTech = Object.entries(techFreq).sort((a,b)=>b[1]-a[1])[0]?.[0];
+      if (topTech) parts.push(ONTOLOGY.techniques[topTech]?.word || '');
+    }
+
+    // Mark character (from tools)
+    if (capsule) {
+      const topTool = Object.keys(capsule.materialMatrix.toolFrequency||{})[0];
+      if (topTool) parts.push(ONTOLOGY.tools[topTool]?.markWord || '');
+    }
+
+    // Lighting
+    const dna = capsule?.aestheticDNA;
+    if (dna?.ityAvg?.luminosity > 0.7) {
+      parts.push(ONTOLOGY.lightingWords[0]);
+    } else if (dna?.pathyAvg?.emotional_resonance > 0.7) {
+      parts.push(ONTOLOGY.lightingWords[6]); // chiaroscuro
+    } else {
+      parts.push(ONTOLOGY.lightingWords[1]);
+    }
+
+    // Color temperature (from DNA)
+    if (dna?.styleAttributes?.color_temperature != null) {
+      const ct = dna.styleAttributes.color_temperature;
+      if (ct > 0.6) parts.push(ONTOLOGY.colorTempWords[0]); // warm
+      else if (ct < 0.4) parts.push(ONTOLOGY.colorTempWords[1]); // cool
+      else parts.push(ONTOLOGY.colorTempWords[2]); // neutral
+    }
+
+    // Value key
+    if (dna?.styleAttributes?.value_range > 0.7) {
+      parts.push(ONTOLOGY.valueKeyWords[3]); // full range
+    } else if (loraParams.luminosity > 0.7) {
+      parts.push(ONTOLOGY.valueKeyWords[0]); // high key
+    } else if (loraParams.luminosity < 0.4) {
+      parts.push(ONTOLOGY.valueKeyWords[1]); // low key
+    }
+
+    // Style tags from aggregation
+    tags.filter(t => t.weight > 0.5).slice(0,3).forEach(t => parts.push(t.tag));
+
+    // User prompt (key words)
+    const stopWords = new Set(['a','an','the','with','and','or','of','in','on','to','for','heavy','bold','moody','use']);
+    const userKeywords = userPrompt.split(/\s+/).filter(w => w.length > 3 && !stopWords.has(w.toLowerCase())).slice(0,6);
+    userKeywords.forEach(w => parts.push(w));
+
+    // Composition
+    if (capsule) {
+      const fmt = ONTOLOGY.compositionWords[Math.floor(Math.random()*ONTOLOGY.compositionWords.length)];
+      parts.push(fmt);
+    }
+
+    // Mood
+    if (entities.styles.length) {
+      parts.push(entities.styles[0]);
+    } else {
+      parts.push(ONTOLOGY.moodWords[Math.floor(Math.random()*ONTOLOGY.moodWords.length)]);
+    }
+
+    // Add surface texture
+    if (loraParams.texture > 0.7) parts.push('rich tactile surface');
+
+    return parts.filter(Boolean).join(', ');
+  }
+
+  function computeTrinityInjection(entities, capsule) {
+    const nodes = [];
+    const edges = [];
+
+    // Generate nodes to inject
+    entities.media.forEach(m => nodes.push(`GEN_${m}`));
+    entities.techniques.forEach(t => nodes.push(`GEN_${t}`));
+    nodes.push('GEN_WORK_' + Date.now());
+
+    // Generate edges
+    if (capsule) {
+      nodes.forEach(n => {
+        edges.push({ from: 'ARTIST', to: n, rel: 'GENERATES' });
+      });
+      edges.push({ from: 'GEN_WORK', to: 'ARTIST', rel: 'EXPRESSES' });
+    }
+
+    return { nodes: nodes.slice(0,6), edges: edges.slice(0,5) };
+  }
+
+  async function runStep(stepNum, fn) {
+    const stepEl = document.getElementById(`step-${stepNum}`);
+    stepEl.classList.add('active');
+
+    // Add spinner
+    const spinner = document.createElement('div');
+    spinner.className = 'step-spinner';
+    stepEl.appendChild(spinner);
+
+    await sleep(300); // Visual delay
+
+    try {
+      const output = await fn();
+      stepEl.classList.remove('active');
+      stepEl.classList.add('complete');
+
+      // Show output
+      let outEl = stepEl.querySelector('.step-output');
+      if (!outEl) {
+        outEl = document.createElement('div');
+        outEl.className = 'step-output';
+        stepEl.querySelector('.step-content').appendChild(outEl);
+      }
+      outEl.textContent = output;
+
+      // Change step num to checkmark
+      stepEl.querySelector('.step-num').textContent = '✓';
+    } finally {
+      spinner.remove();
+    }
+
+    await sleep(200);
+  }
+
+  function clearPipeline() {
+    for (let i = 1; i <= 5; i++) {
+      const step = document.getElementById(`step-${i}`);
+      step.classList.remove('active', 'complete', 'error');
+      step.querySelector('.step-num').textContent = i;
+      const out = step.querySelector('.step-output');
+      if (out) out.remove();
+    }
+    AppState.pipelineState = {
+      resolvedEntities: null, aggregatedTags: null,
+      loraParams: null, assembledPrompt: null, trinityInjection: null,
+    };
+    document.getElementById('assembled-prompt-section').style.display = 'none';
+    document.getElementById('trinity-inject-section').style.display = 'none';
+    document.getElementById('provenance-section').style.display = 'none';
+  }
+
+  async function generateImage() {
+    const prompt = AppState.assembledPrompt;
+    if (!prompt) { toast('No prompt', 'Run the pipeline first', 'warning'); return; }
+
+    const genBtn = document.getElementById('generate-btn');
+    genBtn.disabled = true;
+    genBtn.textContent = '⏳ Generating…';
+
+    document.getElementById('gen-placeholder').style.display = 'none';
+    document.getElementById('gen-loading').style.display = '';
+    document.getElementById('generated-image').style.display = 'none';
+
+    try {
+      const response = await fetch(`${PROXY_URL}/api/fal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'fal-ai/flux/dev',
+          prompt: prompt,
+        }),
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+      const data = await response.json();
+
+      // Try various response formats
+      const imageUrl = data.images?.[0]?.url || data.image?.url || data.url || data.output?.[0];
+      if (!imageUrl) throw new Error('No image URL in response');
+
+      const imgEl = document.getElementById('generated-image');
+      imgEl.src = imageUrl;
+      imgEl.style.display = 'block';
+      document.getElementById('gen-loading').style.display = 'none';
+
+      AppState.generatedImage = { url: imageUrl, prompt, timestamp: new Date().toISOString() };
+
+      // Show provenance
+      renderProvenance();
+
+      toast('Image generated!', '', 'success');
+    } catch(e) {
+      document.getElementById('gen-loading').style.display = 'none';
+      document.getElementById('gen-placeholder').style.display = '';
+      console.error(e);
+      toast('Generation failed', e.message, 'error');
+    }
+
+    genBtn.disabled = false;
+    genBtn.textContent = '⬡ Generate Image';
+  }
+
+  function renderProvenance() {
+    const g = AppState.generatedImage;
+    const c = AppState.capsule;
+    if (!g) return;
+
+    document.getElementById('provenance-section').style.display = 'block';
+    const el = document.getElementById('provenance-box');
+    el.innerHTML = `
+      <div class="provenance-title">Provenance Record</div>
+      <div class="provenance-row">
+        <span class="provenance-key">Artist</span>
+        <span class="provenance-value">${escHtml(c?.artistName || 'Unknown')}</span>
+      </div>
+      <div class="provenance-row">
+        <span class="provenance-key">Model</span>
+        <span class="provenance-value">fal-ai/flux/dev via Artiquity Capsule</span>
+      </div>
+      <div class="provenance-row">
+        <span class="provenance-key">Generated</span>
+        <span class="provenance-value">${new Date(g.timestamp).toLocaleString()}</span>
+      </div>
+      <div class="provenance-row">
+        <span class="provenance-key">Prompt</span>
+        <span class="provenance-value">${escHtml(g.prompt.slice(0,200))}${g.prompt.length>200?'…':''}</span>
+      </div>
+      <div class="provenance-row">
+        <span class="provenance-key">Pipeline</span>
+        <span class="provenance-value">Entity Resolution → Tag Aggregation → LoRA Merge → Assembly → Trinity Injection</span>
+      </div>
+      <div class="provenance-row">
+        <span class="provenance-key">Constraints</span>
+        <span class="provenance-value">${AppState.constraints.filter(c=>c.type==='required').map(c=>c.text).join('; ') || '–'}</span>
+      </div>
+    `;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // EXPORT
+  // ═══════════════════════════════════════════════════════════════════
+
+  function buildExportJSON() {
+    const c = AppState.capsule;
+    if (!c) return '{}';
+    return JSON.stringify({
+      '@type': 'ArtistCapsule',
+      '@version': '1.0',
+      '@ontology': 'artiquity-master-v1',
+      artist: { name: c.artistName, artworkCount: c.artworkCount, builtAt: c.builtAt },
+      coreEthos: c.coreEthos,
+      aestheticDNA: { ...c.aestheticDNA, dominantColors: c.aestheticDNA.dominantColors },
+      materialMatrix: c.materialMatrix,
+      temporalDrift: c.temporalDrift,
+      constraints: AppState.constraints,
+      artworks: AppState.artworks.filter(a => a.analysis).map(a => ({
+        id: a.id, title: a.title, date: a.date, medium: a.medium || a.analysis?.medium,
+        analysis: a.analysis,
+      })),
+      knowledgeGraph: AppState.graphData ? {
+        nodeCount: AppState.graphData.nodes.length,
+        linkCount: AppState.graphData.links.length,
+        nodes: AppState.graphData.nodes.map(n => ({ id: n.id, label: n.label, type: n.type })),
+        links: AppState.graphData.links.map(l => ({ source: l.source?.id || l.source, target: l.target?.id || l.target, rel: l.rel, weight: l.weight })),
+      } : null,
+    }, null, 2);
+  }
+
+  function buildExportCypher() {
+    const c = AppState.capsule;
+    const data = AppState.graphData;
+    if (!c || !data) return '// No capsule built yet';
+
+    const lines = [
+      `// Artiquity Knowledge Graph — ${c.artistName}`,
+      `// Generated: ${new Date().toISOString()}`,
+      `// Import with: neo4j-admin database import (or paste in Neo4j Browser)`,
+      '',
+      `// Clear existing (optional):`,
+      `// MATCH (n:ArtiquityNode) DETACH DELETE n;`,
+      '',
+    ];
+
+    // Artist node
+    lines.push(`CREATE (:Artist:ArtiquityNode { id: "ARTIST", name: "${escCypher(c.artistName)}", artworkCount: ${c.artworkCount}, builtAt: "${c.builtAt}" });`);
+    lines.push('');
+
+    // Other nodes
+    data.nodes.filter(n => n.type !== 'artist').forEach(n => {
+      const label = n.type.charAt(0).toUpperCase() + n.type.slice(1);
+      lines.push(`CREATE (:${label}:ArtiquityNode { id: "${escCypher(n.id)}", name: "${escCypher(n.label)}", type: "${n.type}" });`);
+    });
+    lines.push('');
+
+    // Links
+    lines.push('// Relationships:');
+    data.links.forEach(l => {
+      const src = typeof l.source === 'object' ? l.source.id : l.source;
+      const tgt = typeof l.target === 'object' ? l.target.id : l.target;
+      lines.push(`MATCH (a { id: "${escCypher(src)}" }), (b { id: "${escCypher(tgt)}" }) CREATE (a)-[:${l.rel} { weight: ${l.weight||1} }]->(b);`);
+    });
+
+    return lines.join('\n');
+  }
+
+  function buildExportMarkdown() {
+    const c = AppState.capsule;
+    if (!c) return '# No capsule built yet\n\nAnalyze artworks and build a capsule first.';
+
+    const lines = [
+      `# Artist Capsule: ${c.artistName}`,
+      `*Generated by Artiquity Capsule Builder · ${new Date().toLocaleString()}*`,
+      `*${c.artworkCount} artworks analyzed*`,
+      '',
+      '---',
+      '',
+      '## Core Ethos Signature',
+      '',
+      '### Key Themes',
+      (c.coreEthos.themes || []).map(t => `- ${t}`).join('\n'),
+      '',
+      '### Aesthetic Principles',
+      c.coreEthos.principles || '–',
+      '',
+      '### Trinity Fundamentals',
+      ...ONTOLOGY.trinity.map(k => `- **${k}**: ${(c.coreEthos.trinity[k]||0).toFixed(2)}`),
+      '',
+      '---',
+      '',
+      '## Aesthetic DNA',
+      '',
+      '### Style Attributes',
+      ...ONTOLOGY.styleDimensions.map(d => `- **${d.replace(/_/g,' ')}**: ${(c.aestheticDNA.styleAttributes[d]||0).toFixed(2)}`),
+      '',
+      `### Profile`,
+      `${c.aestheticDNA.textureLevel} · ${c.aestheticDNA.edgeQuality} · ${c.aestheticDNA.markMaking}`,
+      '',
+      '---',
+      '',
+      '## Material Matrix',
+      '',
+      '### Media Frequency',
+      ...Object.entries(c.materialMatrix.mediaFrequency||{}).map(([k,v]) => `- ${ONTOLOGY.media[k]?.name||k}: ${v} work${v>1?'s':''}`),
+      '',
+      '### LoRA Parameters',
+      ...Object.entries(c.materialMatrix.loraParams||{}).map(([k,v]) => `- \`${k}\`: ${v.toFixed(3)}`),
+      '',
+      '---',
+      '',
+      '## Ethical Constraints',
+      '',
+      ...AppState.constraints.map(c => `- **[${c.type.toUpperCase()}]** ${c.text}`),
+      '',
+      '---',
+      '',
+      '## Works Analyzed',
+      '',
+      ...AppState.artworks.filter(a=>a.analysis).map(a => `- **${a.title}**${a.date?` (${a.date})`:''}${a.analysis?.medium?` — ${ONTOLOGY.media[a.analysis.medium]?.name||a.analysis.medium}`:''}`),
+      '',
+      '---',
+      '',
+      '*This capsule was generated by the Artiquity Capsule Builder using the CHIP framework, Ricœur mimesis mapping, and the Artiquity master ontology.*',
+    ];
+
+    return lines.join('\n');
+  }
+
+  function exportJSON() {
+    if (!AppState.capsule) { toast('No capsule', 'Build capsule first', 'warning'); return; }
+    downloadText(buildExportJSON(), `artiquity-capsule-${sanitizeFilename(AppState.capsule.artistName)}.json`, 'application/json');
+    toast('JSON exported', '', 'success');
+  }
+
+  function exportCypher() {
+    if (!AppState.graphData) { toast('No graph data', 'Build capsule first', 'warning'); return; }
+    downloadText(buildExportCypher(), `artiquity-graph-${sanitizeFilename(AppState.capsule?.artistName||'unknown')}.cypher`, 'text/plain');
+    toast('Cypher exported', '', 'success');
+  }
+
+  function exportMarkdown() {
+    if (!AppState.capsule) { toast('No capsule', 'Build capsule first', 'warning'); return; }
+    downloadText(buildExportMarkdown(), `artiquity-capsule-${sanitizeFilename(AppState.capsule.artistName)}.md`, 'text/markdown');
+    toast('Markdown exported', '', 'success');
+  }
+
+  function downloadText(text, filename, mimeType) {
+    const blob = new Blob([text], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function renderExportPreviews() {
+    const jsonPrev  = document.getElementById('json-preview');
+    const cypherPrev= document.getElementById('cypher-preview');
+    const mdPrev    = document.getElementById('md-preview');
+
+    if (AppState.capsule) {
+      const j = buildExportJSON();
+      jsonPrev.textContent  = j.slice(0, 400) + (j.length > 400 ? '\n…' : '');
+      const cy = buildExportCypher();
+      cypherPrev.textContent= cy.slice(0, 300) + (cy.length > 300 ? '\n…' : '');
+      const md = buildExportMarkdown();
+      mdPrev.textContent    = md.slice(0, 300) + (md.length > 300 ? '\n…' : '');
+    } else {
+      [jsonPrev, cypherPrev, mdPrev].forEach(el => el.textContent = '— Build capsule first —');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // ONTOLOGY VIEWER
+  // ═══════════════════════════════════════════════════════════════════
+
+  function showOntTab(name, btn) {
+    document.querySelectorAll('.ont-tab').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const el = document.getElementById('ontology-content');
+
+    const tables = {
+      media: () => `
+        <table class="ont-table">
+          <tr><th>ID</th><th>Name</th><th>Texture</th><th>Luminosity</th><th>Edge</th><th>Viscosity</th><th>Permanence</th><th>Layerability</th></tr>
+          ${Object.entries(ONTOLOGY.media).map(([k,v]) => `
+            <tr>
+              <td><span class="ont-id-tag">${k}</span></td>
+              <td style="color:var(--text-primary)">${v.name}</td>
+              <td>${bar(v.texture)}</td><td>${bar(v.luminosity)}</td><td>${bar(v.edge)}</td>
+              <td>${bar(v.viscosity)}</td><td>${bar(v.permanence)}</td><td>${bar(v.layerability)}</td>
+            </tr>`).join('')}
+        </table>`,
+      tools: () => `
+        <table class="ont-table">
+          <tr><th>ID</th><th>Name</th><th>Mark Character</th></tr>
+          ${Object.entries(ONTOLOGY.tools).map(([k,v]) => `
+            <tr>
+              <td><span class="ont-id-tag">${k}</span></td>
+              <td style="color:var(--text-primary)">${v.name}</td>
+              <td style="color:var(--text-muted)">${v.markWord}</td>
+            </tr>`).join('')}
+        </table>`,
+      surfaces: () => `
+        <table class="ont-table">
+          <tr><th>ID</th><th>Name</th></tr>
+          ${Object.entries(ONTOLOGY.surfaces).map(([k,v]) => `
+            <tr>
+              <td><span class="ont-id-tag">${k}</span></td>
+              <td style="color:var(--text-primary)">${v.name}</td>
+            </tr>`).join('')}
+        </table>`,
+      techniques: () => `
+        <table class="ont-table">
+          <tr><th>ID</th><th>Name</th><th>Description</th><th>Key Modifiers</th></tr>
+          ${Object.entries(ONTOLOGY.techniques).map(([k,v]) => `
+            <tr>
+              <td><span class="ont-id-tag">${k}</span></td>
+              <td style="color:var(--text-primary)">${v.name}</td>
+              <td style="color:var(--text-muted)">${v.description||'—'}</td>
+              <td>${Object.entries(v.modifiers||{}).map(([p,m]) => `<span style="color:var(--cyan-glow)">+${p}(+${m})</span>`).join(' ')}</td>
+            </tr>`).join('')}
+        </table>`,
+      trinity: () => `
+        <table class="ont-table">
+          <tr><th>Fundamental</th><th>Description</th></tr>
+          ${ONTOLOGY.trinity.map(k => `
+            <tr>
+              <td style="color:var(--gold-glow);font-weight:700">${k}</td>
+              <td style="color:var(--text-muted)">${trinityDesc(k)}</td>
+            </tr>`).join('')}
+        </table>`,
+      ity: () => `
+        <table class="ont-table">
+          <tr><th>Property</th><th>Domain</th></tr>
+          ${ONTOLOGY.ityProperties.map(p => `
+            <tr>
+              <td style="color:var(--purple-glow)">${p}</td>
+              <td style="color:var(--text-muted)">Material/Compositional</td>
+            </tr>`).join('')}
+        </table>`,
+      pathy: () => `
+        <table class="ont-table">
+          <tr><th>Property</th><th>Domain</th></tr>
+          ${ONTOLOGY.pathyProperties.map(p => `
+            <tr>
+              <td style="color:var(--cyan-glow)">${p.replace(/_/g,' ')}</td>
+              <td style="color:var(--text-muted)">Empathic/Relational</td>
+            </tr>`).join('')}
+        </table>`,
+    };
+
+    el.innerHTML = (tables[name] || tables.media)();
+  }
+
+  function trinityDesc(k) {
+    const descs = {
+      Synchronicity: 'The alignment between intent and outcome; when all elements cohere',
+      Felicity:      'The quality of rightness — when form perfectly serves content',
+      Authenticity:  'Fidelity to the artist\'s genuine voice and vision',
+      Propensity:    'The tendency toward particular materials, subjects, or approaches',
+      Fragility:     'The delicate balance that gives work its tension and vulnerability',
+      Serendipity:   'Productive accidents and unexpected discoveries in process',
+      Familiarity:   'The resonance with shared cultural and aesthetic memory',
+      Nostalgia:     'The backward gaze — longing encoded in aesthetic choices',
+    };
+    return descs[k] || '';
+  }
+
+  function bar(v = 0) {
+    const pct = Math.round(v * 100);
+    const color = v > 0.7 ? 'var(--cyan-bright)' : v > 0.4 ? 'var(--purple-mid)' : 'var(--text-disabled)';
+    return `<div style="display:flex;align-items:center;gap:4px;min-width:60px">
+      <div style="flex:1;height:4px;background:var(--bg-hover);border-radius:2px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${color}"></div>
+      </div>
+      <span style="font-size:9px;color:var(--text-muted);width:24px">${v.toFixed(2)}</span>
+    </div>`;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // UTILITY FUNCTIONS
+  // ═══════════════════════════════════════════════════════════════════
+
+  function avg(arr) {
+    if (!arr.length) return 0;
+    return arr.reduce((a,b) => a+b, 0) / arr.length;
+  }
+
+  function uniqueTopN(arr, n) {
+    const seen = new Set();
+    const result = [];
+    for (const item of arr) {
+      if (item && !seen.has(item)) { seen.add(item); result.push(item); }
+      if (result.length >= n) break;
+    }
+    return result;
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  function truncate(str, n) {
+    return str.length > n ? str.slice(0,n) + '…' : str;
+  }
+
+  function escHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function escCypher(str) {
+    return String(str||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"');
+  }
+
+  function sanitizeFilename(name) {
+    return (name||'unknown').replace(/[^a-z0-9]/gi,'_').toLowerCase().slice(0,30);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // INITIALIZATION
+  // ═══════════════════════════════════════════════════════════════════
+
+  function init() {
+    initDropZone();
+    loadState();
+    renderConstraints();
+    showOntTab('media', document.querySelector('.ont-tab'));
+
+    // Artist name auto-save
+    document.getElementById('artist-name').addEventListener('input', () => {
+      if (AppState.capsule) AppState.capsule.artistName = document.getElementById('artist-name').value;
+      saveState();
+    });
+
+    // If graph tab is visited, re-render
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.tab === 'graph') setTimeout(() => { if (AppState.graphData) renderGraph(); }, 50);
+        if (btn.dataset.tab === 'export') renderExportPreviews();
+      });
+    });
+
+    console.log('%cArtiquity Capsule Builder & Regenerator', 'color:#7c3aed;font-size:16px;font-weight:700');
+    console.log('%cOntology loaded:', 'color:#06b6d4', {
+      media: Object.keys(ONTOLOGY.media).length,
+      tools: Object.keys(ONTOLOGY.tools).length,
+      surfaces: Object.keys(ONTOLOGY.surfaces).length,
+      techniques: Object.keys(ONTOLOGY.techniques).length,
+    });
+  }
+
+  // Boot when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  </script>
+</body>
+</html>
