@@ -734,6 +734,124 @@ input[type="range"]::-moz-range-thumb {
   nav#top-nav { flex-wrap: nowrap; gap: 10px; }
 }
 
+/* ── WARDROBE ─────────────────────────────────────────────── */
+.wardrobe-card {
+  background: rgba(107,255,212,0.05);
+  border: 1px solid rgba(107,255,212,0.2);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: fadeUp 0.3s ease both;
+}
+.wardrobe-card:hover { border-color: rgba(107,255,212,0.35); }
+.wardrobe-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.wardrobe-badge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--teal);
+}
+.ity-mini-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.ity-mini-fill {
+  flex: 1;
+  height: 3px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.ity-mini-fill span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--teal), var(--purple));
+}
+
+/* ── EXPRESSED ITY ────────────────────────────────────────── */
+.expressed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  border: 1px solid rgba(107,255,212,0.35);
+  color: var(--teal);
+  background: rgba(107,255,212,0.08);
+}
+.expressed-note {
+  font-size: 11px;
+  color: var(--teal);
+  opacity: 0.75;
+  text-align: center;
+  margin-top: 6px;
+  letter-spacing: 0.04em;
+}
+
+/* ── TEAL BUTTON ──────────────────────────────────────────── */
+.btn-teal {
+  background: linear-gradient(135deg, rgba(107,255,212,0.15), rgba(139,107,255,0.10));
+  border-color: rgba(107,255,212,0.35);
+  color: var(--teal);
+}
+.btn-teal:hover {
+  border-color: rgba(107,255,212,0.55);
+  box-shadow: 0 4px 24px rgba(107,255,212,0.15);
+}
+
+/* ── GARMENT PICKER MODAL ─────────────────────────────────── */
+#garment-picker {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
+  align-items: center;
+  justify-content: center;
+}
+#garment-picker.open { display: flex; }
+#garment-picker-box {
+  background: rgba(15,15,25,0.97);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 28px;
+  width: min(480px, 90vw);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.picker-garment-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+}
+.picker-garment-row:hover {
+  border-color: rgba(107,255,212,0.4);
+  background: rgba(107,255,212,0.06);
+}
+
 /* ── MISC ────────────────────────────────────────────────── */
 .mt-4  { margin-top: 16px; }
 .mt-6  { margin-top: 24px; }
@@ -769,6 +887,10 @@ hr.glass-hr {
   <div class="nav-divider"></div>
   <span class="nav-title">Character Studio</span>
   <div class="nav-divider"></div>
+  <div id="api-status-badge" style="display:flex;align-items:center;gap:5px;flex:0 0 auto;font-size:11px;letter-spacing:0.08em;font-weight:500;padding:4px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);">
+    <span id="api-status-dot" style="font-size:9px;color:rgba(255,255,255,0.3);">○</span>
+    <span id="api-status-text" style="color:rgba(255,255,255,0.3);">OFFLINE</span>
+  </div>
   <div id="tab-bar">
     <button class="tab-btn active" data-tab="identity">Identity</button>
     <button class="tab-btn" data-tab="ontology">Ontological Fingerprint</button>
@@ -784,6 +906,11 @@ hr.glass-hr {
 <!-- APP                                                      -->
 <!-- ═══════════════════════════════════════════════════════ -->
 <div id="app">
+
+<!-- OFFLINE BANNER -->
+<div id="offline-banner" style="display:none;position:fixed;top:var(--nav-h);left:0;right:0;z-index:99;background:rgba(255,184,107,0.12);border-bottom:1px solid rgba(255,184,107,0.25);padding:8px 24px;font-size:12px;color:rgba(255,184,107,0.9);text-align:center;letter-spacing:0.04em;backdrop-filter:blur(20px);">
+  ○ OFFLINE MODE — Trinity Graph API unreachable. Changes saved locally only.
+</div>
 
 <!-- ══════════════════════════════════════════════════ -->
 <!-- TAB 1: IDENTITY                                     -->
@@ -804,9 +931,7 @@ hr.glass-hr {
           <div class="form-group">
             <label for="c-world">World</label>
             <select id="c-world">
-              <option value="">— Select World —</option>
-              <option value="Mississippi Delta">Mississippi Delta</option>
-              <option value="Custom">Custom</option>
+              <option value="">— Loading worlds… —</option>
             </select>
           </div>
           <div class="form-group">
@@ -922,9 +1047,23 @@ hr.glass-hr {
   <!-- Live radar charts -->
   <div class="radar-row mt-6">
     <div class="glass" style="padding:20px;">
-      <div class="radar-title">— ity Signature</div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+        <div class="radar-title" style="margin-bottom:0;">— ity Signature</div>
+        <div id="expressed-ity-badge" style="display:none;" class="expressed-badge">+ Wardrobe Blend</div>
+      </div>
+      <div style="display:flex; gap:12px; justify-content:center; margin-bottom:8px;">
+        <span style="font-size:10px; color:rgba(255,107,138,0.7); display:flex; align-items:center; gap:5px;">
+          <span style="display:inline-block; width:20px; height:2px; background:rgba(255,107,138,0.7); border-radius:1px;"></span> Base
+        </span>
+        <span id="expressed-legend" style="font-size:10px; color:rgba(107,255,212,0.7); display:none; align-items:center; gap:5px;">
+          <span style="display:inline-block; width:20px; height:2px; background:rgba(107,255,212,0.7); border-radius:1px; border-top:1px dashed rgba(107,255,212,0.7);"></span> Expressed
+        </span>
+      </div>
       <div class="radar-container">
         <canvas id="chart-ity"></canvas>
+      </div>
+      <div class="expressed-note" id="expressed-note" style="display:none;">
+        Expressed = 60% Base + 40% Wardrobe Avg
       </div>
     </div>
     <div class="glass" style="padding:20px;">
@@ -1134,6 +1273,31 @@ hr.glass-hr {
 <div class="tab-panel" id="panel-garments">
   <h2 class="section-title">Garments &amp; <span>Artifacts</span></h2>
 
+  <!-- ── WARDROBE — Shared Garments from Garment Studio ── -->
+  <div style="margin-bottom:32px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+      <div>
+        <div style="font-size:14px; font-weight:400; letter-spacing:0.04em; display:flex; align-items:center; gap:8px;">
+          Wardrobe <span class="expressed-badge">WEARS ⟶ Graph</span>
+        </div>
+        <div style="font-size:12px; color:var(--text-dim); margin-top:4px;">
+          Shared garments from Garment Studio · shapes Expressed —ity profile (60/40 blend)
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="btn btn-sm" id="btn-refresh-garments" title="Reload from API + trinity_garments">↻ Refresh</button>
+        <button class="btn btn-teal" id="btn-add-wardrobe">+ Assign Garment</button>
+      </div>
+    </div>
+    <div class="stack" id="wardrobe-list">
+      <div class="empty-state" id="wardrobe-empty">
+        No garments assigned. Create garments in Garment Studio or click <strong>Assign Garment</strong> above.
+      </div>
+    </div>
+  </div>
+
+  <hr class="glass-hr">
+
   <!-- Garments Section -->
   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
     <div>
@@ -1186,18 +1350,15 @@ hr.glass-hr {
         <div class="glass-body">
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
             <span class="status-dot" id="graph-status-dot"></span>
-            <span style="font-size:13px; color:var(--text-dim);" id="graph-status-text">Not connected — API coming soon</span>
+            <span style="font-size:13px; color:var(--text-dim);" id="graph-status-text">Connecting to Neo4j…</span>
           </div>
           <div class="export-btn-row">
-            <button class="btn" id="btn-save-graph" disabled style="opacity:0.4; cursor:not-allowed;">
+            <button class="btn btn-primary" id="btn-save-graph">
               ↑ Save to Trinity Graph
             </button>
-            <div class="form-group" style="margin-bottom:0;">
-              <label for="load-graph-sel">Load from Trinity Graph</label>
-              <select id="load-graph-sel" disabled style="opacity:0.4;">
-                <option>API not yet available</option>
-              </select>
-            </div>
+            <button class="btn" id="btn-refresh-gallery" style="font-size:12px;">
+              ↻ Refresh from API
+            </button>
           </div>
         </div>
       </div>
@@ -1217,13 +1378,320 @@ hr.glass-hr {
 
 </div><!-- /#app -->
 
+<!-- GARMENT PICKER MODAL -->
+<div id="garment-picker">
+  <div id="garment-picker-box">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+      <div>
+        <div style="font-size:16px; font-weight:300; letter-spacing:0.05em;">Assign Garment</div>
+        <div style="font-size:12px; color:var(--text-dim); margin-top:4px;">Select from shared Garment Studio library</div>
+      </div>
+      <button class="btn btn-sm" id="btn-picker-close">✕ Close</button>
+    </div>
+
+    <!-- Intent selector -->
+    <div class="form-group" style="margin-bottom:16px;">
+      <label for="wardrobe-intent">Wearing Intent</label>
+      <select id="wardrobe-intent">
+        <option value="everyday">Everyday</option>
+        <option value="ritual">Ritual</option>
+        <option value="formal">Formal</option>
+        <option value="work">Work</option>
+        <option value="performance">Performance</option>
+        <option value="mourning">Mourning</option>
+        <option value="ceremony">Ceremony</option>
+        <option value="armor">Armor (metaphorical)</option>
+      </select>
+    </div>
+
+    <!-- Garment list -->
+    <div id="picker-garment-list">
+      <div class="empty-state">
+        No shared garments found.<br>
+        <span style="font-size:11px; opacity:0.6;">Create garments in Garment Studio, or they'll appear here from the API.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div id="toast"></div>
 
 <script>
 /* ════════════════════════════════════════════════════════
    CHARACTER STUDIO — Main JS Engine
+   Trinity Graph API: https://trinity-graph-api-328246068140.us-central1.run.app
    ════════════════════════════════════════════════════════ */
+
+// ── Trinity Graph API Layer ───────────────────────────────
+const API_BASE = 'https://trinity-graph-api-328246068140.us-central1.run.app';
+let apiConnected = false;
+let apiWorlds = [];
+
+async function apiFetch(path, opts = {}) {
+  const res = await fetch(API_BASE + path, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) }
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text().catch(() => '')}`);
+  return res.json();
+}
+
+async function apiGet(path)        { return apiFetch(path); }
+async function apiPost(path, body) { return apiFetch(path, { method: 'POST', body: JSON.stringify(body) }); }
+async function apiPut(path, body)  { return apiFetch(path, { method: 'PUT',  body: JSON.stringify(body) }); }
+
+// ── API ↔ Local conversion ────────────────────────────────
+function apiCharToLocal(apiChar, localTemplate) {
+  const base = localTemplate || emptyCharacter();
+  base.id            = apiChar.id;
+  base.name          = apiChar.name || '';
+  base.world_id      = apiChar.world_id || null;
+  base.bio           = apiChar.biography || '';
+  base.visual        = apiChar.visual_description || '';
+  base.voicedesc     = apiChar.voice_description || '';
+  // Resolve world name from loaded worlds
+  const worldObj = apiWorlds.find(w => w.id === apiChar.world_id);
+  base.world = worldObj ? worldObj.name : (apiChar.world_id || '');
+  // era / lineage (API stores as IDs, keep as-is for now)
+  base.era     = apiChar.era_id     || base.era     || '';
+  base.lineage = apiChar.lineage_id || base.lineage || '';
+  // Flat ity fields
+  const ityKeys  = Object.keys(emptyCharacter().ity);
+  const pathyKeys = Object.keys(emptyCharacter().pathy);
+  ityKeys.forEach(k  => { if (apiChar[k] !== undefined) base.ity[k]  = apiChar[k]; });
+  pathyKeys.forEach(k => { if (apiChar[k] !== undefined) base.pathy[k] = apiChar[k]; });
+  // Preserve wardrobe from localTemplate (not stored in API)
+  if (localTemplate && localTemplate.wardrobe) base.wardrobe = localTemplate.wardrobe;
+  base._fromApi = true;
+  return base;
+}
+
+function localCharToApiBody(c) {
+  const body = {
+    name:                c.name          || null,
+    biography:           c.bio           || null,
+    visual_description:  c.visual        || null,
+    voice_description:   c.voicedesc     || null,
+  };
+  // world_id: prefer UUID, else look up by name
+  if (c.world_id) {
+    body.world_id = c.world_id;
+  } else if (c.world) {
+    const w = apiWorlds.find(wld => wld.name === c.world);
+    if (w) body.world_id = w.id;
+  }
+  // Flat ity/pathy
+  Object.entries(c.ity).forEach(([k, v])  => { body[k] = v; });
+  Object.entries(c.pathy).forEach(([k, v]) => { body[k] = v; });
+  return body;
+}
+
+// ── Connection Status UI ──────────────────────────────────
+function setApiStatus(connected) {
+  apiConnected = connected;
+  const dot  = document.getElementById('api-status-dot');
+  const text = document.getElementById('api-status-text');
+  const gdot = document.getElementById('graph-status-dot');
+  const gtxt = document.getElementById('graph-status-text');
+  const banner = document.getElementById('offline-banner');
+
+  if (connected) {
+    dot.textContent  = '●';
+    dot.style.color  = 'var(--teal)';
+    text.textContent = 'LIVE';
+    text.style.color = 'var(--teal)';
+    if (gdot) { gdot.classList.add('connected'); }
+    if (gtxt) gtxt.textContent = 'Connected to Neo4j — Trinity Graph';
+    if (banner) banner.style.display = 'none';
+    document.getElementById('btn-save-graph').disabled = false;
+    document.getElementById('btn-save-graph').style.opacity = '1';
+    document.getElementById('btn-save-graph').style.cursor  = 'pointer';
+  } else {
+    dot.textContent  = '○';
+    dot.style.color  = 'rgba(255,255,255,0.3)';
+    text.textContent = 'OFFLINE';
+    text.style.color = 'rgba(255,255,255,0.3)';
+    if (gdot) { gdot.classList.remove('connected'); }
+    if (gtxt) gtxt.textContent = 'Offline — localStorage fallback active';
+    if (banner) banner.style.display = '';
+    document.getElementById('btn-save-graph').disabled = true;
+    document.getElementById('btn-save-graph').style.opacity = '0.4';
+    document.getElementById('btn-save-graph').style.cursor  = 'not-allowed';
+  }
+}
+
+// ── World Selector ────────────────────────────────────────
+async function loadWorlds() {
+  try {
+    const worlds = await apiGet('/worlds');
+    apiWorlds = worlds;
+    setApiStatus(true);
+    populateWorldSelector(worlds);
+  } catch (e) {
+    console.warn('Trinity Graph API unreachable:', e.message);
+    setApiStatus(false);
+    populateWorldSelectorFallback();
+  }
+}
+
+function populateWorldSelector(worlds) {
+  const sel = document.getElementById('c-world');
+  sel.innerHTML = '<option value="">— Select World —</option>';
+  worlds.forEach(w => {
+    const opt = document.createElement('option');
+    opt.value       = w.id;
+    opt.textContent = w.name;
+    if (w.description) opt.title = w.description;
+    sel.appendChild(opt);
+  });
+  // Restore selection
+  if (current.world_id) {
+    sel.value = current.world_id;
+  } else if (current.world) {
+    const match = worlds.find(w => w.name === current.world);
+    if (match) sel.value = match.id;
+  }
+}
+
+function populateWorldSelectorFallback() {
+  const sel = document.getElementById('c-world');
+  sel.innerHTML = `
+    <option value="">— Select World —</option>
+    <option value="offline-mississippi-delta">Mississippi Delta</option>
+    <option value="offline-custom">Custom</option>
+  `;
+  if (current.world) sel.value = current.world;
+}
+
+async function onWorldSelected(worldId) {
+  if (!worldId || !apiConnected) return;
+  toast('Loading characters from world…');
+  try {
+    const chars = await apiGet(`/characters?world_id=${worldId}`);
+    const db = loadAll();
+    chars.forEach(apiChar => {
+      const mapped = apiCharToLocal(apiChar);
+      db[mapped.id] = mapped;
+    });
+    saveAll(db);
+    renderGallery();
+    toast(`↓ Loaded ${chars.length} character${chars.length !== 1 ? 's' : ''} from world`);
+  } catch (e) {
+    toast('⚠ Could not load world characters');
+    console.error(e);
+  }
+}
+
+// ── Save to API ───────────────────────────────────────────
+async function saveCurrentToApi() {
+  const body = localCharToApiBody(current);
+  let apiChar;
+  if (current._fromApi) {
+    // Character already exists in API → PUT update
+    apiChar = await apiPut(`/characters/${current.id}`, body);
+    toast(`✦ ${current.name} updated in Neo4j`);
+  } else {
+    if (!body.world_id) {
+      toast('Select a world before saving to Trinity Graph');
+      return null;
+    }
+    // New character → POST create
+    apiChar = await apiPost('/characters', body);
+    toast(`✦ ${current.name} created in Neo4j`);
+  }
+
+  // Sync wardrobe garments to API via POST /garments (WEARS relationship)
+  if (current.wardrobe && current.wardrobe.length > 0) {
+    for (const wItem of current.wardrobe) {
+      if (wItem._apiSynced) continue; // already posted
+      try {
+        const gBody = {
+          name:        wItem.garment_name,
+          character_id: apiChar.id,
+          description: `Intent: ${wItem.intent || 'everyday'}`,
+          materiality: wItem.ity_profile?.materiality ?? 0.5,
+          luminosity:  wItem.ity_profile?.luminosity  ?? 0.5,
+          tactility:   wItem.ity_profile?.tactility   ?? 0.5,
+          sensuosity:  wItem.ity_profile?.sensuosity  ?? 0.5
+        };
+        await apiPost('/garments', gBody);
+        wItem._apiSynced = true;
+      } catch (e) {
+        console.warn('Garment WEARS sync failed:', e.message);
+      }
+    }
+  }
+
+  // Merge API response back (gets the canonical UUID)
+  const prev = { ...current };
+  apiCharToLocal(apiChar, current);
+  // Preserve locally-only fields
+  current.relationships = prev.relationships;
+  current.images        = prev.images;
+  current.garments      = prev.garments;
+  current.artifacts     = prev.artifacts;
+  current.vTimbre       = prev.vTimbre;
+  current.vPitch        = prev.vPitch;
+  current.vAccent       = prev.vAccent;
+  current.vSpeech       = prev.vSpeech;
+  current.vSample       = prev.vSample;
+  current.vGenres       = prev.vGenres;
+  current.vInstruments  = prev.vInstruments;
+  current.vTempo        = prev.vTempo;
+  current.vKey          = prev.vKey;
+  current.styleColors   = prev.styleColors;
+  current.styleClothing = prev.styleClothing;
+  current.styleAccessories = prev.styleAccessories;
+  current.stylePosture  = prev.stylePosture;
+  return apiChar;
+}
+
+// ── Load character from API ───────────────────────────────
+async function loadCharacterFromApi(id) {
+  try {
+    const apiChar = await apiGet(`/characters/${id}`);
+    const db = loadAll();
+    const existing = db[id] || emptyCharacter();
+    current = apiCharToLocal(apiChar, existing);
+    // Restore locally-only fields from cache
+    current.relationships    = existing.relationships    || [];
+    current.images           = existing.images           || [];
+    current.garments         = existing.garments         || [];
+    current.artifacts        = existing.artifacts        || [];
+    current.vTimbre          = existing.vTimbre          || '';
+    current.vPitch           = existing.vPitch           ?? 0.5;
+    current.vAccent          = existing.vAccent          || '';
+    current.vSpeech          = existing.vSpeech          || '';
+    current.vSample          = existing.vSample          || '';
+    current.vGenres          = existing.vGenres          || [];
+    current.vInstruments     = existing.vInstruments     || [];
+    current.vTempo           = existing.vTempo           ?? 0.5;
+    current.vKey             = existing.vKey             || '';
+    current.styleColors      = existing.styleColors      || '';
+    current.styleClothing    = existing.styleClothing    || '';
+    current.styleAccessories = existing.styleAccessories || '';
+    current.stylePosture     = existing.stylePosture     || '';
+    // Save merged to localStorage cache
+    db[current.id] = current;
+    saveAll(db);
+    localStorage.setItem(CURRENT_KEY, current.id);
+    populateAllFields();
+    toast(`● Loaded: ${current.name}`);
+  } catch (e) {
+    console.warn('API load failed, using localStorage:', e.message);
+    loadCharacterFromStorage(id);
+  }
+}
+
+// ── Cross-App Storage Keys (shared with Spark Maker, Story Engine, Garment Studio) ──
+const TRINITY_KEYS = {
+  ACTIVE_WORLD : 'trinity_active_world_id',
+  CHARACTERS   : 'trinity_characters',
+  GARMENTS     : 'trinity_garments',
+  SPARKS       : 'trinity_sparks',
+  STORIES      : 'trinity_stories'
+};
 
 // ── Data Schema ──────────────────────────────────────────
 const STORAGE_KEY = 'character_studio_characters';
@@ -1234,6 +1702,8 @@ function emptyCharacter() {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2,7),
     name: '',
     world: '',
+    world_id: null,
+    _fromApi: false,
     era: '',
     lineage: '',
     bio: '',
@@ -1259,6 +1729,8 @@ function emptyCharacter() {
       gestural_energy:0.5, ethos:0.5, logos:0.5, nostalgia:0.5,
       fragility:0.5, audacity:0.5
     },
+    // Wardrobe (WEARS relationship — shared garments from Garment Studio)
+    wardrobe: [],
     // Relationships
     relationships: [],
     // Visual DNA
@@ -1288,15 +1760,36 @@ function loadAll() {
 function saveAll(db) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
 }
-function saveCurrent() {
+
+async function saveCurrent() {
+  if (!current.name.trim()) { toast('Please enter a name first'); return; }
+  // Always save to localStorage (offline cache)
   const db = loadAll();
   db[current.id] = current;
   saveAll(db);
   localStorage.setItem(CURRENT_KEY, current.id);
+
+  if (apiConnected) {
+    try {
+      await saveCurrentToApi();
+      // Update cache with API-assigned id
+      const dbAfter = loadAll();
+      dbAfter[current.id] = current;
+      saveAll(dbAfter);
+      localStorage.setItem(CURRENT_KEY, current.id);
+    } catch (e) {
+      toast(`⚠ Saved locally, API error: ${e.message}`);
+    }
+  } else {
+    toast(`✦ ${current.name} saved locally (offline)`);
+  }
+
+  // Sync to cross-app storage (trinity_characters, trinity_active_world_id)
+  writeTrinityCharacters();
   renderGallery();
-  toast(`✦ ${current.name || 'Character'} saved`);
 }
-function loadCharacter(id) {
+
+function loadCharacterFromStorage(id) {
   const db = loadAll();
   if (db[id]) {
     current = db[id];
@@ -1304,6 +1797,15 @@ function loadCharacter(id) {
     toast(`Loaded: ${current.name}`);
   }
 }
+
+function loadCharacter(id) {
+  if (apiConnected) {
+    loadCharacterFromApi(id);
+  } else {
+    loadCharacterFromStorage(id);
+  }
+}
+
 function deleteCharacter(id) {
   const db = loadAll();
   delete db[id];
@@ -1312,6 +1814,109 @@ function deleteCharacter(id) {
   if (current.id === id) {
     current = emptyCharacter();
     populateAllFields();
+  }
+}
+
+// ── Available garments pool (from API + trinity_garments) ─
+let availableGarments = [];
+
+// ── Expressed -ity Calculation ────────────────────────────
+// Blend: 60% base character ity + 40% average garment ity
+// Only garment keys that exist in their ity_profile contribute.
+function computeExpressedIty(char) {
+  const base = char.ity || {};
+  if (!char.wardrobe || char.wardrobe.length === 0) return { ...base };
+  // Average ity across all assigned garments
+  const garmentAvg = {};
+  char.wardrobe.forEach(g => {
+    const prof = g.ity_profile || {};
+    Object.entries(prof).forEach(([k, v]) => {
+      if (v !== null && v !== undefined) {
+        garmentAvg[k] = (garmentAvg[k] || []);
+        garmentAvg[k].push(v);
+      }
+    });
+  });
+  const expressed = {};
+  Object.keys(base).forEach(k => {
+    const vals = garmentAvg[k];
+    if (vals && vals.length > 0) {
+      const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+      expressed[k] = Math.min(1, Math.max(0, 0.6 * base[k] + 0.4 * avg));
+    } else {
+      expressed[k] = base[k];
+    }
+  });
+  return expressed;
+}
+
+// ── Cross-App Character Format ────────────────────────────
+// Used by Spark Maker, Story Engine — must include all needed fields
+function buildCrossAppCharacter(c) {
+  const expressedIty = computeExpressedIty(c);
+  return {
+    id:            c.id,
+    name:          c.name          || '',
+    archetype:     c.lineage       || '',  // lineage = archetype for other apps
+    world_id:      c.world_id      || null,
+    era:           c.era           || '',
+    lineage:       c.lineage       || '',
+    ity_profile:   { ...c.ity },
+    expressed_ity: expressedIty,
+    wardrobe:      c.wardrobe      || [],
+    // Extra rich fields
+    bio:           c.bio           || '',
+    visual:        c.visual        || '',
+    voicedesc:     c.voicedesc     || '',
+    pathy_profile: { ...c.pathy }
+  };
+}
+
+// ── Write to Cross-App Storage ────────────────────────────
+function writeTrinityCharacters() {
+  const db = loadAll();
+  const all = Object.values(db).map(buildCrossAppCharacter);
+  try {
+    localStorage.setItem(TRINITY_KEYS.CHARACTERS, JSON.stringify(all));
+    if (current.world_id) {
+      localStorage.setItem(TRINITY_KEYS.ACTIVE_WORLD, current.world_id);
+    }
+  } catch (e) {
+    console.warn('Could not write to trinity_characters:', e);
+  }
+}
+
+// ── Load Trinity Garments from API + localStorage ─────────
+async function loadTrinityGarments() {
+  // 1. Try API first (Garment Studio may have posted there)
+  try {
+    const apiGarments = await apiGet('/garments');
+    if (apiGarments.length > 0) {
+      const normalized = apiGarments.map(g => ({
+        id:          g.id,
+        name:        g.name || 'Unnamed Garment',
+        fabric:      g.fabric || '',
+        description: g.description || '',
+        character_id: g.character_id || null,
+        ity_profile: {
+          materiality: g.materiality ?? 0.5,
+          luminosity:  g.luminosity  ?? 0.5,
+          tactility:   g.tactility   ?? 0.5,
+          sensuosity:  g.sensuosity  ?? 0.5
+        }
+      }));
+      localStorage.setItem(TRINITY_KEYS.GARMENTS, JSON.stringify(normalized));
+      availableGarments = normalized;
+      return;
+    }
+  } catch (e) { /* API might not have garments yet */ }
+
+  // 2. Fall back to localStorage (written by Garment Studio)
+  try {
+    const stored = JSON.parse(localStorage.getItem(TRINITY_KEYS.GARMENTS) || '[]');
+    availableGarments = stored;
+  } catch (e) {
+    availableGarments = [];
   }
 }
 
@@ -1352,7 +1957,7 @@ document.addEventListener('mousemove', e => {
 // ── Identity Fields ───────────────────────────────────────
 function bindIdentityFields() {
   const fields = [
-    ['c-name','name'], ['c-world','world'], ['c-era','era'],
+    ['c-name','name'], ['c-era','era'],
     ['c-lineage','lineage'], ['c-bio','bio'],
     ['c-visual','visual'], ['c-voicedesc','voicedesc']
   ];
@@ -1363,9 +1968,20 @@ function bindIdentityFields() {
       if (key === 'name') document.getElementById('identity-saved-name').textContent = '';
     });
   });
-  document.getElementById('btn-save-char').addEventListener('click', () => {
+
+  // World selector: stores UUID (for API) in world_id, resolves name to current.world
+  document.getElementById('c-world').addEventListener('change', e => {
+    const selectedId = e.target.value;
+    current.world_id = selectedId || null;
+    const worldObj = apiWorlds.find(w => w.id === selectedId);
+    current.world = worldObj ? worldObj.name : selectedId; // fallback: use raw value
+    // Load characters for this world when online
+    if (apiConnected && selectedId) onWorldSelected(selectedId);
+  });
+
+  document.getElementById('btn-save-char').addEventListener('click', async () => {
     if (!current.name.trim()) { toast('Please enter a name first'); return; }
-    saveCurrent();
+    await saveCurrent();
     document.getElementById('identity-saved-name').textContent = `Last saved: ${new Date().toLocaleTimeString()}`;
   });
   document.getElementById('btn-new-char').addEventListener('click', () => {
@@ -1469,8 +2085,34 @@ function initRadarCharts() {
 
 function updateRadarCharts() {
   if (!ityChart || !pathyChart) return;
-  ityChart.data.datasets[0].data = Object.keys(current.ity).map(k => current.ity[k]);
-  pathyChart.data.datasets[0].data = Object.keys(current.pathy).map(k => current.pathy[k]);
+  const ityKeys  = Object.keys(current.ity);
+  const pathyKeys = Object.keys(current.pathy);
+  ityChart.data.datasets[0].data   = ityKeys.map(k  => current.ity[k]);
+  pathyChart.data.datasets[0].data = pathyKeys.map(k => current.pathy[k]);
+
+  // Expressed ity dataset (wardrobe blend)
+  const hasWardrobe = (current.wardrobe || []).length > 0;
+  if (hasWardrobe) {
+    const expressed = computeExpressedIty(current);
+    const expressedData = ityKeys.map(k => expressed[k]);
+    if (ityChart.data.datasets.length < 2) {
+      ityChart.data.datasets.push({
+        data: expressedData,
+        backgroundColor: 'rgba(107,255,212,0.10)',
+        borderColor: 'rgba(107,255,212,0.65)',
+        borderWidth: 1.5,
+        borderDash: [4, 3],
+        pointBackgroundColor: 'rgba(107,255,212,0.7)',
+        pointRadius: 2,
+        label: 'Expressed'
+      });
+    } else {
+      ityChart.data.datasets[1].data = expressedData;
+    }
+  } else {
+    if (ityChart.data.datasets.length > 1) ityChart.data.datasets.splice(1);
+  }
+
   ityChart.update('none');
   pathyChart.update('none');
 }
@@ -1925,6 +2567,136 @@ document.getElementById('btn-add-artifact').addEventListener('click', () => {
   renderArtifactList();
 });
 
+// ── Wardrobe — WEARS Relationship ────────────────────────
+function renderWardrobeSection() {
+  const list    = document.getElementById('wardrobe-list');
+  const empty   = document.getElementById('wardrobe-empty');
+  list.querySelectorAll('.wardrobe-card').forEach(c => c.remove());
+
+  const wardrobe = current.wardrobe || [];
+  empty.style.display = wardrobe.length ? 'none' : '';
+
+  wardrobe.forEach((item, i) => {
+    const card = document.createElement('div');
+    card.className = 'wardrobe-card';
+    const ityProf = item.ity_profile || {};
+    const ityMini = ['materiality', 'luminosity', 'tactility', 'sensuosity']
+      .map(k => `
+        <div class="ity-mini-bar">
+          <span style="width:80px;">${k}</span>
+          <div class="ity-mini-fill"><span style="width:${((ityProf[k] ?? 0.5)*100).toFixed(0)}%"></span></div>
+          <span style="width:32px;text-align:right;color:var(--teal);">${(ityProf[k] ?? 0.5).toFixed(2)}</span>
+        </div>`).join('');
+
+    card.innerHTML = `
+      <div class="wardrobe-card-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="wardrobe-badge">WEARS</span>
+          <span style="font-size:14px;font-weight:400;">${item.garment_name || 'Unnamed Garment'}</span>
+          ${item._apiSynced ? '<span style="font-size:10px;color:var(--teal);opacity:0.7;">● Neo4j</span>' : ''}
+        </div>
+        <button class="btn btn-sm btn-danger" data-wrd-del="${i}">✕</button>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);">
+        Intent: <strong style="color:var(--amber);">${item.intent || 'everyday'}</strong>
+        ${item.fabric ? ` · ${item.fabric}` : ''}
+      </div>
+      <div style="margin-top:4px;">${ityMini}</div>
+    `;
+
+    card.querySelector('[data-wrd-del]').addEventListener('click', () => {
+      current.wardrobe.splice(i, 1);
+      renderWardrobeSection();
+      updateRadarCharts();
+      updateExpressedBadge();
+    });
+
+    list.appendChild(card);
+  });
+
+  updateExpressedBadge();
+}
+
+function updateExpressedBadge() {
+  const hasWardrobe = (current.wardrobe || []).length > 0;
+  const badge  = document.getElementById('expressed-ity-badge');
+  const legend = document.getElementById('expressed-legend');
+  const note   = document.getElementById('expressed-note');
+  if (badge)  badge.style.display  = hasWardrobe ? 'inline-flex' : 'none';
+  if (legend) legend.style.display = hasWardrobe ? 'flex' : 'none';
+  if (note)   note.style.display   = hasWardrobe ? '' : 'none';
+}
+
+// ── Garment Picker ────────────────────────────────────────
+function openGarmentPicker() {
+  const picker = document.getElementById('garment-picker');
+  const listEl = document.getElementById('picker-garment-list');
+  picker.classList.add('open');
+  listEl.innerHTML = '';
+
+  if (!availableGarments.length) {
+    listEl.innerHTML = `<div class="empty-state">
+      No garments in library yet.<br>
+      <span style="font-size:11px;opacity:0.6;">Create garments in Garment Studio — they'll appear here via trinity_garments.</span>
+    </div>`;
+    return;
+  }
+
+  availableGarments.forEach(g => {
+    // Skip if already in wardrobe
+    const alreadyWorn = (current.wardrobe || []).some(w => w.garment_id === g.id);
+    const row = document.createElement('div');
+    row.className = 'picker-garment-row';
+    if (alreadyWorn) row.style.opacity = '0.4';
+    const ityProf = g.ity_profile || {};
+    row.innerHTML = `
+      <div>
+        <div style="font-size:13px;font-weight:400;">${g.name}</div>
+        <div style="font-size:11px;color:var(--text-dim);">${g.fabric || ''} · mat:${(ityProf.materiality??0.5).toFixed(2)} lum:${(ityProf.luminosity??0.5).toFixed(2)} tac:${(ityProf.tactility??0.5).toFixed(2)}</div>
+      </div>
+      <button class="btn btn-sm btn-teal" ${alreadyWorn ? 'disabled' : ''} data-pick-id="${g.id}">
+        ${alreadyWorn ? '✓ Worn' : '+ Wear'}
+      </button>
+    `;
+    if (!alreadyWorn) {
+      row.querySelector('[data-pick-id]').addEventListener('click', () => {
+        const intent = document.getElementById('wardrobe-intent').value;
+        assignGarmentToCharacter(g, intent);
+        picker.classList.remove('open');
+      });
+    }
+    listEl.appendChild(row);
+  });
+}
+
+function assignGarmentToCharacter(garment, intent) {
+  if (!current.wardrobe) current.wardrobe = [];
+  current.wardrobe.push({
+    garment_id:   garment.id,
+    garment_name: garment.name,
+    fabric:       garment.fabric || '',
+    intent:       intent,
+    ity_profile:  garment.ity_profile || {},
+    _apiSynced:   false
+  });
+  renderWardrobeSection();
+  updateRadarCharts();
+  updateExpressedBadge();
+  toast(`✦ ${garment.name} added to wardrobe`);
+}
+
+document.getElementById('btn-add-wardrobe').addEventListener('click', openGarmentPicker);
+document.getElementById('btn-picker-close').addEventListener('click', () => {
+  document.getElementById('garment-picker').classList.remove('open');
+});
+document.getElementById('garment-picker').addEventListener('click', e => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+});
+document.getElementById('btn-refresh-garments').addEventListener('click', async () => {
+  await loadTrinityGarments();
+  toast(`↻ Refreshed — ${availableGarments.length} garment${availableGarments.length !== 1 ? 's' : ''} in library`);
+});
+
 // ── Style fields ──────────────────────────────────────────
 const styleFieldMap = {
   'vs-colors': 'styleColors',
@@ -2079,15 +2851,24 @@ function buildImagePrompt(c) {
 
 // ── Populate all fields from current ──────────────────────
 function populateAllFields() {
-  // Identity
-  ['c-name','c-world','c-era','c-lineage','c-bio','c-visual','c-voicedesc'].forEach(id => {
+  // Identity (text fields)
+  ['c-name','c-era','c-lineage','c-bio','c-visual','c-voicedesc'].forEach(id => {
     const el = document.getElementById(id);
     const key = {
-      'c-name':'name','c-world':'world','c-era':'era','c-lineage':'lineage',
+      'c-name':'name','c-era':'era','c-lineage':'lineage',
       'c-bio':'bio','c-visual':'visual','c-voicedesc':'voicedesc'
     }[id];
     if (el) el.value = current[key] || '';
   });
+  // World selector: use world_id UUID if available
+  const worldSel = document.getElementById('c-world');
+  if (current.world_id) {
+    worldSel.value = current.world_id;
+  } else if (current.world) {
+    // Try by name (fallback / offline)
+    const match = apiWorlds.find(w => w.name === current.world);
+    worldSel.value = match ? match.id : current.world;
+  }
   document.getElementById('identity-saved-name').textContent = '';
 
   // Rebuild sliders
@@ -2131,9 +2912,13 @@ function populateAllFields() {
     });
   });
 
-  // Garments + Artifacts
+  // Wardrobe + Garments + Artifacts
+  renderWardrobeSection();
   renderGarmentList();
   renderArtifactList();
+
+  // Update expressed badge
+  updateExpressedBadge();
 
   // Gallery
   renderGallery();
@@ -2147,26 +2932,62 @@ const observer = new IntersectionObserver(entries => {
 }, { threshold: 0.1 });
 
 // ── INIT ──────────────────────────────────────────────────
-function init() {
+async function init() {
   bindIdentityFields();
   buildAllSliders();
   initRadarCharts();
   initImageUpload();
   initVoiceMusic();
 
-  // Load last-used character
+  // Load last-used character from localStorage first (instant load)
   const lastId = localStorage.getItem(CURRENT_KEY);
   if (lastId) {
     const db = loadAll();
     if (db[lastId]) { current = db[lastId]; populateAllFields(); }
   }
 
-  // Initial render
+  // Initial gallery render from localStorage
   renderGallery();
 
   // Observe glass cards
   document.querySelectorAll('.glass').forEach(el => observer.observe(el));
+
+  // Connect to Trinity Graph API (async — non-blocking)
+  await loadWorlds();
+
+  // Load shared garments library (API + trinity_garments localStorage)
+  await loadTrinityGarments();
+
+  // If we have a current character with a world, trigger world character load
+  if (apiConnected && current.world_id) {
+    onWorldSelected(current.world_id);
+  }
+
+  // Initial cross-app sync
+  writeTrinityCharacters();
 }
+
+// ── "Save to Trinity Graph" button in Export tab ──────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('btn-save-graph').addEventListener('click', async () => {
+    if (!apiConnected) { toast('Not connected to Trinity Graph'); return; }
+    if (!current.name.trim()) { toast('No character loaded'); return; }
+    await saveCurrent();
+  });
+
+  document.getElementById('btn-refresh-gallery').addEventListener('click', async () => {
+    if (!apiConnected) { toast('Offline — cannot refresh from API'); return; }
+    if (current.world_id) {
+      await onWorldSelected(current.world_id);
+    } else {
+      // Load all worlds' characters
+      for (const w of apiWorlds) {
+        await onWorldSelected(w.id);
+      }
+      renderGallery();
+    }
+  });
+});
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
