@@ -1066,6 +1066,10 @@
       <button class="nav-tab active" data-view="chamber">Collision Chamber</button>
       <button class="nav-tab" data-view="gallery">Spark Gallery</button>
     </nav>
+    <div style="display:flex;align-items:center;gap:6px;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.45)">
+      <div id="api-dot" class="dot"></div>
+      <span id="api-lbl">CHECKING</span>
+    </div>
   </header>
 
   <!-- COLLISION CHAMBER VIEW -->
@@ -1357,13 +1361,89 @@ const ITY_FIELDS = ['materiality','vitality','interiority','criticality','connec
 
 const PATHY_FIELDS = ['empathy','sympathy','apathy','antipathy','telepathy','tactility','sensuosity','immediacy','gestural_energy','pathos','ethos','logos','nostalgia','melancholy','euphoria','anxiety','tranquility','intensity','fragility','audacity'];
 
+// ── Trinity Graph API ──────────────────────────────────────────────────────
+const API_BASE = 'https://trinity-graph-api-328246068140.us-central1.run.app';
+let apiOnline = false;
+
+async function checkApiStatus() {
+  try {
+    const r = await fetch(API_BASE + '/health', { signal: AbortSignal.timeout(3000) });
+    apiOnline = r.ok;
+  } catch(e) { apiOnline = false; }
+  const dot = document.getElementById('api-dot');
+  const lbl = document.getElementById('api-lbl');
+  if (dot) dot.className = 'dot' + (apiOnline ? ' live' : '');
+  if (lbl) lbl.textContent = apiOnline ? 'LIVE API' : 'OFFLINE';
+}
+
+async function loadCharactersFromAPI(worldId) {
+  try {
+    const url = worldId ? `${API_BASE}/characters?world_id=${worldId}` : `${API_BASE}/characters`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch(e) { return null; }
+}
+
+async function persistSparkToAPI() {
+  const a = state.charA, b = state.charB;
+  if (!a || !b) return;
+  if (!a.id || a.id.startsWith('adhoc-') || !b.id || b.id.startsWith('adhoc-')) return;
+  try {
+    const body = {
+      character_a_id: a.id,
+      character_b_id: b.id,
+      world_id: localStorage.getItem('trinity_active_world_id') || undefined
+    };
+    const place = state.collisionResult && state.collisionResult.place;
+    if (a.place_id) body.place_id = a.place_id;
+    const era = state.collisionResult && state.collisionResult.era;
+    if (a.era_id) body.era_id = a.era_id;
+
+    const r = await fetch(`${API_BASE}/sparks/collide`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (r.ok) {
+      const data = await r.json();
+      state.apiSparkId = data.id;
+      state.apiConvergenceScore = data.convergence_score;
+      console.log('[SparkMaker] Spark persisted to API:', data.id, '— convergence:', data.convergence_score);
+    }
+  } catch(e) { console.warn('[SparkMaker] API persist failed:', e.message); }
+}
+
+async function loadSparksFromAPI() {
+  try {
+    const worldId = localStorage.getItem('trinity_active_world_id');
+    const url = worldId ? `${API_BASE}/sparks?world_id=${worldId}` : `${API_BASE}/sparks`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) return;
+    const sparks = await r.json();
+    // Merge into trinity_sparks localStorage
+    const existing = JSON.parse(localStorage.getItem('trinity_sparks') || '[]');
+    const merged = [...sparks.map(s => ({
+      id: s.id, timestamp: s.timestamp,
+      charA: { name: s.character_a_id, id: s.character_a_id },
+      charB: { name: s.character_b_id, id: s.character_b_id },
+      convergence_score: s.convergence_score,
+      narrative: s.narrative, imageUrl: s.generated_image_url,
+      _fromApi: true
+    })), ...existing.filter(e => !e._fromApi)];
+    localStorage.setItem('trinity_sparks', JSON.stringify(merged.slice(0, 50)));
+  } catch(e) { /* offline */ }
+}
+
 const RADAR_ITY_LABELS = ['materiality','vitality','interiority','criticality','connectivity','lucidity','necessity','reciprocity','totality','continuity','authenticity','luminosity'];
 
 // ============================================================
 //  INIT
 // ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-  loadCharactersIntoSelects();
+document.addEventListener('DOMContentLoaded', async () => {
+  await checkApiStatus();
+  await loadCharactersIntoSelects();
+  if (apiOnline) loadSparksFromAPI();
   setupMouseTracking();
   setupNavTabs();
   renderGallery();
@@ -1402,11 +1482,34 @@ function setupMouseTracking() {
 }
 
 // ============================================================
-//  LOAD CHARACTERS from localStorage
+//  LOAD CHARACTERS (localStorage + Trinity API)
 // ============================================================
-function loadCharactersIntoSelects() {
-  const raw = localStorage.getItem('character_studio_characters');
-  const chars = raw ? JSON.parse(raw) : [];
+async function loadCharactersIntoSelects() {
+  // 1. Local characters — merge character_studio_characters + trinity_characters
+  const local1 = JSON.parse(localStorage.getItem('character_studio_characters') || '[]');
+  const local2 = JSON.parse(localStorage.getItem('trinity_characters') || '[]');
+  const seen = new Set();
+  const chars = [...local1, ...local2].filter(c => {
+    const key = c.id || c.name;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  // 2. Try API if online
+  if (apiOnline) {
+    const worldId = localStorage.getItem('trinity_active_world_id');
+    const apiChars = await loadCharactersFromAPI(worldId);
+    if (apiChars && Array.isArray(apiChars)) {
+      apiChars.forEach(c => {
+        if (!seen.has(c.id)) {
+          seen.add(c.id);
+          chars.push(c);
+        }
+      });
+    }
+  }
+
   ['a','b'].forEach(side => {
     const sel = document.getElementById('select-' + side);
     while (sel.options.length > 1) sel.remove(1);
@@ -1748,6 +1851,7 @@ function triggerCollision() {
     renderOverlayRadar();
     generateNarrative();
     generateSparkImage();
+    if (apiOnline) persistSparkToAPI();
 
     state.animating = false;
     btn.disabled = false;
@@ -2148,6 +2252,21 @@ function saveSpark() {
   }
   sparks.unshift(spark);
   localStorage.setItem('spark_gallery', JSON.stringify(sparks));
+
+  // Cross-app: also write to trinity_sparks for Story Engine + World Builder
+  const trinitySparks = JSON.parse(localStorage.getItem('trinity_sparks') || '[]');
+  const ts = {
+    id: state.apiSparkId || spark.id,
+    timestamp: spark.timestamp,
+    charA: { name: state.charA.name, id: state.charA.id, biography: state.charA.biography },
+    charB: { name: state.charB.name, id: state.charB.id, biography: state.charB.biography },
+    place: spark.place, era: spark.era,
+    scores: spark.scores, narrative: spark.narrative, imageUrl: spark.imageUrl,
+    convergence_score: state.apiConvergenceScore || spark.scores.total
+  };
+  trinitySparks.unshift(ts);
+  localStorage.setItem('trinity_sparks', JSON.stringify(trinitySparks.slice(0, 50)));
+
   const btn = document.getElementById('save-spark-btn');
   btn.textContent = '✓ Saved!';
   setTimeout(function() { btn.textContent = '✦ Save this Spark'; }, 2000);

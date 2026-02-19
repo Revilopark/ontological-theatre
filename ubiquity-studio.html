@@ -787,6 +787,24 @@
     <div class="channel-grid" id="group-nft"></div>
   </div>
 
+  <!-- Trinity World Seeds -->
+  <div class="content-map fade-in" id="trinity-seeds-panel" style="margin-bottom:24px;">
+    <h3>Trinity World <span class="accent">Seeds</span> <span id="trinity-api-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#555;margin-left:8px;vertical-align:middle;"></span></h3>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Live characters and sparks from your active Trinity World — ready to publish.</p>
+    <div id="trinity-seeds-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;">
+        <div style="font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:8px;">Characters Ready</div>
+        <div id="trinity-chars-count" style="font-size:2rem;font-weight:300;color:var(--accent);">—</div>
+        <div id="trinity-chars-list" style="font-size:.78rem;color:rgba(255,255,255,.55);margin-top:6px;line-height:1.7;"></div>
+      </div>
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;">
+        <div style="font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:8px;">Sparks to Publish</div>
+        <div id="trinity-sparks-count" style="font-size:2rem;font-weight:300;color:#FFB86B;">—</div>
+        <div id="trinity-sparks-list" style="font-size:.78rem;color:rgba(255,255,255,.55);margin-top:6px;line-height:1.7;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Content Mapping -->
   <div class="content-map fade-in">
     <h3>Content <span class="accent">Mapping</span></h3>
@@ -2374,11 +2392,51 @@ function updateChecklistProgress() {
   if (el) el.textContent = `${done} / ${total} complete`;
 }
 
+// ── Trinity Graph Seeds ────────────────────────────────────────
+const TRINITY_API = 'https://trinity-graph-api-328246068140.us-central1.run.app';
+
+async function loadTrinitySeeds() {
+  const dot = document.getElementById('trinity-api-dot');
+  try {
+    // Characters
+    const chars = JSON.parse(localStorage.getItem('trinity_characters') || '[]');
+    const charsCount = document.getElementById('trinity-chars-count');
+    const charsList = document.getElementById('trinity-chars-list');
+    if (charsCount) charsCount.textContent = chars.length || '0';
+    if (charsList) charsList.innerHTML = chars.slice(0,5).map(c => `<span style="display:inline-block;background:rgba(255,255,255,.07);border-radius:4px;padding:2px 7px;margin:2px 2px 2px 0;">${c.name}</span>`).join('') + (chars.length > 5 ? `<span style="opacity:.5"> +${chars.length-5} more</span>` : '');
+
+    // Sparks
+    const sparks = JSON.parse(localStorage.getItem('trinity_sparks') || '[]');
+    const sparksCount = document.getElementById('trinity-sparks-count');
+    const sparksList = document.getElementById('trinity-sparks-list');
+    if (sparksCount) sparksCount.textContent = sparks.length || '0';
+    if (sparksList && sparks.length) sparksList.innerHTML = sparks.slice(0,4).map(s => `<div style="margin-bottom:3px;">⚡ ${s.charA?.name || '?'} × ${s.charB?.name || '?'}</div>`).join('');
+
+    // Check API health
+    const r = await fetch(TRINITY_API + '/health', { signal: AbortSignal.timeout(3000) });
+    if (r.ok && dot) { dot.style.background = '#4ade80'; dot.title = 'Trinity API Live'; }
+    // If API online, also load from API
+    if (r.ok) {
+      const worldId = localStorage.getItem('trinity_active_world_id');
+      const url = worldId ? `${TRINITY_API}/characters?world_id=${worldId}` : `${TRINITY_API}/characters`;
+      const apiRes = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (apiRes.ok) {
+        const apiChars = await apiRes.json();
+        if (Array.isArray(apiChars) && apiChars.length > 0) {
+          if (charsCount) charsCount.textContent = apiChars.length;
+          if (charsList) charsList.innerHTML = apiChars.slice(0,5).map(c => `<span style="display:inline-block;background:rgba(255,255,255,.07);border-radius:4px;padding:2px 7px;margin:2px 2px 2px 0;">${c.name}</span>`).join('') + (apiChars.length > 5 ? `<span style="opacity:.5"> +${apiChars.length-5} more</span>` : '');
+        }
+      }
+    }
+  } catch(e) { if (dot) { dot.style.background = '#555'; dot.title = 'Trinity API Offline'; } }
+}
+
 // ── Init ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   // Render all channel groups
   Object.keys(CHANNELS).forEach(k => renderChannelGroup(k, CHANNELS[k]));
   saveChannels();
+  loadTrinitySeeds();
 
   // Load persisted state
   loadRevenueState();
