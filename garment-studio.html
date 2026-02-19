@@ -5378,14 +5378,20 @@ function SourcingPanel() {
 // MAIN APP
 // ─────────────────────────────────────────────
 function App() {
-  const [activeTab, setActiveTab]       = useState("explore");
+  const [activeTab, setActiveTab]       = useState("gallery");
   const [selectedFabric, setSelectedFabric] = useState(null);
   const [selectedGarment, setSelectedGarment] = useState(null);
   const [selectedSeam, setSelectedSeam] = useState(null);
   // Verneccia Way shared state
-  const [garments, setGarments] = useState([]);
+  const [garments, setGarments] = useState(() => initGarments());
+  const [openGarmentId, setOpenGarmentId] = useState(null);
   const [dreams,   setDreams]   = useState([]);
   const [slopers,  setSlopers]  = useState([]);
+
+  // Persist garments to localStorage on change
+  useEffect(() => {
+    try { localStorage.setItem(VE_GARMENTS_KEY, JSON.stringify(garments)); } catch(e) {}
+  }, [garments]);
 
   // Expose setters for cross-panel access (Generate panel quick-select)
   useEffect(() => {
@@ -5449,34 +5455,49 @@ function App() {
           )}
         </div>
 
-        {/* Tab Nav */}
-        <nav className="inkwell-tabs">
-          {TABS.map(tab => (
-            <button key={tab.id}
-              className={`inkwell-tab ${activeTab===tab.id?"active":""}`}
-              onClick={()=>setActiveTab(tab.id)}>
-              {tab.label}
+        {/* Tab Nav — only show when inside a garment */}
+        {openGarmentId && (
+          <nav className="inkwell-tabs">
+            <button className="inkwell-tab" style={{color:'var(--gold)',borderColor:'var(--gold-dim)'}}
+              onClick={()=>{ setOpenGarmentId(null); setActiveTab('gallery'); }}>
+              ← All Garments
             </button>
-          ))}
-        </nav>
+            {TABS.filter(t=>t.id!=='gallery').map(tab => (
+              <button key={tab.id}
+                className={`inkwell-tab ${activeTab===tab.id?"active":""}`}
+                onClick={()=>setActiveTab(tab.id)}>
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        )}
       </header>
 
       {/* Panel Content */}
       <main>
-        {activeTab==="explore"    && <FabricExplorer selectedFabric={selectedFabric} onSelectFabric={handleFabricSelect}/>}
-        {activeTab==="techpack"   && <TechPackBuilder selectedFabric={selectedFabric} onSelectFabric={handleFabricSelect}
+        {/* GALLERY HOME — shown when no garment is open */}
+        {!openGarmentId && (
+          <GalleryView
+            garments={garments}
+            onOpenGarment={(id)=>{ setOpenGarmentId(id); setActiveTab('pipeline'); }}
+            onNewGarment={(g)=>{ const ng = makeFreshGarment(g); setGarments(prev=>[ng,...prev]); setOpenGarmentId(ng.id); setActiveTab('pipeline'); }}
+          />
+        )}
+        {/* STUDIO — shown when a garment is open */}
+        {openGarmentId && activeTab==="explore"    && <FabricExplorer selectedFabric={selectedFabric} onSelectFabric={handleFabricSelect}/>}
+        {openGarmentId && activeTab==="techpack"   && <TechPackBuilder selectedFabric={selectedFabric} onSelectFabric={handleFabricSelect}
             selectedGarment={selectedGarment} onSelectGarment={setSelectedGarment}
             selectedSeam={selectedSeam} onSelectSeam={setSelectedSeam}/>}
-        {activeTab==="drape"      && <DrapeSimulatorPanel selectedFabric={selectedFabric} onSelectFabric={handleFabricSelect}/>}
-        {activeTab==="trinity"    && <TrinityAnalysisPanel selectedFabric={selectedFabric}/>}
-        {activeTab==="generate"   && <GeneratePanel selectedFabric={selectedFabric} selectedGarment={selectedGarment} selectedSeam={selectedSeam}/>}
-        {activeTab==="export"     && <ExportPanel selectedFabric={selectedFabric} selectedGarment={selectedGarment} selectedSeam={selectedSeam}/>}
-        {activeTab==="pipeline"   && <PipelinePanel   garments={garments}  onGarmentsChange={setGarments}/>}
-        {activeTab==="dreams"     && <DreamJournalPanel dreams={dreams}    onDreamsChange={setDreams}/>}
-        {activeTab==="slopers"    && <SlopersPanel slopers={slopers}       onSlopersChange={setSlopers}/>}
-        {activeTab==="muslin"     && <MuslinLogPanel   garments={garments} onGarmentsChange={setGarments}/>}
-        {activeTab==="selffabric" && <SelfFabricPanel  garments={garments} onGarmentsChange={setGarments}/>}
-        {activeTab==="sourcing"   && <SourcingPanel/>}
+        {openGarmentId && activeTab==="drape"      && <DrapeSimulatorPanel selectedFabric={selectedFabric} onSelectFabric={handleFabricSelect}/>}
+        {openGarmentId && activeTab==="trinity"    && <TrinityAnalysisPanel selectedFabric={selectedFabric}/>}
+        {openGarmentId && activeTab==="generate"   && <GeneratePanel selectedFabric={selectedFabric} selectedGarment={selectedGarment} selectedSeam={selectedSeam}/>}
+        {openGarmentId && activeTab==="export"     && <ExportPanel selectedFabric={selectedFabric} selectedGarment={selectedGarment} selectedSeam={selectedSeam}/>}
+        {openGarmentId && activeTab==="pipeline"   && <PipelinePanel   garments={garments} onGarmentsChange={setGarments} selGarment={openGarmentId}/>}
+        {openGarmentId && activeTab==="dreams"     && <DreamJournalPanel dreams={dreams}    onDreamsChange={setDreams}/>}
+        {openGarmentId && activeTab==="slopers"    && <SlopersPanel slopers={slopers}       onSlopersChange={setSlopers}/>}
+        {openGarmentId && activeTab==="muslin"     && <MuslinLogPanel   garments={garments} onGarmentsChange={setGarments} selGarment={openGarmentId}/>}
+        {openGarmentId && activeTab==="selffabric" && <SelfFabricPanel  garments={garments} onGarmentsChange={setGarments} selGarment={openGarmentId}/>}
+        {openGarmentId && activeTab==="sourcing"   && <SourcingPanel/>}
       </main>
     </div>
   );
