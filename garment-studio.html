@@ -2850,8 +2850,9 @@ const BODY_PARTS = ["Bodice Front","Bodice Back","Sleeve","Collar","Skirt Front"
 // ─────────────────────────────────────────────
 // PANEL: Pipeline
 // ─────────────────────────────────────────────
-function PipelinePanel({ garments, onGarmentsChange }) {
-  const [selGarment, setSelGarment] = useState(() => garments.length > 0 ? garments[0].id : null);
+function PipelinePanel({ garments, onGarmentsChange, initialGarmentId }) {
+  const [selGarment, setSelGarment] = useState(() => initialGarmentId || (garments.length > 0 ? garments[0].id : null));
+  useEffect(() => { if (initialGarmentId) setSelGarment(initialGarmentId); }, [initialGarmentId]);
   const [showNew, setShowNew] = useState(false);
   const [newName, setNewName] = useState("");
   const [activeStage, setActiveStage] = useState(null);
@@ -3792,7 +3793,7 @@ function App() {
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"16px"}}>
               {garments.map(g => (
-                <div key={g.id} onClick={()=>setActiveTab('pipeline')} style={{cursor:"pointer",background:"var(--glass)",border:"1px solid var(--border)",borderRadius:"var(--radius)",overflow:"hidden",transition:"all 0.2s",backdropFilter:"blur(12px)"}}
+                <div key={g.id} onClick={()=>{ setSelectedGarment(g.id); setActiveTab('pipeline'); }} style={{cursor:"pointer",background:"var(--glass)",border:"1px solid var(--border)",borderRadius:"var(--radius)",overflow:"hidden",transition:"all 0.2s",backdropFilter:"blur(12px)"}}
                   onMouseEnter={e=>e.currentTarget.style.borderColor="var(--gold)"}
                   onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"}>
                   <div style={{height:"180px",background:g.renderUrl?"transparent":"linear-gradient(135deg,rgba(139,92,246,0.15),rgba(184,147,58,0.1))",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
@@ -3819,7 +3820,7 @@ function App() {
         {activeTab==="trinity"    && <TrinityAnalysisPanel selectedFabric={selectedFabric}/>}
         {activeTab==="generate"   && <GeneratePanel selectedFabric={selectedFabric} selectedGarment={selectedGarment} selectedSeam={selectedSeam}/>}
         {activeTab==="export"     && <ExportPanel selectedFabric={selectedFabric} selectedGarment={selectedGarment} selectedSeam={selectedSeam}/>}
-        {activeTab==="pipeline"   && <PipelinePanel   garments={garments}  onGarmentsChange={setGarments}/>}
+        {activeTab==="pipeline"   && <PipelinePanel   garments={garments}  onGarmentsChange={setGarments} initialGarmentId={selectedGarment}/>}
         {activeTab==="dreams"     && <DreamJournalPanel dreams={dreams}    onDreamsChange={setDreams}/>}
         {activeTab==="slopers"    && <SlopersPanel slopers={slopers}       onSlopersChange={setSlopers}/>}
         {activeTab==="muslin"     && <MuslinLogPanel   garments={garments} onGarmentsChange={setGarments}/>}
