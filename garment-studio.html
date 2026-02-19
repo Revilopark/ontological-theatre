@@ -2851,7 +2851,7 @@ const BODY_PARTS = ["Bodice Front","Bodice Back","Sleeve","Collar","Skirt Front"
 // PANEL: Pipeline
 // ─────────────────────────────────────────────
 function PipelinePanel({ garments, onGarmentsChange }) {
-  const [selGarment, setSelGarment] = useState(null);
+  const [selGarment, setSelGarment] = useState(() => garments.length > 0 ? garments[0].id : null);
   const [showNew, setShowNew] = useState(false);
   const [newName, setNewName] = useState("");
   const [activeStage, setActiveStage] = useState(null);
@@ -3683,7 +3683,20 @@ function App() {
   const [selectedGarment, setSelectedGarment] = useState(null);
   const [selectedSeam, setSelectedSeam] = useState(null);
   // Verneccia Way shared state
-  const [garments, setGarments] = useState([]);
+  const [garments, setGarments] = useState(() => {
+    const seed = [
+      { id:'xanadu', name:'Xanadu', collection:'Beaded Collection', type:'Cocktail Dress', stage:'Complete', fabric:'Silver seed beads on duchess satin', notes:'Seed bead convertible cocktail dress. Halter neck, gold zipper.', renderUrl:'', createdAt:'2024-01-01' },
+      { id:'luna', name:'Luna', collection:'Taffeta Collection', type:'Gown', stage:'Complete', fabric:'Silver taffeta', notes:'Taffeta convertible gown. Tiered ruffles, V-back.', renderUrl:'', createdAt:'2024-01-01' },
+      { id:'andreeana', name:'AnDreeAna', collection:'Beaded Collection', type:'Gown', stage:'Complete', fabric:'Crystal beads on duchess satin', notes:'Hand beaded convertible gown. Corset back with buttons and lacing.', renderUrl:'', createdAt:'2024-01-01' },
+      { id:'elle', name:'Elle', collection:'Beaded Collection', type:'Coat', stage:'Complete', fabric:'Metallic beaded fabric', notes:'Silver metallic beaded convertible coat. Kimono silhouette.', renderUrl:'', createdAt:'2024-01-01' },
+      { id:'organza-trench', name:'Organza Trench', collection:'Organza Collection', type:'Coat', stage:'Complete', fabric:'Silk organza', notes:'Sheer ivory organza double-breasted trench.', renderUrl:'', createdAt:'2024-01-01' },
+      { id:'merino-sheath', name:'Merino Sheath', collection:'Custom Commissions', type:'Dress', stage:'Complete', fabric:'Stretch Merino wool', notes:'Midi sheath, heavy shoulder pads, custom commission.', renderUrl:'', createdAt:'2024-01-01' },
+      { id:'power-gown-1', name:'Power Gown I', collection:'New Work 2026', type:'Gown', stage:'Dream', fabric:'Stretch Merino Summer Wool — warm greige', notes:'Geometric shoulder pads, long fitted sleeves, no puff, column silhouette, front slit.', renderUrl:'https://v3b.fal.media/files/b/0a8f0b20/OE09f7VwnPpeUnZmG0XAe_b11f609880a3484386b6eae7215cdbbc.jpg', createdAt:'2026-02-19' },
+      { id:'power-gown-2', name:'Power Gown II', collection:'New Work 2026', type:'Gown', stage:'Dream', fabric:'Stretch Merino Winter Weight — deep charcoal', notes:'Same pattern as Power Gown I. Heavier Merino in deep charcoal.', renderUrl:'https://v3b.fal.media/files/b/0a8f0b0c/eUT4JjR9wttDz22SE3lZS_3294ab84b4bb463fa665dea3e6768c30.jpg', createdAt:'2026-02-19' },
+      { id:'power-gown-3', name:'Power Gown III', collection:'New Work 2026', type:'Gown', stage:'Dream', fabric:'Matte black crepe — geometric wing shoulders', notes:'Black evening version. Massive flat geometric wing shoulder pads.', renderUrl:'https://v3b.fal.media/files/b/0a8f0b36/MyZCDu2rRB1Vn385_yHV3_c9f4817535864b9bb57e7ee87586f42a.jpg', createdAt:'2026-02-19' },
+    ];
+    return seed;
+  });
   const [dreams,   setDreams]   = useState([]);
   const [slopers,  setSlopers]  = useState([]);
 
@@ -3704,22 +3717,7 @@ function App() {
     if (f && f.compatibleSeams.length > 0) setSelectedSeam(f.compatibleSeams[0]);
   }, []);
 
-  // Seed known garments into pipeline on first load
-  useEffect(() => {
-    if (garments.length === 0) {
-      setGarments([
-        { id:'xanadu', name:'Xanadu', collection:'Beaded Collection', type:'Cocktail Dress', stage:'Complete', fabric:'Silver seed beads on duchess satin', notes:'Seed bead convertible cocktail dress. Halter neck, gold zipper.', renderUrl:'', createdAt:'2024-01-01' },
-        { id:'luna', name:'Luna', collection:'Taffeta Collection', type:'Gown', stage:'Complete', fabric:'Silver taffeta', notes:'Taffeta convertible gown. Tiered ruffles, V-back.', renderUrl:'', createdAt:'2024-01-01' },
-        { id:'andreeana', name:'AnDreeAna', collection:'Beaded Collection', type:'Gown', stage:'Complete', fabric:'Crystal beads on duchess satin', notes:'Hand beaded convertible gown. Corset back with buttons and lacing.', renderUrl:'', createdAt:'2024-01-01' },
-        { id:'elle', name:'Elle', collection:'Beaded Collection', type:'Coat', stage:'Complete', fabric:'Metallic beaded fabric', notes:'Silver metallic beaded convertible coat. Kimono silhouette.', renderUrl:'', createdAt:'2024-01-01' },
-        { id:'organza-trench', name:'Organza Trench', collection:'Organza Collection', type:'Coat', stage:'Complete', fabric:'Silk organza', notes:'Sheer ivory organza double-breasted trench.', renderUrl:'', createdAt:'2024-01-01' },
-        { id:'merino-sheath', name:'Merino Sheath', collection:'Custom Commissions', type:'Dress', stage:'Complete', fabric:'Stretch Merino wool', notes:'Midi sheath, heavy shoulder pads, custom commission.', renderUrl:'', createdAt:'2024-01-01' },
-        { id:'power-gown-1', name:'Power Gown I', collection:'New Work 2026', type:'Gown', stage:'Dream', fabric:'Stretch Merino Summer Wool — warm greige', notes:'Geometric shoulder pads, long fitted sleeves, no puff, column silhouette, front slit.', renderUrl:'https://v3b.fal.media/files/b/0a8f0b20/OE09f7VwnPpeUnZmG0XAe_b11f609880a3484386b6eae7215cdbbc.jpg', createdAt:'2026-02-19' },
-        { id:'power-gown-2', name:'Power Gown II', collection:'New Work 2026', type:'Gown', stage:'Dream', fabric:'Stretch Merino Winter Weight — deep charcoal', notes:'Same pattern as Power Gown I. Heavier Merino in deep charcoal.', renderUrl:'https://v3b.fal.media/files/b/0a8f0b0c/eUT4JjR9wttDz22SE3lZS_3294ab84b4bb463fa665dea3e6768c30.jpg', createdAt:'2026-02-19' },
-        { id:'power-gown-3', name:'Power Gown III', collection:'New Work 2026', type:'Gown', stage:'Dream', fabric:'Matte black crepe — geometric wing shoulders', notes:'Black evening version. Massive flat geometric wing shoulder pads.', renderUrl:'https://v3b.fal.media/files/b/0a8f0b36/MyZCDu2rRB1Vn385_yHV3_c9f4817535864b9bb57e7ee87586f42a.jpg', createdAt:'2026-02-19' },
-      ]);
-    }
-  }, []);
+  // (garments seeded directly in useState)
 
   const TABS = [
     { id:"gallery",  label:"✦ Collection" },
