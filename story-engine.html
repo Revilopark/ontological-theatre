@@ -972,7 +972,10 @@ async function genText(i, summaries) {
     });
     if (!r.ok) throw 0;
     const d = await r.json();
-    return d.candidates?.[0]?.content?.parts?.[0]?.text || d.text || fallbackScene(i);
+    let text = d.candidates?.[0]?.content?.parts?.[0]?.text || d.text || fallbackScene(i);
+    // Strip any accidental "Act N: Name (Ity)\n\n" headers from the start
+    text = text.replace(/^Act\s+\d+[:\s].+?\n+/i, '').trim();
+    return text;
   } catch(e){ return fallbackScene(i); }
 }
 
