@@ -2829,15 +2829,865 @@ function DrapeSimulator({ fabricId }) {
 }
 
 // ─────────────────────────────────────────────
+// VERNECCIA WAY — Pipeline Data
+// ─────────────────────────────────────────────
+const PIPELINE_STAGES = [
+  { id:"dream",           num:1,  icon:"🌙", name:"Dream",              desc:"Bedside sketch, raw inspiration captured at the moment of vision." },
+  { id:"illustration",    num:2,  icon:"✏️",  name:"Fashion Illustration",desc:"Whimsical, idealized rendering — the garment as it lives in the imagination." },
+  { id:"flat_sketch",     num:3,  icon:"📐", name:"Flat/Technical Sketch",desc:"Seams, stitches, ease, openings — the blueprint made precise." },
+  { id:"sloper_selection",num:4,  icon:"🧩", name:"Sloper Selection",    desc:"Foundational pattern blocks chosen for this silhouette." },
+  { id:"pattern_making",  num:5,  icon:"📄", name:"Pattern Making",      desc:"Trace sloper onto brown paper, add seam allowance, cut pieces." },
+  { id:"first_muslin",    num:6,  icon:"🪡", name:"First Muslin",        desc:"Cheap fabric prototype — try on, mark corrections without fear." },
+  { id:"second_muslin",   num:7,  icon:"🔄", name:"Second Muslin",       desc:"Corrected version — repeat until pattern is proven." },
+  { id:"cut_self",        num:8,  icon:"✂️",  name:"Cut the Self",        desc:"The real fabric, cut only when pattern is proven. Sacred threshold." },
+  { id:"construction",    num:9,  icon:"🧵", name:"Construction",        desc:"Every stitch intentional. Every seam considered. The careful assembly." },
+  { id:"final_fitting",   num:10, icon:"👁️",  name:"Final Fitting",       desc:"The garment meets its wearer. The last edit. The becoming." }
+];
+const STAGE_STATUS_LIST = ["Not Started","In Progress","Complete"];
+const MOOD_TAGS = ["Structured","Fluid","Dramatic","Minimal","Heritage","Avant-garde","Joyful","Powerful"];
+const BODY_PARTS = ["Bodice Front","Bodice Back","Sleeve","Collar","Skirt Front","Skirt Back","Trouser Front","Trouser Back","Waistband","Cuff","Pocket","Facing"];
+
+// ─────────────────────────────────────────────
+// PANEL: Pipeline
+// ─────────────────────────────────────────────
+function PipelinePanel({ garments, onGarmentsChange }) {
+  const [selGarment, setSelGarment] = useState(null);
+  const [showNew, setShowNew] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [activeStage, setActiveStage] = useState(null);
+
+  const garment = garments.find(g => g.id === selGarment);
+  const getStatus = (sid) => garment?.stages?.[sid]?.status || "Not Started";
+  const getNotes  = (sid) => garment?.stages?.[sid]?.notes  || "";
+
+  const addGarment = () => {
+    if (!newName.trim()) return;
+    const g = { id: Date.now().toString(), name: newName.trim(), createdAt: new Date().toISOString().slice(0,10), stages:{}, muslins:[], patternProven:false, selfFabric:null };
+    onGarmentsChange([...garments, g]);
+    setSelGarment(g.id); setShowNew(false); setNewName("");
+  };
+
+  const setStageStatus = (sid, status) => onGarmentsChange(garments.map(g =>
+    g.id !== selGarment ? g : { ...g, stages:{ ...g.stages, [sid]:{ ...g.stages[sid], status } } }
+  ));
+  const setStageNotes = (sid, notes) => onGarmentsChange(garments.map(g =>
+    g.id !== selGarment ? g : { ...g, stages:{ ...g.stages, [sid]:{ ...g.stages[sid], notes } } }
+  ));
+
+  const stCol = s => s==="Complete"?"#10b981":s==="In Progress"?"#f59e0b":"var(--text3)";
+  const stBg  = s => s==="Complete"?"rgba(16,185,129,0.1)":s==="In Progress"?"rgba(245,158,11,0.1)":"transparent";
+
+  const complete = garment ? PIPELINE_STAGES.filter(s => getStatus(s.id)==="Complete").length : 0;
+  const progress = garment ? complete/PIPELINE_STAGES.length : 0;
+
+  return (
+    <div className="panel fade-in">
+      <div className="panel-title">Verneccia Way — Production Pipeline</div>
+
+      {/* Garment selector row */}
+      <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"24px", flexWrap:"wrap" }}>
+        <span style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px" }}>GARMENT:</span>
+        {garments.map(g => (
+          <button key={g.id} onClick={() => setSelGarment(g.id)} style={{
+            padding:"6px 14px", fontSize:"10px", fontWeight:selGarment===g.id?"700":"400",
+            border:`1px solid ${selGarment===g.id?"var(--gold)":"var(--border)"}`,
+            background:selGarment===g.id?"rgba(139,92,246,0.12)":"var(--glass)",
+            color:selGarment===g.id?"var(--gold)":"var(--text2)",
+            borderRadius:"var(--radius-sm)", backdropFilter:"blur(12px)", cursor:"pointer"
+          }}>{g.name}</button>
+        ))}
+        {showNew ? (
+          <div style={{ display:"flex", gap:"6px" }}>
+            <input autoFocus value={newName} onChange={e=>setNewName(e.target.value)}
+              onKeyDown={e=>{ if(e.key==="Enter") addGarment(); if(e.key==="Escape") setShowNew(false); }}
+              placeholder="Garment name…"
+              style={{ padding:"6px 10px", fontSize:"10px", width:"160px", borderRadius:"var(--radius-sm)" }}/>
+            <button className="btn primary" onClick={addGarment} style={{ padding:"6px 12px", fontSize:"9px" }}>Add</button>
+            <button className="btn" onClick={()=>setShowNew(false)} style={{ padding:"6px 10px", fontSize:"9px" }}>✕</button>
+          </div>
+        ) : (
+          <button className="btn primary" onClick={()=>setShowNew(true)} style={{ padding:"6px 16px", fontSize:"9px" }}>+ New Garment</button>
+        )}
+      </div>
+
+      {!garment ? (
+        <div style={{ textAlign:"center", padding:"80px 0", color:"var(--text3)" }}>
+          <div style={{ fontSize:"48px", marginBottom:"16px", opacity:0.15 }}>🌙</div>
+          <div style={{ fontSize:"12px", letterSpacing:"3px", marginBottom:"8px" }}>BEGIN WITH A DREAM</div>
+          <div style={{ fontSize:"9px" }}>Create a new garment to start tracking its journey through the ten stages</div>
+        </div>
+      ) : (
+        <div>
+          {/* Progress */}
+          <div style={{ marginBottom:"24px" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", fontSize:"9px", color:"var(--text3)", marginBottom:"6px" }}>
+              <span style={{ letterSpacing:"2px" }}>PIPELINE PROGRESS — {garment.name.toUpperCase()}</span>
+              <span style={{ color:"var(--gold)", fontWeight:"700" }}>{complete}/{PIPELINE_STAGES.length} stages complete</span>
+            </div>
+            <div className="bar-track" style={{ height:"6px" }}>
+              <div className="bar-fill" style={{ width:`${progress*100}%`, background:"linear-gradient(90deg,#8B5CF6,#10b981)", transition:"width 0.5s ease" }}/>
+            </div>
+          </div>
+
+          {/* Stage grid */}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:"10px", marginBottom:"20px" }}>
+            {PIPELINE_STAGES.map(stage => {
+              const status = getStatus(stage.id);
+              const isAct = activeStage===stage.id;
+              return (
+                <button key={stage.id} onClick={()=>setActiveStage(isAct?null:stage.id)} style={{
+                  padding:"14px 10px", textAlign:"center",
+                  background:isAct?"rgba(139,92,246,0.15)":stBg(status),
+                  border:`1px solid ${isAct?"var(--gold)":status!=="Not Started"?stCol(status):"var(--border)"}`,
+                  borderRadius:"var(--radius)", backdropFilter:"blur(12px)", cursor:"pointer",
+                  transition:"all 0.2s ease",
+                  boxShadow:isAct?"0 4px 20px rgba(139,92,246,0.2)":"var(--shadow-sm)"
+                }}>
+                  <div style={{ fontSize:"22px", marginBottom:"6px" }}>{stage.icon}</div>
+                  <div style={{ fontSize:"8px", fontWeight:"700", letterSpacing:"1px", color:"var(--text)", marginBottom:"4px" }}>{stage.num}. {stage.name}</div>
+                  <div style={{ display:"inline-block", padding:"2px 7px", fontSize:"7px", letterSpacing:"0.5px",
+                    background:stBg(status), color:stCol(status), border:`1px solid ${stCol(status)}`, borderRadius:"20px" }}>
+                    {status}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Detail panel */}
+          {activeStage && (() => {
+            const stage = PIPELINE_STAGES.find(s=>s.id===activeStage);
+            const status = getStatus(activeStage);
+            const notes  = getNotes(activeStage);
+            return (
+              <div className="card fade-in" style={{ border:"1px solid rgba(139,92,246,0.3)" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"16px" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
+                    <div style={{ fontSize:"32px" }}>{stage.icon}</div>
+                    <div>
+                      <div style={{ fontSize:"14px", fontWeight:"700", color:"var(--text)", letterSpacing:"1px" }}>Stage {stage.num} — {stage.name}</div>
+                      <div style={{ fontSize:"10px", color:"var(--text3)", marginTop:"3px" }}>{stage.desc}</div>
+                    </div>
+                  </div>
+                  <div style={{ display:"flex", gap:"6px" }}>
+                    {STAGE_STATUS_LIST.map(s => (
+                      <button key={s} onClick={()=>setStageStatus(activeStage,s)} style={{
+                        padding:"6px 12px", fontSize:"8px", letterSpacing:"1px",
+                        border:`1px solid ${status===s?stCol(s):"var(--border)"}`,
+                        background:status===s?stBg(s):"transparent",
+                        color:status===s?stCol(s):"var(--text3)",
+                        borderRadius:"var(--radius-sm)", cursor:"pointer", fontWeight:status===s?"700":"400"
+                      }}>{s}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px", marginBottom:"6px" }}>STAGE NOTES</div>
+                  <textarea value={notes} onChange={e=>setStageNotes(activeStage,e.target.value)}
+                    placeholder={`Notes for ${stage.name}…`} rows={3}
+                    style={{ width:"100%", padding:"10px", fontSize:"10px", lineHeight:"1.6",
+                      border:"1px solid var(--border)", background:"var(--bg3)", color:"var(--text)",
+                      borderRadius:"var(--radius-sm)", resize:"vertical" }}/>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// PANEL: Dream Journal
+// ─────────────────────────────────────────────
+function DreamJournalPanel({ dreams, onDreamsChange }) {
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({ date:new Date().toISOString().slice(0,10), title:"", description:"", moods:[] });
+
+  const moodColor = m => ({"Structured":"#6366f1","Fluid":"#06b6d4","Dramatic":"#ec4899","Minimal":"#94a3b8","Heritage":"#d97706","Avant-garde":"#8b5cf6","Joyful":"#f59e0b","Powerful":"#ef4444"}[m]||"var(--text3)");
+
+  const toggleMood = mood => setForm(f => ({...f, moods: f.moods.includes(mood)?f.moods.filter(m=>m!==mood):[...f.moods,mood]}));
+
+  const saveDream = () => {
+    if (!form.title.trim()) return;
+    onDreamsChange([{ id:Date.now().toString(), ...form }, ...dreams]);
+    setForm({ date:new Date().toISOString().slice(0,10), title:"", description:"", moods:[] });
+    setShowModal(false);
+  };
+
+  return (
+    <div className="panel fade-in">
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"24px" }}>
+        <div className="panel-title" style={{ marginBottom:0 }}>Dream Journal — Inspiration Archive</div>
+        <button className="btn primary" onClick={()=>setShowModal(true)} style={{ padding:"8px 20px" }}>+ New Dream</button>
+      </div>
+
+      {dreams.length===0 ? (
+        <div style={{ textAlign:"center", padding:"80px 0", color:"var(--text3)" }}>
+          <div style={{ fontSize:"48px", marginBottom:"16px", opacity:0.15 }}>✨</div>
+          <div style={{ fontSize:"12px", letterSpacing:"3px", marginBottom:"8px" }}>THE JOURNAL AWAITS</div>
+          <div style={{ fontSize:"9px" }}>Capture the visions that arrive in the night</div>
+        </div>
+      ) : (
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:"16px" }}>
+          {dreams.map(dream => (
+            <div key={dream.id} className="card" style={{ position:"relative" }}>
+              <button onClick={()=>onDreamsChange(dreams.filter(d=>d.id!==dream.id))}
+                style={{ position:"absolute", top:"10px", right:"10px", background:"transparent", border:"none", color:"var(--text3)", fontSize:"12px", cursor:"pointer", padding:"2px 6px" }}>✕</button>
+              <div style={{ width:"100%", height:"100px", marginBottom:"12px",
+                background:"linear-gradient(135deg,rgba(139,92,246,0.1),rgba(59,130,246,0.08))",
+                border:"1px dashed var(--border)", borderRadius:"var(--radius-sm)",
+                display:"flex", alignItems:"center", justifyContent:"center", fontSize:"32px", opacity:0.6 }}>🌙</div>
+              <div style={{ fontSize:"8px", color:"var(--text3)", letterSpacing:"2px", marginBottom:"4px" }}>{dream.date}</div>
+              <div style={{ fontSize:"14px", fontWeight:"700", color:"var(--text)", marginBottom:"8px", letterSpacing:"0.5px" }}>{dream.title}</div>
+              {dream.description && (
+                <div style={{ fontSize:"10px", color:"var(--text2)", lineHeight:"1.7", marginBottom:"10px" }}>
+                  {dream.description.length>120?dream.description.slice(0,120)+"…":dream.description}
+                </div>
+              )}
+              <div style={{ display:"flex", flexWrap:"wrap", gap:"4px" }}>
+                {dream.moods.map(mood => (
+                  <span key={mood} style={{ padding:"2px 8px", fontSize:"8px", letterSpacing:"0.5px",
+                    border:`1px solid ${moodColor(mood)}`, color:moodColor(mood),
+                    borderRadius:"20px", background:`${moodColor(mood)}18` }}>{mood}</span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showModal && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", backdropFilter:"blur(8px)",
+          display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000 }}>
+          <div style={{ background:"rgba(255,255,255,0.97)", borderRadius:"var(--radius)", padding:"28px",
+            width:"540px", maxWidth:"95vw", boxShadow:"0 20px 60px rgba(100,60,180,0.3)", border:"1px solid var(--glass-border)" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"20px" }}>
+              <div style={{ fontSize:"14px", fontWeight:"700", letterSpacing:"2px", color:"var(--text)" }}>NEW DREAM ENTRY</div>
+              <button onClick={()=>setShowModal(false)} style={{ background:"transparent", border:"none", fontSize:"18px", cursor:"pointer", color:"var(--text3)" }}>✕</button>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px", marginBottom:"12px" }}>
+              <div>
+                <label style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px", display:"block", marginBottom:"4px" }}>DATE</label>
+                <input type="date" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))}
+                  style={{ width:"100%", padding:"8px 10px", fontSize:"10px", borderRadius:"var(--radius-sm)" }}/>
+              </div>
+              <div>
+                <label style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px", display:"block", marginBottom:"4px" }}>TITLE</label>
+                <input type="text" value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))}
+                  placeholder="Name this dream…"
+                  style={{ width:"100%", padding:"8px 10px", fontSize:"10px", borderRadius:"var(--radius-sm)" }}/>
+              </div>
+            </div>
+            <div style={{ marginBottom:"12px" }}>
+              <label style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px", display:"block", marginBottom:"4px" }}>DESCRIPTION</label>
+              <textarea value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))}
+                placeholder="Describe the vision — the silhouette, the feeling, the moment of knowing…"
+                rows={4} style={{ width:"100%", padding:"10px", fontSize:"10px", lineHeight:"1.7", borderRadius:"var(--radius-sm)", resize:"vertical" }}/>
+            </div>
+            <div style={{ marginBottom:"12px" }}>
+              <label style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px", display:"block", marginBottom:"4px" }}>REFERENCE IMAGE</label>
+              <div style={{ border:"1px dashed var(--border)", borderRadius:"var(--radius-sm)", padding:"18px",
+                textAlign:"center", color:"var(--text3)", fontSize:"9px", letterSpacing:"1px",
+                cursor:"pointer", background:"var(--bg3)" }}>
+                📎 DRAG IMAGE OR CLICK TO UPLOAD
+                <div style={{ fontSize:"8px", marginTop:"3px" }}>Sketch, reference, or inspiration</div>
+              </div>
+            </div>
+            <div style={{ marginBottom:"20px" }}>
+              <label style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px", display:"block", marginBottom:"8px" }}>MOOD TAGS</label>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:"6px" }}>
+                {MOOD_TAGS.map(mood => (
+                  <button key={mood} onClick={()=>toggleMood(mood)} style={{
+                    padding:"5px 12px", fontSize:"9px", cursor:"pointer",
+                    border:`1px solid ${form.moods.includes(mood)?moodColor(mood):"var(--border)"}`,
+                    background:form.moods.includes(mood)?`${moodColor(mood)}20`:"transparent",
+                    color:form.moods.includes(mood)?moodColor(mood):"var(--text3)",
+                    borderRadius:"20px", fontWeight:form.moods.includes(mood)?"700":"400"
+                  }}>{mood}</button>
+                ))}
+              </div>
+            </div>
+            <div style={{ display:"flex", justifyContent:"flex-end", gap:"8px" }}>
+              <button className="btn" onClick={()=>setShowModal(false)}>Cancel</button>
+              <button className="btn primary" onClick={saveDream}>Save Dream</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// PANEL: Slopers
+// ─────────────────────────────────────────────
+function MannequinDiagram({ bodyPart }) {
+  const regions = {
+    "Bodice Front":  {x:35,y:16,w:30,h:32},
+    "Bodice Back":   {x:35,y:16,w:30,h:32},
+    "Sleeve":        {x:5, y:16,w:28,h:36},
+    "Collar":        {x:40,y:2, w:20,h:14},
+    "Skirt Front":   {x:33,y:48,w:34,h:46},
+    "Skirt Back":    {x:33,y:48,w:34,h:46},
+    "Trouser Front": {x:33,y:48,w:16,h:52},
+    "Trouser Back":  {x:50,y:48,w:17,h:52},
+    "Waistband":     {x:25,y:46,w:50,h:5},
+    "Cuff":          {x:5, y:50,w:28,h:7},
+    "Pocket":        {x:52,y:55,w:14,h:18},
+    "Facing":        {x:33,y:10,w:34,h:18}
+  };
+  const r = regions[bodyPart];
+  return (
+    <svg viewBox="0 0 100 105" style={{ width:"100%", maxWidth:"72px" }}>
+      <ellipse cx="50" cy="8" rx="10" ry="8" fill="none" stroke="var(--text3)" strokeWidth="1.5" opacity="0.5"/>
+      <rect x="35" y="16" width="30" height="32" rx="3" fill="none" stroke="var(--text3)" strokeWidth="1.5" opacity="0.5"/>
+      <rect x="5"  y="16" width="28" height="36" rx="3" fill="none" stroke="var(--text3)" strokeWidth="1.5" opacity="0.5"/>
+      <rect x="67" y="16" width="28" height="36" rx="3" fill="none" stroke="var(--text3)" strokeWidth="1.5" opacity="0.5"/>
+      <rect x="33" y="48" width="17" height="52" rx="3" fill="none" stroke="var(--text3)" strokeWidth="1.5" opacity="0.5"/>
+      <rect x="50" y="48" width="17" height="52" rx="3" fill="none" stroke="var(--text3)" strokeWidth="1.5" opacity="0.5"/>
+      {r && <rect x={r.x} y={r.y} width={r.w} height={r.h} rx="2" fill="rgba(139,92,246,0.25)" stroke="#8b5cf6" strokeWidth="1.5"/>}
+    </svg>
+  );
+}
+
+function SlopersPanel({ slopers, onSlopersChange }) {
+  const [search, setSearch]       = useState("");
+  const [filterPart, setFilter]   = useState("All");
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({ name:"", bodyPart:"Bodice Front", measurements:"", notes:"", date:new Date().toISOString().slice(0,10) });
+
+  const filtered = slopers.filter(s => {
+    const q = search.toLowerCase();
+    const ms = !search || s.name.toLowerCase().includes(q) || s.notes.toLowerCase().includes(q);
+    const mp = filterPart==="All" || s.bodyPart===filterPart;
+    return ms && mp;
+  });
+
+  const saveSloper = () => {
+    if (!form.name.trim()) return;
+    onSlopersChange([{ id:Date.now().toString(), ...form }, ...slopers]);
+    setForm({ name:"", bodyPart:"Bodice Front", measurements:"", notes:"", date:new Date().toISOString().slice(0,10) });
+    setShowModal(false);
+  };
+
+  return (
+    <div className="panel fade-in">
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"16px" }}>
+        <div className="panel-title" style={{ marginBottom:0 }}>Sloper Library</div>
+        <button className="btn primary" onClick={()=>setShowModal(true)}>+ New Sloper</button>
+      </div>
+
+      {/* Filters */}
+      <div style={{ display:"flex", gap:"10px", marginBottom:"16px", flexWrap:"wrap", alignItems:"center" }}>
+        <input type="text" placeholder="Search slopers…" value={search} onChange={e=>setSearch(e.target.value)}
+          style={{ padding:"7px 10px", fontSize:"9px", letterSpacing:"1px", width:"180px", borderRadius:"var(--radius-sm)" }}/>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:"4px" }}>
+          {["All",...BODY_PARTS].map(p => (
+            <button key={p} className={`filter-btn ${filterPart===p?"active":""}`}
+              onClick={()=>setFilter(p)} style={{ borderRadius:"20px", padding:"4px 10px" }}>{p}</button>
+          ))}
+        </div>
+      </div>
+
+      {filtered.length===0 ? (
+        <div style={{ textAlign:"center", padding:"60px 0", color:"var(--text3)" }}>
+          <div style={{ fontSize:"40px", marginBottom:"12px", opacity:0.15 }}>🧩</div>
+          <div style={{ fontSize:"11px", letterSpacing:"3px" }}>NO SLOPERS YET</div>
+          <div style={{ fontSize:"9px", marginTop:"6px" }}>Your foundational pattern blocks will live here</div>
+        </div>
+      ) : (
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(250px,1fr))", gap:"12px" }}>
+          {filtered.map(sloper => (
+            <div key={sloper.id} className="card" style={{ position:"relative" }}>
+              <button onClick={()=>onSlopersChange(slopers.filter(s=>s.id!==sloper.id))}
+                style={{ position:"absolute", top:"10px", right:"10px", background:"transparent", border:"none", color:"var(--text3)", cursor:"pointer", fontSize:"12px" }}>✕</button>
+              <div style={{ display:"flex", gap:"12px", alignItems:"flex-start" }}>
+                <div style={{ flexShrink:0 }}><MannequinDiagram bodyPart={sloper.bodyPart}/></div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:"8px", color:"var(--gold)", letterSpacing:"2px", marginBottom:"3px" }}>{sloper.bodyPart.toUpperCase()}</div>
+                  <div style={{ fontSize:"13px", fontWeight:"700", color:"var(--text)", marginBottom:"4px" }}>{sloper.name}</div>
+                  <div style={{ fontSize:"8px", color:"var(--text3)", marginBottom:"6px" }}>{sloper.date}</div>
+                  {sloper.measurements && (
+                    <div style={{ fontSize:"9px", color:"var(--text2)", lineHeight:"1.6", marginBottom:"6px" }}>📏 {sloper.measurements}</div>
+                  )}
+                  {sloper.notes && (
+                    <div style={{ fontSize:"9px", color:"var(--text3)", lineHeight:"1.5", fontStyle:"italic" }}>
+                      {sloper.notes.length>80?sloper.notes.slice(0,80)+"…":sloper.notes}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showModal && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", backdropFilter:"blur(8px)",
+          display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000 }}>
+          <div style={{ background:"rgba(255,255,255,0.97)", borderRadius:"var(--radius)", padding:"28px",
+            width:"500px", maxWidth:"95vw", boxShadow:"0 20px 60px rgba(100,60,180,0.3)", border:"1px solid var(--glass-border)" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"20px" }}>
+              <div style={{ fontSize:"14px", fontWeight:"700", letterSpacing:"2px", color:"var(--text)" }}>NEW SLOPER</div>
+              <button onClick={()=>setShowModal(false)} style={{ background:"transparent", border:"none", fontSize:"18px", cursor:"pointer", color:"var(--text3)" }}>✕</button>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px", marginBottom:"12px" }}>
+              <div>
+                <label style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px", display:"block", marginBottom:"4px" }}>SLOPER NAME</label>
+                <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}
+                  placeholder="e.g. Verneccia Blazer Block"
+                  style={{ width:"100%", padding:"8px 10px", fontSize:"10px", borderRadius:"var(--radius-sm)" }}/>
+              </div>
+              <div>
+                <label style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px", display:"block", marginBottom:"4px" }}>DATE CREATED</label>
+                <input type="date" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))}
+                  style={{ width:"100%", padding:"8px 10px", fontSize:"10px", borderRadius:"var(--radius-sm)" }}/>
+              </div>
+            </div>
+            <div style={{ marginBottom:"12px" }}>
+              <label style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px", display:"block", marginBottom:"4px" }}>BODY PART</label>
+              <select value={form.bodyPart} onChange={e=>setForm(f=>({...f,bodyPart:e.target.value}))}
+                style={{ width:"100%", padding:"8px 10px", fontSize:"10px", borderRadius:"var(--radius-sm)" }}>
+                {BODY_PARTS.map(p=><option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+            <div style={{ marginBottom:"12px" }}>
+              <label style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px", display:"block", marginBottom:"4px" }}>MEASUREMENTS</label>
+              <input value={form.measurements} onChange={e=>setForm(f=>({...f,measurements:e.target.value}))}
+                placeholder="e.g. Bust 96cm, Waist 78cm, Length 65cm"
+                style={{ width:"100%", padding:"8px 10px", fontSize:"10px", borderRadius:"var(--radius-sm)" }}/>
+            </div>
+            <div style={{ marginBottom:"20px" }}>
+              <label style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px", display:"block", marginBottom:"4px" }}>NOTES</label>
+              <textarea value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))}
+                placeholder="Ease allowances, fitting adjustments, special notes…" rows={3}
+                style={{ width:"100%", padding:"8px 10px", fontSize:"10px", lineHeight:"1.6", borderRadius:"var(--radius-sm)", resize:"vertical" }}/>
+            </div>
+            <div style={{ display:"flex", justifyContent:"flex-end", gap:"8px" }}>
+              <button className="btn" onClick={()=>setShowModal(false)}>Cancel</button>
+              <button className="btn primary" onClick={saveSloper}>Save Sloper</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// PANEL: Muslin Log
+// ─────────────────────────────────────────────
+function MuslinLogPanel({ garments, onGarmentsChange }) {
+  const [selGarment, setSelGarment] = useState(null);
+  const [showModal, setShowModal]   = useState(false);
+  const [form, setForm] = useState({ date:new Date().toISOString().slice(0,10), notes:"", status:"In Progress" });
+
+  const garment  = garments.find(g=>g.id===selGarment);
+  const muslins  = garment?.muslins || [];
+  const isProven = garment?.patternProven || false;
+
+  const stCol = s => s==="Approved"?"#10b981":s==="In Progress"?"#f59e0b":s==="Discarded"?"#ef4444":"var(--text3)";
+
+  const addMuslin = () => {
+    if (!selGarment) return;
+    const entry = { id:Date.now().toString(), version:muslins.length+1, ...form };
+    onGarmentsChange(garments.map(g=>g.id===selGarment?{...g,muslins:[...(g.muslins||[]),entry]}:g));
+    setForm({ date:new Date().toISOString().slice(0,10), notes:"", status:"In Progress" });
+    setShowModal(false);
+  };
+
+  const updateMuslinStatus = (mid, status) => onGarmentsChange(garments.map(g=> {
+    if(g.id!==selGarment) return g;
+    return {...g, muslins:(g.muslins||[]).map(m=>m.id===mid?{...m,status}:m)};
+  }));
+
+  const markProven   = () => onGarmentsChange(garments.map(g=>g.id===selGarment?{...g,patternProven:true}:g));
+  const unmarkProven = () => onGarmentsChange(garments.map(g=>g.id===selGarment?{...g,patternProven:false}:g));
+
+  const approvedCount = muslins.filter(m=>m.status==="Approved").length;
+
+  return (
+    <div className="panel fade-in">
+      <div className="panel-title">Muslin Log — Prototype Iterations</div>
+
+      {/* Garment selector */}
+      <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"20px", flexWrap:"wrap" }}>
+        <span style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px" }}>GARMENT:</span>
+        {garments.length===0 ? (
+          <span style={{ fontSize:"10px", color:"var(--text3)", fontStyle:"italic" }}>No garments — create one in Pipeline tab</span>
+        ) : garments.map(g=>(
+          <button key={g.id} onClick={()=>setSelGarment(g.id)} style={{
+            padding:"6px 14px", fontSize:"10px",
+            border:`1px solid ${selGarment===g.id?"var(--gold)":"var(--border)"}`,
+            background:selGarment===g.id?"rgba(139,92,246,0.12)":"var(--glass)",
+            color:selGarment===g.id?"var(--gold)":"var(--text2)",
+            borderRadius:"var(--radius-sm)", cursor:"pointer", fontWeight:selGarment===g.id?"700":"400"
+          }}>
+            {g.name}
+            {g.patternProven && <span style={{ marginLeft:"5px", color:"#10b981", fontSize:"8px" }}>✓</span>}
+          </button>
+        ))}
+      </div>
+
+      {!garment ? (
+        <div style={{ textAlign:"center", padding:"80px 0", color:"var(--text3)" }}>
+          <div style={{ fontSize:"40px", marginBottom:"12px", opacity:0.15 }}>🪡</div>
+          <div style={{ fontSize:"11px", letterSpacing:"3px" }}>SELECT A GARMENT</div>
+        </div>
+      ) : (
+        <div>
+          {/* Warning / success banner */}
+          {!isProven ? (
+            <div style={{ padding:"14px 18px", marginBottom:"20px", background:"rgba(245,158,11,0.08)",
+              border:"1px solid rgba(245,158,11,0.4)", borderRadius:"var(--radius-sm)", display:"flex", alignItems:"center", gap:"10px" }}>
+              <span style={{ fontSize:"18px" }}>⚠️</span>
+              <div>
+                <div style={{ fontSize:"11px", fontWeight:"700", color:"#f59e0b", letterSpacing:"1px" }}>PATTERN NOT YET PROVEN — DO NOT CUT THE SELF</div>
+                <div style={{ fontSize:"9px", color:"#d97706", marginTop:"2px" }}>Mark pattern proven only when the muslin fits with confidence and all corrections are resolved</div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ padding:"14px 18px", marginBottom:"20px", background:"rgba(16,185,129,0.08)",
+              border:"1px solid rgba(16,185,129,0.4)", borderRadius:"var(--radius-sm)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
+                <span style={{ fontSize:"18px" }}>✅</span>
+                <div>
+                  <div style={{ fontSize:"11px", fontWeight:"700", color:"#10b981", letterSpacing:"1px" }}>PATTERN PROVEN — SELF FABRIC UNLOCKED</div>
+                  <div style={{ fontSize:"9px", color:"#059669", marginTop:"2px" }}>Ready to cut the real fabric</div>
+                </div>
+              </div>
+              <button className="btn" onClick={unmarkProven} style={{ fontSize:"8px", padding:"5px 10px", color:"var(--text3)" }}>Revert</button>
+            </div>
+          )}
+
+          {/* Stats row */}
+          <div style={{ display:"flex", gap:"10px", marginBottom:"20px", flexWrap:"wrap" }}>
+            <div className="stat-box"><div className="stat-label">Total Muslins</div><div className="stat-value">{muslins.length}</div></div>
+            <div className="stat-box"><div className="stat-label">Approved</div><div className="stat-value" style={{ color:"#10b981" }}>{approvedCount}</div></div>
+            <div className="stat-box">
+              <div className="stat-label">Pattern Status</div>
+              <div className="stat-value" style={{ fontSize:"11px", color:isProven?"#10b981":"#f59e0b" }}>{isProven?"PROVEN":"IN PROGRESS"}</div>
+            </div>
+            {!isProven && muslins.length>0 && (
+              <button className="btn primary" onClick={markProven} style={{ alignSelf:"stretch", padding:"0 20px", fontSize:"9px" }}>✓ Mark Pattern Proven</button>
+            )}
+            <button className="btn" onClick={()=>setShowModal(true)} style={{ marginLeft:"auto", alignSelf:"stretch", padding:"0 16px", fontSize:"9px" }}>+ Log Muslin</button>
+          </div>
+
+          {muslins.length===0 ? (
+            <div style={{ textAlign:"center", padding:"40px", color:"var(--text3)", border:"1px dashed var(--border)", borderRadius:"var(--radius)" }}>
+              <div style={{ fontSize:"9px", letterSpacing:"2px" }}>NO MUSLINS LOGGED YET</div>
+              <div style={{ fontSize:"9px", marginTop:"6px" }}>The first muslin begins the conversation between pattern and body</div>
+            </div>
+          ) : (
+            <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
+              {[...muslins].reverse().map(m=>(
+                <div key={m.id} className="card" style={{ borderLeft:`3px solid ${stCol(m.status)}` }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
+                      <div style={{ width:"36px", height:"36px", borderRadius:"50%",
+                        background:`${stCol(m.status)}18`, border:`2px solid ${stCol(m.status)}`,
+                        display:"flex", alignItems:"center", justifyContent:"center",
+                        fontSize:"12px", fontWeight:"700", color:stCol(m.status), flexShrink:0 }}>{m.version}</div>
+                      <div>
+                        <div style={{ fontSize:"12px", fontWeight:"700", color:"var(--text)" }}>Muslin {m.version}</div>
+                        <div style={{ fontSize:"9px", color:"var(--text3)" }}>{m.date}</div>
+                      </div>
+                    </div>
+                    <div style={{ display:"flex", gap:"5px" }}>
+                      {["In Progress","Approved","Discarded"].map(s=>(
+                        <button key={s} onClick={()=>updateMuslinStatus(m.id,s)} style={{
+                          padding:"4px 10px", fontSize:"7px", letterSpacing:"0.5px", cursor:"pointer",
+                          border:`1px solid ${m.status===s?stCol(s):"var(--border)"}`,
+                          background:m.status===s?`${stCol(s)}15`:"transparent",
+                          color:m.status===s?stCol(s):"var(--text3)", borderRadius:"20px"
+                        }}>{s}</button>
+                      ))}
+                    </div>
+                  </div>
+                  {m.notes && (
+                    <div style={{ marginTop:"10px", padding:"10px", background:"var(--bg3)", borderRadius:"var(--radius-sm)", fontSize:"10px", color:"var(--text2)", lineHeight:"1.7" }}>{m.notes}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {showModal && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", backdropFilter:"blur(8px)",
+          display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000 }}>
+          <div style={{ background:"rgba(255,255,255,0.97)", borderRadius:"var(--radius)", padding:"28px",
+            width:"480px", maxWidth:"95vw", boxShadow:"0 20px 60px rgba(100,60,180,0.3)" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"20px" }}>
+              <div style={{ fontSize:"14px", fontWeight:"700", letterSpacing:"2px", color:"var(--text)" }}>LOG MUSLIN {muslins.length+1}</div>
+              <button onClick={()=>setShowModal(false)} style={{ background:"transparent", border:"none", fontSize:"18px", cursor:"pointer", color:"var(--text3)" }}>✕</button>
+            </div>
+            <div style={{ marginBottom:"12px" }}>
+              <label style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px", display:"block", marginBottom:"4px" }}>DATE</label>
+              <input type="date" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))}
+                style={{ width:"100%", padding:"8px 10px", fontSize:"10px", borderRadius:"var(--radius-sm)" }}/>
+            </div>
+            <div style={{ marginBottom:"12px" }}>
+              <label style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px", display:"block", marginBottom:"4px" }}>CORRECTIONS NEEDED</label>
+              <textarea value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))}
+                placeholder="What needs fixing? Describe each correction clearly…" rows={5}
+                style={{ width:"100%", padding:"10px", fontSize:"10px", lineHeight:"1.7", borderRadius:"var(--radius-sm)", resize:"vertical" }}/>
+            </div>
+            <div style={{ marginBottom:"20px" }}>
+              <label style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px", display:"block", marginBottom:"8px" }}>STATUS</label>
+              <div style={{ display:"flex", gap:"8px" }}>
+                {["In Progress","Approved","Discarded"].map(s=>(
+                  <button key={s} onClick={()=>setForm(f=>({...f,status:s}))} style={{
+                    padding:"7px 16px", fontSize:"9px", cursor:"pointer",
+                    border:`1px solid ${form.status===s?stCol(s):"var(--border)"}`,
+                    background:form.status===s?`${stCol(s)}15`:"transparent",
+                    color:form.status===s?stCol(s):"var(--text3)", borderRadius:"var(--radius-sm)"
+                  }}>{s}</button>
+                ))}
+              </div>
+            </div>
+            <div style={{ display:"flex", justifyContent:"flex-end", gap:"8px" }}>
+              <button className="btn" onClick={()=>setShowModal(false)}>Cancel</button>
+              <button className="btn primary" onClick={addMuslin}>Log Muslin</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// PANEL: Self Fabric
+// ─────────────────────────────────────────────
+const CUTTING_CHECKLIST_ITEMS = [
+  "Grain line marked on every piece",
+  "Seam allowance added (confirmed width)",
+  "Notches marked and aligned",
+  "Piece count confirmed against pattern",
+  "Fabric grain checked before laying",
+  "Nap direction noted and consistent",
+  "Right side / wrong side identified",
+  "All pattern pieces accounted for"
+];
+
+function SelfFabricPanel({ garments, onGarmentsChange }) {
+  const [selGarment, setSelGarment] = useState(null);
+  const [fabForm, setFabForm] = useState({ name:"", supplier:"", colorway:"", costPerYard:"" });
+  const [pieces, setPieces] = useState([{ id:"p1", name:"", lengthIn:"", count:"1" }]);
+
+  const garment  = garments.find(g=>g.id===selGarment);
+  const isProven = garment?.patternProven || false;
+  const checklist = garment?.selfFabric?.checklist || {};
+
+  const totalYds   = useMemo(()=> pieces.reduce((s,p)=>s+((parseFloat(p.lengthIn)||0)*(parseInt(p.count)||1)/36),0), [pieces]);
+  const withWaste  = totalYds * 1.1;
+  const totalCost  = withWaste * (parseFloat(fabForm.costPerYard)||0);
+
+  const addPiece    = ()     => setPieces([...pieces,{id:Date.now().toString(),name:"",lengthIn:"",count:"1"}]);
+  const removePiece = id     => setPieces(pieces.filter(p=>p.id!==id));
+  const upPiece     = (id,k,v)=> setPieces(pieces.map(p=>p.id===id?{...p,[k]:v}:p));
+
+  const toggleCheck = item => {
+    if (!selGarment||!isProven) return;
+    onGarmentsChange(garments.map(g=>{
+      if(g.id!==selGarment) return g;
+      const cl = {...(g.selfFabric?.checklist||{}), [item]:!g.selfFabric?.checklist?.[item]};
+      return {...g, selfFabric:{...(g.selfFabric||{}), checklist:cl}};
+    }));
+  };
+
+  const saveFabricPlan = () => {
+    if (!selGarment||!isProven) return;
+    onGarmentsChange(garments.map(g=>{
+      if(g.id!==selGarment) return g;
+      return {...g, selfFabric:{...(g.selfFabric||{}), ...fabForm, pieces, totalYards:withWaste, totalCost}};
+    }));
+  };
+
+  const selectGarment = (gid) => {
+    setSelGarment(gid);
+    const g = garments.find(x=>x.id===gid);
+    if (g?.selfFabric) {
+      setFabForm({ name:g.selfFabric.name||"", supplier:g.selfFabric.supplier||"", colorway:g.selfFabric.colorway||"", costPerYard:g.selfFabric.costPerYard||"" });
+      if (g.selfFabric.pieces?.length) setPieces(g.selfFabric.pieces);
+    }
+  };
+
+  const checkedCount = Object.values(checklist).filter(Boolean).length;
+
+  return (
+    <div className="panel fade-in">
+      <div className="panel-title">Self Fabric — The Real Thing</div>
+
+      {/* Garment selector */}
+      <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"20px", flexWrap:"wrap" }}>
+        <span style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px" }}>GARMENT:</span>
+        {garments.length===0 ? (
+          <span style={{ fontSize:"10px", color:"var(--text3)", fontStyle:"italic" }}>No garments — create one in Pipeline tab</span>
+        ) : garments.map(g=>(
+          <button key={g.id} onClick={()=>selectGarment(g.id)} style={{
+            padding:"6px 14px", fontSize:"10px",
+            border:`1px solid ${selGarment===g.id?"var(--gold)":"var(--border)"}`,
+            background:selGarment===g.id?"rgba(139,92,246,0.12)":"var(--glass)",
+            color:selGarment===g.id?"var(--gold)":"var(--text2)",
+            borderRadius:"var(--radius-sm)", cursor:"pointer", opacity:g.patternProven?1:0.6,
+            fontWeight:selGarment===g.id?"700":"400"
+          }}>
+            {g.name}
+            {!g.patternProven && <span style={{ marginLeft:"5px", fontSize:"9px" }}>🔒</span>}
+            {g.patternProven  && <span style={{ marginLeft:"5px", color:"#10b981", fontSize:"9px" }}>✓</span>}
+          </button>
+        ))}
+      </div>
+
+      {!garment ? (
+        <div style={{ textAlign:"center", padding:"80px 0", color:"var(--text3)" }}>
+          <div style={{ fontSize:"40px", marginBottom:"12px", opacity:0.15 }}>✂️</div>
+          <div style={{ fontSize:"11px", letterSpacing:"3px" }}>SELECT A GARMENT</div>
+        </div>
+      ) : !isProven ? (
+        <div style={{ textAlign:"center", padding:"80px 40px", color:"var(--text3)",
+          border:"2px dashed rgba(245,158,11,0.4)", borderRadius:"var(--radius)", background:"rgba(245,158,11,0.03)" }}>
+          <div style={{ fontSize:"48px", marginBottom:"16px", opacity:0.4 }}>🔒</div>
+          <div style={{ fontSize:"16px", fontWeight:"700", color:"#f59e0b", letterSpacing:"3px", marginBottom:"8px" }}>PATTERN NOT PROVEN</div>
+          <div style={{ fontSize:"11px", color:"#d97706", marginBottom:"6px" }}>Do not cut the self until the muslin is approved</div>
+          <div style={{ fontSize:"10px", color:"var(--text3)" }}>Go to Muslin Log → mark the pattern as proven to unlock this section</div>
+        </div>
+      ) : (
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"20px", alignItems:"start" }}>
+
+          {/* Left: Details + Calculator */}
+          <div>
+            <div className="card" style={{ marginBottom:"16px" }}>
+              <div className="card-title">Fabric Details</div>
+              {[
+                {label:"FABRIC NAME",         key:"name",         placeholder:"e.g. Glen Check Wool Suiting"},
+                {label:"SUPPLIER",            key:"supplier",     placeholder:"e.g. Halley Stevensons, Huddersfield"},
+                {label:"COLORWAY",            key:"colorway",     placeholder:"e.g. Grey/Cream Glen Check"},
+                {label:"COST PER YARD (USD)", key:"costPerYard",  placeholder:"28.00", type:"number"}
+              ].map(({label,key,placeholder,type})=>(
+                <div key={key} style={{ marginBottom:"10px" }}>
+                  <label style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px", display:"block", marginBottom:"4px" }}>{label}</label>
+                  <input type={type||"text"} value={fabForm[key]||""} onChange={e=>setFabForm(f=>({...f,[key]:e.target.value}))}
+                    placeholder={placeholder}
+                    style={{ width:"100%", padding:"8px 10px", fontSize:"10px", borderRadius:"var(--radius-sm)" }}/>
+                </div>
+              ))}
+            </div>
+
+            {/* Yardage calculator */}
+            <div className="card" style={{ marginBottom:"16px" }}>
+              <div className="card-title">Yardage Calculator</div>
+              <div style={{ fontSize:"9px", color:"var(--text3)", marginBottom:"10px" }}>Enter piece lengths in inches — count = number of cuts</div>
+              {pieces.map(p=>(
+                <div key={p.id} style={{ display:"grid", gridTemplateColumns:"1fr 90px 56px 24px", gap:"5px", marginBottom:"5px", alignItems:"center" }}>
+                  <input value={p.name} onChange={e=>upPiece(p.id,"name",e.target.value)}
+                    placeholder="Piece name" style={{ padding:"6px 8px", fontSize:"9px", borderRadius:"var(--radius-sm)" }}/>
+                  <input type="number" value={p.lengthIn} onChange={e=>upPiece(p.id,"lengthIn",e.target.value)}
+                    placeholder="Length (in)" style={{ padding:"6px 8px", fontSize:"9px", borderRadius:"var(--radius-sm)" }}/>
+                  <input type="number" value={p.count} onChange={e=>upPiece(p.id,"count",e.target.value)}
+                    placeholder="×" min="1" style={{ padding:"6px 8px", fontSize:"9px", borderRadius:"var(--radius-sm)" }}/>
+                  <button onClick={()=>removePiece(p.id)}
+                    style={{ background:"transparent", border:"none", color:"var(--text3)", cursor:"pointer", fontSize:"16px", lineHeight:1 }}>×</button>
+                </div>
+              ))}
+              <button className="btn" onClick={addPiece} style={{ fontSize:"8px", marginBottom:"12px", width:"100%" }}>+ Add Piece</button>
+              <div style={{ borderTop:"1px solid var(--border)", paddingTop:"12px" }}>
+                {[
+                  ["Pieces raw yardage", `${totalYds.toFixed(2)} yds`],
+                  ["+ 10% waste allowance", `${withWaste.toFixed(2)} yds`],
+                  ...(fabForm.costPerYard ? [["Estimated cost", `$${totalCost.toFixed(2)}`]] : [])
+                ].map(([l,v])=>(
+                  <div key={l} style={{ display:"flex", justifyContent:"space-between", fontSize:"10px", padding:"4px 0", borderBottom:"1px solid var(--border2)" }}>
+                    <span style={{ color:"var(--text3)" }}>{l}</span>
+                    <span style={{ color:l.includes("waste")?"var(--gold)":"var(--text)", fontWeight:l.includes("waste")?"700":"400" }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button className="btn primary" onClick={saveFabricPlan} style={{ width:"100%", padding:"11px", fontSize:"10px", letterSpacing:"1px" }}>
+              💾 Save Fabric Plan
+            </button>
+          </div>
+
+          {/* Right: Cutting Checklist + Cost Summary */}
+          <div>
+            <div className="card" style={{ marginBottom:"16px" }}>
+              <div className="card-title" style={{ color:"var(--gold)" }}>✂️ CUTTING CHECKLIST</div>
+              <div style={{ fontSize:"9px", color:"var(--text2)", lineHeight:"1.7", marginBottom:"14px" }}>
+                Before the first cut is made, every item must be confirmed. This is the threshold between the provisional and the permanent.
+              </div>
+              <div style={{ display:"flex", flexDirection:"column", gap:"7px" }}>
+                {CUTTING_CHECKLIST_ITEMS.map(item => {
+                  const checked = checklist[item]||false;
+                  return (
+                    <button key={item} onClick={()=>toggleCheck(item)} style={{
+                      display:"flex", alignItems:"center", gap:"12px",
+                      padding:"10px 14px", textAlign:"left",
+                      border:`1px solid ${checked?"rgba(16,185,129,0.4)":"var(--border)"}`,
+                      background:checked?"rgba(16,185,129,0.07)":"var(--bg3)",
+                      borderRadius:"var(--radius-sm)", cursor:"pointer", width:"100%"
+                    }}>
+                      <div style={{ width:"20px", height:"20px", borderRadius:"50%", flexShrink:0,
+                        border:`2px solid ${checked?"#10b981":"var(--border)"}`,
+                        background:checked?"#10b981":"transparent",
+                        display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.2s" }}>
+                        {checked && <span style={{ color:"white", fontSize:"10px" }}>✓</span>}
+                      </div>
+                      <span style={{ fontSize:"10px", color:checked?"var(--text)":"var(--text2)", fontWeight:checked?"700":"400" }}>{item}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop:"14px", padding:"12px", background:"rgba(139,92,246,0.06)",
+                border:"1px solid rgba(139,92,246,0.2)", borderRadius:"var(--radius-sm)", textAlign:"center" }}>
+                <div style={{ fontSize:"24px", fontWeight:"700", color:"var(--gold)" }}>{checkedCount}/{CUTTING_CHECKLIST_ITEMS.length}</div>
+                <div style={{ fontSize:"8px", color:"var(--text3)", letterSpacing:"2px" }}>ITEMS CONFIRMED</div>
+                {checkedCount===CUTTING_CHECKLIST_ITEMS.length && (
+                  <div style={{ marginTop:"8px", fontSize:"10px", color:"#10b981", fontWeight:"700" }}>ALL CLEAR — READY TO CUT ✂️</div>
+                )}
+              </div>
+            </div>
+
+            {fabForm.costPerYard && withWaste>0 && (
+              <div className="card">
+                <div className="card-title">Cost Summary</div>
+                <div style={{ fontSize:"32px", fontWeight:"700", color:"var(--gold)", marginBottom:"4px" }}>${totalCost.toFixed(2)}</div>
+                <div style={{ fontSize:"9px", color:"var(--text3)", marginBottom:"12px" }}>
+                  {withWaste.toFixed(2)} yards at ${parseFloat(fabForm.costPerYard).toFixed(2)}/yd (incl. 10% waste)
+                </div>
+                {fabForm.name     && <div style={{ fontSize:"11px", color:"var(--text)", fontWeight:"600" }}>{fabForm.name}</div>}
+                {fabForm.supplier && <div style={{ fontSize:"9px", color:"var(--text3)" }}>{fabForm.supplier}</div>}
+                {fabForm.colorway && <div style={{ fontSize:"9px", color:"var(--text3)", fontStyle:"italic" }}>{fabForm.colorway}</div>}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // MAIN APP
 // ─────────────────────────────────────────────
 function App() {
-  const [activeTab, setActiveTab] = useState("explore");
+  const [activeTab, setActiveTab]       = useState("explore");
   const [selectedFabric, setSelectedFabric] = useState(null);
   const [selectedGarment, setSelectedGarment] = useState(null);
   const [selectedSeam, setSelectedSeam] = useState(null);
+  // Verneccia Way shared state
+  const [garments, setGarments] = useState([]);
+  const [dreams,   setDreams]   = useState([]);
+  const [slopers,  setSlopers]  = useState([]);
 
-  // Expose setters for cross-panel access
+  // Expose setters for cross-panel access (Generate panel quick-select)
   useEffect(() => {
     window._setGarment = setSelectedGarment;
     window._setFabric = (id) => {
@@ -2855,12 +3705,17 @@ function App() {
   }, []);
 
   const TABS = [
-    { id:"explore",  label:"Fabric Explorer" },
+    { id:"explore",  label:"Fabric" },
     { id:"techpack", label:"Tech Pack" },
-    { id:"drape",    label:"Drape Simulator" },
-    { id:"trinity",  label:"Trinity Analysis" },
+    { id:"drape",    label:"Drape" },
+    { id:"trinity",  label:"Trinity" },
     { id:"generate", label:"Generate" },
-    { id:"export",   label:"Export" }
+    { id:"export",   label:"Export" },
+    { id:"pipeline", label:"🌙 Pipeline" },
+    { id:"dreams",   label:"Dream Journal" },
+    { id:"slopers",  label:"Slopers" },
+    { id:"muslin",   label:"Muslin Log" },
+    { id:"selffabric",label:"Self Fabric" }
   ];
 
   return (
@@ -2869,14 +3724,14 @@ function App() {
       <header className="inkwell-header">
         <div className="inkwell-logo">
           <div className="inkwell-logo-title">Inkwell Garment Studio</div>
-          <div className="inkwell-logo-sub">Trinity Graph · IAM · Tech Pack Engine · Fal.ai</div>
+          <div className="inkwell-logo-sub">Trinity Graph · IAM · Tech Pack · Verneccia Way</div>
         </div>
 
         {/* Selection Pills */}
         <div style={{ display:"flex", gap:"6px", alignItems:"center" }}>
           {selectedFabric && (
             <div style={{ padding:"4px 10px", fontSize:"8px", letterSpacing:"1px", border:"1px solid var(--gold-dim)", color:"var(--gold)", display:"flex", alignItems:"center", gap:"6px" }}>
-              <div style={{ width:"8px", height:"8px", background: getFabricById(selectedFabric)?.color || "transparent" }} />
+              <div style={{ width:"8px", height:"8px", background:getFabricById(selectedFabric)?.color||"transparent" }}/>
               {getFabricById(selectedFabric)?.name}
             </div>
           )}
@@ -2886,8 +3741,8 @@ function App() {
             </div>
           )}
           {selectedFabric && (
-            <button onClick={() => { setSelectedFabric(null); setSelectedGarment(null); setSelectedSeam(null); }}
-              style={{ padding:"4px 8px", fontSize:"8px", border:"1px solid var(--border)", background:"transparent", color:"var(--text3)", letterSpacing:"1px" }}>
+            <button onClick={()=>{ setSelectedFabric(null); setSelectedGarment(null); setSelectedSeam(null); }}
+              style={{ padding:"4px 8px", fontSize:"8px", border:"1px solid var(--border)", background:"transparent", color:"var(--text3)", letterSpacing:"1px", cursor:"pointer" }}>
               ✕ Clear
             </button>
           )}
@@ -2897,8 +3752,8 @@ function App() {
         <nav className="inkwell-tabs">
           {TABS.map(tab => (
             <button key={tab.id}
-              className={`inkwell-tab ${activeTab === tab.id ? "active" : ""}`}
-              onClick={() => setActiveTab(tab.id)}>
+              className={`inkwell-tab ${activeTab===tab.id?"active":""}`}
+              onClick={()=>setActiveTab(tab.id)}>
               {tab.label}
             </button>
           ))}
@@ -2907,47 +3762,19 @@ function App() {
 
       {/* Panel Content */}
       <main>
-        {activeTab === "explore" && (
-          <FabricExplorer
-            selectedFabric={selectedFabric}
-            onSelectFabric={handleFabricSelect}
-          />
-        )}
-        {activeTab === "techpack" && (
-          <TechPackBuilder
-            selectedFabric={selectedFabric}
-            onSelectFabric={handleFabricSelect}
-            selectedGarment={selectedGarment}
-            onSelectGarment={setSelectedGarment}
-            selectedSeam={selectedSeam}
-            onSelectSeam={setSelectedSeam}
-          />
-        )}
-        {activeTab === "drape" && (
-          <DrapeSimulatorPanel
-            selectedFabric={selectedFabric}
-            onSelectFabric={handleFabricSelect}
-          />
-        )}
-        {activeTab === "trinity" && (
-          <TrinityAnalysisPanel
-            selectedFabric={selectedFabric}
-          />
-        )}
-        {activeTab === "generate" && (
-          <GeneratePanel
-            selectedFabric={selectedFabric}
-            selectedGarment={selectedGarment}
-            selectedSeam={selectedSeam}
-          />
-        )}
-        {activeTab === "export" && (
-          <ExportPanel
-            selectedFabric={selectedFabric}
-            selectedGarment={selectedGarment}
-            selectedSeam={selectedSeam}
-          />
-        )}
+        {activeTab==="explore"    && <FabricExplorer selectedFabric={selectedFabric} onSelectFabric={handleFabricSelect}/>}
+        {activeTab==="techpack"   && <TechPackBuilder selectedFabric={selectedFabric} onSelectFabric={handleFabricSelect}
+            selectedGarment={selectedGarment} onSelectGarment={setSelectedGarment}
+            selectedSeam={selectedSeam} onSelectSeam={setSelectedSeam}/>}
+        {activeTab==="drape"      && <DrapeSimulatorPanel selectedFabric={selectedFabric} onSelectFabric={handleFabricSelect}/>}
+        {activeTab==="trinity"    && <TrinityAnalysisPanel selectedFabric={selectedFabric}/>}
+        {activeTab==="generate"   && <GeneratePanel selectedFabric={selectedFabric} selectedGarment={selectedGarment} selectedSeam={selectedSeam}/>}
+        {activeTab==="export"     && <ExportPanel selectedFabric={selectedFabric} selectedGarment={selectedGarment} selectedSeam={selectedSeam}/>}
+        {activeTab==="pipeline"   && <PipelinePanel   garments={garments}  onGarmentsChange={setGarments}/>}
+        {activeTab==="dreams"     && <DreamJournalPanel dreams={dreams}    onDreamsChange={setDreams}/>}
+        {activeTab==="slopers"    && <SlopersPanel slopers={slopers}       onSlopersChange={setSlopers}/>}
+        {activeTab==="muslin"     && <MuslinLogPanel   garments={garments} onGarmentsChange={setGarments}/>}
+        {activeTab==="selffabric" && <SelfFabricPanel  garments={garments} onGarmentsChange={setGarments}/>}
       </main>
     </div>
   );
