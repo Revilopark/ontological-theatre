@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+<script src="trinity-context-engine.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1179,7 +1180,7 @@
       <!-- Place & Time Bar (full width) -->
       <div class="glass place-time-bar">
         <div class="place-time-group">
-          <label>Place</label>
+          <label>Place <span id="world-place-hint" style="font-size:10px;color:rgba(255,184,107,0.6);margin-left:6px;"></span></label>
           <select id="select-place" onchange="onPlaceChange()">
             <option value="The Crossroads - Clarksdale">The Crossroads · Clarksdale</option>
             <option value="Dockery Farms">Dockery Farms</option>
@@ -1217,6 +1218,29 @@
       </div>
 
     </div><!-- /.chamber -->
+
+    <!-- World Context Panel (shown when world active) -->
+    <div id="world-context-panel" style="display:none;margin-bottom:16px;">
+      <div class="glass" style="padding:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,184,107,0.7);">
+            ✦ World Context — <span id="wcp-world-name" style="color:var(--amber)"></span>
+          </div>
+        </div>
+        <!-- Suggested collision pairs -->
+        <div style="margin-bottom:16px;">
+          <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:8px;">Suggested Sparks</div>
+          <div id="suggested-sparks" style="display:flex;flex-wrap:wrap;gap:8px;">
+            <div style="font-size:13px;color:rgba(255,255,255,0.3);">Load characters to see suggestions</div>
+          </div>
+        </div>
+        <!-- Suggested themes -->
+        <div>
+          <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:8px;">World Themes</div>
+          <div id="suggested-themes" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+      </div>
+    </div>
 
     <!-- Results Section -->
     <div id="results-section">
@@ -1448,6 +1472,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupNavTabs();
   renderGallery();
   animateSVGIdle();
+  initWorldContext();
 });
 
 // ============================================================
@@ -2418,6 +2443,126 @@ function closeModal(e) {
   if (e.target === document.getElementById('spark-modal')) {
     document.getElementById('spark-modal').classList.remove('open');
   }
+}
+
+// ============================================================
+//  WORLD CONTEXT (TrinityContext integration)
+// ============================================================
+function initWorldContext() {
+  if (typeof TrinityContext === 'undefined') return;
+  const world = TrinityContext.getWorld();
+  if (!world) return;
+
+  // Show world context panel
+  const panel = document.getElementById('world-context-panel');
+  if (panel) panel.style.display = 'block';
+  const nameEl = document.getElementById('wcp-world-name');
+  if (nameEl) nameEl.textContent = world.name;
+
+  // Inject world-appropriate place suggestions into the place select
+  const placeSel = document.getElementById('select-place');
+  const hint = document.getElementById('world-place-hint');
+  if (placeSel && world) {
+    const places = TrinityContext.suggestPlaceTypes();
+    // Add world places as optgroup
+    const oldWorld = placeSel.querySelector('optgroup[data-world]');
+    if (oldWorld) oldWorld.remove();
+    const grp = document.createElement('optgroup');
+    grp.label = `For ${world.name}`;
+    grp.setAttribute('data-world', '1');
+    places.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = '⚑ ' + p;
+      grp.appendChild(opt);
+    });
+    placeSel.insertBefore(grp, placeSel.firstChild);
+    if (places.length > 0) {
+      placeSel.value = places[0];
+      if (hint) hint.textContent = `World: ${world.name}`;
+    }
+  }
+
+  // Render suggested themes as chips
+  renderSuggestedThemes();
+
+  // Render suggested sparks after characters load
+  setTimeout(() => renderSuggestedSparks(), 500);
+}
+
+function renderSuggestedThemes() {
+  if (typeof TrinityContext === 'undefined') return;
+  const container = document.getElementById('suggested-themes');
+  if (!container) return;
+  const themes = TrinityContext.suggestThemes().slice(0, 6);
+  if (!themes.length) { container.innerHTML = '<div style="font-size:13px;color:rgba(255,255,255,0.3);">No themes available</div>'; return; }
+  container.innerHTML = themes.map(t => `
+    <button onclick="applyTheme('${t.replace(/'/g,'\\\'')}')"
+      style="padding:5px 14px;border-radius:16px;border:1px solid rgba(255,184,107,0.3);background:rgba(255,184,107,0.1);color:var(--amber);font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.2s;"
+      onmouseover="this.style.background='rgba(255,184,107,0.25)'"
+      onmouseout="this.style.background='rgba(255,184,107,0.1)'">${t}</button>
+  `).join('');
+}
+
+function applyTheme(theme) {
+  // Try to find a narrative context field and prepend the theme
+  const narrativeEl = document.getElementById('narrative-text');
+  if (narrativeEl && !narrativeEl.textContent.includes(theme)) {
+    // Store theme for use in next collision
+    window._selectedWorldTheme = theme;
+  }
+  // Visual feedback
+  event.target.style.background = 'rgba(255,184,107,0.4)';
+  event.target.style.border = '1px solid rgba(255,184,107,0.7)';
+  setTimeout(() => {
+    if (event.target) {
+      event.target.style.background = 'rgba(255,184,107,0.1)';
+      event.target.style.border = '1px solid rgba(255,184,107,0.3)';
+    }
+  }, 1200);
+  // Show toast
+  const lbl = document.getElementById('api-lbl');
+  if (lbl) { const prev = lbl.textContent; lbl.textContent = `Theme: ${theme}`; setTimeout(() => lbl.textContent = prev, 2000); }
+}
+
+function renderSuggestedSparks() {
+  if (typeof TrinityContext === 'undefined') return;
+  const container = document.getElementById('suggested-sparks');
+  if (!container) return;
+  const chars = window._savedChars || [];
+  if (chars.length < 2) {
+    container.innerHTML = '<div style="font-size:13px;color:rgba(255,255,255,0.3);">Load characters to see suggestions</div>';
+    return;
+  }
+  const mapped = chars.map(c => ({
+    ...c,
+    tags: c.tags || [],
+    ity_profile: c.ity_profile || c.ity || {},
+    archetype: c.archetype || c.lineage || ''
+  }));
+  const pairs = TrinityContext.topCollisions(mapped, 3);
+  if (!pairs.length) {
+    container.innerHTML = '<div style="font-size:13px;color:rgba(255,255,255,0.3);">Not enough character diversity for suggestions</div>';
+    return;
+  }
+  container.innerHTML = pairs.map(pair => `
+    <button onclick="prefillCollisionPair('${(pair.a.id||pair.a.name).replace(/'/g,'\\\'').replace(/"/g,'')}','${(pair.b.id||pair.b.name).replace(/'/g,'\\\'').replace(/"/g,'')}')"
+      style="padding:8px 16px;border-radius:12px;border:1px solid rgba(255,184,107,0.25);background:rgba(255,184,107,0.06);color:var(--text-primary);font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.2s;display:flex;align-items:center;gap:8px;"
+      onmouseover="this.style.background='rgba(255,184,107,0.15)'"
+      onmouseout="this.style.background='rgba(255,184,107,0.06)'">
+      <span style="color:var(--rose)">${pair.a.name||'A'}</span>
+      <span style="color:rgba(255,255,255,0.35)">⚡</span>
+      <span style="color:var(--purple)">${pair.b.name||'B'}</span>
+      <span style="font-size:10px;color:var(--amber);margin-left:4px;">${(pair.score*100).toFixed(0)}%</span>
+    </button>
+  `).join('');
+}
+
+function prefillCollisionPair(idA, idB) {
+  const selA = document.getElementById('select-a');
+  const selB = document.getElementById('select-b');
+  if (selA) { selA.value = idA; selectCharacter('a', idA); }
+  if (selB) { selB.value = idB; selectCharacter('b', idB); }
 }
 
 function clearGallery() {

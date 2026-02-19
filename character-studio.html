@@ -6,6 +6,7 @@
 <title>Character Studio — Inkwell</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="trinity-context-engine.js"></script>
 <style>
 /* ── Reset & Base ─────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -947,6 +948,13 @@ hr.glass-hr {
               <option>Digital Delta</option>
               <option>Quantum Crossroads</option>
             </select>
+          </div>
+          <!-- World-suggested archetypes (shown when world is active) -->
+          <div id="suggested-archetypes-panel" style="display:none;margin-bottom:14px;">
+            <label style="font-size:11px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-dim);display:block;margin-bottom:8px;">
+              Suggested for <span id="suggested-archetypes-world" style="color:var(--rose)">World</span>
+            </label>
+            <div id="suggested-archetypes-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
           </div>
           <div class="form-group">
             <label for="c-lineage">Lineage / Archetype</label>
@@ -2714,14 +2722,35 @@ function renderGallery() {
   const empty = document.getElementById('gallery-empty');
   list.querySelectorAll('.gallery-item').forEach(i => i.remove());
   const db = loadAll();
-  const chars = Object.values(db);
+  let chars = Object.values(db);
   empty.style.display = chars.length ? 'none' : '';
-  chars.sort((a,b) => b.id.localeCompare(a.id)).forEach(ch => {
+  // Rank by world relevance if TrinityContext is available and a world is active
+  const activeWorld = (typeof TrinityContext !== 'undefined') ? TrinityContext.getWorld() : null;
+  if (activeWorld) {
+    chars = TrinityContext.rank(chars.map(c => ({
+      ...c,
+      tags: c.tags || [],
+      ity_profile: c.ity || {},
+      archetype: c.lineage || ''
+    }))).map(ranked => {
+      // Map back to original char by id
+      return db[ranked.id] || ranked;
+    });
+  } else {
+    chars.sort((a,b) => b.id.localeCompare(a.id));
+  }
+  chars.forEach(ch => {
     const item = document.createElement('div');
     item.className = 'gallery-item';
+    const relevanceScore = activeWorld && typeof TrinityContext !== 'undefined'
+      ? TrinityContext.score({ tags: ch.tags || [], era: ch.era || '', archetype: ch.lineage || '', ity_profile: ch.ity || {} })
+      : null;
+    const relevanceBadge = relevanceScore !== null
+      ? `<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:rgba(255,107,138,0.15);border:1px solid rgba(255,107,138,0.3);color:var(--rose);margin-left:6px;">${(relevanceScore * 100).toFixed(0)}% match</span>`
+      : '';
     item.innerHTML = `
       <div class="gallery-item-info">
-        <div class="gallery-item-name">${ch.name || 'Unnamed Character'}</div>
+        <div class="gallery-item-name">${ch.name || 'Unnamed Character'}${relevanceBadge}</div>
         <div class="gallery-item-meta">${[ch.era, ch.lineage, ch.world].filter(Boolean).join(' · ') || 'No metadata yet'}</div>
       </div>
       <div class="gallery-actions">
@@ -2965,6 +2994,66 @@ async function init() {
 
   // Initial cross-app sync
   writeTrinityCharacters();
+
+  // World-context suggestions
+  initWorldContextSuggestions();
+}
+
+// ── World Context Suggestions ─────────────────────────────
+function initWorldContextSuggestions() {
+  updateWorldContextSuggestions();
+}
+
+function updateWorldContextSuggestions() {
+  if (typeof TrinityContext === 'undefined') return;
+  const world = TrinityContext.getWorld();
+  const panel = document.getElementById('suggested-archetypes-panel');
+  const chips = document.getElementById('suggested-archetypes-chips');
+  const worldName = document.getElementById('suggested-archetypes-world');
+  if (!world) {
+    if (panel) panel.style.display = 'none';
+    return;
+  }
+  // Show suggested archetypes panel
+  if (panel) panel.style.display = 'block';
+  if (worldName) worldName.textContent = world.name;
+
+  // Build archetype chips
+  const archetypes = TrinityContext.suggestArchetypes().slice(0, 6);
+  if (chips) {
+    chips.innerHTML = archetypes.map(a => `
+      <button onclick="selectSuggestedArchetype('${a.replace(/'/g,'\\\'')}')"
+        style="padding:5px 12px;border-radius:16px;border:1px solid rgba(255,107,138,0.35);background:rgba(255,107,138,0.1);color:var(--rose);font-size:12px;cursor:pointer;transition:all 0.2s;font-family:inherit;"
+        onmouseover="this.style.background='rgba(255,107,138,0.25)'"
+        onmouseout="this.style.background='rgba(255,107,138,0.1)'">${a}</button>
+    `).join('');
+  }
+
+  // Pre-fill era if not already set
+  const eraField = document.getElementById('c-era');
+  if (eraField && !current.era && world.era) {
+    eraField.value = world.era;
+    current.era = world.era;
+  }
+}
+
+function selectSuggestedArchetype(archetype) {
+  const sel = document.getElementById('c-lineage');
+  if (!sel) return;
+  // Add as option if not present
+  let found = false;
+  for (const opt of sel.options) {
+    if (opt.value === archetype || opt.textContent === archetype) { found = true; break; }
+  }
+  if (!found) {
+    const opt = document.createElement('option');
+    opt.value = archetype;
+    opt.textContent = archetype;
+    sel.appendChild(opt);
+  }
+  sel.value = archetype;
+  current.lineage = archetype;
+  toast(`Archetype set: ${archetype}`);
 }
 
 // ── "Save to Trinity Graph" button in Export tab ──────────

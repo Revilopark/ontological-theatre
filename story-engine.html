@@ -350,6 +350,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
 
 </main>
 
+<script src="trinity-context-engine.js"></script>
 <script>
 // ── CONSTANTS ──────────────────────────────────────────────────
 const API = 'https://trinity-graph-api-328246068140.us-central1.run.app';
@@ -442,6 +443,61 @@ function loadLS() {
     const pl = JSON.parse(localStorage.getItem('trinity_places')||'null');
     if (Array.isArray(pl)) S.places = pl;
   } catch(e){ console.warn('LS read:', e); }
+}
+
+// ── WORLD CONTEXT (TrinityContext integration) ──────────────────
+function applyWorldContext() {
+  if (typeof TrinityContext === 'undefined') return;
+  const world = TrinityContext.getWorld();
+  if (!world) return;
+
+  // Pre-fill era
+  const eraIn = document.getElementById('eraIn');
+  if (eraIn && !eraIn.value && world.era) eraIn.value = world.era;
+
+  // Pre-fill location with first suggested place
+  const locIn = document.getElementById('locIn');
+  if (locIn && !locIn.value) {
+    const places = TrinityContext.suggestPlaceTypes();
+    if (places.length > 0) locIn.value = places[0];
+  }
+
+  // Suggest arc from world ity_profile
+  const arcSel = document.getElementById('arcSel');
+  if (arcSel) {
+    const suggestedArc = TrinityContext.suggestArc();
+    // Add as option if not present
+    const arcName = suggestedArc.replace(' Arc','');
+    let found = false;
+    for (const opt of arcSel.options) { if (opt.value === arcName || opt.textContent.includes(arcName)) { found = true; arcSel.value = opt.value; S.arc = opt.value; break; } }
+    if (!found && suggestedArc) {
+      const opt = document.createElement('option');
+      opt.value = arcName;
+      opt.textContent = arcName + ' (World-Recommended)';
+      arcSel.appendChild(opt);
+      arcSel.value = arcName;
+      S.arc = arcName;
+    }
+  }
+
+  // Pre-select world themes in theme grid
+  const worldThemes = TrinityContext.suggestThemes().slice(0, 3);
+  worldThemes.forEach(t => {
+    const matched = THEMES.find(th => th.toLowerCase() === t.toLowerCase());
+    if (matched && S.themes.size < 3) S.themes.add(matched);
+  });
+  renderThemes();
+
+  // Show world context banner
+  const worldsRow = document.getElementById('worldsRow');
+  if (worldsRow) {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'padding:8px 14px;background:rgba(207,184,124,0.1);border:1px solid rgba(207,184,124,0.25);border-radius:10px;font-size:0.75rem;color:rgba(207,184,124,0.8);margin-bottom:10px;width:100%;';
+    banner.innerHTML = `✦ <strong style="color:var(--gold)">${world.name}</strong> — ${world.aesthetic || world.premise || ''} · Arc suggested: <em>${TrinityContext.suggestArc()}</em>`;
+    worldsRow.parentNode.insertBefore(banner, worldsRow);
+  }
+
+  updateSummary();
 }
 
 // ── API ─────────────────────────────────────────────────────────
@@ -562,7 +618,17 @@ function renderCast() {
     g.innerHTML = '<div style="color:var(--t3);font-size:.82rem">No characters in this world.</div>';
     return;
   }
-  g.innerHTML = S.chars.map(c=>{
+  // Sort by world relevance if TrinityContext is available
+  let sortedChars = S.chars;
+  if (typeof TrinityContext !== 'undefined' && TrinityContext.getWorld()) {
+    sortedChars = TrinityContext.rank(S.chars.map(c => ({
+      ...c,
+      tags: c.tags || [],
+      ity_profile: c.ity_profile || c.ity || {},
+      archetype: c.archetype || c.lineage || ''
+    }))).map(r => S.chars.find(c => c.id === r.id) || r);
+  }
+  g.innerHTML = sortedChars.map(c=>{
     const sel = S.castIds.has(c.id);
     const maxed = S.castIds.size>=5 && !sel;
     const gar = getGarment(c);
@@ -1050,6 +1116,8 @@ async function init() {
   } else if (S.worlds.length===1) {
     await selWorld(S.worlds[0].id);
   }
+  // Apply world context from TrinityContext engine
+  applyWorldContext();
   updateSummary();
 
   // URL hash story expand

@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Inkwell Garment Studio</title>
-<script src="trinity-context-engine.js"></script>
 <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -2851,13 +2850,12 @@ const BODY_PARTS = ["Bodice Front","Bodice Back","Sleeve","Collar","Skirt Front"
 // ─────────────────────────────────────────────
 // PANEL: Pipeline
 // ─────────────────────────────────────────────
-function PipelinePanel({ garments, onGarmentsChange, initialGarmentId, onBack }) {
+function PipelinePanel({ garments, onGarmentsChange, initialGarmentId }) {
   const [selGarment, setSelGarment] = useState(() => initialGarmentId || (garments.length > 0 ? garments[0].id : null));
   useEffect(() => { if (initialGarmentId) setSelGarment(initialGarmentId); }, [initialGarmentId]);
   const [showNew, setShowNew] = useState(false);
   const [newName, setNewName] = useState("");
   const [activeStage, setActiveStage] = useState(null);
-  const [illustrating, setIllustrating] = useState(false);
 
   const garment = garments.find(g => g.id === selGarment);
   const getStatus = (sid) => garment?.stages?.[sid]?.status || "Not Started";
@@ -2877,45 +2875,6 @@ function PipelinePanel({ garments, onGarmentsChange, initialGarmentId, onBack })
     g.id !== selGarment ? g : { ...g, stages:{ ...g.stages, [sid]:{ ...g.stages[sid], notes } } }
   ));
 
-  const setGarmentField = (field, value) => onGarmentsChange(garments.map(g =>
-    g.id !== selGarment ? g : { ...g, [field]: value }
-  ));
-
-  const generateIllustration = async () => {
-    if (!garment) return;
-    setIllustrating(true);
-    const hasSketch = !!garment.sketchUrl;
-    const sketchNote = hasSketch ? "fashion sketch transformation, technical drawing to rendered illustration, " : "";
-    // World context injection
-    let worldPromptAddition = '';
-    if (typeof TrinityContext !== 'undefined') {
-      const world = TrinityContext.getWorld();
-      if (world) {
-        const worldTags = (Array.isArray(world.tags) ? world.tags : (world.tags||'').split(',')).slice(0,4).join(', ');
-        worldPromptAddition = `, ${world.era ? world.era + ' era aesthetic' : ''}, ${world.aesthetic || ''}, ${worldTags}`;
-      }
-    }
-    const prompt = `${sketchNote}Verneccia Étienne fashion illustration, designer ${garment.name}, ${garment.fabric || 'fine fabric'}, ${garment.type || 'garment'}${worldPromptAddition}, convertible transformational silhouette, white gold silver palette, architectural clean lines, editorial fashion rendering, luxury haute couture, ivory cream white gold silver metallic, precise geometry, Inkwell Studio aesthetic, portrait format, fashion illustration watercolor editorial`;
-    try {
-      const res = await fetch('https://awareness-proxy-328246068140.us-central1.run.app/fal/generate-sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'fal-ai/flux/dev', prompt, image_size: 'portrait_4_3', num_inference_steps: 28 })
-      });
-      const data = await res.json();
-      const url = data?.images?.[0]?.url || data?.image?.url || data?.url || (Array.isArray(data?.images) ? data.images[0] : null);
-      if (url) setGarmentField('renderUrl', url);
-    } catch(e) { console.error('Generate failed', e); }
-    setIllustrating(false);
-  };
-
-  const handleSketchUpload = (file) => {
-    if (!file || !file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = (e) => setGarmentField('sketchUrl', e.target.result);
-    reader.readAsDataURL(file);
-  };
-
   const stCol = s => s==="Complete"?"#10b981":s==="In Progress"?"#f59e0b":"var(--text3)";
   const stBg  = s => s==="Complete"?"rgba(16,185,129,0.1)":s==="In Progress"?"rgba(245,158,11,0.1)":"transparent";
 
@@ -2924,18 +2883,6 @@ function PipelinePanel({ garments, onGarmentsChange, initialGarmentId, onBack })
 
   return (
     <div className="panel fade-in">
-      {onBack && (
-        <button onClick={onBack} style={{
-          background:"transparent", border:"none", color:"var(--text3)", fontSize:"10px",
-          letterSpacing:"1.5px", cursor:"pointer", padding:"0 0 12px 0", display:"flex",
-          alignItems:"center", gap:"5px", fontFamily:"var(--font)", fontWeight:500,
-          transition:"color 0.15s"
-        }}
-          onMouseEnter={e=>e.currentTarget.style.color="var(--gold)"}
-          onMouseLeave={e=>e.currentTarget.style.color="var(--text3)"}>
-          ← BACK TO COLLECTION
-        </button>
-      )}
       <div className="panel-title">Verneccia Way — Production Pipeline</div>
 
       {/* Garment selector row */}
@@ -3035,66 +2982,6 @@ function PipelinePanel({ garments, onGarmentsChange, initialGarmentId, onBack })
                     ))}
                   </div>
                 </div>
-
-                {/* ── Illustration stage extras (Gap 1 & 2) ── */}
-                {activeStage === 'illustration' && (
-                  <div style={{ marginBottom:"20px" }}>
-                    {/* Sketch upload drop zone */}
-                    <div style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px", marginBottom:"8px" }}>SKETCH UPLOAD</div>
-                    <div
-                      onDragOver={e=>{ e.preventDefault(); e.currentTarget.style.borderColor="var(--gold)"; }}
-                      onDragLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; }}
-                      onDrop={e=>{ e.preventDefault(); e.currentTarget.style.borderColor="var(--border)"; handleSketchUpload(e.dataTransfer.files[0]); }}
-                      onClick={()=>document.getElementById('sketch-file-input').click()}
-                      style={{ border:"1px dashed var(--border)", borderRadius:"var(--radius-sm)", padding:"18px",
-                        textAlign:"center", cursor:"pointer", background:"var(--bg3)", transition:"border-color 0.2s", marginBottom:"12px",
-                        display:"flex", flexDirection:"column", alignItems:"center", gap:"8px" }}>
-                      <input id="sketch-file-input" type="file" accept="image/*" style={{ display:"none" }}
-                        onChange={e=>handleSketchUpload(e.target.files[0])}/>
-                      {garment.sketchUrl ? (
-                        <img src={garment.sketchUrl} alt="Sketch" style={{ maxHeight:"120px", maxWidth:"100%", borderRadius:"6px", objectFit:"contain" }}/>
-                      ) : (
-                        <>
-                          <div style={{ fontSize:"24px", opacity:0.4 }}>📎</div>
-                          <div style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"1px" }}>DRAG & DROP SKETCH OR CLICK TO BROWSE</div>
-                          <div style={{ fontSize:"8px", color:"var(--text3)" }}>PNG, JPG, WEBP — any image format</div>
-                        </>
-                      )}
-                    </div>
-                    {garment.sketchUrl && (
-                      <button className="btn" onClick={()=>setGarmentField('sketchUrl',null)}
-                        style={{ fontSize:"8px", padding:"4px 10px", marginBottom:"12px" }}>✕ Remove Sketch</button>
-                    )}
-
-                    {/* AI Generate button + render display */}
-                    <div style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px", marginBottom:"8px" }}>AI ILLUSTRATION</div>
-                    <div style={{ display:"flex", gap:"10px", alignItems:"flex-start", flexWrap:"wrap" }}>
-                      <button
-                        className="btn primary"
-                        onClick={generateIllustration}
-                        disabled={illustrating}
-                        style={{ padding:"9px 20px", fontSize:"9px", letterSpacing:"1.5px", opacity:illustrating?0.7:1, cursor:illustrating?"not-allowed":"pointer" }}>
-                        {illustrating ? "✦ GENERATING…" : "✦ GENERATE ILLUSTRATION"}
-                      </button>
-                      {garment.renderUrl && (
-                        <button className="btn" onClick={()=>setGarmentField('renderUrl','')} style={{ fontSize:"8px", padding:"9px 14px" }}>✕ Clear Render</button>
-                      )}
-                    </div>
-                    {illustrating && (
-                      <div style={{ marginTop:"16px", padding:"24px", textAlign:"center", border:"1px solid rgba(139,92,246,0.2)", borderRadius:"var(--radius-sm)", background:"var(--bg3)" }}>
-                        <div className="loading-dots" style={{ fontSize:"10px", color:"var(--gold)", letterSpacing:"3px" }}>GENERATING ILLUSTRATION</div>
-                        <div style={{ fontSize:"8px", color:"var(--text3)", marginTop:"6px" }}>Flux Dev · 28 steps · Portrait 4:3</div>
-                      </div>
-                    )}
-                    {garment.renderUrl && !illustrating && (
-                      <div style={{ marginTop:"12px" }}>
-                        <img src={garment.renderUrl} alt={garment.name + " render"} style={{ maxWidth:"100%", maxHeight:"400px", display:"block", borderRadius:"var(--radius-sm)", border:"1px solid var(--border)", objectFit:"contain" }}/>
-                        <div style={{ fontSize:"8px", color:"var(--text3)", marginTop:"6px", letterSpacing:"1px" }}>SAVED TO GALLERY</div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 <div>
                   <div style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"2px", marginBottom:"6px" }}>STAGE NOTES</div>
                   <textarea value={notes} onChange={e=>setStageNotes(activeStage,e.target.value)}
@@ -3789,429 +3676,26 @@ function SelfFabricPanel({ garments, onGarmentsChange }) {
 }
 
 // ─────────────────────────────────────────────
-// PANEL: Verneccia Way (Gap 5 + Gap 6)
-// ─────────────────────────────────────────────
-function CroquisCanvas({ garments, activeGarmentId, onGarmentsChange }) {
-  const canvasRef = useRef(null);
-  const [drawing, setDrawing] = useState(false);
-  const [tool, setTool] = useState('pen-black');
-  const [brushSize, setBrushSize] = useState(3);
-  const lastPos = useRef(null);
-
-  const TOOLS = [
-    { id:'pen-black',  label:'✏ Black',  color:'#1a1028' },
-    { id:'pen-gold',   label:'✏ Gold',   color:'#B8933A' },
-    { id:'pen-coral',  label:'✏ Coral',  color:'#E05050' },
-    { id:'eraser',     label:'◻ Eraser', color:'#FEF9F0' },
-  ];
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#FEF9F0';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    // light ruled lines like paper
-    ctx.strokeStyle = 'rgba(180,160,200,0.12)';
-    ctx.lineWidth = 0.5;
-    for (let y = 20; y < canvas.height; y += 20) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-    }
-  }, []);
-
-  const getPos = (e) => {
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width  / rect.width;
-    const scaleY = canvas.height / rect.height;
-    if (e.touches) {
-      return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY };
-    }
-    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
-  };
-
-  const startDraw = (e) => {
-    e.preventDefault();
-    setDrawing(true);
-    lastPos.current = getPos(e);
-  };
-  const endDraw = () => { setDrawing(false); lastPos.current = null; };
-
-  const draw = (e) => {
-    if (!drawing) return;
-    e.preventDefault();
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const pos = getPos(e);
-    const toolDef = TOOLS.find(t => t.id === tool);
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.strokeStyle = tool === 'eraser' ? '#FEF9F0' : (toolDef?.color || '#1a1028');
-    ctx.lineWidth = tool === 'eraser' ? brushSize * 4 : brushSize;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    if (lastPos.current) {
-      ctx.beginPath();
-      ctx.moveTo(lastPos.current.x, lastPos.current.y);
-      ctx.lineTo(pos.x, pos.y);
-      ctx.stroke();
-    }
-    lastPos.current = pos;
-  };
-
-  const clearCanvas = () => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#FEF9F0';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = 'rgba(180,160,200,0.12)';
-    ctx.lineWidth = 0.5;
-    for (let y = 20; y < canvas.height; y += 20) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-    }
-  };
-
-  const saveAsSketch = () => {
-    if (!activeGarmentId || !onGarmentsChange) return;
-    const canvas = canvasRef.current;
-    const dataUrl = canvas.toDataURL('image/png');
-    onGarmentsChange(garments.map(g => g.id === activeGarmentId ? { ...g, sketchUrl: dataUrl } : g));
-    alert('Sketch saved to ' + (garments.find(g=>g.id===activeGarmentId)?.name || 'garment') + '!');
-  };
-
-  return (
-    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"12px" }}>
-      {/* Tool palette */}
-      <div style={{ display:"flex", gap:"6px", flexWrap:"wrap", justifyContent:"center" }}>
-        {TOOLS.map(t => (
-          <button key={t.id} onClick={()=>setTool(t.id)} style={{
-            padding:"6px 12px", fontSize:"9px", letterSpacing:"1px",
-            border:`1px solid ${tool===t.id?"var(--gold)":"var(--border)"}`,
-            background:tool===t.id?"rgba(184,147,58,0.15)":"var(--glass)",
-            color:tool===t.id?"var(--gold)":"var(--text2)",
-            borderRadius:"var(--radius-sm)", cursor:"pointer", fontWeight:tool===t.id?"700":"400"
-          }}>{t.label}</button>
-        ))}
-      </div>
-
-      {/* Brush size */}
-      <div style={{ display:"flex", alignItems:"center", gap:"10px", fontSize:"9px", color:"var(--text3)", letterSpacing:"1.5px" }}>
-        <span>BRUSH SIZE</span>
-        <input type="range" min="1" max="12" value={brushSize} onChange={e=>setBrushSize(Number(e.target.value))}
-          style={{ width:"100px", accentColor:"var(--gold)" }}/>
-        <span style={{ color:"var(--text2)", fontWeight:600 }}>{brushSize}px</span>
-      </div>
-
-      {/* Canvas */}
-      <canvas
-        ref={canvasRef}
-        width={300} height={500}
-        style={{
-          border:"1px solid var(--border)", borderRadius:"var(--radius-sm)",
-          background:"#FEF9F0", touchAction:"none",
-          cursor: tool==='eraser' ? 'cell' : 'crosshair',
-          boxShadow:"0 4px 20px rgba(100,60,180,0.1)",
-          maxWidth:"100%"
-        }}
-        onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
-        onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw}
-      />
-
-      {/* Action buttons */}
-      <div style={{ display:"flex", gap:"8px" }}>
-        <button className="btn" onClick={clearCanvas} style={{ fontSize:"9px", padding:"7px 16px" }}>✕ Clear</button>
-        <button className="btn primary" onClick={saveAsSketch} disabled={!activeGarmentId}
-          style={{ fontSize:"9px", padding:"7px 16px", opacity:activeGarmentId?1:0.5 }}>
-          💾 Save as Sketch
-        </button>
-      </div>
-      {!activeGarmentId && (
-        <div style={{ fontSize:"8px", color:"var(--text3)", letterSpacing:"1px" }}>Select a garment in the Pipeline tab first to save a sketch</div>
-      )}
-    </div>
-  );
-}
-
-function VernecciaWayPanel({ garments, onGarmentsChange, activeGarmentId }) {
-  const [croquisOpen, setCroquisOpen] = useState(false);
-
-  const PALETTE = [
-    { name:'White',  hex:'#FFFFFF', border:'#E0D8F0' },
-    { name:'Gold',   hex:'#B8933A', border:'#B8933A' },
-    { name:'Silver', hex:'#A0A0A8', border:'#A0A0A8' },
-  ];
-
-  const CONVERTIBLE_EXAMPLES = [
-    { name:'Xanadu',   desc:'Halter-neck cocktail dress converts at the waist — two distinct silhouettes in one piece.' },
-    { name:'Luna',     desc:'Taffeta gown: tiered floor-length converts to asymmetric cocktail via internal ties.' },
-    { name:'AnDreeAna',desc:'Beaded gown with corset back converts by releasing lacing — structured to draped.' },
-    { name:'Elle',     desc:'Kimono beaded coat converts: sleeves detach to reveal a sleeveless column gown.' },
-  ];
-
-  const STYLING_PRINCIPLES = [
-    "Every piece must earn its place — no unnecessary elements, no decoration for its own sake.",
-    "The silhouette is the statement. Clean architectural lines over surface ornamentation.",
-    "White, gold, and silver are the VE signature palette — worn together or alone, always luminous.",
-    "Conversion is not a gimmick — it is the philosophy: one piece, multiple lives, maximum value.",
-    "Fabric must be chosen for its structural role. If it cannot hold the line, it cannot hold the vision.",
-    "Shoulder architecture grounds the silhouette. Geometric shoulders = authority.",
-    "The body is not decorated — it is framed. The garment is architecture the body inhabits.",
-  ];
-
-  const BEADED_PIECES = [
-    { name:'Frida',    desc:'Gold and bronze seed beads on ivory silk. Empire bodice with cascading bead fringe. Named for Frida Kahlo — strength in adornment.' },
-    { name:'Josephine',desc:'Champagne crystal beads on duchess satin. Column gown with beaded overlay. Regal, imperial, timeless.' },
-    { name:'Zuri',     desc:'Iridescent seed beads in mosaic pattern. Strapless A-line. Named for beauty — Zuri means "beautiful" in Swahili.' },
-    { name:'Nadia',    desc:'Silver bugle beads on charcoal crepe. Architectural shoulders, beaded cascade front panel. Power and luminosity in one.' },
-  ];
-
-  return (
-    <div className="panel fade-in" style={{ maxWidth:"900px" }}>
-      {/* Header */}
-      <div style={{ marginBottom:"32px" }}>
-        <div style={{ fontFamily:"var(--font-display)", fontSize:"26px", letterSpacing:"3px", color:"var(--text)", marginBottom:"6px" }}>🌿 THE VERNECCIA WAY</div>
-        <div style={{ fontSize:"9px", color:"var(--text3)", letterSpacing:"3px" }}>DESIGN DNA — VERNECCIA ÉTIENNE</div>
-      </div>
-
-      {/* ISW Badge */}
-      <div style={{ display:"inline-flex", alignItems:"center", gap:"10px", padding:"10px 20px", marginBottom:"28px",
-        border:"2px solid #B8933A", borderRadius:"var(--radius-sm)", background:"rgba(184,147,58,0.08)",
-        boxShadow:"0 0 12px rgba(184,147,58,0.15)" }}>
-        <div style={{ fontSize:"20px" }}>🏅</div>
-        <div>
-          <div style={{ fontSize:"10px", fontWeight:"700", color:"#B8933A", letterSpacing:"2px" }}>ISW TRUSTED SOURCE</div>
-          <div style={{ fontSize:"8px", color:"var(--text3)", letterSpacing:"1px" }}>International Silks & Woollens · Beverly Hills, CA</div>
-        </div>
-      </div>
-
-      {/* Palette */}
-      <section style={{ marginBottom:"28px" }}>
-        <div className="panel-title" style={{ marginBottom:"14px" }}>SIGNATURE PALETTE</div>
-        <div style={{ display:"flex", gap:"16px", flexWrap:"wrap" }}>
-          {PALETTE.map(p => (
-            <div key={p.name} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"8px" }}>
-              <div style={{ width:"64px", height:"64px", background:p.hex, borderRadius:"var(--radius-sm)",
-                border:`2px solid ${p.border}`, boxShadow:"0 4px 16px rgba(0,0,0,0.1)" }}/>
-              <div style={{ fontSize:"10px", fontWeight:"600", color:"var(--text)", letterSpacing:"1px" }}>{p.name}</div>
-              <div style={{ fontSize:"8px", color:"var(--text3)", fontFamily:"monospace" }}>{p.hex}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* CONVERTIBLE Signature */}
-      <section style={{ marginBottom:"28px" }}>
-        <div className="panel-title" style={{ marginBottom:"14px" }}>✦ CONVERTIBLE SIGNATURE</div>
-        <div style={{ fontSize:"11px", color:"var(--text2)", lineHeight:"1.8", marginBottom:"16px" }}>
-          Nearly every major Verneccia Étienne piece transforms. Conversion is not a feature — it is a philosophy.
-          A VE garment must justify its existence by offering more than one life. This principle of transformation
-          runs through every collection, from beaded cocktail to architectural gown.
-        </div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))", gap:"12px" }}>
-          {CONVERTIBLE_EXAMPLES.map(ex => (
-            <div key={ex.name} className="card" style={{ borderColor:"rgba(184,147,58,0.3)" }}>
-              <div style={{ fontSize:"12px", fontFamily:"var(--font-display)", fontWeight:600, color:"var(--text)", marginBottom:"6px" }}>{ex.name}</div>
-              <div style={{ fontSize:"9px", color:"var(--text2)", lineHeight:"1.7" }}>{ex.desc}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Silhouette Philosophy */}
-      <section style={{ marginBottom:"28px" }}>
-        <div className="panel-title" style={{ marginBottom:"14px" }}>SILHOUETTE PHILOSOPHY</div>
-        <div style={{ fontSize:"11px", color:"var(--text2)", lineHeight:"1.9" }}>
-          Clean architectural lines. Precise geometry. Movement through transformation, not decoration.
-          The VE silhouette is resolved before a single seam is sewn. Shoulder architecture grounds the body —
-          geometric shoulder pads are the signature structural element. The column, the A-line, the cocoon:
-          each silhouette chosen for what it says about the body inhabiting it.
-        </div>
-      </section>
-
-      {/* Fabric Philosophy */}
-      <section style={{ marginBottom:"28px" }}>
-        <div className="panel-title" style={{ marginBottom:"14px" }}>FABRIC PHILOSOPHY</div>
-        <div style={{ fontSize:"11px", color:"var(--text2)", lineHeight:"1.9", marginBottom:"12px" }}>
-          <strong>ISW Beverly Hills</strong> is the primary source. International Silks and Woollens on Robertson
-          Boulevard — a curated house of fabrics that earn their place. VE fabrics: stretch Merino wools
-          (summer and winter weight), duchess satin, silk organza, matte crepe, silk dupioni, taffeta.
-          <br/><br/>
-          Fabric must earn its place. If it cannot hold the architectural line, it cannot hold the vision.
-          Weight, drape, and structural integrity are chosen before colour or surface effect.
-        </div>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:"8px" }}>
-          {['Stretch Merino (Summer)','Stretch Merino (Winter)','Duchess Satin','Silk Organza','Matte Crepe','Silk Dupioni','Silver Taffeta'].map(f => (
-            <span key={f} style={{ padding:"4px 12px", fontSize:"8px", letterSpacing:"1px", border:"1px solid rgba(184,147,58,0.3)", color:"#B8933A", borderRadius:"20px", background:"rgba(184,147,58,0.06)" }}>{f}</span>
-          ))}
-        </div>
-      </section>
-
-      {/* Styling Principles */}
-      <section style={{ marginBottom:"28px" }}>
-        <div className="panel-title" style={{ marginBottom:"14px" }}>STYLING PRINCIPLES</div>
-        <ul style={{ listStyle:"none", display:"flex", flexDirection:"column", gap:"10px" }}>
-          {STYLING_PRINCIPLES.map((p, i) => (
-            <li key={i} style={{ display:"flex", gap:"12px", alignItems:"flex-start" }}>
-              <span style={{ color:"#B8933A", fontWeight:"700", fontSize:"10px", flexShrink:0 }}>0{i+1}</span>
-              <span style={{ fontSize:"11px", color:"var(--text2)", lineHeight:"1.7" }}>{p}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* Beaded Pieces */}
-      <section style={{ marginBottom:"28px" }}>
-        <div className="panel-title" style={{ marginBottom:"14px" }}>NAMED BEADED PIECES</div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))", gap:"14px" }}>
-          {BEADED_PIECES.map(b => (
-            <div key={b.name} className="card" style={{ borderColor:"rgba(184,147,58,0.25)", background:"rgba(184,147,58,0.04)" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"8px" }}>
-                <div style={{ width:"10px", height:"10px", borderRadius:"50%", background:"#B8933A", flexShrink:0, boxShadow:"0 0 6px rgba(184,147,58,0.5)" }}/>
-                <div style={{ fontSize:"13px", fontFamily:"var(--font-display)", fontWeight:600, color:"var(--text)" }}>{b.name}</div>
-              </div>
-              <div style={{ fontSize:"9px", color:"var(--text2)", lineHeight:"1.8" }}>{b.desc}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Croquis Canvas (Gap 6) */}
-      <section style={{ marginBottom:"20px" }}>
-        <div className="panel-title" style={{ marginBottom:"8px" }}>
-          <span>CROQUIS SKETCH CANVAS</span>
-          <button onClick={()=>setCroquisOpen(o=>!o)}
-            style={{ marginLeft:"16px", padding:"4px 12px", fontSize:"8px", letterSpacing:"1.5px", border:"1px solid var(--border)", background:"transparent", color:"var(--text3)", cursor:"pointer", borderRadius:"var(--radius-sm)", fontFamily:"var(--font)" }}>
-            {croquisOpen ? "COLLAPSE ▲" : "EXPAND ▼"}
-          </button>
-        </div>
-        {croquisOpen && (
-          <div className="card fade-in" style={{ padding:"20px" }}>
-            <div style={{ fontSize:"9px", color:"var(--text3)", marginBottom:"14px", letterSpacing:"1px" }}>
-              Fashion croquis proportions (300×500px). Draw on paper-toned canvas. Save to the active garment's sketch record.
-            </div>
-            <CroquisCanvas garments={garments} activeGarmentId={activeGarmentId} onGarmentsChange={onGarmentsChange}/>
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
 // MAIN APP
 // ─────────────────────────────────────────────
-// ── World-Aware Gallery Panel ──────────────────────────────────
-function GalleryPanel({ garments, onGarmentsChange, onSelectGarment, onNewGarment }) {
-  const [worldFilter, setWorldFilter] = React.useState(false);
-  const world = typeof TrinityContext !== 'undefined' ? TrinityContext.getWorld() : null;
-
-  const tagGarmentWithWorld = (garmentId, e) => {
-    e.stopPropagation();
-    if (!world) { alert('No active world. Set one in World Builder.'); return; }
-    const worldTags = Array.isArray(world.tags) ? world.tags : (world.tags||'').split(',').map(s=>s.trim()).filter(Boolean);
-    const updated = garments.map(g => {
-      if (g.id !== garmentId) return g;
-      const existingTags = Array.isArray(g.tags) ? g.tags : (g.tags||'').split(',').map(s=>s.trim()).filter(Boolean);
-      const merged = [...new Set([...existingTags, ...worldTags])];
-      return { ...g, tags: merged, worldTagged: world.name };
-    });
-    onGarmentsChange(updated);
-  };
-
-  const scoreGarment = (g) => {
-    if (typeof TrinityContext === 'undefined' || !world) return 0;
-    const tags = Array.isArray(g.tags) ? g.tags : (g.tags||'').split(',').map(s=>s.trim()).filter(Boolean);
-    return TrinityContext.score({ tags, era: g.era||'', archetype: g.type||'', ity_profile: g.ity_profile||{} });
-  };
-
-  let displayGarments = [...garments];
-  if (worldFilter && world) {
-    displayGarments = displayGarments.filter(g => {
-      const tags = Array.isArray(g.tags) ? g.tags : (g.tags||'').split(',').map(s=>s.trim()).filter(Boolean);
-      const worldTags = Array.isArray(world.tags) ? world.tags : (world.tags||'').split(',').map(s=>s.trim()).filter(Boolean);
-      const hasWorldTag = g.worldTagged === world.name || tags.some(t => worldTags.includes(t));
-      return hasWorldTag || scoreGarment(g) > 0.3;
-    });
-    displayGarments.sort((a,b) => scoreGarment(b) - scoreGarment(a));
-  }
-
-  return (
-    <div style={{padding:"32px 24px"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}}>
-        <div>
-          <div style={{fontFamily:"var(--font-display)",fontSize:"22px",letterSpacing:"2px",color:"var(--text)"}}>VERNECCIA ÉTIENNE</div>
-          <div style={{fontSize:"9px",color:"var(--text3)",letterSpacing:"3px",marginTop:"4px"}}>YOUR COLLECTION — {garments.length} PIECES</div>
-        </div>
-        <button className="btn primary" onClick={onNewGarment} style={{letterSpacing:"2px",fontSize:"9px"}}>＋ NEW GARMENT</button>
-      </div>
-      {/* World filter tabs */}
-      <div style={{display:"flex",gap:"8px",marginBottom:"20px",alignItems:"center"}}>
-        <button onClick={()=>setWorldFilter(false)} style={{padding:"6px 14px",fontSize:"9px",letterSpacing:"1px",border:`1px solid ${!worldFilter?"var(--gold)":"var(--border)"}`,background:!worldFilter?"rgba(139,92,246,0.1)":"var(--glass)",color:!worldFilter?"var(--gold)":"var(--text3)",borderRadius:"8px",cursor:"pointer",fontFamily:"var(--font)",fontWeight:500}}>ALL</button>
-        {world && <button onClick={()=>setWorldFilter(true)} style={{padding:"6px 14px",fontSize:"9px",letterSpacing:"1px",border:`1px solid ${worldFilter?"var(--gold)":"var(--border)"}`,background:worldFilter?"rgba(139,92,246,0.15)":"var(--glass)",color:worldFilter?"var(--gold)":"var(--text3)",borderRadius:"8px",cursor:"pointer",fontFamily:"var(--font)",fontWeight:500}}>✦ FOR {world.name.toUpperCase()}</button>}
-        {world && <span style={{fontSize:"9px",color:"var(--text3)",letterSpacing:"1px"}}> — {world.era||''} · {world.aesthetic||''}</span>}
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"16px"}}>
-        {displayGarments.map(g => {
-          const score = scoreGarment(g);
-          return (
-            <div key={g.id} onClick={()=>onSelectGarment(g.id)} style={{cursor:"pointer",background:"var(--glass)",border:`1px solid ${g.worldTagged===world?.name?"rgba(139,92,246,0.5)":"var(--border)"}`,borderRadius:"var(--radius)",overflow:"hidden",transition:"all 0.2s",backdropFilter:"blur(12px)",position:"relative"}}
-              onMouseEnter={e=>e.currentTarget.style.borderColor="var(--gold)"}
-              onMouseLeave={e=>e.currentTarget.style.borderColor=g.worldTagged===world?.name?"rgba(139,92,246,0.5)":"var(--border)"}>
-              {/* World match badge */}
-              {world && score > 0.3 && <div style={{position:"absolute",top:"8px",right:"8px",padding:"2px 7px",background:"rgba(139,92,246,0.8)",color:"white",fontSize:"8px",borderRadius:"8px",zIndex:2,letterSpacing:"0.5px"}}>{(score*100).toFixed(0)}%</div>}
-              <div style={{height:"180px",background:g.renderUrl?"transparent":"linear-gradient(135deg,rgba(139,92,246,0.15),rgba(184,147,58,0.1))",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
-                {g.renderUrl
-                  ? <img src={g.renderUrl} style={{width:"100%",height:"100%",objectFit:"cover"}} alt={g.name}/>
-                  : <div style={{fontSize:"40px",opacity:0.15,fontFamily:"var(--font-display)",fontWeight:700}}>{(g.name||'?')[0]}</div>
-                }
-              </div>
-              <div style={{padding:"12px"}}>
-                <div style={{fontFamily:"var(--font-display)",fontSize:"13px",fontWeight:600,color:"var(--text)",marginBottom:"4px"}}>{g.name}</div>
-                <div style={{fontSize:"8px",color:"var(--text3)",letterSpacing:"1.5px",textTransform:"uppercase"}}>{g.collection}</div>
-                <div style={{marginTop:"8px",display:"flex",alignItems:"center",gap:"6px",flexWrap:"wrap"}}>
-                  <span style={{display:"inline-block",padding:"2px 8px",fontSize:"8px",letterSpacing:"1px",background:g.stage==="Complete"?"rgba(16,185,129,0.15)":g.stage==="Dream"?"rgba(139,92,246,0.15)":"rgba(245,158,11,0.15)",color:g.stage==="Complete"?"#10b981":g.stage==="Dream"?"var(--accent)":"#f59e0b",borderRadius:"20px"}}>{g.stage==="Dream"?"🌙 Dream":g.stage==="Complete"?"✅ Complete":"🪡 "+g.stage}</span>
-                  {world && <button onClick={(e)=>tagGarmentWithWorld(g.id,e)} title={`Tag for ${world.name}`} style={{padding:"2px 7px",fontSize:"8px",border:"1px solid rgba(139,92,246,0.35)",background:g.worldTagged===world.name?"rgba(139,92,246,0.25)":"rgba(139,92,246,0.08)",color:g.worldTagged===world.name?"var(--gold)":"var(--text3)",borderRadius:"8px",cursor:"pointer",fontFamily:"var(--font)",letterSpacing:"0.5px",whiteSpace:"nowrap"}}>{g.worldTagged===world.name?"✦ Tagged":"Tag for World"}</button>}
-                </div>
-                {g.worldTagged && <div style={{fontSize:"8px",color:"rgba(139,92,246,0.7)",marginTop:"4px",letterSpacing:"0.5px"}}>✦ {g.worldTagged}</div>}
-              </div>
-            </div>
-          );
-        })}
-        {displayGarments.length === 0 && <div style={{color:"var(--text3)",fontSize:"13px",gridColumn:"1/-1",textAlign:"center",padding:"40px"}}>No garments match this world's context.</div>}
-      </div>
-    </div>
-  );
-}
-
 function App() {
   const [activeTab, setActiveTab]       = useState("gallery");
   const [selectedFabric, setSelectedFabric] = useState(null);
   const [selectedGarment, setSelectedGarment] = useState(null);
   const [selectedSeam, setSelectedSeam] = useState(null);
-  // Verneccia Way shared state — seed version 2026-02-20-a
+  // Verneccia Way shared state
   const [garments, setGarments] = useState(() => {
-    const SEED_VER = '2026-02-20-a';
     const seed = [
-      { id:'xanadu',        name:'Xanadu',          collection:'Beaded Collection',    type:'Cocktail Dress', stage:'Complete', fabric:'Silver seed beads on duchess satin',          notes:'Seed bead convertible cocktail dress. Halter neck, gold zipper.', renderUrl:'', createdAt:'2024-01-01', convertible:true },
-      { id:'luna',          name:'Luna',             collection:'Taffeta Collection',   type:'Gown',           stage:'Complete', fabric:'Silver taffeta',                              notes:'Taffeta convertible gown. Tiered ruffles, V-back.', renderUrl:'', createdAt:'2024-01-01', convertible:true },
-      { id:'andreeana',     name:'AnDreeAna',        collection:'Beaded Collection',    type:'Gown',           stage:'Complete', fabric:'Crystal beads on duchess satin',              notes:'Hand beaded convertible gown. Corset back with buttons and lacing.', renderUrl:'', createdAt:'2024-01-01', convertible:true },
-      { id:'elle',          name:'Elle',             collection:'Beaded Collection',    type:'Coat',           stage:'Complete', fabric:'Metallic beaded fabric',                      notes:'Silver metallic beaded convertible coat. Kimono silhouette.', renderUrl:'', createdAt:'2024-01-01', convertible:true },
-      { id:'organza-trench',name:'Organza Trench',   collection:'Organza Collection',   type:'Coat',           stage:'Complete', fabric:'Silk organza',                                notes:'Sheer ivory organza double-breasted trench.', renderUrl:'', createdAt:'2024-01-01' },
-      { id:'japanese-transformational', name:'Japanese Transformational', collection:'Origami Collection', type:'Coat', stage:'Complete', fabric:'Structured silk dupioni', notes:'Origami-fold transformational coat. Converts to cocoon cape or structured jacket.', renderUrl:'', createdAt:'2024-06-01', convertible:true },
-      { id:'merino-sheath', name:'Merino Sheath',    collection:'Custom Commissions',   type:'Dress',          stage:'Complete', fabric:'Stretch Merino wool',                         notes:'Midi sheath, heavy shoulder pads, custom commission.', renderUrl:'', createdAt:'2024-01-01' },
-      { id:'power-gown-1',  name:'Power Gown I',     collection:'New Work 2026',        type:'Gown',           stage:'Dream',    fabric:'Stretch Merino Summer Wool — warm greige',    notes:'Geometric shoulder pads, long fitted sleeves, no puff, column silhouette, front slit.',                renderUrl:'https://v3b.fal.media/files/b/0a8f0b20/OE09f7VwnPpeUnZmG0XAe_b11f609880a3484386b6eae7215cdbbc.jpg', createdAt:'2026-02-19' },
-      { id:'power-gown-2',  name:'Power Gown II',    collection:'New Work 2026',        type:'Gown',           stage:'Dream',    fabric:'Stretch Merino Winter Weight — deep charcoal', notes:'Same pattern as Power Gown I. Heavier Merino in deep charcoal.',                                          renderUrl:'https://v3b.fal.media/files/b/0a8f0b0c/eUT4JjR9wttDz22SE3lZS_3294ab84b4bb463fa665dea3e6768c30.jpg', createdAt:'2026-02-19' },
-      { id:'power-gown-3',  name:'Power Gown III',   collection:'New Work 2026',        type:'Gown',           stage:'Dream',    fabric:'Matte black crepe — geometric wing shoulders',notes:'Black evening version. Massive flat geometric wing shoulder pads.',                                       renderUrl:'https://v3b.fal.media/files/b/0a8f0b36/MyZCDu2rRB1Vn385_yHV3_c9f4817535864b9bb57e7ee87586f42a.jpg', createdAt:'2026-02-19' },
+      { id:'xanadu', name:'Xanadu', collection:'Beaded Collection', type:'Cocktail Dress', stage:'Complete', fabric:'Silver seed beads on duchess satin', notes:'Seed bead convertible cocktail dress. Halter neck, gold zipper.', renderUrl:'', createdAt:'2024-01-01' },
+      { id:'luna', name:'Luna', collection:'Taffeta Collection', type:'Gown', stage:'Complete', fabric:'Silver taffeta', notes:'Taffeta convertible gown. Tiered ruffles, V-back.', renderUrl:'', createdAt:'2024-01-01' },
+      { id:'andreeana', name:'AnDreeAna', collection:'Beaded Collection', type:'Gown', stage:'Complete', fabric:'Crystal beads on duchess satin', notes:'Hand beaded convertible gown. Corset back with buttons and lacing.', renderUrl:'', createdAt:'2024-01-01' },
+      { id:'elle', name:'Elle', collection:'Beaded Collection', type:'Coat', stage:'Complete', fabric:'Metallic beaded fabric', notes:'Silver metallic beaded convertible coat. Kimono silhouette.', renderUrl:'', createdAt:'2024-01-01' },
+      { id:'organza-trench', name:'Organza Trench', collection:'Organza Collection', type:'Coat', stage:'Complete', fabric:'Silk organza', notes:'Sheer ivory organza double-breasted trench.', renderUrl:'', createdAt:'2024-01-01' },
+      { id:'merino-sheath', name:'Merino Sheath', collection:'Custom Commissions', type:'Dress', stage:'Complete', fabric:'Stretch Merino wool', notes:'Midi sheath, heavy shoulder pads, custom commission.', renderUrl:'', createdAt:'2024-01-01' },
+      { id:'power-gown-1', name:'Power Gown I', collection:'New Work 2026', type:'Gown', stage:'Dream', fabric:'Stretch Merino Summer Wool — warm greige', notes:'Geometric shoulder pads, long fitted sleeves, no puff, column silhouette, front slit.', renderUrl:'https://v3b.fal.media/files/b/0a8f0b20/OE09f7VwnPpeUnZmG0XAe_b11f609880a3484386b6eae7215cdbbc.jpg', createdAt:'2026-02-19' },
+      { id:'power-gown-2', name:'Power Gown II', collection:'New Work 2026', type:'Gown', stage:'Dream', fabric:'Stretch Merino Winter Weight — deep charcoal', notes:'Same pattern as Power Gown I. Heavier Merino in deep charcoal.', renderUrl:'https://v3b.fal.media/files/b/0a8f0b0c/eUT4JjR9wttDz22SE3lZS_3294ab84b4bb463fa665dea3e6768c30.jpg', createdAt:'2026-02-19' },
+      { id:'power-gown-3', name:'Power Gown III', collection:'New Work 2026', type:'Gown', stage:'Dream', fabric:'Matte black crepe — geometric wing shoulders', notes:'Black evening version. Massive flat geometric wing shoulder pads.', renderUrl:'https://v3b.fal.media/files/b/0a8f0b36/MyZCDu2rRB1Vn385_yHV3_c9f4817535864b9bb57e7ee87586f42a.jpg', createdAt:'2026-02-19' },
     ];
-    try {
-      const storedVer = localStorage.getItem('ve_seed_ver');
-      if (storedVer !== SEED_VER) {
-        localStorage.setItem('ve_seed_ver', SEED_VER);
-        localStorage.setItem('ve_garments', JSON.stringify(seed));
-        return seed;
-      }
-      const stored = localStorage.getItem('ve_garments');
-      if (stored) return JSON.parse(stored);
-    } catch(e) {}
     return seed;
   });
   const [dreams,   setDreams]   = useState([]);
@@ -4235,7 +3719,6 @@ function App() {
       'Beaded Collection':    { authenticity:0.95, luminosity:0.9, complexity:0.85, vitality:0.8, felicity:0.9 },
       'Taffeta Collection':   { fluidity:0.9, felicity:0.85, vitality:0.8, serendipity:0.75, clarity:0.7 },
       'Organza Collection':   { transparency:0.95, fluidity:0.9, fragility:0.85, authenticity:0.8, luminosity:0.85 },
-      'Origami Collection':   { transformation:0.95, geometry:0.9, precision:0.9, adaptability:0.85, clarity:0.8 },
       'New Work 2026':        { power:0.95, authority:0.9, clarity:0.9, intensity:0.85, presence:0.9 },
       'Custom Commissions':   { authenticity:0.9, reciprocity:0.85, vitality:0.8, integrity:0.85, uniqueness:0.9 },
     };
@@ -4243,7 +3726,6 @@ function App() {
       'Beaded Collection':    'Radiant presence through handcraft — each bead a declaration of time, care, and luminosity',
       'Taffeta Collection':   'Fluid transformation — garments that move between states as their wearer moves through worlds',
       'Organza Collection':   'Vulnerability as power — sheer layers that reveal and conceal simultaneously',
-      'Origami Collection':   'Geometry as philosophy — the fold as transformation, structure as liberation',
       'New Work 2026':        'Authority through architecture — the body as structure, the silhouette as statement',
       'Custom Commissions':   'Intimate specificity — made for one person, one moment, one truth',
     };
@@ -4264,11 +3746,6 @@ function App() {
     try { localStorage.setItem('trinity_garments', JSON.stringify(trinityGarments)); } catch(e) {}
   }, [garments]);
 
-  // Persist garments to localStorage whenever they change
-  useEffect(() => {
-    try { localStorage.setItem('ve_garments', JSON.stringify(garments)); } catch(e) {}
-  }, [garments]);
-
   const handleFabricSelect = useCallback((id) => {
     setSelectedFabric(id);
     const f = getFabricById(id);
@@ -4278,20 +3755,19 @@ function App() {
   // (garments seeded directly in useState)
 
   const TABS = [
-    { id:"gallery",     label:"✦ Collection" },
-    { id:"verneccia",   label:"🌿 Verneccia Way" },
-    { id:"explore",     label:"Fabric" },
-    { id:"techpack",    label:"Tech Pack" },
-    { id:"drape",       label:"Drape" },
-    { id:"trinity",     label:"Trinity" },
-    { id:"generate",    label:"Generate" },
-    { id:"export",      label:"Export" },
-    { id:"pipeline",    label:"🌙 Pipeline" },
-    { id:"dreams",      label:"Dream Journal" },
-    { id:"slopers",     label:"Slopers" },
-    { id:"muslin",      label:"Muslin Log" },
-    { id:"selffabric",  label:"Self Fabric" },
-    { id:"sourcing",    label:"🗺 Sourcing", link:"https://revilopark.github.io/ontological-theatre/sourcing-directory.html" }
+    { id:"gallery",  label:"✦ Collection" },
+    { id:"explore",  label:"Fabric" },
+    { id:"techpack", label:"Tech Pack" },
+    { id:"drape",    label:"Drape" },
+    { id:"trinity",  label:"Trinity" },
+    { id:"generate", label:"Generate" },
+    { id:"export",   label:"Export" },
+    { id:"pipeline", label:"🌙 Pipeline" },
+    { id:"dreams",   label:"Dream Journal" },
+    { id:"slopers",  label:"Slopers" },
+    { id:"muslin",   label:"Muslin Log" },
+    { id:"selffabric",label:"Self Fabric" },
+    { id:"sourcing", label:"🗺 Sourcing", link:"https://revilopark.github.io/ontological-theatre/sourcing-directory.html" }
   ];
 
   return (
@@ -4341,7 +3817,34 @@ function App() {
       {/* Panel Content */}
       <main>
         {activeTab==="gallery" && (
-          <GalleryPanel garments={garments} onGarmentsChange={setGarments} onSelectGarment={(id)=>{ setSelectedGarment(id); setActiveTab('pipeline'); }} onNewGarment={()=>setActiveTab('pipeline')} />
+          <div style={{padding:"32px 24px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"28px"}}>
+              <div>
+                <div style={{fontFamily:"var(--font-display)",fontSize:"22px",letterSpacing:"2px",color:"var(--text)"}}>VERNECCIA ÉTIENNE</div>
+                <div style={{fontSize:"9px",color:"var(--text3)",letterSpacing:"3px",marginTop:"4px"}}>YOUR COLLECTION — {garments.length} PIECES</div>
+              </div>
+              <button className="btn primary" onClick={()=>setActiveTab('pipeline')} style={{letterSpacing:"2px",fontSize:"9px"}}>＋ NEW GARMENT</button>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"16px"}}>
+              {garments.map(g => (
+                <div key={g.id} onClick={()=>{ setSelectedGarment(g.id); setActiveTab('pipeline'); }} style={{cursor:"pointer",background:"var(--glass)",border:"1px solid var(--border)",borderRadius:"var(--radius)",overflow:"hidden",transition:"all 0.2s",backdropFilter:"blur(12px)"}}
+                  onMouseEnter={e=>e.currentTarget.style.borderColor="var(--gold)"}
+                  onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"}>
+                  <div style={{height:"180px",background:g.renderUrl?"transparent":"linear-gradient(135deg,rgba(139,92,246,0.15),rgba(184,147,58,0.1))",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
+                    {g.renderUrl
+                      ? <img src={g.renderUrl} style={{width:"100%",height:"100%",objectFit:"cover"}} alt={g.name}/>
+                      : <div style={{fontSize:"40px",opacity:0.15,fontFamily:"var(--font-display)",fontWeight:700}}>{(g.name||'?')[0]}</div>
+                    }
+                  </div>
+                  <div style={{padding:"12px"}}>
+                    <div style={{fontFamily:"var(--font-display)",fontSize:"13px",fontWeight:600,color:"var(--text)",marginBottom:"4px"}}>{g.name}</div>
+                    <div style={{fontSize:"8px",color:"var(--text3)",letterSpacing:"1.5px",textTransform:"uppercase"}}>{g.collection}</div>
+                    <div style={{marginTop:"8px",display:"inline-block",padding:"2px 8px",fontSize:"8px",letterSpacing:"1px",background:g.stage==="Complete"?"rgba(16,185,129,0.15)":g.stage==="Dream"?"rgba(139,92,246,0.15)":"rgba(245,158,11,0.15)",color:g.stage==="Complete"?"#10b981":g.stage==="Dream"?"var(--accent)":"#f59e0b",borderRadius:"20px"}}>{g.stage==="Dream"?"🌙 Dream":g.stage==="Complete"?"✅ Complete":"🪡 "+g.stage}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
         {activeTab==="explore"    && <FabricExplorer selectedFabric={selectedFabric} onSelectFabric={handleFabricSelect}/>}
         {activeTab==="techpack"   && <TechPackBuilder selectedFabric={selectedFabric} onSelectFabric={handleFabricSelect}
@@ -4351,8 +3854,7 @@ function App() {
         {activeTab==="trinity"    && <TrinityAnalysisPanel selectedFabric={selectedFabric}/>}
         {activeTab==="generate"   && <GeneratePanel selectedFabric={selectedFabric} selectedGarment={selectedGarment} selectedSeam={selectedSeam}/>}
         {activeTab==="export"     && <ExportPanel selectedFabric={selectedFabric} selectedGarment={selectedGarment} selectedSeam={selectedSeam}/>}
-        {activeTab==="verneccia"  && <VernecciaWayPanel garments={garments} onGarmentsChange={setGarments} activeGarmentId={selectedGarment}/>}
-        {activeTab==="pipeline"   && <PipelinePanel   garments={garments}  onGarmentsChange={setGarments} initialGarmentId={selectedGarment} onBack={()=>setActiveTab('gallery')}/>}
+        {activeTab==="pipeline"   && <PipelinePanel   garments={garments}  onGarmentsChange={setGarments} initialGarmentId={selectedGarment}/>}
         {activeTab==="dreams"     && <DreamJournalPanel dreams={dreams}    onDreamsChange={setDreams}/>}
         {activeTab==="slopers"    && <SlopersPanel slopers={slopers}       onSlopersChange={setSlopers}/>}
         {activeTab==="muslin"     && <MuslinLogPanel   garments={garments} onGarmentsChange={setGarments}/>}
@@ -4374,15 +3876,6 @@ function buildArtiquityPrompt(fabric, garment, seam) {
   const g = getGarmentById(garment);
   const s = seam ? getSeamById(seam) : null;
   if (!f || !g) return "";
-  // Inject world context if available
-  let worldContextStr = '';
-  if (typeof TrinityContext !== 'undefined') {
-    const world = TrinityContext.getWorld();
-    if (world) {
-      const worldTags = (Array.isArray(world.tags) ? world.tags : (world.tags||'').split(',')).join(', ');
-      worldContextStr = `, ${world.era ? world.era + ' era' : ''}, ${world.aesthetic || ''}, ${worldTags}`.replace(/,\s*,/g,',').trim();
-    }
-  }
 
   const ity = f.trinity.ity;
   const pathy = f.trinity.pathy;
@@ -4405,7 +3898,7 @@ function buildArtiquityPrompt(fabric, garment, seam) {
     gestural_energy: "gestural, movement-filled, kinetic"
   };
 
-  return `Editorial fashion photograph of a ${g.name.toLowerCase()} crafted from ${f.name} (${f.gsm}gsm, drape coefficient ${f.drapeCoeff.toFixed(2)}). The garment is ${ity_desc[dominant_ity]}, with ${pathy_desc[dominant_pathy]} qualities. Fabric feel: ${f.handfeel}. Thermal character: ${f.thermal}. ${s ? `Construction: ${s.name} (${s.code}), ${s.seamWidth} seam allowance.` : ''} Artiquity aesthetic: authenticity ${fund.authenticity}/10, felicity ${fund.felicity}/10, propensity ${fund.propensity}/10.${worldContextStr} Shot on large format film, natural light, architectural space. Inkwell Studio editorial.`;
+  return `Editorial fashion photograph of a ${g.name.toLowerCase()} crafted from ${f.name} (${f.gsm}gsm, drape coefficient ${f.drapeCoeff.toFixed(2)}). The garment is ${ity_desc[dominant_ity]}, with ${pathy_desc[dominant_pathy]} qualities. Fabric feel: ${f.handfeel}. Thermal character: ${f.thermal}. ${s ? `Construction: ${s.name} (${s.code}), ${s.seamWidth} seam allowance.` : ''} Artiquity aesthetic: authenticity ${fund.authenticity}/10, felicity ${fund.felicity}/10, propensity ${fund.propensity}/10. Shot on large format film, natural light, architectural space. Inkwell Studio editorial.`;
 }
 
 </script>

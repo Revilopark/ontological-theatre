@@ -260,7 +260,23 @@ a{color:var(--gold);text-decoration:none}
           </div>
           <div class="form-group">
             <label>Founding Era</label>
-            <input type="text" id="w-era" placeholder="e.g. The Silk Collapse, 2049">
+            <input type="text" id="w-era" placeholder="e.g. 1760-1820 or The Silk Collapse, 2049">
+          </div>
+          <div class="form-group">
+            <label>Tags (comma-separated)</label>
+            <input type="text" id="w-tags" placeholder="e.g. frontier, wilderness, colonial, survival">
+          </div>
+          <div class="form-group">
+            <label>Aesthetic</label>
+            <input type="text" id="w-aesthetic" placeholder="e.g. rugged, utilitarian, frontier survival">
+          </div>
+          <div class="form-group">
+            <label>Archetypes (comma-separated)</label>
+            <input type="text" id="w-archetypes" placeholder="e.g. Pioneer, Scout, Trapper, Settler">
+          </div>
+          <div class="form-group">
+            <label>Themes (comma-separated)</label>
+            <input type="text" id="w-themes" placeholder="e.g. survival, freedom, conflict, discovery">
           </div>
           <div style="display:flex;gap:10px;margin-top:6px">
             <button class="btn btn-gold" onclick="createWorld()">Create World</button>
@@ -488,6 +504,7 @@ a{color:var(--gold);text-decoration:none}
 <!-- TOAST CONTAINER -->
 <div class="status-bar" id="toasts"></div>
 
+<script src="trinity-context-engine.js"></script>
 <script>
 // =============================================================================
 //  CONSTANTS & STATE
@@ -578,6 +595,22 @@ document.querySelectorAll('.tab').forEach(t => {
 function selectWorld(world) {
   state.activeWorld = world;
   lsSet(LS_WORLD, world.id);
+  // Write full context object for TrinityContext engine
+  const fullContext = {
+    id: world.id,
+    name: world.name,
+    era: world.era || '',
+    geography: world.geography || '',
+    aesthetic: world.aesthetic || '',
+    tags: world.tags ? (Array.isArray(world.tags) ? world.tags : world.tags.split(',').map(s => s.trim()).filter(Boolean)) : [],
+    archetypes: world.archetypes ? (Array.isArray(world.archetypes) ? world.archetypes : world.archetypes.split(',').map(s => s.trim()).filter(Boolean)) : [],
+    ity_profile: world.ity_profile || {},
+    themes: world.themes ? (Array.isArray(world.themes) ? world.themes : world.themes.split(',').map(s => s.trim()).filter(Boolean)) : [],
+    premise: world.premise || '',
+    dominant_ity: world.dominant_ity || '',
+    shadow_ity: world.shadow_ity || '',
+  };
+  lsSet('trinity_active_world', fullContext);
   document.getElementById('active-world-name').textContent = world.name;
   document.querySelectorAll('.world-card').forEach(c => c.classList.remove('selected'));
   const el = document.querySelector(`.world-card[data-id="${world.id}"]`);
@@ -631,6 +664,9 @@ async function createWorld() {
   const name = document.getElementById('w-name').value.trim();
   if (!name) { toast('Name required', 'error'); return; }
   try {
+    const tagsRaw = document.getElementById('w-tags').value;
+    const archetypesRaw = document.getElementById('w-archetypes').value;
+    const themesRaw = document.getElementById('w-themes').value;
     const world = await api('/worlds', {
       method: 'POST',
       body: {
@@ -639,6 +675,10 @@ async function createWorld() {
         dominant_ity: document.getElementById('w-dominant').value || null,
         shadow_ity: document.getElementById('w-shadow').value || null,
         era: document.getElementById('w-era').value || null,
+        aesthetic: document.getElementById('w-aesthetic').value || null,
+        tags: tagsRaw ? tagsRaw.split(',').map(s => s.trim()).filter(Boolean) : [],
+        archetypes: archetypesRaw ? archetypesRaw.split(',').map(s => s.trim()).filter(Boolean) : [],
+        themes: themesRaw ? themesRaw.split(',').map(s => s.trim()).filter(Boolean) : [],
       }
     });
     toast(`World "${world.name}" created!`, 'success');
