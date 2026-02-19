@@ -640,8 +640,19 @@ async function loadWorlds() {
       if (w) selectWorld(w);
     }
   } catch (e) {
-    list.innerHTML = `<div class="card" style="color:var(--rose);font-size:0.85rem;padding:20px">API offline — ${e.message}</div>`;
+    // API list is broken but worlds can still be created — show empty state
+    state.worlds = state.worlds || [];
+    if (!state.worlds.length) {
+      list.innerHTML = `<div class="card" style="color:var(--muted);font-size:0.85rem;padding:20px">Could not load worlds list — create a new world above and it will appear here.</div>`;
+    } else {
+      renderWorlds(state.worlds);
+    }
   }
+}
+
+function renderWorlds(worlds) {
+  const list = document.getElementById('world-list');
+  renderWorldList(worlds);
 }
 
 function renderWorldList(worlds) {
@@ -671,6 +682,7 @@ async function createWorld() {
       method: 'POST',
       body: {
         name,
+        description: document.getElementById('w-premise').value,
         premise: document.getElementById('w-premise').value,
         dominant_ity: document.getElementById('w-dominant').value || null,
         shadow_ity: document.getElementById('w-shadow').value || null,
@@ -682,7 +694,10 @@ async function createWorld() {
       }
     });
     toast(`World "${world.name}" created!`, 'success');
-    loadWorlds();
+    // Add created world to local list immediately (don't rely on GET /worlds)
+    state.worlds = state.worlds || [];
+    state.worlds.unshift(world);
+    renderWorlds(state.worlds);
   } catch (e) { toast('Failed: ' + e.message, 'error'); }
 }
 
