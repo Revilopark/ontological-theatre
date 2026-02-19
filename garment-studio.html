@@ -3104,43 +3104,16 @@ const SAMPLE_GARMENTS = [
   { id:'sg6', name:'Japanese Transformational', collection:'Reconstruction Series', type:'Gown', season:'Resort', stage:'Complete', notes:'Grey metallic mesh mermaid gown. Architectural back cutout, pattern-based geometric construction.' },
   { id:'sg7', name:'Merino Sheath', collection:'Custom Commissions', type:'Dress',        season:'Fall/Winter',  stage:'Complete', notes:'Stretch Merino wool midi sheath. Very fitted, heavy shoulder pads. Custom commission for businesswoman client.' },
   {
-    id: 'power-gown-summer',
-    name: 'Power Gown I',
-    collection: 'New Work 2026',
-    type: 'Gown',
-    season: 'Spring/Summer',
-    stage: 'Dream',
-    fabric: 'Stretch Merino Summer Wool — warm greige',
-    notes: 'Geometric structured shoulder pads, long fitted sleeves, no puff, clean column front, front slit at hem. Summer weight Merino — warm greige/medium grey tone.\n\nSource: ISW Beverly Hills is primary fabric source for Merino.',
-    sketchUrl: 'sketch-annotated-01.jpg',
-    renderUrl: 'https://v3b.fal.media/files/b/0a8f0b20/OE09f7VwnPpeUnZmG0XAe_b11f609880a3484386b6eae7215cdbbc.jpg',
-    createdAt: '2026-02-19',
-    updatedAt: '2026-02-19',
-  },
-  {
-    id: 'power-gown-winter',
-    name: 'Power Gown II',
+    id: 'new-power-gown-2026',
+    name: 'Power Gown',
     collection: 'New Work 2026',
     type: 'Gown',
     season: 'Fall/Winter',
     stage: 'Dream',
-    fabric: 'Stretch Merino Winter Weight — deep charcoal',
-    notes: 'Same pattern as Power Gown I. Heavier weight Merino in deep charcoal. For fall/winter eveningwear.\n\nSource: ISW Beverly Hills is primary fabric source for Merino.',
-    sketchUrl: 'sketch-annotated-01.jpg',
+    fabric: 'Stretch Merino Summer Wool',
+    notes: 'Floor-length fitted column gown. GEOMETRIC structured shoulder pads (sharp angular 90-degree architecture, NOT puffed). Long fitted sleeves straight from geometric shoulder. High mock turtleneck. Clean smooth column — NO waist seaming, completely smooth front. Front slit at hem. Notes from sketch: shoulder pad/structure, no puff, long sleeve, slit.\n\nFabric: Stretch Merino summer wool — lightweight structured Merino, holds geometric shoulder shape while draping clean through column.\n\nSource: ISW Beverly Hills is primary fabric source for Merino.',
+    sketchUrl: '/home/node/.openclaw/workspace/inkwell/verneccia/sketch-annotated-01.jpg',
     renderUrl: 'https://v3b.fal.media/files/b/0a8f0b0c/eUT4JjR9wttDz22SE3lZS_3294ab84b4bb463fa665dea3e6768c30.jpg',
-    createdAt: '2026-02-19',
-    updatedAt: '2026-02-19',
-  },
-  {
-    id: 'power-gown-black',
-    name: 'Power Gown III',
-    collection: 'New Work 2026',
-    type: 'Gown',
-    season: 'Resort/Evening',
-    stage: 'Dream',
-    fabric: 'Matte Black Crepe — geometric wing shoulders',
-    notes: 'The black evening version. Massive flat geometric triangular wing-shaped shoulder pads extending outward dramatically. Same clean column silhouette as Power Gowns I & II. Matte black crepe. The definitive power statement.',
-    renderUrl: 'https://v3b.fal.media/files/b/0a8f0b36/MyZCDu2rRB1Vn385_yHV3_c9f4817535864b9bb57e7ee87586f42a.jpg',
     createdAt: '2026-02-19',
     updatedAt: '2026-02-19',
   }
@@ -3205,7 +3178,7 @@ function makeFreshGarment(fields) {
 
 const VE_GARMENTS_KEY  = 've_garments';
 const VE_SEED_VER_KEY  = 've_garments_seed_ver';
-const VE_SEED_VER      = '2026-02-19-c';   // bump when sample data changes
+const VE_SEED_VER      = '2026-02-19-b';   // bump when sample data changes
 
 function initGarments() {
   const today = new Date().toISOString().slice(0,10);
@@ -5383,15 +5356,9 @@ function App() {
   const [selectedGarment, setSelectedGarment] = useState(null);
   const [selectedSeam, setSelectedSeam] = useState(null);
   // Verneccia Way shared state
-  const [garments, setGarments] = useState(() => initGarments());
-  const [openGarmentId, setOpenGarmentId] = useState(null);
+  const [garments, setGarments] = useState([]);
   const [dreams,   setDreams]   = useState([]);
   const [slopers,  setSlopers]  = useState([]);
-
-  // Persist garments to localStorage on change
-  useEffect(() => {
-    try { localStorage.setItem(VE_GARMENTS_KEY, JSON.stringify(garments)); } catch(e) {}
-  }, [garments]);
 
   // Expose setters for cross-panel access (Generate panel quick-select)
   useEffect(() => {
@@ -5411,6 +5378,7 @@ function App() {
   }, []);
 
   const TABS = [
+    { id:"gallery",  label:"✦ Gallery" },
     { id:"explore",  label:"Fabric" },
     { id:"techpack", label:"Tech Pack" },
     { id:"drape",    label:"Drape" },
@@ -5455,49 +5423,35 @@ function App() {
           )}
         </div>
 
-        {/* Tab Nav — only show when inside a garment */}
-        {openGarmentId && (
-          <nav className="inkwell-tabs">
-            <button className="inkwell-tab" style={{color:'var(--gold)',borderColor:'var(--gold-dim)'}}
-              onClick={()=>{ setOpenGarmentId(null); setActiveTab('gallery'); }}>
-              ← All Garments
+        {/* Tab Nav */}
+        <nav className="inkwell-tabs">
+          {TABS.map(tab => (
+            <button key={tab.id}
+              className={`inkwell-tab ${activeTab===tab.id?"active":""}`}
+              onClick={()=>setActiveTab(tab.id)}>
+              {tab.label}
             </button>
-            {TABS.filter(t=>t.id!=='gallery').map(tab => (
-              <button key={tab.id}
-                className={`inkwell-tab ${activeTab===tab.id?"active":""}`}
-                onClick={()=>setActiveTab(tab.id)}>
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-        )}
+          ))}
+        </nav>
       </header>
 
       {/* Panel Content */}
       <main>
-        {/* GALLERY HOME — shown when no garment is open */}
-        {!openGarmentId && (
-          <GalleryView
-            garments={garments}
-            onOpenGarment={(id)=>{ setOpenGarmentId(id); setActiveTab('pipeline'); }}
-            onNewGarment={(g)=>{ const ng = makeFreshGarment(g); setGarments(prev=>[ng,...prev]); setOpenGarmentId(ng.id); setActiveTab('pipeline'); }}
-          />
-        )}
-        {/* STUDIO — shown when a garment is open */}
-        {openGarmentId && activeTab==="explore"    && <FabricExplorer selectedFabric={selectedFabric} onSelectFabric={handleFabricSelect}/>}
-        {openGarmentId && activeTab==="techpack"   && <TechPackBuilder selectedFabric={selectedFabric} onSelectFabric={handleFabricSelect}
+        {activeTab==="gallery"    && <GalleryView garments={garments} onOpenGarment={(id)=>setActiveTab('pipeline')} onNewGarment={()=>setActiveTab('pipeline')}/>}
+        {activeTab==="explore"    && <FabricExplorer selectedFabric={selectedFabric} onSelectFabric={handleFabricSelect}/>}
+        {activeTab==="techpack"   && <TechPackBuilder selectedFabric={selectedFabric} onSelectFabric={handleFabricSelect}
             selectedGarment={selectedGarment} onSelectGarment={setSelectedGarment}
             selectedSeam={selectedSeam} onSelectSeam={setSelectedSeam}/>}
-        {openGarmentId && activeTab==="drape"      && <DrapeSimulatorPanel selectedFabric={selectedFabric} onSelectFabric={handleFabricSelect}/>}
-        {openGarmentId && activeTab==="trinity"    && <TrinityAnalysisPanel selectedFabric={selectedFabric}/>}
-        {openGarmentId && activeTab==="generate"   && <GeneratePanel selectedFabric={selectedFabric} selectedGarment={selectedGarment} selectedSeam={selectedSeam}/>}
-        {openGarmentId && activeTab==="export"     && <ExportPanel selectedFabric={selectedFabric} selectedGarment={selectedGarment} selectedSeam={selectedSeam}/>}
-        {openGarmentId && activeTab==="pipeline"   && <PipelinePanel   garments={garments} onGarmentsChange={setGarments} selGarment={openGarmentId}/>}
-        {openGarmentId && activeTab==="dreams"     && <DreamJournalPanel dreams={dreams}    onDreamsChange={setDreams}/>}
-        {openGarmentId && activeTab==="slopers"    && <SlopersPanel slopers={slopers}       onSlopersChange={setSlopers}/>}
-        {openGarmentId && activeTab==="muslin"     && <MuslinLogPanel   garments={garments} onGarmentsChange={setGarments} selGarment={openGarmentId}/>}
-        {openGarmentId && activeTab==="selffabric" && <SelfFabricPanel  garments={garments} onGarmentsChange={setGarments} selGarment={openGarmentId}/>}
-        {openGarmentId && activeTab==="sourcing"   && <SourcingPanel/>}
+        {activeTab==="drape"      && <DrapeSimulatorPanel selectedFabric={selectedFabric} onSelectFabric={handleFabricSelect}/>}
+        {activeTab==="trinity"    && <TrinityAnalysisPanel selectedFabric={selectedFabric}/>}
+        {activeTab==="generate"   && <GeneratePanel selectedFabric={selectedFabric} selectedGarment={selectedGarment} selectedSeam={selectedSeam}/>}
+        {activeTab==="export"     && <ExportPanel selectedFabric={selectedFabric} selectedGarment={selectedGarment} selectedSeam={selectedSeam}/>}
+        {activeTab==="pipeline"   && <PipelinePanel   garments={garments}  onGarmentsChange={setGarments}/>}
+        {activeTab==="dreams"     && <DreamJournalPanel dreams={dreams}    onDreamsChange={setDreams}/>}
+        {activeTab==="slopers"    && <SlopersPanel slopers={slopers}       onSlopersChange={setSlopers}/>}
+        {activeTab==="muslin"     && <MuslinLogPanel   garments={garments} onGarmentsChange={setGarments}/>}
+        {activeTab==="selffabric" && <SelfFabricPanel  garments={garments} onGarmentsChange={setGarments}/>}
+        {activeTab==="sourcing"   && <SourcingPanel/>}
       </main>
     </div>
   );
