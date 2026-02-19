@@ -2780,8 +2780,8 @@ setTimeout(() => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       if (isActive) return;
-      // Store full world context for the context panel
-      try { localStorage.setItem('trinity_active_world', JSON.stringify(world)); } catch(e) {}
+      // Store full world context (enriched with tags/archetypes/ity_profile from contexts file)
+      try { localStorage.setItem('trinity_active_world', JSON.stringify(enrichWorld(world))); } catch(e) {}
       setActiveWorldId(world.id);
       // Re-render all cards to update active state
       renderWorldCards(worldsCache);
@@ -2841,18 +2841,34 @@ setTimeout(() => {
   }
 
   // ── Fetch worlds list ─────────────────────────────────────────
+  // World context supplement (tags, archetypes, themes, ity_profile for known worlds)
+  let _worldContexts = {};
+  async function loadWorldContexts() {
+    try {
+      const r = await fetch('trinity-world-contexts.json', { signal: AbortSignal.timeout(3000) });
+      if (r.ok) _worldContexts = await r.json();
+    } catch(e) { /* offline — contexts unavailable */ }
+  }
+  function enrichWorld(world) {
+    const ctx = _worldContexts[world.id];
+    if (!ctx) return world;
+    return { ...ctx, ...world }; // API data wins for id/name/description; ctx adds tags/archetypes/etc
+  }
+
   async function loadWorlds() {
     const grid = document.getElementById('worlds-grid');
+    await loadWorldContexts();
     try {
       const res = await fetch(`${API}/worlds`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const worlds = await res.json();
+      const rawWorlds = await res.json();
+      const worlds = (Array.isArray(rawWorlds) ? rawWorlds : []).map(enrichWorld);
 
       // Show LIVE API badge
       const badge = document.getElementById('live-api-badge');
       if (badge) badge.style.display = 'inline-flex';
 
-      renderWorldCards(Array.isArray(worlds) ? worlds : []);
+      renderWorldCards(worlds);
 
       // If no active world yet and there is at least one, auto-set the first
       if (!getActiveWorldId() && worlds.length) {
