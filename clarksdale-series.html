@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Clarksdale Series — A Trinity World Production</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#C8973A;--gold2:#E8C87A;--bg:#0A0704;--card:#130E08;--card2:#1C1408;--text:#F0E6D0;--muted:#7A6A4A;--border:#2A2010;--accent:#3A2A10;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.6;}
+
+/* PIPELINE BAR */
+.pipeline-bar{position:sticky;top:0;z-index:100;background:rgba(10,7,4,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 0;overflow-x:auto;}
+.pipeline-inner{display:flex;align-items:center;gap:0;min-width:max-content;padding:0 24px;margin:0 auto;}
+.pip-step{display:flex;align-items:center;gap:6px;padding:6px 14px;cursor:pointer;transition:all .2s;text-decoration:none;color:var(--muted);font-size:11px;font-weight:500;white-space:nowrap;border-radius:4px;}
+.pip-step:hover,.pip-step.active{color:var(--gold);background:rgba(200,151,58,.1);}
+.pip-arrow{color:var(--border);font-size:12px;padding:0 4px;}
+.pip-icon{font-size:14px;}
+.pip-count{font-size:9px;background:var(--gold);color:#000;border-radius:10px;padding:1px 5px;font-weight:700;margin-left:3px;}
+
+/* HERO */
+.hero{position:relative;height:100vh;min-height:600px;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;}
+.hero-bg{position:absolute;inset:0;background-image:url('https://v3b.fal.media/files/b/0a8f2700/pkfaJDPV8Ius8HhpEX-RP.jpg');background-size:cover;background-position:center;filter:brightness(.35);}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,7,4,.3) 0%,rgba(10,7,4,.6) 60%,var(--bg) 100%);}
+.hero-content{position:relative;z-index:2;max-width:820px;padding:40px 24px;}
+.hero-eyebrow{font-size:10px;font-weight:700;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:20px;}
+.hero-title{font-family:'Playfair Display',serif;font-size:clamp(42px,8vw,88px);font-weight:700;line-height:1.05;margin-bottom:16px;color:var(--text);}
+.hero-sub{font-size:16px;color:var(--muted);margin-bottom:32px;letter-spacing:.06em;}
+.hero-tags{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.hero-tag{padding:4px 12px;border:1px solid var(--border);border-radius:20px;font-size:10px;color:var(--muted);letter-spacing:.08em;}
+
+/* SECTIONS */
+section{padding:80px 0;}
+.container{max-width:1160px;margin:0 auto;padding:0 32px;}
+.section-eyebrow{font-size:9px;font-weight:700;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow::after{content:'';flex:1;height:1px;background:var(--border);}
+.section-title{font-family:'Playfair Display',serif;font-size:clamp(28px,4vw,44px);font-weight:700;margin-bottom:8px;}
+.section-sub{font-size:14px;color:var(--muted);max-width:600px;line-height:1.7;margin-bottom:40px;}
+
+/* WORLD CARD */
+.world-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:40px;display:grid;grid-template-columns:1fr 280px;gap:48px;align-items:start;}
+.world-era{font-size:11px;color:var(--gold);font-weight:700;letter-spacing:.15em;margin-bottom:8px;}
+.world-name{font-family:'Playfair Display',serif;font-size:32px;font-weight:700;margin-bottom:16px;}
+.world-desc{font-size:14px;color:var(--muted);line-height:1.75;margin-bottom:24px;}
+.ity-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.ity-pill-dom{padding:5px 14px;background:var(--gold);color:#000;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;}
+.ity-pill-shad{padding:5px 14px;border:1px solid var(--muted);color:var(--muted);border-radius:3px;font-size:10px;font-weight:600;text-transform:uppercase;}
+.tag-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.arch-tag{padding:4px 12px;background:rgba(200,151,58,.15);border:1px solid var(--gold);color:var(--gold);border-radius:3px;font-size:10px;font-weight:600;}
+.theme-tag{padding:4px 12px;border:1px solid var(--border);color:var(--muted);border-radius:3px;font-size:10px;}
+/* Radar */
+.radar-wrap{text-align:center;}
+.radar-label{font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;}
+.world-id-box{margin-top:20px;padding:10px 14px;background:var(--bg);border-radius:6px;font-size:9px;color:var(--muted);font-family:monospace;}
+
+/* CHARACTERS */
+.chars-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;}
+.char-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:transform .2s,border-color .2s;}
+.char-card:hover{transform:translateY(-4px);border-color:var(--gold);}
+.char-img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;}
+.char-body{padding:14px;}
+.char-arch{display:inline-block;padding:3px 8px;background:rgba(200,151,58,.2);border:1px solid var(--gold);color:var(--gold);border-radius:3px;font-size:8px;font-weight:700;text-transform:uppercase;margin-bottom:8px;}
+.char-name{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;margin-bottom:2px;}
+.char-era{font-size:10px;color:var(--muted);margin-bottom:12px;}
+.ity-bar-row{margin-bottom:6px;}
+.ity-bar-lbl{display:flex;justify-content:space-between;font-size:9px;margin-bottom:2px;}
+.ity-bar-lbl span:first-child{color:var(--text);}
+.ity-bar-lbl span:last-child{color:var(--gold);font-weight:600;}
+.ity-track{height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+.ity-fill{height:100%;background:var(--gold);border-radius:2px;}
+.char-desc{font-size:10px;color:var(--muted);line-height:1.5;margin-top:10px;}
+.char-id{font-size:8px;color:var(--border);font-family:monospace;margin-top:8px;}
+
+/* SPARKS */
+.sparks-grid{display:flex;flex-direction:column;gap:24px;}
+.spark-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:32px;display:grid;grid-template-columns:280px 1fr;gap:40px;align-items:start;}
+.spark-portraits{display:flex;align-items:center;gap:12px;}
+.spark-portrait{width:100px;height:100px;object-fit:cover;border-radius:8px;border:2px solid var(--border);}
+.spark-bolt{font-size:28px;color:var(--gold);flex-shrink:0;}
+.spark-meta{flex:1;}
+.spark-type-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.spark-type{padding:3px 8px;border:1px solid var(--border);border-radius:3px;font-size:9px;color:var(--muted);}
+.spark-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:4px;}
+.spark-chars{font-size:11px;color:var(--muted);margin-bottom:16px;}
+.convergence-row{display:flex;align-items:baseline;gap:8px;margin-bottom:16px;}
+.conv-num{font-family:'Playfair Display',serif;font-size:40px;color:var(--gold);font-weight:700;line-height:1;}
+.conv-lbl{font-size:10px;color:var(--muted);}
+.spark-quote{font-family:'Playfair Display',serif;font-size:13px;font-style:italic;color:var(--text);border-left:2px solid var(--gold);padding-left:16px;line-height:1.7;opacity:.85;}
+.spark-id{font-size:8px;color:var(--border);font-family:monospace;margin-top:12px;}
+
+/* NARRATIVE */
+.acts-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;}
+.act-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px 12px;text-align:center;transition:border-color .2s;}
+.act-card:hover{border-color:var(--gold);}
+.act-num{font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--gold);margin-bottom:4px;}
+.act-rune{font-size:20px;margin-bottom:6px;}
+.act-ity{font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;}
+.act-name{font-family:'Playfair Display',serif;font-size:11px;font-weight:600;margin-bottom:8px;}
+.act-desc{font-size:9px;color:var(--muted);line-height:1.5;}
+
+/* ENVIRONMENTS */
+.envs-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;}
+.env-card{border-radius:10px;overflow:hidden;border:1px solid var(--border);transition:transform .2s;}
+.env-card:hover{transform:scale(1.01);}
+.env-img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;}
+.env-body{background:var(--card);padding:16px;}
+.env-name{font-family:'Playfair Display',serif;font-size:16px;font-weight:600;margin-bottom:4px;}
+.env-desc{font-size:11px;color:var(--muted);margin-bottom:8px;}
+.env-tags{display:flex;gap:5px;flex-wrap:wrap;}
+.env-tag{padding:2px 8px;border:1px solid var(--border);border-radius:10px;font-size:9px;color:var(--muted);}
+
+/* VISUAL CINEMA */
+.cinema-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.cinema-card{border-radius:8px;overflow:hidden;border:1px solid var(--border);position:relative;}
+.cinema-card.wide{grid-column:span 2;}
+.cinema-img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;transition:transform .3s;}
+.cinema-card:hover .cinema-img{transform:scale(1.03);}
+.cinema-overlay{position:absolute;bottom:0;left:0;right:0;padding:12px;background:linear-gradient(to top,rgba(10,7,4,.9),transparent);}
+.cinema-title{font-family:'Playfair Display',serif;font-size:13px;color:var(--text);}
+
+/* VIDEOS */
+.videos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.video-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.video-el{width:100%;aspect-ratio:16/9;display:block;background:#000;}
+.video-body{padding:12px;}
+.video-act{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;}
+.video-title{font-family:'Playfair Display',serif;font-size:14px;font-weight:600;}
+.video-pending{aspect-ratio:16/9;background:var(--card2);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;}
+.video-pending-icon{font-size:28px;opacity:.4;}
+.video-pending-text{font-size:10px;color:var(--muted);}
+
+/* MUSIC */
+.music-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.music-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.music-type{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
+.music-type.solo{color:var(--gold);}
+.music-type.duet{color:#A0C8E8;}
+.music-title{font-family:'Playfair Display',serif;font-size:14px;font-weight:600;margin-bottom:8px;}
+.music-style{font-size:9px;color:var(--muted);line-height:1.5;margin-bottom:12px;}
+.waveform{display:flex;align-items:center;gap:2px;height:24px;}
+.waveform .bar{width:3px;border-radius:1px;background:var(--gold);animation:wave var(--dur,.6s) ease-in-out infinite alternate;}
+@keyframes wave{0%{transform:scaleY(.2);opacity:.4;}100%{transform:scaleY(1);opacity:1;}}
+.music-pending{font-size:9px;color:var(--muted);margin-top:6px;}
+
+/* SOCIAL */
+.social-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.social-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+
+/* Instagram mock */
+.ig-header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);}
+.ig-avatar{width:32px;height:32px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:14px;}
+.ig-name{font-size:12px;font-weight:600;}
+.ig-handle{font-size:10px;color:var(--muted);}
+.ig-verified{color:var(--gold);font-size:10px;margin-left:3px;}
+.ig-img{width:100%;aspect-ratio:1;object-fit:cover;display:block;}
+.ig-body{padding:12px 14px;}
+.ig-actions{display:flex;gap:14px;margin-bottom:8px;font-size:18px;}
+.ig-caption{font-size:11px;line-height:1.5;color:var(--text);}
+.ig-caption strong{font-weight:600;}
+.ig-hashtags{font-size:10px;color:#6080C0;margin-top:4px;}
+.ig-stats{font-size:10px;color:var(--muted);margin-top:6px;}
+
+/* Twitter mock */
+.tw-card{padding:16px;}
+.tw-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.tw-avatar{width:40px;height:40px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;}
+.tw-name{font-size:13px;font-weight:700;}
+.tw-handle{font-size:11px;color:var(--muted);}
+.tw-tweet{font-size:13px;line-height:1.6;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+.tw-label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.tw-actions{display:flex;gap:20px;font-size:11px;color:var(--muted);margin-top:8px;}
+
+/* Press release */
+.press-card{padding:24px;}
+.press-outlet{font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;}
+.press-hed{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;margin-bottom:6px;line-height:1.3;}
+.press-dek{font-size:12px;color:var(--muted);margin-bottom:12px;font-style:italic;}
+.press-body{font-size:11px;color:var(--muted);line-height:1.65;}
+
+/* STUDIOS */
+.studios-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.studio-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px;text-align:center;text-decoration:none;transition:all .2s;display:block;}
+.studio-card:hover{border-color:var(--gold);transform:translateY(-2px);}
+.studio-icon{font-size:24px;margin-bottom:8px;}
+.studio-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.studio-desc{font-size:10px;color:var(--muted);}
+
+/* FOOTER */
+footer{text-align:center;padding:60px 32px;border-top:1px solid var(--border);}
+footer h2{font-family:'Playfair Display',serif;font-size:22px;margin-bottom:8px;}
+footer p{font-size:11px;color:var(--muted);margin-bottom:24px;letter-spacing:.06em;}
+
+/* SCROLL FADE */
+.fade-in{opacity:0;transform:translateY(24px);transition:opacity .6s,transform .6s;}
+.fade-in.visible{opacity:1;transform:none;}
+
+@media(max-width:900px){
+  .chars-grid{grid-template-columns:repeat(2,1fr);}
+  .acts-grid{grid-template-columns:repeat(3,1fr);}
+  .spark-card{grid-template-columns:1fr;}
+  .world-card{grid-template-columns:1fr;}
+  .music-grid{grid-template-columns:repeat(2,1fr);}
+  .social-grid{grid-template-columns:1fr;}
+  .studios-grid{grid-template-columns:repeat(2,1fr);}
+  .cinema-grid{grid-template-columns:1fr;}
+  .cinema-card.wide{grid-column:span 1;}
+}
+</style>
+</head>
+<body>
+
+<!-- PIPELINE BAR -->
+<nav class="pipeline-bar">
+  <div class="pipeline-inner">
+    <a href="#world" class="pip-step active"><span class="pip-icon">🌍</span> World <span class="pip-count">1</span></a>
+    <span class="pip-arrow">→</span>
+    <a href="#characters" class="pip-step"><span class="pip-icon">🧑</span> Characters <span class="pip-count">5</span></a>
+    <span class="pip-arrow">→</span>
+    <a href="#sparks" class="pip-step"><span class="pip-icon">⚡</span> Sparks <span class="pip-count">3</span></a>
+    <span class="pip-arrow">→</span>
+    <a href="#narrative" class="pip-step"><span class="pip-icon">📖</span> Narrative <span class="pip-count">7</span></a>
+    <span class="pip-arrow">→</span>
+    <a href="#environments" class="pip-step"><span class="pip-icon">🏛️</span> Environments <span class="pip-count">4</span></a>
+    <span class="pip-arrow">→</span>
+    <a href="#cinema" class="pip-step"><span class="pip-icon">🎬</span> Visual Cinema <span class="pip-count">5</span></a>
+    <span class="pip-arrow">→</span>
+    <a href="#videos" class="pip-step"><span class="pip-icon">🎞️</span> Video Arcs <span class="pip-count">3+</span></a>
+    <span class="pip-arrow">→</span>
+    <a href="#music" class="pip-step"><span class="pip-icon">🎵</span> Music <span class="pip-count">8</span></a>
+    <span class="pip-arrow">→</span>
+    <a href="#social" class="pip-step"><span class="pip-icon">📱</span> Social <span class="pip-count">5</span></a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">A Trinity World Production · Full Creative Lifecycle</div>
+    <h1 class="hero-title">The Clarksdale Series</h1>
+    <p class="hero-sub">Mississippi Delta Blues · 1900–1960 · Built with Trinity Graph</p>
+    <div class="hero-tags">
+      <span class="hero-tag">World Builder</span>
+      <span class="hero-tag">Character Studio</span>
+      <span class="hero-tag">Spark Maker</span>
+      <span class="hero-tag">Omega Protocol</span>
+      <span class="hero-tag">Story Engine</span>
+      <span class="hero-tag">Image Generation</span>
+      <span class="hero-tag">Video Generation</span>
+      <span class="hero-tag">Social Distribution</span>
+    </div>
+  </div>
+</section>
+
+<!-- WORLD -->
+<section id="world">
+  <div class="container">
+    <div class="section-eyebrow">Stage 1 — World Builder</div>
+    <h2 class="section-title">The World Brief</h2>
+    <p class="section-sub">Every Trinity production begins with a world. The world defines the emotional, historical, and creative context that every other department draws from.</p>
+    <div class="world-card fade-in">
+      <div>
+        <div class="world-era">1900 – 1960</div>
+        <div class="world-name">Mississippi Delta<br>The Blues Crucible</div>
+        <p class="world-desc">The flattest, most fertile, most dangerous land in America produced the richest cultural harvest. Red clay earth, cotton fields, juke joints, and the crossroads. Where African American music became the foundation of all American music. Where the blues was born not as entertainment but as survival — a language for grief, desire, resistance, and transcendence.</p>
+        <div class="ity-pills">
+          <span class="ity-pill-dom">Dominant: Vitality</span>
+          <span class="ity-pill-shad">Shadow: Vulnerability</span>
+        </div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Archetypes</div>
+        <div class="tag-row">
+          <span class="arch-tag">The Bluesman</span><span class="arch-tag">The Preacher</span><span class="arch-tag">The Wanderer</span><span class="arch-tag">The Empress</span><span class="arch-tag">The Revolutionary</span>
+        </div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:12px 0 8px;">Themes</div>
+        <div class="tag-row">
+          <span class="theme-tag">transcendence through suffering</span><span class="theme-tag">the sacred and the profane</span><span class="theme-tag">migration</span><span class="theme-tag">memory</span><span class="theme-tag">the crossroads</span>
+        </div>
+        <div class="world-id-box">World ID: 32cb022b-e28a-4d06-9061-b35d5132a877 · Trinity Graph API</div>
+      </div>
+      <div class="radar-wrap">
+        <div class="radar-label">Ity Profile — World DNA</div>
+        <svg width="220" height="220" viewBox="0 0 220 220">
+          <defs><style>.rl{font-family:Inter,sans-serif;font-size:9px;fill:#7A6A4A;}</style></defs>
+          <!-- Hex grid -->
+          <g opacity=".3">
+            <polygon points="110,30 175,67 175,153 110,190 45,153 45,67" fill="none" stroke="#2A2010" stroke-width="1"/>
+            <polygon points="110,55 155,80 155,140 110,165 65,140 65,80" fill="none" stroke="#2A2010" stroke-width="1"/>
+            <polygon points="110,80 135,95 135,125 110,140 85,125 85,95" fill="none" stroke="#2A2010" stroke-width="1"/>
+          </g>
+          <!-- Axes -->
+          <line x1="110" y1="30" x2="110" y2="190" stroke="#2A2010" stroke-width="1"/>
+          <line x1="45" y1="67" x2="175" y2="153" stroke="#2A2010" stroke-width="1"/>
+          <line x1="175" y1="67" x2="45" y2="153" stroke="#2A2010" stroke-width="1"/>
+          <!-- Data: vitality=.95, authenticity=.92, resilience=.88, connectivity=.90, creativity=.93, serenity=.45 -->
+          <polygon points="110,37 168,72 164,145 110,180 58,148 57,74" fill="rgba(200,151,58,.2)" stroke="#C8973A" stroke-width="1.5"/>
+          <!-- Labels -->
+          <text x="110" y="24" text-anchor="middle" class="rl">Vitality</text>
+          <text x="183" y="64" class="rl">Authenticity</text>
+          <text x="180" y="158" class="rl">Creativity</text>
+          <text x="110" y="200" text-anchor="middle" class="rl">Serenity</text>
+          <text x="4" y="158" class="rl">Connectivity</text>
+          <text x="10" y="64" class="rl">Resilience</text>
+        </svg>
+        <div style="margin-top:16px;padding:14px;background:var(--bg);border-radius:8px;text-align:left;">
+          <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">World Stats</div>
+          <div style="font-size:11px;color:var(--text);display:flex;flex-direction:column;gap:5px;">
+            <div>🧑 5 Characters created</div>
+            <div>⚡ 3 Sparks ignited</div>
+            <div>🏛️ 4 Environments mapped</div>
+            <div>🖼️ 10 Images generated</div>
+            <div>🎞️ 3+ Videos produced</div>
+            <div>🎵 8 Songs composed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CHARACTERS -->
+<section id="characters" style="background:linear-gradient(180deg,var(--bg) 0%,#0F0A06 100%);">
+  <div class="container">
+    <div class="section-eyebrow">Stage 2 — Character Studio</div>
+    <h2 class="section-title">The Characters</h2>
+    <p class="section-sub">Each character is born with 50 ontological dimensions — ity scores that define their emotional, creative, and relational profile within the world.</p>
+    <div class="chars-grid fade-in">
+      <div class="char-card">
+        <img class="char-img" src="https://v3b.fal.media/files/b/0a8f2683/CFObHML-5Th2SGcdOYplN.jpg" alt="Robert Johnson" loading="lazy">
+        <div class="char-body">
+          <span class="char-arch">The Wanderer</span>
+          <div class="char-name">Robert Johnson</div>
+          <div class="char-era">1911 – 1938 · King of the Delta Blues</div>
+          <div class="ity-bar-row"><div class="ity-bar-lbl"><span>Vitality</span><span>0.99</span></div><div class="ity-track"><div class="ity-fill" style="width:99%"></div></div></div>
+          <div class="ity-bar-row"><div class="ity-bar-lbl"><span>Creativity</span><span>0.99</span></div><div class="ity-track"><div class="ity-fill" style="width:99%"></div></div></div>
+          <div class="ity-bar-row"><div class="ity-bar-lbl"><span>Intensity</span><span>0.98</span></div><div class="ity-track"><div class="ity-fill" style="width:98%"></div></div></div>
+          <p class="char-desc">29 songs. Dead at 27. The DNA of rock and roll. He came back from 6 months away able to play things no one had taught him.</p>
+          <div class="char-id">c19723aa-7d97-478a-98c0-795eca74e28a</div>
+        </div>
+      </div>
+      <div class="char-card">
+        <img class="char-img" src="https://v3b.fal.media/files/b/0a8f2683/dHOfa4Ybh2zNxVAGbArJl.jpg" alt="Bessie Smith" loading="lazy">
+        <div class="char-body">
+          <span class="char-arch">The Empress</span>
+          <div class="char-name">Bessie Smith</div>
+          <div class="char-era">1894 – 1937 · Empress of the Blues</div>
+          <div class="ity-bar-row"><div class="ity-bar-lbl"><span>Authenticity</span><span>0.99</span></div><div class="ity-track"><div class="ity-fill" style="width:99%"></div></div></div>
+          <div class="ity-bar-row"><div class="ity-bar-lbl"><span>Luminosity</span><span>0.99</span></div><div class="ity-track"><div class="ity-fill" style="width:99%"></div></div></div>
+          <div class="ity-bar-row"><div class="ity-bar-lbl"><span>Sovereignty</span><span>0.98</span></div><div class="ity-track"><div class="ity-fill" style="width:98%"></div></div></div>
+          <p class="char-desc">Her voice was a physical force. She could fill a theater with no microphone. She made more money than almost any Black artist of her era.</p>
+          <div class="char-id">baa5c4a3-00af-439a-ac9a-cf1b9efb41be</div>
+        </div>
+      </div>
+      <div class="char-card">
+        <img class="char-img" src="https://v3b.fal.media/files/b/0a8f2684/Zu7l46WjprkC35u80P1kF.jpg" alt="Muddy Waters" loading="lazy">
+        <div class="char-body">
+          <span class="char-arch">The Architect</span>
+          <div class="char-name">Muddy Waters</div>
+          <div class="char-era">1913 – 1983 · Father of Electric Blues</div>
+          <div class="ity-bar-row"><div class="ity-bar-lbl"><span>Connectivity</span><span>0.99</span></div><div class="ity-track"><div class="ity-fill" style="width:99%"></div></div></div>
+          <div class="ity-bar-row"><div class="ity-bar-lbl"><span>Tenacity</span><span>0.98</span></div><div class="ity-track"><div class="ity-fill" style="width:98%"></div></div></div>
+          <div class="ity-bar-row"><div class="ity-bar-lbl"><span>Resilience</span><span>0.97</span></div><div class="ity-track"><div class="ity-fill" style="width:97%"></div></div></div>
+          <p class="char-desc">Moved the Delta to Chicago. Plugged his guitar in. Every rock band that followed is downstream of Muddy Waters.</p>
+          <div class="char-id">437f4584-da67-4b01-b105-e228f5bf7cd6</div>
+        </div>
+      </div>
+      <div class="char-card">
+        <img class="char-img" src="https://v3b.fal.media/files/b/0a8f2685/IQ6sRw785Z7m9bLz8QdDr.jpg" alt="Son House" loading="lazy">
+        <div class="char-body">
+          <span class="char-arch">The Preacher</span>
+          <div class="char-name">Son House</div>
+          <div class="char-era">1902 – 1988 · Preacher & Bluesman</div>
+          <div class="ity-bar-row"><div class="ity-bar-lbl"><span>Intensity</span><span>0.99</span></div><div class="ity-track"><div class="ity-fill" style="width:99%"></div></div></div>
+          <div class="ity-bar-row"><div class="ity-bar-lbl"><span>Authenticity</span><span>0.99</span></div><div class="ity-track"><div class="ity-fill" style="width:99%"></div></div></div>
+          <div class="ity-bar-row"><div class="ity-bar-lbl"><span>Complexity</span><span>0.93</span></div><div class="ity-track"><div class="ity-fill" style="width:93%"></div></div></div>
+          <p class="char-desc">Taught Robert Johnson. Disappeared for 20 years. His slide guitar work remains unrepeated. He played like he was fighting with God.</p>
+          <div class="char-id">7c4afa5c-1ec9-4593-911a-09f7d637ad62</div>
+        </div>
+      </div>
+      <div class="char-card">
+        <img class="char-img" src="https://v3b.fal.media/files/b/0a8f2686/oAdYPlri-4YVcmu0Lvlad.jpg" alt="Sister Rosetta Tharpe" loading="lazy">
+        <div class="char-body">
+          <span class="char-arch">The Revolutionary</span>
+          <div class="char-name">Sister Rosetta Tharpe</div>
+          <div class="char-era">1915 – 1973 · Godmother of Rock</div>
+          <div class="ity-bar-row"><div class="ity-bar-lbl"><span>Creativity</span><span>0.99</span></div><div class="ity-track"><div class="ity-fill" style="width:99%"></div></div></div>
+          <div class="ity-bar-row"><div class="ity-bar-lbl"><span>Sovereignty</span><span>0.97</span></div><div class="ity-track"><div class="ity-fill" style="width:97%"></div></div></div>
+          <div class="ity-bar-row"><div class="ity-bar-lbl"><span>Vitality</span><span>0.97</span></div><div class="ity-track"><div class="ity-fill" style="width:97%"></div></div></div>
+          <p class="char-desc">Johnny Cash, Elvis, Jerry Lee Lewis, Little Richard — all cited her. She invented rock and roll guitar. She was largely forgotten. Now remembered.</p>
+          <div class="char-id">be5db390-8843-4919-9442-7c146696091e</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SPARKS -->
+<section id="sparks">
+  <div class="container">
+    <div class="section-eyebrow">Stage 3 — Spark Maker</div>
+    <h2 class="section-title">The Sparks</h2>
+    <p class="section-sub">Two characters collide. The Trinity Graph calculates convergence — the creative, emotional, and ontological tension between them. Each spark becomes a narrative seed.</p>
+    <div class="sparks-grid fade-in">
+      <div class="spark-card">
+        <div class="spark-portraits">
+          <img class="spark-portrait" src="https://v3b.fal.media/files/b/0a8f2683/CFObHML-5Th2SGcdOYplN.jpg" alt="RJ">
+          <div class="spark-bolt">⚡</div>
+          <img class="spark-portrait" src="https://v3b.fal.media/files/b/0a8f2685/IQ6sRw785Z7m9bLz8QdDr.jpg" alt="SH">
+          <div style="margin-left:12px">
+            <div class="spark-type-tags"><span class="spark-type">Mentor × Student</span><span class="spark-type">Creative Lineage</span></div>
+            <div class="spark-chars" style="font-size:12px;color:var(--text);font-weight:600">Robert Johnson × Son House</div>
+          </div>
+        </div>
+        <div class="spark-meta">
+          <div class="spark-title">The Student Surpasses the Teacher</div>
+          <div class="convergence-row"><div class="conv-num">0.89</div><div class="conv-lbl">convergence score<br><small style="color:var(--border)">34cac165-82fb-49a4</small></div></div>
+          <blockquote class="spark-quote">"The Mississippi sun beat down on the dust devils swirling around Son House and a young Robert Johnson, sweat plastering their shirts as House hammered out a blues riff on his steel guitar, patiently guiding Johnson's clumsy fingers over the fretboard. Then Johnson vanished for a spell, only to reappear with the devil in his eyes and a virtuosity that made the floorboards tremble, notes cascading from his guitar like a dark river overflowing its banks. House watched, face etched with a cold, unyielding contempt, knowing damn well the price Johnson paid for that unholy gift."</blockquote>
+        </div>
+      </div>
+      <div class="spark-card">
+        <div class="spark-portraits">
+          <img class="spark-portrait" src="https://v3b.fal.media/files/b/0a8f2683/dHOfa4Ybh2zNxVAGbArJl.jpg" alt="BS">
+          <div class="spark-bolt">⚡</div>
+          <img class="spark-portrait" src="https://v3b.fal.media/files/b/0a8f2686/oAdYPlri-4YVcmu0Lvlad.jpg" alt="SRT">
+          <div style="margin-left:12px">
+            <div class="spark-type-tags"><span class="spark-type">Sovereign Collision</span><span class="spark-type">Power × Power</span></div>
+            <div class="spark-chars" style="font-size:12px;color:var(--text);font-weight:600">Bessie Smith × Sister Rosetta Tharpe</div>
+          </div>
+        </div>
+        <div class="spark-meta">
+          <div class="spark-title">Two Empresses Meet</div>
+          <div class="convergence-row"><div class="conv-num">0.94</div><div class="conv-lbl">convergence score<br><small style="color:var(--border)">367ce7f3-db43-427a</small></div></div>
+          <blockquote class="spark-quote">"The backstage air hung thick with stale cigarette smoke and anticipation, clinging to Rosetta's sequined dress like a second skin. Bessie, perched on a beat-up amp, sized her up with eyes that had seen both jubilees and heartbreak, a wry smile playing on lips painted the crimson of a late-evening sin. Rosetta met her gaze, a silent challenge in her own, her fingers already dancing a nervous tattoo on the neck of her Gibson, a holy fire waiting to be unleashed."</blockquote>
+        </div>
+      </div>
+      <div class="spark-card">
+        <div class="spark-portraits">
+          <img class="spark-portrait" src="https://v3b.fal.media/files/b/0a8f2684/Zu7l46WjprkC35u80P1kF.jpg" alt="MW">
+          <div class="spark-bolt">⚡</div>
+          <img class="spark-portrait" src="https://v3b.fal.media/files/b/0a8f2683/CFObHML-5Th2SGcdOYplN.jpg" alt="RJ">
+          <div style="margin-left:12px">
+            <div class="spark-type-tags"><span class="spark-type">Lineage</span><span class="spark-type">Migration</span><span class="spark-type">Amplification</span></div>
+            <div class="spark-chars" style="font-size:12px;color:var(--text);font-weight:600">Muddy Waters × Robert Johnson</div>
+          </div>
+        </div>
+        <div class="spark-meta">
+          <div class="spark-title">The Delta Reaches Chicago</div>
+          <div class="convergence-row"><div class="conv-num">0.91</div><div class="conv-lbl">convergence score<br><small style="color:var(--border)">b3911ae8-332a-41a8</small></div></div>
+          <blockquote class="spark-quote">"The Greyhound coughed him onto the curb, his guitar case heavy with Delta dust and the ghost of Robert Johnson. He found a corner on Maxwell Street, plugged into a borrowed amp crackling with nascent electricity, and laid his calloused fingers on the strings. The notes that ripped from the speaker were still Johnson's — but now charged with the brute force of the city itself: raw, metallic, and hungry."</blockquote>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NARRATIVE -->
+<section id="narrative" style="background:#0F0A06;">
+  <div class="container">
+    <div class="section-eyebrow">Stage 4 — Story Engine · Omega Protocol</div>
+    <h2 class="section-title">The 7-Act Story Arc</h2>
+    <p class="section-sub">The Omega Protocol maps every spark to a 7-act narrative structure — 7 runes, 7 ity states, from Materiality to Continuity. Each act is a cognitive phase in the story's unfolding.</p>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:28px;font-style:italic;">Source Spark: Robert Johnson × Son House — "The Student Surpasses the Teacher"</p>
+    <div class="acts-grid fade-in">
+      <div class="act-card"><div class="act-num">ACT I</div><div class="act-rune">ᚢ</div><div class="act-ity">Materiality</div><div class="act-name">The Crossroads</div><div class="act-desc">The red clay earth. The signpost at midnight. The bargain — real or imagined. A man at the junction of two roads and two worlds.</div></div>
+      <div class="act-card"><div class="act-num">ACT II</div><div class="act-rune">ᛒ</div><div class="act-ity">Vitality</div><div class="act-name">The Guitar Awakens</div><div class="act-desc">Johnson's fingers finding sounds no one taught him. The instrument as living thing. Music that shouldn't exist, coming into being.</div></div>
+      <div class="act-card"><div class="act-num">ACT III</div><div class="act-rune">ᛗ</div><div class="act-ity">Interiority</div><div class="act-name">The Bargain</div><div class="act-desc">What really happened those 6 months he disappeared. The cost of genius. What a man gives up to play like God.</div></div>
+      <div class="act-card"><div class="act-num">ACT IV</div><div class="act-rune">ᚦ</div><div class="act-ity">Criticality</div><div class="act-name">The Teacher's Doubt</div><div class="act-desc">Son House watching his student surpass him. The moment he understood what he'd given away. Pride and grief in the same breath.</div></div>
+      <div class="act-card"><div class="act-num">ACT V</div><div class="act-rune">ᛖ</div><div class="act-ity">Connectivity</div><div class="act-name">The Music Spreads</div><div class="act-desc">29 songs. Two recording sessions. A catalogue that would become the DNA of everything that followed. The music finds its listeners.</div></div>
+      <div class="act-card"><div class="act-num">ACT VI</div><div class="act-rune">ᚲ</div><div class="act-ity">Lucidity</div><div class="act-name">The Legend Forms</div><div class="act-desc">Robert Johnson dies at 27. The legend is born larger than the man. The music outlives everything. The myth outlives the music.</div></div>
+      <div class="act-card"><div class="act-num">ACT VII</div><div class="act-rune">ᛞ</div><div class="act-ity">Continuity</div><div class="act-name">The Music Never Dies</div><div class="act-desc">Keith Richards. Eric Clapton. Led Zeppelin. Every guitar played since. The Delta lives in everything downstream. The crossroads is everywhere.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ENVIRONMENTS -->
+<section id="environments">
+  <div class="container">
+    <div class="section-eyebrow">Stage 5 — Environment Studio</div>
+    <h2 class="section-title">The Environments</h2>
+    <p class="section-sub">Places are not backdrops — they are participants. Each environment carries its own ity profile, shaping the emotional register of every scene set within it.</p>
+    <div class="envs-grid fade-in">
+      <div class="env-card">
+        <img class="env-img" src="https://v3b.fal.media/files/b/0a8f27c8/oi2cMhKOkXOVuwELKY0IY.jpg" alt="The Crossroads" loading="lazy">
+        <div class="env-body">
+          <div class="env-name">The Crossroads — Route 61 & 49</div>
+          <p class="env-desc">Clarksdale, Mississippi. The most mythologized intersection in American music. Where decisions are made that cannot be undone.</p>
+          <div class="env-tags"><span class="env-tag">Vitality 0.99</span><span class="env-tag">Mystery 0.97</span><span class="env-tag">Liminality 0.95</span></div>
+        </div>
+      </div>
+      <div class="env-card">
+        <img class="env-img" src="https://v3b.fal.media/files/b/0a8f27c8/ncBkBMmdN0a6fYA5DzXGP.jpg" alt="The Juke Joint" loading="lazy">
+        <div class="env-body">
+          <div class="env-name">The Juke Joint Interior</div>
+          <p class="env-desc">Saturday night. The only space that belonged entirely to the people who built the Delta. Music until the sun came back.</p>
+          <div class="env-tags"><span class="env-tag">Community 0.98</span><span class="env-tag">Joy 0.94</span><span class="env-tag">Resistance 0.91</span></div>
+        </div>
+      </div>
+      <div class="env-card">
+        <img class="env-img" src="https://v3b.fal.media/files/b/0a8f27c8/rqbd5pmpewYQ10zqZ5KaA.jpg" alt="The Church" loading="lazy">
+        <div class="env-body">
+          <div class="env-name">The Baptist Church</div>
+          <p class="env-desc">Where the same congregation gathered Sunday morning who danced in the juke joint Saturday night. The sacred and the profane were neighbors.</p>
+          <div class="env-tags"><span class="env-tag">Spirituality 0.99</span><span class="env-tag">Transcendence 0.96</span><span class="env-tag">Community 0.93</span></div>
+        </div>
+      </div>
+      <div class="env-card">
+        <img class="env-img" src="https://v3b.fal.media/files/b/0a8f27c8/cjsVJGVGurp1tULehDkyY.jpg" alt="Stovall Plantation" loading="lazy">
+        <div class="env-body">
+          <div class="env-name">Stovall Plantation — Where It Was Recorded</div>
+          <p class="env-desc">Near Clarksdale. Alan Lomax arrived here in 1941 with recording equipment. What he captured changed the history of music documentation.</p>
+          <div class="env-tags"><span class="env-tag">Memory 0.97</span><span class="env-tag">Authenticity 0.99</span><span class="env-tag">Origin 0.98</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VISUAL CINEMA -->
+<section id="cinema" style="background:#0F0A06;">
+  <div class="container">
+    <div class="section-eyebrow">Stage 6 — Visual Production</div>
+    <h2 class="section-title">Visual Cinema</h2>
+    <p class="section-sub">Five cinematic scenes generated from the world context — each one a window into the emotional atmosphere of the Clarksdale Series.</p>
+    <div class="cinema-grid fade-in">
+      <div class="cinema-card wide">
+        <img class="cinema-img" src="https://v3b.fal.media/files/b/0a8f2701/lysoI721QPE7ggr1rVDea.jpg" alt="Sacred & Profane" loading="lazy" style="aspect-ratio:21/9">
+        <div class="cinema-overlay"><div class="cinema-title">IV — Sacred & Profane · The Church and The Juke Joint</div></div>
+      </div>
+      <div class="cinema-card">
+        <img class="cinema-img" src="https://v3b.fal.media/files/b/0a8f2700/pkfaJDPV8Ius8HhpEX-RP.jpg" alt="Crossroads" loading="lazy">
+        <div class="cinema-overlay"><div class="cinema-title">I — The Crossroads at Midnight</div></div>
+      </div>
+      <div class="cinema-card">
+        <img class="cinema-img" src="https://v3b.fal.media/files/b/0a8f2700/77YIRW4fCoVJmZjYLX2ij.jpg" alt="Juke Joint" loading="lazy">
+        <div class="cinema-overlay"><div class="cinema-title">II — The Juke Joint</div></div>
+      </div>
+      <div class="cinema-card">
+        <img class="cinema-img" src="https://v3b.fal.media/files/b/0a8f2700/njgodzzltMlOfWEyIJ8no.jpg" alt="Cotton Dawn" loading="lazy">
+        <div class="cinema-overlay"><div class="cinema-title">III — Cotton Field at Dawn</div></div>
+      </div>
+      <div class="cinema-card">
+        <img class="cinema-img" src="https://v3b.fal.media/files/b/0a8f2701/9d2lS9rxFQ3hletutsh7p.jpg" alt="Maxwell Street" loading="lazy">
+        <div class="cinema-overlay"><div class="cinema-title">V — The Delta Goes Electric · Maxwell Street</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VIDEO ARCS -->
+<section id="videos">
+  <div class="container">
+    <div class="section-eyebrow">Stage 6b — Video Production · wan-t2v</div>
+    <h2 class="section-title">The Arc Videos</h2>
+    <p class="section-sub">Each Omega Protocol act generates a short cinematic video clip — a moving image of the narrative moment. Generated via Fal.ai wan-t2v directly from the act descriptions.</p>
+    <div class="videos-grid fade-in">
+      <div class="video-card">
+        <video class="video-el" controls loop muted autoplay playsinline>
+          <source src="https://v3b.fal.media/files/b/0a8f27fd/SQdhL9nlXRIzzaTVhg68B_tmpctggqz4s.mp4" type="video/mp4">
+        </video>
+        <div class="video-body">
+          <div class="video-act">Act I · Materiality · ᚢ Uruz</div>
+          <div class="video-title">The Crossroads at Midnight</div>
+        </div>
+      </div>
+      <div class="video-card">
+        <video class="video-el" controls loop muted autoplay playsinline>
+          <source src="https://v3b.fal.media/files/b/0a8f27f2/Edbg8J4iiFqANwqPybISN_tmpii26_rpx.mp4" type="video/mp4">
+        </video>
+        <div class="video-body">
+          <div class="video-act">Act II · Vitality · ᛒ Berkano</div>
+          <div class="video-title">The Guitar Awakens</div>
+        </div>
+      </div>
+      <div class="video-card">
+        <div class="video-pending">
+          <div class="video-pending-icon">🎞️</div>
+          <div class="video-pending-text">Acts III–VII</div>
+          <div class="video-pending-text" style="font-size:9px">Generating…</div>
+        </div>
+        <div class="video-body">
+          <div class="video-act">Acts III–VII · In Production</div>
+          <div class="video-title">The Bargain · The Doubt · The Legend</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MUSIC -->
+<section id="music" style="background:#0F0A06;">
+  <div class="container">
+    <div class="section-eyebrow">Stage 7 — Music Studio · Suno AI</div>
+    <h2 class="section-title">The Music</h2>
+    <p class="section-sub">8 original tracks composed for this world — 5 solos and 3 duets — each one generated from the character profiles, world atmosphere, and Omega Protocol themes. No artist names used. Pure musical description.</p>
+    <div class="music-grid fade-in">
+      <div class="music-card">
+        <div class="music-type solo">Solo</div>
+        <div class="music-title">Last Night at the Crossroads</div>
+        <div class="music-style">Delta blues · acoustic slide guitar · open G · raw haunting male vocals · 1930s Mississippi · crossroads</div>
+        <div class="waveform">
+          <div class="bar" style="height:8px;--dur:.4s"></div><div class="bar" style="height:18px;--dur:.5s"></div><div class="bar" style="height:14px;--dur:.7s"></div><div class="bar" style="height:22px;--dur:.45s"></div><div class="bar" style="height:10px;--dur:.6s"></div><div class="bar" style="height:20px;--dur:.55s"></div><div class="bar" style="height:16px;--dur:.5s"></div><div class="bar" style="height:24px;--dur:.65s"></div><div class="bar" style="height:12px;--dur:.4s"></div><div class="bar" style="height:18px;--dur:.7s"></div>
+        </div>
+        <div class="music-pending">🎵 Ready for Suno generation</div>
+      </div>
+      <div class="music-card">
+        <div class="music-type solo">Solo</div>
+        <div class="music-title">Empress of the Evening</div>
+        <div class="music-style">Classic blues · powerful female vocalist · jazz piano · theatrical · 1920s · juke joint · heartbreak · sovereignty</div>
+        <div class="waveform">
+          <div class="bar" style="height:20px;--dur:.5s"></div><div class="bar" style="height:12px;--dur:.6s"></div><div class="bar" style="height:24px;--dur:.45s"></div><div class="bar" style="height:16px;--dur:.7s"></div><div class="bar" style="height:22px;--dur:.55s"></div><div class="bar" style="height:8px;--dur:.5s"></div><div class="bar" style="height:18px;--dur:.65s"></div><div class="bar" style="height:14px;--dur:.4s"></div><div class="bar" style="height:22px;--dur:.6s"></div><div class="bar" style="height:10px;--dur:.5s"></div>
+        </div>
+        <div class="music-pending">🎵 Ready for Suno generation</div>
+      </div>
+      <div class="music-card">
+        <div class="music-type solo">Solo</div>
+        <div class="music-title">Maxwell Street Saturday</div>
+        <div class="music-style">Chicago electric blues · amplified slide guitar · rhythm section · 1940s · urban blues · powerful male vocals</div>
+        <div class="waveform">
+          <div class="bar" style="height:22px;--dur:.55s"></div><div class="bar" style="height:18px;--dur:.4s"></div><div class="bar" style="height:24px;--dur:.65s"></div><div class="bar" style="height:14px;--dur:.5s"></div><div class="bar" style="height:20px;--dur:.7s"></div><div class="bar" style="height:24px;--dur:.45s"></div><div class="bar" style="height:16px;--dur:.55s"></div><div class="bar" style="height:22px;--dur:.6s"></div><div class="bar" style="height:12px;--dur:.5s"></div><div class="bar" style="height:20px;--dur:.65s"></div>
+        </div>
+        <div class="music-pending">🎵 Ready for Suno generation</div>
+      </div>
+      <div class="music-card">
+        <div class="music-type solo">Solo</div>
+        <div class="music-title">Preacher Man Blues</div>
+        <div class="music-style">Prewar Delta blues · gospel meets devil · intense slide guitar · preacher vocal · 1930s · spiritual conflict</div>
+        <div class="waveform">
+          <div class="bar" style="height:14px;--dur:.6s"></div><div class="bar" style="height:22px;--dur:.5s"></div><div class="bar" style="height:10px;--dur:.7s"></div><div class="bar" style="height:24px;--dur:.45s"></div><div class="bar" style="height:18px;--dur:.55s"></div><div class="bar" style="height:14px;--dur:.65s"></div><div class="bar" style="height:20px;--dur:.5s"></div><div class="bar" style="height:12px;--dur:.6s"></div><div class="bar" style="height:24px;--dur:.45s"></div><div class="bar" style="height:16px;--dur:.7s"></div>
+        </div>
+        <div class="music-pending">🎵 Ready for Suno generation</div>
+      </div>
+      <div class="music-card">
+        <div class="music-type solo">Solo</div>
+        <div class="music-title">Holy Electric</div>
+        <div class="music-style">Gospel blues proto-rock · electric guitar virtuosity · joyful female vocals · 1940s · sacred and secular · celebratory</div>
+        <div class="waveform">
+          <div class="bar" style="height:24px;--dur:.45s"></div><div class="bar" style="height:16px;--dur:.6s"></div><div class="bar" style="height:22px;--dur:.5s"></div><div class="bar" style="height:10px;--dur:.7s"></div><div class="bar" style="height:24px;--dur:.55s"></div><div class="bar" style="height:18px;--dur:.45s"></div><div class="bar" style="height:14px;--dur:.65s"></div><div class="bar" style="height:22px;--dur:.5s"></div><div class="bar" style="height:20px;--dur:.6s"></div><div class="bar" style="height:12px;--dur:.55s"></div>
+        </div>
+        <div class="music-pending">🎵 Ready for Suno generation</div>
+      </div>
+      <div class="music-card">
+        <div class="music-type duet">Duet</div>
+        <div class="music-title">What I Gave You</div>
+        <div class="music-style">Delta blues duet · two male voices · call and response · acoustic slide guitar · mentor-student tension · 1930s Mississippi</div>
+        <div class="waveform">
+          <div class="bar" style="height:16px;--dur:.5s"></div><div class="bar" style="height:24px;--dur:.65s"></div><div class="bar" style="height:12px;--dur:.45s"></div><div class="bar" style="height:20px;--dur:.7s"></div><div class="bar" style="height:16px;--dur:.55s"></div><div class="bar" style="height:22px;--dur:.5s"></div><div class="bar" style="height:10px;--dur:.6s"></div><div class="bar" style="height:18px;--dur:.45s"></div><div class="bar" style="height:24px;--dur:.65s"></div><div class="bar" style="height:14px;--dur:.5s"></div>
+        </div>
+        <div class="music-pending">🎵 Ready for Suno generation</div>
+      </div>
+      <div class="music-card">
+        <div class="music-type duet">Duet</div>
+        <div class="music-title">Two Empresses</div>
+        <div class="music-style">Blues duet · two powerful female vocalists · electric guitar · jazz piano · theatrical · 1940s · regal · mutual respect</div>
+        <div class="waveform">
+          <div class="bar" style="height:22px;--dur:.55s"></div><div class="bar" style="height:14px;--dur:.5s"></div><div class="bar" style="height:24px;--dur:.65s"></div><div class="bar" style="height:18px;--dur:.45s"></div><div class="bar" style="height:12px;--dur:.7s"></div><div class="bar" style="height:22px;--dur:.55s"></div><div class="bar" style="height:20px;--dur:.5s"></div><div class="bar" style="height:16px;--dur:.6s"></div><div class="bar" style="height:24px;--dur:.45s"></div><div class="bar" style="height:10px;--dur:.65s"></div>
+        </div>
+        <div class="music-pending">🎵 Ready for Suno generation</div>
+      </div>
+      <div class="music-card">
+        <div class="music-type duet">Duet</div>
+        <div class="music-title">Delta to Electric</div>
+        <div class="music-style">Blues duet · acoustic voice meets electric · past meets present · Delta meets Chicago · 1940s · cinematic · nostalgic</div>
+        <div class="waveform">
+          <div class="bar" style="height:10px;--dur:.7s"></div><div class="bar" style="height:20px;--dur:.5s"></div><div class="bar" style="height:16px;--dur:.6s"></div><div class="bar" style="height:24px;--dur:.45s"></div><div class="bar" style="height:12px;--dur:.65s"></div><div class="bar" style="height:22px;--dur:.55s"></div><div class="bar" style="height:18px;--dur:.5s"></div><div class="bar" style="height:14px;--dur:.7s"></div><div class="bar" style="height:20px;--dur:.45s"></div><div class="bar" style="height:24px;--dur:.6s"></div>
+        </div>
+        <div class="music-pending">🎵 Ready for Suno generation</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOCIAL -->
+<section id="social">
+  <div class="container">
+    <div class="section-eyebrow">Stage 8 — Social Distribution · Ubiquity Studio</div>
+    <h2 class="section-title">The Social Campaign</h2>
+    <p class="section-sub">Every Trinity World production generates a complete social campaign — platform-native content ready for distribution. Characters, sparks, scenes, and stories become posts, threads, and press.</p>
+    <div class="social-grid fade-in">
+
+      <!-- Instagram Post 1 -->
+      <div class="social-card">
+        <div class="ig-header">
+          <div class="ig-avatar">♪</div>
+          <div><div class="ig-name">clarksdale_series <span class="ig-verified">✦</span></div><div class="ig-handle">@clarksdale_series · Clarksdale, Mississippi</div></div>
+        </div>
+        <img src="https://v3b.fal.media/files/b/0a8f2683/CFObHML-5Th2SGcdOYplN.jpg" style="width:100%;aspect-ratio:1;object-fit:cover;display:block" alt="Robert Johnson">
+        <div class="ig-body">
+          <div class="ig-actions">♡ &nbsp; ✈ &nbsp; 🔖</div>
+          <div class="ig-caption"><strong>4,721 likes</strong><br>He went down to the crossroads. He came back able to play things no one had taught him. 29 songs. Dead at 27. The DNA of everything that came after.</div>
+          <div class="ig-hashtags">#DeltaBlues #ClarksdaleSeries #TrinityGraph #MississippiBlues #BluesHistory</div>
+          <div class="ig-stats">89 comments · View all</div>
+        </div>
+      </div>
+
+      <!-- Twitter Thread -->
+      <div class="social-card">
+        <div class="tw-card">
+          <div class="tw-header">
+            <div class="tw-avatar">♪</div>
+            <div><div class="tw-name">Clarksdale Series ✦</div><div class="tw-handle">@clarksdale_series</div></div>
+          </div>
+          <div class="tw-label">Thread · 1/5</div>
+          <div class="tw-tweet">The Mississippi Delta produced more music per square mile than anywhere in human history. We used Trinity Graph to find out why. Here's what the AI discovered. 🧵</div>
+          <div class="tw-label">2/5</div>
+          <div class="tw-tweet">5 characters. 3 sparks. 7 acts of narrative. The highest convergence score in the world: Bessie Smith × Sister Rosetta Tharpe. Two empresses. 0.94.</div>
+          <div class="tw-label">3/5</div>
+          <div class="tw-tweet">The delta went electric when one man packed a guitar case and took the Illinois Central north to Chicago. What came out of the amplifier was the twentieth century.</div>
+          <div class="tw-actions">↩ 312 &nbsp; 🔁 1.4K &nbsp; ♡ 8.7K &nbsp; 📊</div>
+        </div>
+      </div>
+
+      <!-- Press Release -->
+      <div class="social-card">
+        <div class="press-card">
+          <div class="press-outlet">Press Release · Inkwell Technology Studios</div>
+          <div class="press-hed">Inkwell Launches Trinity Graph World-Building Platform with Mississippi Delta Demo</div>
+          <div class="press-dek">AI system generates complete creative universes — characters, narratives, visuals, and music — from a single world brief</div>
+          <div class="press-body">
+            <strong>LOS ANGELES, CA</strong> — Inkwell Technology Studios today announced the Trinity Graph World-Building Platform, a system that generates complete creative productions from a single world brief. The inaugural demonstration, "The Clarksdale Series," recreates the creative universe of the Mississippi Delta blues scene — producing five AI-rendered characters with ontological profiles, three narrative sparks with convergence scores, a 7-act story arc using the Omega Protocol, ten cinematic images, two generated videos, and eight original songs.
+            <br><br>
+            "We built a system that understands a world the way a creative director understands a brief," said Oliver Luckett, CEO of Inkwell Technology Studios. "Every department — characters, story, visuals, music, social — reads from the same world context and produces output that is genuinely aligned."
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- STUDIOS -->
+<section style="background:#0F0A06;padding:60px 0;">
+  <div class="container">
+    <div class="section-eyebrow">Open in Trinity Worlds</div>
+    <h2 class="section-title" style="font-size:28px;margin-bottom:32px">All Studios</h2>
+    <div class="studios-grid">
+      <a class="studio-card" href="trinity-worlds.html"><div class="studio-icon">⬡</div><div class="studio-name">Trinity Worlds Hub</div><div class="studio-desc">World selector + stats dashboard</div></a>
+      <a class="studio-card" href="world-builder.html"><div class="studio-icon">🌍</div><div class="studio-name">World Builder</div><div class="studio-desc">Create and seed new worlds</div></a>
+      <a class="studio-card" href="character-studio.html"><div class="studio-icon">🧑</div><div class="studio-name">Character Studio</div><div class="studio-desc">Birth characters with 50 ity dimensions</div></a>
+      <a class="studio-card" href="spark-maker.html"><div class="studio-icon">⚡</div><div class="studio-name">Spark Maker</div><div class="studio-desc">Collide characters, find convergence</div></a>
+      <a class="studio-card" href="story-engine.html"><div class="studio-icon">📖</div><div class="studio-name">Story Engine</div><div class="studio-desc">7-act Omega Protocol narratives</div></a>
+      <a class="studio-card" href="environment-studio.html"><div class="studio-icon">🏛️</div><div class="studio-name">Environment Studio</div><div class="studio-desc">Places & atmospheres</div></a>
+      <a class="studio-card" href="scene-studio.html"><div class="studio-icon">🎬</div><div class="studio-name">Scene Studio</div><div class="studio-desc">Compose scenes: characters + place + tone</div></a>
+      <a class="studio-card" href="ubiquity-studio.html"><div class="studio-icon">📱</div><div class="studio-name">Ubiquity Studio</div><div class="studio-desc">Publishing & distribution</div></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <h2>The Clarksdale Series</h2>
+  <p>A Trinity World Production · Inkwell Technology Studios · Built with Trinity Graph, Omega Protocol, Fal.ai, Gemini</p>
+  <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+    <a href="clarksdale-demo.html" style="color:var(--gold);font-size:11px;text-decoration:none;padding:6px 14px;border:1px solid var(--border);border-radius:4px;">◈ Characters & Sparks</a>
+    <a href="clarksdale-videos.html" style="color:var(--gold);font-size:11px;text-decoration:none;padding:6px 14px;border:1px solid var(--border);border-radius:4px;">🎬 Visual Cinema</a>
+    <a href="trinity-worlds.html" style="color:var(--gold);font-size:11px;text-decoration:none;padding:6px 14px;border:1px solid var(--border);border-radius:4px;">⬡ Trinity Worlds</a>
+  </div>
+</footer>
+
+<script>
+// Fade-in on scroll
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+
+// Pipeline active link
+const sections = document.querySelectorAll('section[id]');
+const pipLinks = document.querySelectorAll('.pip-step');
+const sectionObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting) {
+      pipLinks.forEach(l => l.classList.remove('active'));
+      const link = document.querySelector('.pip-step[href="#'+e.target.id+'"]');
+      if(link) link.classList.add('active');
+    }
+  });
+}, { rootMargin: '-40% 0px -40% 0px' });
+sections.forEach(s => sectionObs.observe(s));
+</script>
+</body>
+</html>
