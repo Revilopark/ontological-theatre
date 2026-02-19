@@ -1120,6 +1120,31 @@ async function init() {
   applyWorldContext();
   updateSummary();
 
+  // Spark Maker handoff — "Write Their Story →" button sets trinity_story_setup
+  const sparkSetup = (() => { try { return JSON.parse(localStorage.getItem('trinity_story_setup')||'null'); } catch(e){ return null; } })();
+  if (sparkSetup) {
+    localStorage.removeItem('trinity_story_setup'); // consume once
+    if (sparkSetup.cast && Array.isArray(sparkSetup.cast)) {
+      sparkSetup.cast.forEach(c => {
+        if (S.cast.length < 6 && !S.cast.find(x => x.id === c.id)) {
+          S.cast.push(c);
+          S.castIds.add(c.id);
+        }
+      });
+    }
+    if (sparkSetup.place && !S.loc) S.loc = sparkSetup.place;
+    if (sparkSetup.era && !S.era) S.era = sparkSetup.era;
+    if (sparkSetup.narrative) {
+      // Pre-fill title with character names
+      const names = sparkSetup.cast?.map(c=>c.name).join(' × ');
+      if (names && !document.getElementById('titleIn').value) {
+        document.getElementById('titleIn').value = `The Story of ${names}`;
+      }
+    }
+    renderCast?.(); updateSummary?.();
+    toast('Cast loaded from Spark Maker ✦', 'inf');
+  }
+
   // URL hash story expand
   if (location.hash.startsWith('#story=')) {
     try {
