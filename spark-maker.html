@@ -1493,6 +1493,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderGallery();
   animateSVGIdle();
   initWorldContext();
+
+  // Character Studio handoff — "⚡ Spark →" pre-loads Character A
+  const preload = (() => { try { return JSON.parse(localStorage.getItem('trinity_spark_preload')||'null'); } catch(e){ return null; } })();
+  if (preload && preload.charA) {
+    localStorage.removeItem('trinity_spark_preload');
+    const c = preload.charA;
+    if (!window._savedChars) window._savedChars = [];
+    if (!window._savedChars.find(function(x){ return x.id === c.id; })) window._savedChars.push(c);
+    const sel = document.getElementById('select-a');
+    if (sel) {
+      let opt = sel.querySelector('option[value="' + c.id + '"]');
+      if (!opt) {
+        opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name + (c.era ? ' · ' + c.era : '');
+        sel.appendChild(opt);
+      }
+      sel.value = c.id;
+      selectCharacter('a', c.id);
+    }
+  }
 });
 
 // ============================================================
