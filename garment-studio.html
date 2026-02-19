@@ -3712,6 +3712,40 @@ function App() {
     return () => { delete window._setGarment; delete window._setFabric; };
   }, []);
 
+  // Trinity Graph bridge — sync garments to shared trinity_garments key
+  // so Character Studio, Spark Maker, Story Engine, World Builder can all see them
+  useEffect(() => {
+    const ITY_MAP = {
+      'Beaded Collection':    { authenticity:0.95, luminosity:0.9, complexity:0.85, vitality:0.8, felicity:0.9 },
+      'Taffeta Collection':   { fluidity:0.9, felicity:0.85, vitality:0.8, serendipity:0.75, clarity:0.7 },
+      'Organza Collection':   { transparency:0.95, fluidity:0.9, fragility:0.85, authenticity:0.8, luminosity:0.85 },
+      'New Work 2026':        { power:0.95, authority:0.9, clarity:0.9, intensity:0.85, presence:0.9 },
+      'Custom Commissions':   { authenticity:0.9, reciprocity:0.85, vitality:0.8, integrity:0.85, uniqueness:0.9 },
+    };
+    const INTENT_MAP = {
+      'Beaded Collection':    'Radiant presence through handcraft — each bead a declaration of time, care, and luminosity',
+      'Taffeta Collection':   'Fluid transformation — garments that move between states as their wearer moves through worlds',
+      'Organza Collection':   'Vulnerability as power — sheer layers that reveal and conceal simultaneously',
+      'New Work 2026':        'Authority through architecture — the body as structure, the silhouette as statement',
+      'Custom Commissions':   'Intimate specificity — made for one person, one moment, one truth',
+    };
+    const trinityGarments = garments.map(g => ({
+      id: g.id,
+      name: g.name,
+      collection: g.collection,
+      type: g.type,
+      stage: g.stage,
+      fabric: g.fabric,
+      notes: g.notes,
+      renderUrl: g.renderUrl,
+      ity_profile: ITY_MAP[g.collection] || { authenticity:0.8, vitality:0.7, clarity:0.75 },
+      intent: INTENT_MAP[g.collection] || 'Crafted with intention and care',
+      source: 'verneccia-etienne',
+      createdAt: g.createdAt,
+    }));
+    try { localStorage.setItem('trinity_garments', JSON.stringify(trinityGarments)); } catch(e) {}
+  }, [garments]);
+
   const handleFabricSelect = useCallback((id) => {
     setSelectedFabric(id);
     const f = getFabricById(id);
