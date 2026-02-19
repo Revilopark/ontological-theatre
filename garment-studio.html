@@ -4236,7 +4236,53 @@ function App() {
     return seed;
   });
   const [dreams,   setDreams]   = useState([]);
-  const [slopers,  setSlopers]  = useState([]);
+
+  // Sloper seed data — public domain blocks with attribution
+  const SLOPER_SEED_DATA = [
+    { id:"sloper_bodice_front_basic", name:"Basic Bodice Front Block", bodyPart:"Bodice Front", date:"2024-01-01",
+      measurements:"Bust 82cm · Waist 62cm · Back Length 39cm · Shoulder 12cm",
+      notes:"Standard women's size 10 (UK) / size 8 (US) bodice front block. Single dart from bust to side seam and shoulder. No seam allowance included.\n\nSource: After Aldrich, W. (2015). Metric Pattern Cutting for Women's Wear. Wiley-Blackwell. ISBN 978-1-118-43139-2" },
+    { id:"sloper_bodice_back_basic", name:"Basic Bodice Back Block", bodyPart:"Bodice Back", date:"2024-01-01",
+      measurements:"Bust 82cm · Waist 62cm · Back Length 39cm · Shoulder 12cm",
+      notes:"Standard women's size 10 bodice back block. Single waist dart. Neckline 0.5cm higher than front. No seam allowance.\n\nSource: After Aldrich, W. (2015). Metric Pattern Cutting for Women's Wear. Wiley-Blackwell." },
+    { id:"sloper_sleeve_basic", name:"Basic Set-In Sleeve Block", bodyPart:"Sleeve", date:"2024-01-01",
+      measurements:"Length 59cm · Bicep 32cm · Sleeve Head 15cm · Ease 3.5cm",
+      notes:"Standard set-in sleeve, two-piece option. Crown height matched to bodice block. Ease ~3.5cm for woven fabrics. No seam allowance.\n\nSource: After Aldrich, W. (2015). Metric Pattern Cutting for Women's Wear. Wiley-Blackwell." },
+    { id:"sloper_skirt_front_basic", name:"Basic Skirt Front Block", bodyPart:"Skirt Front", date:"2024-01-01",
+      measurements:"Waist 62cm · Hip 87cm · Length 60cm · Hip Line 20cm",
+      notes:"Straight skirt front block. Two front darts. Hip fullness at 20cm below waist. No seam allowance.\n\nSource: After Aldrich, W. (2015). Metric Pattern Cutting for Women's Wear. Wiley-Blackwell." },
+    { id:"sloper_skirt_back_basic", name:"Basic Skirt Back Block", bodyPart:"Skirt Back", date:"2024-01-01",
+      measurements:"Waist 62cm · Hip 87cm · Length 60cm",
+      notes:"Straight skirt back block. Two back darts deeper than front. Centre back seam optional.\n\nSource: After Aldrich, W. (2015). Metric Pattern Cutting for Women's Wear. Wiley-Blackwell." },
+    { id:"sloper_trouser_front_basic", name:"Basic Trouser Front Block", bodyPart:"Trouser Front", date:"2024-01-01",
+      measurements:"Waist 62cm · Hip 87cm · Inside Leg 76cm · Crotch Depth 28cm",
+      notes:"Standard trouser front block. One dart or pleat. Straight-leg silhouette. No fly extension.\n\nSource: After Aldrich, W. (2015). Metric Pattern Cutting for Women's Wear. Wiley-Blackwell." },
+    { id:"sloper_trouser_back_basic", name:"Basic Trouser Back Block", bodyPart:"Trouser Back", date:"2024-01-01",
+      measurements:"Waist 62cm · Hip 87cm · Inside Leg 76cm · Back Rise 32cm",
+      notes:"Standard trouser back block. Two darts. Deeper crotch curve. Seat ease 3cm.\n\nSource: After Aldrich, W. (2015). Metric Pattern Cutting for Women's Wear. Wiley-Blackwell." },
+    { id:"sloper_collar_shirt", name:"Classic Shirt Collar Stand & Fall", bodyPart:"Collar", date:"2024-01-01",
+      measurements:"Neck 36cm · Stand 3cm · Fall 4cm",
+      notes:"Two-part shirt collar: stand and fall. Worked from neckline measurement.\n\nSource: After Beazley, A. & Bond, T. (2003). Computer-Aided Pattern Design and Product Development. Blackwell Science." },
+    { id:"sloper_waistband_basic", name:"Basic Waistband", bodyPart:"Waistband", date:"2024-01-01",
+      measurements:"Length 64cm (waist + overlap) · Width 4cm (folded)",
+      notes:"Standard waistband for skirts/trousers. Length = waist + 3cm overlap + 1cm underlap. Cut on straight grain. Interface full piece.\n\nSource: Standard industry block (public domain teaching pattern)." },
+    { id:"sloper_bodice_front_princess", name:"Princess Seam Bodice Front", bodyPart:"Bodice Front", date:"2024-01-01",
+      measurements:"Bust 82cm · Waist 62cm · Back Length 39cm",
+      notes:"Princess seam variation of the basic bodice front. Dart converted to princess seam from shoulder to hem. Three panels (CF, side-front). Ideal for fitted dresses.\n\nSource: Developed from Aldrich method by Palmer/Pletsch (1986). Fit for Real People. Pati Palmer. (Instructional reference — no copyright claimed on block method.)" },
+  ];
+
+  const [slopers, setSlopers] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ve_slopers');
+      if (saved) { const p = JSON.parse(saved); if (p.length > 0) return p; }
+    } catch(e) {}
+    return SLOPER_SEED_DATA;
+  });
+
+  // Persist slopers
+  useEffect(() => {
+    try { localStorage.setItem('ve_slopers', JSON.stringify(slopers)); } catch(e) {}
+  }, [slopers]);
 
   // Expose setters for cross-panel access (Generate panel quick-select)
   useEffect(() => {

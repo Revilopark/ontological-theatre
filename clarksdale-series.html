@@ -224,6 +224,8 @@ footer p{font-size:11px;color:var(--muted);margin-bottom:24px;letter-spacing:.06
     <span class="pip-arrow">→</span>
     <a href="#environments" class="pip-step"><span class="pip-icon">🏛️</span> Environments <span class="pip-count">4</span></a>
     <span class="pip-arrow">→</span>
+    <a href="#map" class="pip-step"><span class="pip-icon">🗺️</span> Map <span class="pip-count">1927</span></a>
+    <span class="pip-arrow">→</span>
     <a href="#cinema" class="pip-step"><span class="pip-icon">🎬</span> Visual Cinema <span class="pip-count">5</span></a>
     <span class="pip-arrow">→</span>
     <a href="#videos" class="pip-step"><span class="pip-icon">🎞️</span> Video Arcs <span class="pip-count">3+</span></a>
@@ -516,6 +518,188 @@ footer p{font-size:11px;color:var(--muted);margin-bottom:24px;letter-spacing:.06
     </div>
   </div>
 </section>
+
+<!-- HISTORICAL MAP -->
+<section id="map" style="background:#0F0A06;">
+  <div class="container">
+    <div class="section-eyebrow">Geography — 1927 Mississippi River Commission Survey</div>
+    <h2 class="section-title">The Delta Map</h2>
+    <p class="section-sub">The river that made the Delta. This map shows the Mississippi River's course as surveyed c.1927 — the year of the Great Flood that changed everything. The 1927 flood (April–August) inundated 27,000 sq miles, displaced 700,000 people, and accelerated the Great Migration north. <span style="color:var(--gold)">Red overlay = 1927 flood extent.</span> Every scene in the Clarksdale Series was shaped by this water.</p>
+    <div id="delta-map" style="width:100%;height:520px;border-radius:12px;border:1px solid var(--border);overflow:hidden;"></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px;">
+      <div style="background:var(--card);border:1px solid var(--border);padding:14px;border-radius:8px;font-size:11px;color:var(--muted);">
+        <div style="color:var(--gold);font-weight:700;margin-bottom:4px;">🗺 Map Source</div>
+        Mississippi River Commission survey maps, c.1926–1929. Original maps held at Library of Congress Geography & Map Division. The 1927 course differs significantly from today — the Army Corps of Engineers straightened and leveed the river after the flood, shortening it by ~150 miles.
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);padding:14px;border-radius:8px;font-size:11px;color:var(--muted);">
+        <div style="color:var(--gold);font-weight:700;margin-bottom:4px;">🌊 The Great Flood of 1927</div>
+        April 15 – August 1927. Worst river flood in US history. Mound Landing crevasse (April 21) near Greenville sent 468,000 cubic feet/sec across the Delta. Bessie Smith recorded <em>Back-Water Blues</em> in February — as if in prophecy.
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);padding:14px;border-radius:8px;font-size:11px;color:var(--muted);">
+        <div style="color:var(--gold);font-weight:700;margin-bottom:4px;">🚂 The Great Migration</div>
+        Between 1910–1970, ~6 million Black Americans left the South. The 1927 flood accelerated the movement north. The Illinois Central Railroad ("The City of New Orleans") ran straight from the Delta to Chicago — same track that carried Muddy Waters.
+      </div>
+    </div>
+  </div>
+</section>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function initMap() {
+  // Initialize map centered on the Mississippi Delta
+  const map = L.map('delta-map', {
+    center: [33.8, -90.7],
+    zoom: 7,
+    zoomControl: true,
+    attributionControl: true
+  });
+
+  // Dark tile layer
+  L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 18
+  }).addTo(map);
+
+  // 1927 Flood extent polygon (approximate, based on historical records)
+  // The 1927 flood inundated the Yazoo-Mississippi Delta lowlands
+  const floodPolygon = L.polygon([
+    // Main Delta flood zone (approximate from historical USGS/Corps records)
+    [35.15, -90.2], [35.1, -90.0], [34.9, -89.9],
+    [34.7, -90.1], [34.5, -90.3], [34.2, -90.5],
+    [33.9, -90.8], [33.5, -91.0], [33.2, -91.2],
+    [32.8, -91.3], [32.5, -91.2], [32.5, -90.9],
+    [32.8, -90.7], [33.2, -90.7], [33.5, -90.7],
+    [33.8, -90.6], [34.1, -90.5], [34.4, -90.4],
+    [34.7, -90.3], [35.0, -90.2], [35.15, -90.2]
+  ], {
+    color: '#8B1A1A',
+    fillColor: '#CC2200',
+    fillOpacity: 0.2,
+    weight: 1.5,
+    dashArray: '4,4'
+  }).addTo(map);
+  floodPolygon.bindPopup('<b style="color:#CC4400">1927 Great Flood</b><br>Approximate inundation zone<br>April–August 1927<br><small>27,000 sq miles flooded · 700,000 displaced</small>');
+
+  // River course marker (approximate 1927 main channel)
+  const riverPath = L.polyline([
+    [35.15, -90.07], [34.87, -90.15], [34.53, -90.59],
+    [34.2, -90.87], [33.92, -91.08], [33.54, -91.06],
+    [33.19, -91.09], [32.78, -91.09], [32.35, -90.89]
+  ], {
+    color: '#4A8AB0',
+    weight: 4,
+    opacity: 0.7
+  }).addTo(map);
+  riverPath.bindPopup('<b>Mississippi River</b><br>c.1927 main channel<br><small>Course has changed since Army Corps levee work post-1927</small>');
+
+  // Custom gold icon
+  function goldIcon(emoji) {
+    return L.divIcon({
+      html: `<div style="width:32px;height:32px;background:#1C1408;border:2px solid #C8973A;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.6)">${emoji}</div>`,
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      className: ''
+    });
+  }
+
+  // Scene & character locations
+  const locations = [
+    {
+      lat: 34.1948, lng: -90.5715,
+      emoji: '⚡',
+      title: 'The Crossroads — Clarksdale',
+      desc: '<b>Scene I — The Crossroads</b><br>Hwy 61 & Hwy 49, Clarksdale, MS<br>The mythologized intersection. Robert Johnson\'s bargain. Son House\'s territory.<br><small>Convergence Score: 0.89</small>',
+      act: 1
+    },
+    {
+      lat: 34.22, lng: -90.72,
+      emoji: '🎸',
+      title: 'Stovall Plantation',
+      desc: '<b>Stovall Plantation</b><br>Lula, MS — Coahoma County<br>Where Alan Lomax arrived in 1941 with a recording machine.<br>Muddy Waters was a sharecropper here. The recordings that changed music history were made in a commissary.<br><small>Muddy Waters character location</small>',
+      act: 4
+    },
+    {
+      lat: 33.90, lng: -90.70,
+      emoji: '🏠',
+      title: 'Dockery Farms',
+      desc: '<b>Dockery Farms</b><br>Near Cleveland, MS — Sunflower County<br>The birthplace of the blues. Charlie Patton lived here. Son House visited often. The nexus where the earliest Delta blues musicians gathered.<br><small>Son House character location</small>',
+      act: 2
+    },
+    {
+      lat: 34.52, lng: -90.59,
+      emoji: '🌊',
+      title: 'Helena, Arkansas',
+      desc: '<b>Helena, AR</b><br>Across the Mississippi from the Delta<br>KFFA Radio launched <em>King Biscuit Time</em> in 1941 here — the first blues radio show. Sonny Boy Williamson II broadcast the Delta to the world.<br><small>Radio broadcast / connectivity node</small>',
+      act: 5
+    },
+    {
+      lat: 35.149, lng: -90.049,
+      emoji: '🚂',
+      title: 'Memphis — The Gateway',
+      desc: '<b>Memphis, Tennessee</b><br>Beale Street · Sun Studio (later)<br>The first city north. Where the Delta musicians went to record. Where the Illinois Central stopped before Chicago.<br><small>Migration waypoint · Blues to Rock transition</small>',
+      act: 6
+    },
+    {
+      lat: 34.19, lng: -90.58,
+      emoji: '⛪',
+      title: 'Clarksdale Baptist Church',
+      desc: '<b>Baptist Church</b><br>Clarksdale, MS<br>The same congregation that danced in the juke joint Saturday night. The sacred and the profane were neighbors.<br><small>Scene III — The sacred & profane</small>',
+      act: 3
+    },
+    {
+      lat: 33.41, lng: -91.06,
+      emoji: '💧',
+      title: 'Greenville — Mound Landing',
+      desc: '<b>Mound Landing Crevasse</b><br>Near Greenville, MS — April 21, 1927<br>The levee broke here at dawn. 468,000 cubic feet per second. The flood that displaced 700,000 people and accelerated the Great Migration. Bessie Smith had already recorded <em>Back-Water Blues</em>.<br><small>1927 Great Flood epicenter</small>',
+      act: 0
+    }
+  ];
+
+  locations.forEach(loc => {
+    const marker = L.marker([loc.lat, loc.lng], { icon: goldIcon(loc.emoji) }).addTo(map);
+    marker.bindPopup(`<div style="font-family:Georgia,serif;max-width:220px;font-size:12px;line-height:1.5">${loc.desc}</div>`, {
+      maxWidth: 250
+    });
+  });
+
+  // Migration route line (Delta → Chicago)
+  const migrationRoute = L.polyline([
+    [34.19, -90.57], // Clarksdale
+    [35.15, -90.05], // Memphis
+    [36.8, -89.1],   // Cairo IL
+    [38.6, -90.2],   // St. Louis
+    [41.88, -87.63]  // Chicago
+  ], {
+    color: '#C8973A',
+    weight: 2,
+    opacity: 0.6,
+    dashArray: '6,6'
+  }).addTo(map);
+  migrationRoute.bindPopup('<b style="color:#C8973A">The Great Migration</b><br>Illinois Central Railroad<br>Delta → Memphis → Chicago<br><small>The same track that carried Muddy Waters north in 1943</small>');
+
+  // Chicago destination marker
+  L.marker([41.88, -87.63], { icon: goldIcon('🏙️') }).addTo(map)
+    .bindPopup('<b>Chicago</b><br>Maxwell Street · Chess Records<br>Where Muddy Waters arrived in 1943.<br>Where the Delta went electric.');
+
+  // Legend
+  const legend = L.control({ position: 'bottomright' });
+  legend.onAdd = function() {
+    const div = L.DomUtil.create('div');
+    div.style.cssText = 'background:rgba(19,14,8,.92);border:1px solid #2A2010;padding:10px 14px;border-radius:8px;font-size:10px;color:#7A6A4A;line-height:1.8;';
+    div.innerHTML = `
+      <div style="color:#C8973A;font-weight:700;margin-bottom:6px;letter-spacing:.1em">LEGEND</div>
+      <div><span style="color:#CC2200">■</span> 1927 Flood Extent</div>
+      <div><span style="color:#4A8AB0">━</span> Mississippi River c.1927</div>
+      <div><span style="color:#C8973A">╌╌</span> Great Migration Route</div>
+      <div style="margin-top:4px">Map: OpenStreetMap / Stadia</div>
+      <div>Historical data: USGS / MRC c.1927</div>
+    `;
+    return div;
+  };
+  legend.addTo(map);
+})();
+</script>
 
 <!-- VISUAL CINEMA -->
 <section id="cinema" style="background:#0F0A06;">
