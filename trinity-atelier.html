@@ -631,6 +631,113 @@ html, body { height: 100%; font-family: 'Inter', sans-serif; background: var(--o
 .var-name { font-size: 10px; font-weight: 600; color: var(--black); margin-bottom: 3px; }
 .var-desc { font-size: 9px; color: var(--gray); line-height: 1.4; }
 
+/* Render button */
+.render-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--black) 0%, #2C1810 100%);
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  font-family: 'Playfair Display', serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.25s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.render-btn:hover { background: linear-gradient(135deg, #2C1810 0%, var(--gold) 100%); color: var(--white); }
+.render-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.render-btn .render-icon { font-size: 18px; }
+
+/* Render output */
+.render-output {
+  position: relative;
+  background: var(--off);
+  border: 1px solid var(--light-gray);
+  border-radius: 10px;
+  overflow: hidden;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.render-img {
+  width: 100%;
+  border-radius: 10px;
+  display: block;
+}
+.render-placeholder {
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--gray);
+}
+.render-placeholder .rp-icon { font-size: 36px; margin-bottom: 10px; display: block; opacity: 0.4; }
+.render-placeholder .rp-text { font-size: 11px; line-height: 1.6; }
+
+/* Loading shimmer */
+.render-loading {
+  width: 100%;
+  min-height: 240px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #f0ede8 25%, #e8e4dc 50%, #f0ede8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.loading-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--gold);
+  animation: fadeInOut 1.4s ease-in-out infinite;
+}
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.render-prompt-preview {
+  font-size: 9px;
+  color: var(--gray);
+  font-style: italic;
+  line-height: 1.5;
+  padding: 8px 0 0;
+}
+
+/* Render actions overlay */
+.render-actions {
+  display: none;
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  gap: 6px;
+}
+.render-output:hover .render-actions { display: flex; }
+.render-action-btn {
+  padding: 5px 10px;
+  background: rgba(26,26,26,0.85);
+  color: var(--gold);
+  border: none;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+
 /* Locked decisions */
 .locked-block {
   background: var(--white);
@@ -1181,7 +1288,28 @@ html, body { height: 100%; font-family: 'Inter', sans-serif; background: var(--o
           <path d="M95 34 Q82 31 70 32" stroke="#B8933A" stroke-width="1.5" fill="none" stroke-linecap="round"/>
         </svg>
 
-        <div class="variations-row">
+        <!-- Render output (above variations) -->
+      <div class="render-output" id="renderOutput" style="width:100%;margin-bottom:14px">
+        <div class="render-placeholder">
+          <span class="rp-icon">✦</span>
+          <div class="rp-text">Your rendered look will appear here.<br>Lock your decisions, then hit Render.</div>
+        </div>
+        <div class="render-actions">
+          <button class="render-action-btn" onclick="downloadRender()">↓ Save</button>
+          <button class="render-action-btn" onclick="reRender()">↺ Re-render</button>
+        </div>
+      </div>
+
+      <!-- Render button -->
+      <button class="render-btn" id="renderBtn" onclick="renderLook()">
+        <span class="render-icon">✦</span>
+        Render This Look
+      </button>
+      <div class="render-prompt-preview" id="renderPromptPreview"></div>
+
+      <div style="height:14px"></div>
+
+      <div class="variations-row">
           <div class="variation-card" onclick="selectVariation(this,'A')">
             <div class="var-letter">A</div>
             <div class="var-name">Architectural Shoulder</div>
@@ -1638,11 +1766,6 @@ function updateEmpathy() {
   document.getElementById('empathyBrief').textContent = empathyVariants[empathyIdx];
 }
 
-// ═══ ITY TAGS ═══════════════════════════════════════
-function toggleTag(el) {
-  el.classList.toggle('selected');
-}
-
 // ═══ ADD CARD (placeholder) ═════════════════════════
 function addCard() {
   const types = ['Text', 'Feeling', 'Color'];
@@ -1706,6 +1829,12 @@ function selectVariation(el, letter) {
   document.querySelectorAll('.variation-card').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
   garment.selectedVariation = letter;
+  updatePromptPreview();
+}
+
+function toggleTag(el) {
+  el.classList.toggle('selected');
+  updatePromptPreview();
 }
 
 // ═══ PATTERN PIECE DATA ══════════════════════════════
@@ -1841,7 +1970,141 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAnalysi
 // ═══ GARMENT NAME SYNC ═══════════════════════════════
 document.getElementById('garmentName').addEventListener('change', function() {
   garment.name = this.value;
+  updatePromptPreview();
 });
+
+// ═══ RENDER ENGINE ════════════════════════════════════
+const PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app';
+
+let lastRenderUrl = null;
+
+function buildRenderPrompt() {
+  const name = garment.name || 'Elegant evening dress';
+
+  // Variation descriptions
+  const varDesc = {
+    'A': 'boxy structured top with fluid column skirt, strong architectural shoulders',
+    'B': 'asymmetric wrap silhouette, convertible fold at hip, fluid drape below waist',
+    'C': 'clean column silhouette with dramatic contrast fold panel, editorial lines',
+  };
+
+  // Ity-derived mood words
+  const selectedTags = [...document.querySelectorAll('.ity-tag.selected')].map(t => t.textContent.toLowerCase());
+  const moodWords = selectedTags.join(', ') || 'authentic, vital, serene';
+
+  // Mood vector → style adjectives
+  const mv = garment.moodVector;
+  const fluidStructured = mv[0] > 50 ? 'fluid, draped' : 'structured, architectural';
+  const publicPrivate = mv[1] > 50 ? 'commanding, public presence' : 'intimate, understated';
+  const timeless = mv[2] < 40 ? 'timeless, classic cut' : 'contemporary';
+
+  const silhouette = varDesc[garment.selectedVariation] || varDesc['B'];
+  const locked = garment.lockedDecisions.join(', ');
+
+  const prompt = `High fashion editorial photograph, ${name}, ${silhouette}, ${locked}, silk crepe fabric, ${fluidStructured}, ${publicPrivate}, ${timeless}, embodies ${moodWords}, sophisticated woman standing confidently, full length shot, elegant studio lighting, pure white seamless background, Vogue editorial quality, sharp focus, photorealistic, fashion photography masterpiece`;
+
+  return prompt;
+}
+
+function updatePromptPreview() {
+  const preview = document.getElementById('renderPromptPreview');
+  if (preview) preview.textContent = '"' + buildRenderPrompt().slice(0, 120) + '…"';
+}
+
+function renderLook() {
+  const btn = document.getElementById('renderBtn');
+  const output = document.getElementById('renderOutput');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="render-icon">⟳</span> Rendering…';
+
+  // Show shimmer loading state
+  output.innerHTML = `
+    <div class="render-loading">
+      <div class="loading-text">The AI is reading your decisions…</div>
+    </div>`;
+
+  const prompt = buildRenderPrompt();
+
+  // Loading message cycle
+  const loadingTexts = [
+    'The AI is reading your decisions…',
+    'Translating empathy into form…',
+    'Considering the shoulder line…',
+    'Resolving the convertible element…',
+    'Almost there — final render…',
+  ];
+  let li = 0;
+  const loadInterval = setInterval(() => {
+    li++;
+    const el = output.querySelector('.loading-text');
+    if (el) el.textContent = loadingTexts[li % loadingTexts.length];
+  }, 1800);
+
+  fetch(`${PROXY}/fal/generate-sync`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'fal-ai/flux/schnell',
+      prompt: prompt,
+      image_size: 'portrait_4_3',
+      num_inference_steps: 8,
+      num_images: 1,
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    clearInterval(loadInterval);
+    const url = data?.images?.[0]?.url || data?.image?.url || data?.url;
+    if (!url) throw new Error('No image URL in response');
+
+    lastRenderUrl = url;
+    output.innerHTML = `
+      <img class="render-img" src="${url}" alt="${garment.name}" onerror="this.parentNode.innerHTML='<div class=render-placeholder><span class=rp-icon>⚠</span><div class=rp-text>Render failed — try again</div></div>'">
+      <div class="render-actions">
+        <button class="render-action-btn" onclick="downloadRender()">↓ Save</button>
+        <button class="render-action-btn" onclick="reRender()">↺ Re-render</button>
+      </div>`;
+
+    btn.disabled = false;
+    btn.innerHTML = '<span class="render-icon">✦</span> Render Again';
+
+    // Add a message to Atelier chat
+    const feed = document.getElementById('chatMessages');
+    const msg = document.createElement('div');
+    msg.className = 'msg atelier';
+    msg.textContent = 'The look is rendered. I\'m reading the result — the shoulder is holding exactly as intended. The convertible fold reads cleanly. How does she feel to you?';
+    feed.appendChild(msg);
+    feed.scrollTop = feed.scrollHeight;
+  })
+  .catch(err => {
+    clearInterval(loadInterval);
+    console.error('Render error:', err);
+    output.innerHTML = `
+      <div class="render-placeholder">
+        <span class="rp-icon">⚠</span>
+        <div class="rp-text">Render failed: ${err.message}<br><small>Check proxy connection and try again.</small></div>
+      </div>`;
+    btn.disabled = false;
+    btn.innerHTML = '<span class="render-icon">✦</span> Try Again';
+  });
+}
+
+function reRender() {
+  document.getElementById('renderBtn').click();
+}
+
+function downloadRender() {
+  if (!lastRenderUrl) return;
+  const a = document.createElement('a');
+  a.href = lastRenderUrl;
+  a.download = (garment.name || 'render').replace(/\s+/g, '-') + '.jpg';
+  a.target = '_blank';
+  a.click();
+}
+
+// Initialize prompt preview on load
+updatePromptPreview();
 </script>
 </body>
 </html>
