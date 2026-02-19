@@ -705,30 +705,72 @@ async function generateWorldDNA() {
   const dom = document.getElementById('w-dominant').value || '';
   const shadow = document.getElementById('w-shadow').value || '';
   document.getElementById('world-ai-panel').style.display = 'block';
-  document.getElementById('world-ai-output').textContent = 'Generating World DNA…';
-  const prompt = `You are a world-building assistant for Ontological Theatre.
-Create a World DNA profile for: "${name}"
+  document.getElementById('world-ai-output').textContent = '✨ Generating World DNA…';
+
+  const prompt = `You are a world-building assistant for the Ontological Theatre system, which uses "-ity" words as ontological primitives.
+
+Generate a World DNA profile for: "${name}"
 Premise: ${premise}
-Dominant -ity: ${dom} | Shadow -ity: ${shadow}
+Dominant -ity: ${dom || 'undefined'} | Shadow -ity: ${shadow || 'undefined'}
 
-Generate:
-1. Three founding lineages (name + origin + dominant trait)
-2. Four key eras (name + brief description)  
-3. Three iconic places (name + type + sensory atmosphere)
-4. The world's central philosophical tension in one sentence
-5. A poetic opening monologue (3 lines)
+Return EXACTLY this JSON structure (no markdown, no explanation, just valid JSON):
+{
+  "tags": ["tag1","tag2","tag3","tag4","tag5","tag6"],
+  "aesthetic": "single line describing the visual/sensory aesthetic of this world",
+  "archetypes": ["Archetype 1","Archetype 2","Archetype 3","Archetype 4","Archetype 5","Archetype 6"],
+  "themes": ["theme1","theme2","theme3","theme4","theme5"],
+  "era": "time period or range (e.g. 1760-1820 or The Silk Age, 2049)",
+  "lineages": [
+    {"name":"Lineage Name","origin":"Brief origin","trait":"dominant quality"}
+  ],
+  "eras": [
+    {"name":"Era Name","desc":"Brief era description"}
+  ],
+  "places": [
+    {"name":"Place Name","type":"place type","atmosphere":"sensory atmosphere"}
+  ],
+  "tension": "The world's central philosophical tension in one sentence.",
+  "opening": "A poetic 2-line opening monologue for this world."
+}
 
-Be concise, evocative, and specific.`;
+Be specific, evocative, and faithful to the premise. Tags should be 3-8 short lowercase words. Archetypes should be character types a person in this world might be.`;
+
   try {
-    const res = await fetch(OR_PROXY, {
+    const res = await fetch('https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, max_tokens: 600 })
+      body: JSON.stringify({
+        model: 'gemini-2.0-flash',
+        contents: [{ parts: [{ text: prompt }] }]
+      })
     });
     const data = await res.json();
-    document.getElementById('world-ai-output').textContent = data.text || data.content || JSON.stringify(data);
+    const raw = (data.candidates?.[0]?.content?.parts?.[0]?.text || data.text || '').trim();
+    // Parse JSON — strip any markdown fencing
+    const jsonStr = raw.replace(/^```json?\s*/,'').replace(/```\s*$/,'').trim();
+    let dna;
+    try { dna = JSON.parse(jsonStr); } catch(e) {
+      document.getElementById('world-ai-output').textContent = raw;
+      return;
+    }
+
+    // Auto-fill the form fields
+    if (dna.tags) document.getElementById('w-tags').value = dna.tags.join(', ');
+    if (dna.aesthetic) document.getElementById('w-aesthetic').value = dna.aesthetic;
+    if (dna.archetypes) document.getElementById('w-archetypes').value = dna.archetypes.join(', ');
+    if (dna.themes) document.getElementById('w-themes').value = dna.themes.join(', ');
+    if (dna.era && !document.getElementById('w-era').value) document.getElementById('w-era').value = dna.era;
+
+    // Display full DNA as text
+    let display = `✅ World DNA generated — fields auto-filled above!\n\n`;
+    if (dna.tension) display += `TENSION: ${dna.tension}\n\n`;
+    if (dna.opening) display += `OPENING:\n${dna.opening}\n\n`;
+    if (dna.lineages) display += `LINEAGES:\n${dna.lineages.map(l=>`• ${l.name} — ${l.origin} (${l.trait})`).join('\n')}\n\n`;
+    if (dna.eras) display += `ERAS:\n${dna.eras.map(e=>`• ${e.name}: ${e.desc}`).join('\n')}\n\n`;
+    if (dna.places) display += `PLACES:\n${dna.places.map(p=>`• ${p.name} (${p.type}): ${p.atmosphere}`).join('\n')}`;
+    document.getElementById('world-ai-output').textContent = display;
   } catch (e) {
-    document.getElementById('world-ai-output').textContent = `[OpenRouter proxy offline]\n\nWorld DNA for "${name}":\n\nLineages: The Weavers, The Luminants, The Viscose\nEras: Origin, Silk Collapse, Meridian Drift, New Weave\nPlaces: The Glass Market, The Depth Rooms, The Fringe\nTension: Memory vs Velocity\n\n"Before the Collapse, cloth held souls.\nNow it holds data.\nWe wear who we were."`;
+    document.getElementById('world-ai-output').textContent = `[Generation failed: ${e.message}]\n\nTry: Frontier, Silk Empire, Deep Ocean, Ancient Rome, Afrofuture 2120...`;
   }
 }
 
