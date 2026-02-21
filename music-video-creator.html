@@ -1,0 +1,2073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Music Video Creator — AI Production Studio</title>
+<style>
+:root{
+  --bg:#080a0f;--card:#0f1318;--card2:#141920;--border:#1e2530;
+  --gold:#C8961E;--blue:#4A9EDB;--green:#3DBF7A;--red:#E0504A;
+  --text:#E8EDF4;--muted:#6B7A94;--accent:#4A9EDB;
+  --step-inactive:#1e2530;--step-active:#4A9EDB;--step-done:#3DBF7A;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:14px;min-height:100vh}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+
+/* HEADER */
+.header{background:rgba(8,10,15,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.header-logo{display:flex;align-items:center;gap:10px}
+.header-logo-icon{font-size:22px}
+.header-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700}
+.header-sub{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+
+/* STEP WIZARD */
+.wizard-bar{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:0;overflow-x:auto}
+.step-item{display:flex;align-items:center;gap:8px;flex-shrink:0;cursor:pointer;opacity:.4;transition:opacity .2s}
+.step-item.active{opacity:1}
+.step-item.done{opacity:.7}
+.step-item.done .step-num{background:var(--step-done);color:#fff}
+.step-item.active .step-num{background:var(--step-active);color:#fff}
+.step-num{width:26px;height:26px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:var(--step-inactive);flex-shrink:0}
+.step-label{font-size:11px;font-weight:600;white-space:nowrap}
+.step-arrow{color:var(--border);margin:0 10px;font-size:12px}
+
+/* MAIN */
+.main{max-width:920px;margin:0 auto;padding:32px 24px}
+.step-panel{display:none}
+.step-panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
+.card-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin-bottom:6px}
+.card-sub{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:20px}
+.section-eyebrow{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+
+/* FORMS */
+label{font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em}
+input[type=text],input[type=url],input[type=number],textarea,select{
+  width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);font-size:13px;font-family:inherit;padding:10px 12px;outline:none;transition:border .2s}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:120px;line-height:1.6}
+select{cursor:pointer}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.form-group{margin-bottom:16px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#5aaeeb}
+.btn-success{background:var(--green);color:#fff}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:7px 14px;font-size:11px}
+.btn-danger{background:var(--red);color:#fff}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;align-items:center}
+
+/* UPLOAD ZONE */
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(74,158,219,.04)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upload-zone-icon{font-size:36px;margin-bottom:10px}
+.upload-zone-text{font-size:13px;color:var(--muted)}
+.upload-zone-sub{font-size:11px;color:var(--border);margin-top:4px}
+
+/* WAVEFORM */
+.waveform-container{background:var(--bg);border-radius:8px;padding:10px;margin:12px 0;overflow:hidden}
+canvas#waveform{width:100%;height:80px;display:block}
+
+/* SECTIONS TABLE */
+.sections-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.section-row{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:8px;padding:10px 14px}
+.section-badge{font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.1em}
+.badge-intro{background:rgba(74,158,219,.2);color:var(--blue)}
+.badge-verse{background:rgba(200,150,30,.2);color:var(--gold)}
+.badge-chorus{background:rgba(61,191,122,.2);color:var(--green)}
+.badge-bridge{background:rgba(160,80,220,.2);color:#a050dc}
+.badge-outro{background:rgba(107,122,148,.2);color:var(--muted)}
+.section-time{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:90px}
+.section-energy{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.section-energy-fill{height:100%;border-radius:3px;background:var(--gold);transition:width .3s}
+
+/* LYRICS LINES */
+.lyrics-container{background:var(--bg);border-radius:8px;padding:16px;margin-top:12px;max-height:200px;overflow-y:auto}
+.lyric-line{display:flex;gap:12px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.lyric-time{font-size:10px;color:var(--muted);min-width:50px;font-variant-numeric:tabular-nums;padding-top:1px}
+.lyric-text{font-size:12px;line-height:1.5}
+
+/* STYLE GRID */
+.style-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.style-card{border:2px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:all .2s}
+.style-card:hover{border-color:var(--accent);background:rgba(74,158,219,.04)}
+.style-card.selected{border-color:var(--accent);background:rgba(74,158,219,.08)}
+.style-card-emoji{font-size:28px;margin-bottom:8px}
+.style-card-name{font-weight:700;font-size:14px;margin-bottom:4px}
+.style-card-desc{font-size:11px;color:var(--muted);line-height:1.5}
+
+/* CHARACTER CARDS */
+.char-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.char-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.char-portrait{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:var(--bg)}
+.char-portrait-placeholder{width:100%;aspect-ratio:3/4;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:40px}
+.char-body{padding:14px}
+.char-name{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;margin-bottom:2px}
+.char-role{font-size:10px;color:var(--gold);font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.char-dna{font-size:10px;color:var(--muted);line-height:1.6;font-family:monospace}
+
+/* STORYBOARD */
+.storyboard-grid{display:flex;flex-direction:column;gap:24px}
+.sb-card{background:var(--card2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.sb-header{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border)}
+.sb-scene-num{font-size:24px;font-weight:700;font-family:'Playfair Display',serif;color:var(--accent);min-width:36px}
+.sb-section-info{flex:1}
+.sb-section-name{font-size:12px;font-weight:600}
+.sb-section-time{font-size:10px;color:var(--muted)}
+.sb-lyrics-preview{font-size:11px;color:var(--gold);font-style:italic}
+.sb-body{padding:18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.sb-frame{border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.sb-frame-label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:6px 10px;background:var(--bg);color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.sb-frame-img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--border)}
+.sb-frame-img-placeholder{width:100%;aspect-ratio:16/9;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--border);font-size:24px}
+.sb-frame-prompt{padding:8px 10px;font-size:9px;color:var(--muted);line-height:1.5;border-top:1px solid var(--border);max-height:60px;overflow:hidden}
+.sb-prompt-section{padding:0 18px 14px;grid-column:1/-1}
+.sb-video-prompt{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;padding:10px;font-family:monospace;resize:vertical;min-height:80px;outline:none}
+.sb-video-prompt:focus{border-color:var(--accent)}
+
+/* GENERATION QUEUE */
+.gen-grid{display:flex;flex-direction:column;gap:12px}
+.gen-item{display:flex;align-items:center;gap:14px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.gen-scene-badge{font-size:16px;font-weight:700;color:var(--accent);min-width:30px}
+.gen-info{flex:1}
+.gen-title{font-size:12px;font-weight:600;margin-bottom:3px}
+.gen-status{font-size:10px;color:var(--muted)}
+.gen-status.generating{color:var(--gold)}
+.gen-status.done{color:var(--green)}
+.gen-status.error{color:var(--red)}
+.gen-preview{width:64px;height:36px;border-radius:4px;object-fit:cover;background:var(--border);flex-shrink:0}
+.progress-bar{width:100%;height:4px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden}
+.progress-fill{height:100%;background:var(--gold);border-radius:2px;transition:width .5s}
+
+/* ASSEMBLY */
+.assembly-timeline{display:flex;gap:6px;overflow-x:auto;padding:12px 0;margin:12px 0}
+.timeline-clip{flex-shrink:0;text-align:center}
+.timeline-thumb{width:80px;height:45px;border-radius:4px;object-fit:cover;background:var(--border);display:block;border:2px solid transparent;transition:.2s}
+.timeline-clip.active .timeline-thumb{border-color:var(--accent)}
+.timeline-label{font-size:8px;color:var(--muted);margin-top:3px}
+.timeline-transition{display:flex;align-items:center;color:var(--border);font-size:14px}
+
+/* STATUS */
+.status-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:600}
+.pill-analyzing{background:rgba(200,150,30,.15);color:var(--gold)}
+.pill-ready{background:rgba(61,191,122,.15);color:var(--green)}
+.pill-pending{background:rgba(107,122,148,.15);color:var(--muted)}
+.pulse{animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* TOAST */
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-size:12px;max-width:300px;animation:slideIn .3s ease}
+.toast.success{border-color:var(--green)}
+.toast.error{border-color:var(--red)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* DIVIDER */
+.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+
+/* PROMPT DNA */
+.dna-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-family:monospace;font-size:10px;color:var(--muted);line-height:1.7;white-space:pre-wrap;word-break:break-all}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .style-grid{grid-template-columns:1fr 1fr}
+  .char-grid{grid-template-columns:1fr}
+  .sb-body{grid-template-columns:1fr}
+  .input-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">
+    <span class="header-logo-icon">🎬</span>
+    <div>
+      <div class="header-title">Music Video Creator</div>
+      <div class="header-sub">AI Production Studio · 7-Stage Pipeline</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <button class="btn btn-ghost btn-sm" onclick="exportProject()">💾 Save Project</button>
+    <button class="btn btn-ghost btn-sm" onclick="importProject()">📂 Load Project</button>
+  </div>
+</div>
+
+<!-- STEP WIZARD -->
+<div class="wizard-bar" id="wizardBar">
+  <div class="step-item active" id="step-nav-1" onclick="goStep(1)">
+    <div class="step-num">1</div><div class="step-label">🎵 Song</div>
+  </div>
+  <span class="step-arrow">→</span>
+  <div class="step-item" id="step-nav-2" onclick="goStep(2)">
+    <div class="step-num">2</div><div class="step-label">🎨 Style</div>
+  </div>
+  <span class="step-arrow">→</span>
+  <div class="step-item" id="step-nav-3" onclick="goStep(3)">
+    <div class="step-num">3</div><div class="step-label">📖 Story</div>
+  </div>
+  <span class="step-arrow">→</span>
+  <div class="step-item" id="step-nav-4" onclick="goStep(4)">
+    <div class="step-num">4</div><div class="step-label">👤 Characters</div>
+  </div>
+  <span class="step-arrow">→</span>
+  <div class="step-item" id="step-nav-5" onclick="goStep(5)">
+    <div class="step-num">5</div><div class="step-label">🎞️ Storyboard</div>
+  </div>
+  <span class="step-arrow">→</span>
+  <div class="step-item" id="step-nav-6" onclick="goStep(6)">
+    <div class="step-num">6</div><div class="step-label">⚡ Generate</div>
+  </div>
+  <span class="step-arrow">→</span>
+  <div class="step-item" id="step-nav-7" onclick="goStep(7)">
+    <div class="step-num">7</div><div class="step-label">🎬 Assemble</div>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- ════════════════════════════════════════════════════════
+     STEP 1 — SONG
+════════════════════════════════════════════════════════ -->
+<div class="step-panel active" id="panel-1">
+  <div class="card">
+    <div class="section-eyebrow">Step 1 of 7</div>
+    <div class="card-title">Load Your Song</div>
+    <div class="card-sub">Upload an audio file or paste a hosted URL. We'll analyze the BPM, detect song structure (intro / verse / chorus / bridge / outro), and transcribe the lyrics with timestamps.</div>
+
+    <div style="display:grid;grid-template-columns:1fr auto;gap:12px;margin-bottom:20px;align-items:end">
+      <div class="form-group" style="margin:0">
+        <label>Audio URL (MP3, WAV, M4A — hosted link)</label>
+        <input type="url" id="audioUrl" placeholder="https://... or Google Drive / Dropbox direct link">
+      </div>
+      <button class="btn btn-primary" onclick="loadFromUrl()">Load URL</button>
+    </div>
+
+    <div style="text-align:center;margin:12px 0;color:var(--muted);font-size:11px">— or upload a local file —</div>
+
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" accept="audio/*" id="audioFile" onchange="handleFileUpload(this)">
+      <div class="upload-zone-icon">🎵</div>
+      <div class="upload-zone-text">Click to upload or drag & drop</div>
+      <div class="upload-zone-sub">MP3, WAV, FLAC, M4A, OGG · Max 100MB</div>
+    </div>
+
+    <div id="audioLoaded" style="display:none;margin-top:20px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <span class="status-pill pill-analyzing pulse" id="analysisPill">⏳ Analyzing…</span>
+        <span id="songTitle" style="font-weight:600"></span>
+      </div>
+
+      <!-- Waveform -->
+      <div class="waveform-container">
+        <canvas id="waveform"></canvas>
+      </div>
+
+      <!-- Analysis results -->
+      <div id="analysisResults" style="display:none">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0">
+          <div style="background:var(--bg);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:28px;font-weight:700;color:var(--gold)" id="bpmDisplay">—</div>
+            <div style="font-size:10px;color:var(--muted)">BPM</div>
+          </div>
+          <div style="background:var(--bg);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:28px;font-weight:700;color:var(--blue)" id="durationDisplay">—</div>
+            <div style="font-size:10px;color:var(--muted)">Duration</div>
+          </div>
+          <div style="background:var(--bg);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:28px;font-weight:700;color:var(--green)" id="sectionsDisplay">—</div>
+            <div style="font-size:10px;color:var(--muted)">Sections</div>
+          </div>
+        </div>
+
+        <!-- Manual overrides -->
+        <div class="input-row">
+          <div class="form-group">
+            <label>Song Title</label>
+            <input type="text" id="songTitleInput" placeholder="Enter song title">
+          </div>
+          <div class="form-group">
+            <label>Artist Name</label>
+            <input type="text" id="artistInput" placeholder="Artist or band name">
+          </div>
+        </div>
+
+        <div class="input-row">
+          <div class="form-group">
+            <label>BPM <span style="color:var(--muted);font-weight:400">(auto-detected — override if needed)</span></label>
+            <input type="number" id="bpmInput" placeholder="120">
+          </div>
+          <div class="form-group">
+            <label>Key / Mood (optional)</label>
+            <input type="text" id="keyInput" placeholder="e.g. C minor, melancholic, driving">
+          </div>
+        </div>
+
+        <!-- Detected sections -->
+        <div style="margin:16px 0">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <label style="margin:0">Detected Sections</label>
+            <button class="btn btn-ghost btn-sm" onclick="addSection()">+ Add Section</button>
+          </div>
+          <div class="sections-list" id="sectionsList"></div>
+        </div>
+
+        <!-- Lyrics -->
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <label style="margin:0">Lyrics <span style="color:var(--muted);font-weight:400">(auto-transcribed / paste manually)</span></label>
+            <button class="btn btn-ghost btn-sm" id="transcribeBtn" onclick="transcribeLyrics()">🎤 Auto-Transcribe</button>
+          </div>
+          <textarea id="lyricsInput" placeholder="Paste lyrics here, or click Auto-Transcribe if you provided a hosted audio URL...&#10;&#10;Tip: Add timestamps like [0:14] before lines for better sync."></textarea>
+          <div class="lyrics-container" id="lyricsContainer" style="display:none"></div>
+        </div>
+      </div>
+
+      <!-- Manual fallback if no file/URL -->
+      <div id="manualAnalysis" style="display:none">
+        <div class="input-row">
+          <div class="form-group">
+            <label>Song Title</label>
+            <input type="text" id="songTitleManual" placeholder="Enter song title">
+          </div>
+          <div class="form-group">
+            <label>Artist</label>
+            <input type="text" id="artistManual" placeholder="Artist name">
+          </div>
+        </div>
+        <div class="input-row">
+          <div class="form-group">
+            <label>BPM</label>
+            <input type="number" id="bpmManual" placeholder="120">
+          </div>
+          <div class="form-group">
+            <label>Duration (seconds)</label>
+            <input type="number" id="durationManual" placeholder="210">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Song Structure (one section per line: intro, verse, chorus, bridge, outro)</label>
+          <textarea id="structureManual" placeholder="intro: 0-15s&#10;verse: 15-45s&#10;chorus: 45-75s&#10;verse: 75-105s&#10;chorus: 105-135s&#10;bridge: 135-160s&#10;outro: 160-180s" style="min-height:140px"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Lyrics</label>
+          <textarea id="lyricsManual" placeholder="Paste full lyrics here..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Manual entry shortcut -->
+    <div style="margin-top:16px;text-align:center">
+      <button class="btn btn-ghost btn-sm" onclick="showManualEntry()">⌨️ Enter song details manually</button>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="finishStep1()">Continue to Style →</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     STEP 2 — STYLE
+════════════════════════════════════════════════════════ -->
+<div class="step-panel" id="panel-2">
+  <div class="card">
+    <div class="section-eyebrow">Step 2 of 7</div>
+    <div class="card-title">Choose Your Visual Style</div>
+    <div class="card-sub">This becomes the visual DNA of your entire video — every frame, every scene, every clip will inherit this aesthetic. You can also add custom keywords below.</div>
+
+    <div class="style-grid" id="styleGrid">
+      <div class="style-card" onclick="selectStyle('film-noir')">
+        <div class="style-card-emoji">🎬</div>
+        <div class="style-card-name">Film Noir</div>
+        <div class="style-card-desc">High contrast B&W, deep shadows, venetian blind light, 1940s crime aesthetic, femme fatales and private eyes</div>
+      </div>
+      <div class="style-card" onclick="selectStyle('neo-noir')">
+        <div class="style-card-emoji">🌃</div>
+        <div class="style-card-name">Neo Noir</div>
+        <div class="style-card-desc">Modern noir — neon lights, rain-slicked streets, desaturated with electric color accents, blade runner energy</div>
+      </div>
+      <div class="style-card" onclick="selectStyle('vintage')">
+        <div class="style-card-emoji">📽️</div>
+        <div class="style-card-name">Vintage / Analog</div>
+        <div class="style-card-desc">Warm Kodachrome film grain, Super 8 texture, sun-drenched nostalgia, analog warmth</div>
+      </div>
+      <div class="style-card" onclick="selectStyle('modern-cinematic')">
+        <div class="style-card-emoji">🎥</div>
+        <div class="style-card-name">Modern Cinematic</div>
+        <div class="style-card-desc">IMAX-quality, teal & orange grade, dramatic wide shots, blockbuster visual language</div>
+      </div>
+      <div class="style-card" onclick="selectStyle('abstract')">
+        <div class="style-card-emoji">🎨</div>
+        <div class="style-card-name">Abstract / Experimental</div>
+        <div class="style-card-desc">Painterly, surreal, dreamlike — visual metaphors over narrative, rules are suggestions</div>
+      </div>
+      <div class="style-card" onclick="selectStyle('documentary')">
+        <div class="style-card-emoji">📷</div>
+        <div class="style-card-name">Documentary / Gritty</div>
+        <div class="style-card-desc">Handheld, raw, real — National Geographic meets music documentary, available light</div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px">
+      <div class="form-group">
+        <label>Custom Style Keywords <span style="color:var(--muted);font-weight:400">(added to every prompt)</span></label>
+        <input type="text" id="customStyle" placeholder="e.g. golden hour, 70s, grainy, polaroid, cyberpunk — comma separated">
+      </div>
+    </div>
+
+    <div id="selectedStylePreview" style="display:none;margin-top:16px">
+      <div class="section-eyebrow">Style DNA Preview</div>
+      <div class="dna-box" id="styleDNABox"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
+      <button class="btn btn-primary" onclick="finishStep2()">Continue to Story →</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     STEP 3 — STORY
+════════════════════════════════════════════════════════ -->
+<div class="step-panel" id="panel-3">
+  <div class="card">
+    <div class="section-eyebrow">Step 3 of 7</div>
+    <div class="card-title">What's the Story?</div>
+    <div class="card-sub">Choose how your video will be structured. This shapes the scenes and what characters do in them.</div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px">
+      <div class="style-card" id="mode-solo" onclick="setStoryMode('solo')">
+        <div class="style-card-emoji">🎤</div>
+        <div class="style-card-name">Solo Performance</div>
+        <div class="style-card-desc">Artist performing. Locations change with the song's energy. No scripted narrative.</div>
+      </div>
+      <div class="style-card" id="mode-story" onclick="setStoryMode('story')">
+        <div class="style-card-emoji">📖</div>
+        <div class="style-card-name">Narrative Story</div>
+        <div class="style-card-desc">A scene-by-scene visual story that runs alongside the music. You write or describe the plot.</div>
+      </div>
+      <div class="style-card" id="mode-script" onclick="setStoryMode('script')">
+        <div class="style-card-emoji">🎭</div>
+        <div class="style-card-name">Full Script</div>
+        <div class="style-card-desc">Scene-by-scene direction. You control exactly what happens in each shot.</div>
+      </div>
+    </div>
+
+    <!-- Solo mode -->
+    <div id="story-solo" style="display:none">
+      <div class="form-group">
+        <label>Performance Setting / Vibe</label>
+        <textarea id="soloSetting" placeholder="Describe the performance context...&#10;e.g. Rooftop at sunset, neon-lit jazz club, empty stadium, underwater, outer space, haunted mansion..." style="min-height:80px"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Energy Arc <span style="color:var(--muted);font-weight:400">(how should the visual intensity change through the song?)</span></label>
+        <input type="text" id="soloArc" placeholder="e.g. Quiet and intimate → building intensity → explosive climax → slow fade">
+      </div>
+    </div>
+
+    <!-- Story mode -->
+    <div id="story-narrative" style="display:none">
+      <div class="form-group">
+        <label>Tell the Story</label>
+        <textarea id="storyText" placeholder="Write your story here — doesn't need to be formal. Just tell it like you'd tell a friend.&#10;&#10;e.g. A woman discovers old love letters in her grandmother's attic. Each letter triggers a memory. As the song builds, she realizes the letters were written to her grandfather — who she never knew..."
+          style="min-height:200px" oninput="parseStoryCharacters()"></textarea>
+      </div>
+      <div id="detectedCharsPreview" style="display:none;margin-top:12px">
+        <div class="section-eyebrow">Characters Detected in Story</div>
+        <div id="detectedCharsList" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
+        <div style="font-size:10px;color:var(--muted);margin-top:6px">You'll build these out fully in Step 4.</div>
+      </div>
+    </div>
+
+    <!-- Script mode -->
+    <div id="story-script" style="display:none">
+      <div class="form-group">
+        <label>Scene-by-Scene Script <span style="color:var(--muted);font-weight:400">(one scene per section, match your song structure)</span></label>
+        <textarea id="scriptText" placeholder="SCENE 1 — INTRO (0-15s)&#10;EXT. CROSSROADS — NIGHT&#10;A lone figure stands at the crossroads. Fog. No one else around.&#10;&#10;SCENE 2 — VERSE 1 (15-45s)&#10;INT. JUKE JOINT — NIGHT&#10;She takes the stage. The crowd falls silent..."
+          style="min-height:280px"></textarea>
+      </div>
+      <div style="margin-top:10px">
+        <button class="btn btn-ghost btn-sm" onclick="autoParseScript()">🔍 Auto-Parse Script → Scenes</button>
+      </div>
+    </div>
+
+    <!-- Auto-generate option -->
+    <div style="margin-top:20px;padding:16px;background:rgba(74,158,219,.06);border:1px solid rgba(74,158,219,.2);border-radius:8px">
+      <div style="font-size:11px;font-weight:600;color:var(--blue);margin-bottom:6px">✨ AI Story Generator</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Let AI write a story based on your lyrics, style, and mood.</div>
+      <button class="btn btn-ghost btn-sm" onclick="generateStory()">Generate Story from Lyrics</button>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goStep(2)">← Back</button>
+      <button class="btn btn-primary" onclick="finishStep3()">Continue to Characters →</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     STEP 4 — CHARACTERS
+════════════════════════════════════════════════════════ -->
+<div class="step-panel" id="panel-4">
+  <div class="card">
+    <div class="section-eyebrow">Step 4 of 7</div>
+    <div class="card-title">Character Studio</div>
+    <div class="card-sub">Character consistency is everything. Every character gets a full visual DNA — a text fingerprint that gets embedded in every prompt they appear in. Build them here, generate reference portraits, then lock them in before we storyboard.</div>
+
+    <div id="charsList">
+      <div style="text-align:center;padding:30px;color:var(--muted)">
+        <div style="font-size:32px;margin-bottom:10px">👤</div>
+        <div>No characters yet. Add one below.</div>
+      </div>
+    </div>
+
+    <div id="charCards" class="char-grid" style="display:none;margin-bottom:20px"></div>
+
+    <!-- Add Character Form -->
+    <div class="card" style="background:var(--card2);margin-top:16px">
+      <div class="section-eyebrow">Add Character</div>
+      <div class="input-row">
+        <div class="form-group">
+          <label>Character Name</label>
+          <input type="text" id="newCharName" placeholder="e.g. Maya, Detective Cole, The Stranger">
+        </div>
+        <div class="form-group">
+          <label>Role in Story</label>
+          <input type="text" id="newCharRole" placeholder="e.g. protagonist, love interest, antagonist">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Physical Appearance <span style="color:var(--muted);font-weight:400">(be specific — this goes in every prompt)</span></label>
+        <textarea id="newCharAppearance" placeholder="e.g. Black woman, late 20s, natural hair styled in large coils, sharp cheekbones, warm brown skin, intense dark eyes with long lashes" style="min-height:80px"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Clothing / Wardrobe <span style="color:var(--muted);font-weight:400">(costume that stays consistent)</span></label>
+        <textarea id="newCharClothing" placeholder="e.g. Worn denim jacket over a white sundress, brown leather boots, a silver locket around her neck. Carries an old camera." style="min-height:80px"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Distinguishing Features / Expression</label>
+        <input type="text" id="newCharDistinct" placeholder="e.g. small scar above left eyebrow, usually looks slightly sad, moves slowly and deliberately">
+      </div>
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn btn-primary" onclick="addCharacter()">+ Add Character</button>
+        <button class="btn btn-ghost btn-sm" onclick="generateCharPortrait(null)">🎨 Generate Portrait</button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goStep(3)">← Back</button>
+      <button class="btn btn-primary" onclick="finishStep4()">Continue to Storyboard →</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     STEP 5 — STORYBOARD
+════════════════════════════════════════════════════════ -->
+<div class="step-panel" id="panel-5">
+  <div class="card">
+    <div class="section-eyebrow">Step 5 of 7</div>
+    <div class="card-title">Storyboard</div>
+    <div class="card-sub">One scene card per song section. Each card has a beginning frame (the first image of the clip), an ending frame (where the clip lands), and the master video prompt. Iterate until every scene feels right.</div>
+
+    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="buildStoryboard()">🔨 Build Storyboard from Song</button>
+      <button class="btn btn-ghost btn-sm" onclick="generateAllBeginFrames()">🎨 Generate All Begin Frames</button>
+      <button class="btn btn-ghost btn-sm" onclick="generateAllEndFrames()">🎨 Generate All End Frames</button>
+    </div>
+
+    <div class="storyboard-grid" id="storyboardGrid">
+      <div style="text-align:center;padding:40px;color:var(--muted)">
+        <div style="font-size:40px">🎞️</div>
+        <div style="margin-top:10px">Click "Build Storyboard" to auto-generate scenes from your song structure.</div>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:24px">
+      <button class="btn btn-ghost" onclick="goStep(4)">← Back</button>
+      <button class="btn btn-primary" onclick="finishStep5()">Continue to Generate →</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     STEP 6 — GENERATE
+════════════════════════════════════════════════════════ -->
+<div class="step-panel" id="panel-6">
+  <div class="card">
+    <div class="section-eyebrow">Step 6 of 7</div>
+    <div class="card-title">Generate Videos</div>
+    <div class="card-sub">Each scene generates as a short video clip using AI video generation (wan-t2v). The beginning frame anchors the visual, the prompt drives the motion. You can regenerate any clip individually until it's right.</div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div id="genProgress" style="font-size:12px;color:var(--muted)">Ready to generate</div>
+      <button class="btn btn-primary" id="genAllBtn" onclick="generateAllVideos()">⚡ Generate All Clips</button>
+    </div>
+
+    <div class="progress-bar" style="margin-bottom:20px">
+      <div class="progress-fill" id="genProgressBar" style="width:0%"></div>
+    </div>
+
+    <div class="gen-grid" id="genGrid">
+      <div style="text-align:center;padding:40px;color:var(--muted)">
+        <div style="font-size:40px">⚡</div>
+        <div style="margin-top:10px">Build your storyboard first, then generate clips here.</div>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:24px">
+      <button class="btn btn-ghost" onclick="goStep(5)">← Back</button>
+      <button class="btn btn-primary" onclick="finishStep6()">Continue to Assembly →</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     STEP 7 — ASSEMBLE
+════════════════════════════════════════════════════════ -->
+<div class="step-panel" id="panel-7">
+  <div class="card">
+    <div class="section-eyebrow">Step 7 of 7</div>
+    <div class="card-title">Final Assembly</div>
+    <div class="card-sub">Arrange your clips, add transitions, sync with the original audio, and export the final music video.</div>
+
+    <div class="assembly-timeline" id="assemblyTimeline">
+      <div style="text-align:center;padding:20px;color:var(--muted);width:100%">Generate video clips first.</div>
+    </div>
+
+    <!-- Transition picker -->
+    <div style="margin:20px 0">
+      <label>Transition Style</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn btn-ghost btn-sm" id="trans-cut" onclick="setTransition('cut')">✂️ Cut</button>
+        <button class="btn btn-ghost btn-sm" id="trans-fade" onclick="setTransition('fade')">🌅 Fade</button>
+        <button class="btn btn-ghost btn-sm" id="trans-dissolve" onclick="setTransition('dissolve')">💧 Dissolve</button>
+        <button class="btn btn-ghost btn-sm" id="trans-whip" onclick="setTransition('whip')">⚡ Whip Pan</button>
+      </div>
+    </div>
+
+    <!-- Audio sync -->
+    <div class="form-group">
+      <label>Audio Sync <span style="color:var(--muted);font-weight:400">(milliseconds offset if video/audio drift)</span></label>
+      <input type="number" id="audioOffset" value="0" placeholder="0">
+    </div>
+
+    <!-- Export options -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px">
+        <div style="font-size:11px;font-weight:700;margin-bottom:6px">🌐 Web Export</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:12px">720p MP4, optimized for social media. Assembled in browser via FFmpeg WASM.</div>
+        <button class="btn btn-primary btn-sm" onclick="assembleInBrowser()">Assemble + Export MP4</button>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px">
+        <div style="font-size:11px;font-weight:700;margin-bottom:6px">⬇️ Download Clips</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:12px">Download all clips + audio + FFmpeg command to assemble locally.</div>
+        <button class="btn btn-ghost btn-sm" onclick="downloadPackage()">Download Project Package</button>
+      </div>
+    </div>
+
+    <!-- Assembly log -->
+    <div id="assemblyLog" style="display:none">
+      <div class="section-eyebrow" style="margin-bottom:8px">Assembly Log</div>
+      <div class="dna-box" id="assemblyLogText" style="max-height:200px;overflow-y:auto"></div>
+    </div>
+
+    <!-- Final video -->
+    <div id="finalVideoContainer" style="display:none;margin-top:20px">
+      <div class="section-eyebrow">Your Music Video</div>
+      <video id="finalVideo" controls style="width:100%;border-radius:8px;margin-top:8px;background:#000"></video>
+      <div class="btn-row" style="margin-top:12px">
+        <a id="finalDownloadBtn" class="btn btn-success" download="music-video.mp4">⬇️ Download Video</a>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:24px">
+      <button class="btn btn-ghost" onclick="goStep(6)">← Back</button>
+      <button class="btn btn-success" onclick="saveProject()">💾 Save Full Project</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Hidden file input for project import -->
+<input type="file" id="projectFileInput" accept=".json" style="display:none" onchange="handleProjectImport(this)">
+
+<!-- CDNs -->
+<script src="https://cdn.jsdelivr.net/npm/music-tempo@1.2.4/dist/music-tempo.min.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════
+const PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app';
+const FAL_KEY = null; // All calls go through proxy — no client-side key needed
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+const S = {
+  currentStep: 1,
+  song: {
+    title: '', artist: '', url: null, localBlob: null,
+    bpm: null, duration: null, key: '', mood: ''
+  },
+  sections: [],   // [{id, type, start, end, energy}]
+  lyrics: [],     // [{start, end, text}] — with timestamps
+  lyricsRaw: '',  // plain text
+  style: null,    // style key
+  customStyle: '',
+  storyMode: 'solo',
+  story: '',
+  characters: [], // [{id, name, role, appearance, clothing, distinct, portraitUrl, promptDNA}]
+  storyboard: [], // [{id, sectionId, action, charIds, beginFrame, endFrame, videoPrompt, videoUrl, videoStatus}]
+  transition: 'cut',
+  generatedCount: 0
+};
+
+// ═══════════════════════════════════════════════
+// STYLE DEFINITIONS
+// ═══════════════════════════════════════════════
+const STYLES = {
+  'film-noir': {
+    name: 'Film Noir',
+    promptDNA: 'film noir black and white photography, dramatic chiaroscuro lighting, high contrast deep shadows, venetian blind light patterns, 1940s cinematic aesthetic, 35mm film grain, expressionist angles'
+  },
+  'neo-noir': {
+    name: 'Neo Noir',
+    promptDNA: 'neo noir cinematography, neon lights reflected on rain-slicked pavement, desaturated color palette with electric neon accents, modern cinematic, anamorphic lens flare, shallow depth of field'
+  },
+  'vintage': {
+    name: 'Vintage / Analog',
+    promptDNA: 'vintage 35mm Kodachrome film photography, warm analog tones, Super 8 film texture, sun-drenched, golden hour light, nostalgic cinematic, film grain, soft vignette'
+  },
+  'modern-cinematic': {
+    name: 'Modern Cinematic',
+    promptDNA: 'modern cinematic photography, teal and orange color grade, dramatic wide angle shots, shallow depth of field, anamorphic widescreen, dynamic motion, blockbuster visual language'
+  },
+  'abstract': {
+    name: 'Abstract / Experimental',
+    promptDNA: 'experimental abstract cinematic art, painterly surreal dreamlike atmosphere, artistic visual metaphor, expressionist, vivid color saturation, impressionistic textures'
+  },
+  'documentary': {
+    name: 'Documentary / Gritty',
+    promptDNA: 'documentary photography style, handheld camera, raw authentic gritty, natural available light, photorealistic, journalism aesthetic, observational'
+  }
+};
+
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+function goStep(n) {
+  document.getElementById(`panel-${S.currentStep}`).classList.remove('active');
+  document.getElementById(`step-nav-${S.currentStep}`).classList.remove('active');
+  S.currentStep = n;
+  document.getElementById(`panel-${n}`).classList.add('active');
+  document.getElementById(`step-nav-${n}`).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// Mark steps done
+function markStepDone(n) {
+  const el = document.getElementById(`step-nav-${n}`);
+  el.classList.remove('active');
+  el.classList.add('done');
+  el.querySelector('.step-num').textContent = '✓';
+}
+
+// ═══════════════════════════════════════════════
+// STEP 1 — SONG
+// ═══════════════════════════════════════════════
+async function handleFileUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  S.song.localBlob = file;
+  S.song.title = file.name.replace(/\.[^.]+$/,'');
+  document.getElementById('audioLoaded').style.display = 'block';
+  document.getElementById('songTitle').textContent = file.name;
+  document.getElementById('analysisResults').style.display = 'block';
+  document.getElementById('songTitleInput').value = S.song.title;
+  await analyzeLocalAudio(file);
+}
+
+async function loadFromUrl() {
+  const url = document.getElementById('audioUrl').value.trim();
+  if (!url) { toast('Enter an audio URL first', 'error'); return; }
+  S.song.url = url;
+  S.song.title = url.split('/').pop().split('?')[0].replace(/\.[^.]+$/,'') || 'Song';
+  document.getElementById('audioLoaded').style.display = 'block';
+  document.getElementById('songTitle').textContent = S.song.title;
+  document.getElementById('analysisResults').style.display = 'block';
+  document.getElementById('songTitleInput').value = S.song.title;
+  toast('URL loaded. Click Auto-Transcribe for lyrics.', 'success');
+  document.getElementById('analysisPill').textContent = '✅ URL Loaded';
+  document.getElementById('analysisPill').className = 'status-pill pill-ready';
+  setDefaultSections(180);
+}
+
+async function analyzeLocalAudio(file) {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+    const duration = Math.round(audioBuffer.duration);
+    S.song.duration = duration;
+    document.getElementById('durationDisplay').textContent = formatTime(duration);
+
+    // Draw waveform
+    drawWaveform(audioBuffer);
+
+    // Detect BPM
+    try {
+      const channelData = audioBuffer.getChannelData(0);
+      const mt = new MusicTempo(channelData, { sampleRate: audioBuffer.sampleRate });
+      S.song.bpm = Math.round(mt.tempo);
+      document.getElementById('bpmDisplay').textContent = S.song.bpm;
+      document.getElementById('bpmInput').value = S.song.bpm;
+    } catch(e) {
+      document.getElementById('bpmDisplay').textContent = '?';
+    }
+
+    // Detect sections
+    const secs = detectSections(audioBuffer);
+    S.sections = secs;
+    document.getElementById('sectionsDisplay').textContent = secs.length;
+    renderSections();
+
+    document.getElementById('analysisPill').textContent = '✅ Analysis Complete';
+    document.getElementById('analysisPill').className = 'status-pill pill-ready';
+
+  } catch(e) {
+    console.error(e);
+    toast('Could not decode audio. Try a different format.', 'error');
+    showManualEntry();
+  }
+}
+
+function drawWaveform(audioBuffer) {
+  const canvas = document.getElementById('waveform');
+  canvas.width = canvas.offsetWidth * 2;
+  canvas.height = 160;
+  const ctx = canvas.getContext('2d');
+  const data = audioBuffer.getChannelData(0);
+  const step = Math.ceil(data.length / canvas.width);
+  const amp = canvas.height / 2;
+
+  ctx.fillStyle = '#0f1318';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.strokeStyle = '#4A9EDB';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+
+  for (let i = 0; i < canvas.width; i++) {
+    let min = 1, max = -1;
+    for (let j = 0; j < step; j++) {
+      const datum = data[(i * step) + j] || 0;
+      if (datum < min) min = datum;
+      if (datum > max) max = datum;
+    }
+    ctx.moveTo(i, (1 + min) * amp);
+    ctx.lineTo(i, (1 + max) * amp);
+  }
+  ctx.stroke();
+}
+
+function detectSections(audioBuffer) {
+  const data = audioBuffer.getChannelData(0);
+  const sr = audioBuffer.sampleRate;
+  const windowSize = Math.floor(sr * 4); // 4-second windows
+  const hopSize = Math.floor(sr * 2);    // 2-second hops
+  const energies = [];
+
+  for (let i = 0; i < data.length - windowSize; i += hopSize) {
+    let sum = 0;
+    for (let j = i; j < i + windowSize; j++) sum += data[j] * data[j];
+    energies.push(Math.sqrt(sum / windowSize));
+  }
+
+  if (energies.length === 0) return setDefaultSections(audioBuffer.duration);
+
+  const maxE = Math.max(...energies);
+  const normE = energies.map(e => e / maxE);
+
+  // Find peaks and valleys to identify section boundaries
+  const boundaries = [0];
+  for (let i = 2; i < normE.length - 2; i++) {
+    const diff = Math.abs(normE[i] - normE[i-2]);
+    if (diff > 0.15) {
+      const time = (i * hopSize / sr);
+      if (time - boundaries[boundaries.length-1] > 10) {
+        boundaries.push(time);
+      }
+    }
+  }
+  boundaries.push(audioBuffer.duration);
+
+  // Label sections
+  const types = labelSections(normE, boundaries, hopSize, sr);
+  return boundaries.slice(0,-1).map((start, i) => ({
+    id: `sec-${i}`,
+    type: types[i] || 'verse',
+    start: Math.round(start),
+    end: Math.round(boundaries[i+1]),
+    energy: normE[Math.floor(i * (normE.length / boundaries.length))] || 0.5
+  }));
+}
+
+function labelSections(normE, boundaries, hopSize, sr) {
+  const n = boundaries.length - 1;
+  const types = [];
+  for (let i = 0; i < n; i++) {
+    const startIdx = Math.floor(boundaries[i] * sr / hopSize);
+    const endIdx = Math.floor(boundaries[i+1] * sr / hopSize);
+    const windowE = normE.slice(startIdx, endIdx);
+    const avgE = windowE.reduce((a,b) => a+b, 0) / (windowE.length || 1);
+
+    if (i === 0) types.push('intro');
+    else if (i === n-1) types.push('outro');
+    else if (avgE > 0.7) types.push(i % 2 === 0 ? 'chorus' : 'chorus');
+    else if (avgE > 0.4) types.push('verse');
+    else types.push('bridge');
+  }
+  return types;
+}
+
+function setDefaultSections(duration) {
+  const secs = [];
+  if (duration <= 60) {
+    secs.push({id:'sec-0',type:'intro',start:0,end:Math.round(duration*0.1),energy:.3});
+    secs.push({id:'sec-1',type:'verse',start:Math.round(duration*0.1),end:Math.round(duration*0.35),energy:.5});
+    secs.push({id:'sec-2',type:'chorus',start:Math.round(duration*0.35),end:Math.round(duration*0.6),energy:.8});
+    secs.push({id:'sec-3',type:'verse',start:Math.round(duration*0.6),end:Math.round(duration*0.8),energy:.5});
+    secs.push({id:'sec-4',type:'outro',start:Math.round(duration*0.8),end:Math.round(duration),energy:.3});
+  } else {
+    secs.push({id:'sec-0',type:'intro',start:0,end:15,energy:.3});
+    secs.push({id:'sec-1',type:'verse',start:15,end:45,energy:.5});
+    secs.push({id:'sec-2',type:'chorus',start:45,end:75,energy:.8});
+    secs.push({id:'sec-3',type:'verse',start:75,end:105,energy:.5});
+    secs.push({id:'sec-4',type:'chorus',start:105,end:135,energy:.85});
+    secs.push({id:'sec-5',type:'bridge',start:135,end:155,energy:.6});
+    secs.push({id:'sec-6',type:'outro',start:155,end:Math.round(duration||180),energy:.3});
+  }
+  S.sections = secs;
+  renderSections();
+  return secs;
+}
+
+function renderSections() {
+  const list = document.getElementById('sectionsList');
+  list.innerHTML = S.sections.map((s,i) => `
+    <div class="section-row" data-id="${s.id}">
+      <select onchange="updateSectionType('${s.id}',this.value)" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:5px;font-size:11px;width:90px">
+        ${['intro','verse','chorus','bridge','outro'].map(t=>`<option value="${t}"${t===s.type?' selected':''}>${t}</option>`).join('')}
+      </select>
+      <div class="section-time">${formatTime(s.start)} → ${formatTime(s.end)}</div>
+      <div class="section-energy">
+        <div class="section-energy-fill" style="width:${Math.round(s.energy*100)}%"></div>
+      </div>
+      <span style="font-size:10px;color:var(--muted)">${Math.round(s.energy*100)}%</span>
+      <button class="btn btn-ghost btn-sm" style="padding:4px 8px" onclick="removeSection('${s.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+function updateSectionType(id, type) {
+  const s = S.sections.find(s => s.id === id);
+  if (s) s.type = type;
+}
+
+function removeSection(id) {
+  S.sections = S.sections.filter(s => s.id !== id);
+  renderSections();
+}
+
+function addSection() {
+  const last = S.sections[S.sections.length-1];
+  const start = last ? last.end : 0;
+  S.sections.push({ id:`sec-${Date.now()}`, type:'verse', start, end: start+30, energy:0.5 });
+  renderSections();
+}
+
+async function transcribeLyrics() {
+  const url = S.song.url || document.getElementById('audioUrl').value.trim();
+  if (!url) { toast('Provide a hosted audio URL first for transcription', 'error'); return; }
+
+  const btn = document.getElementById('transcribeBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Transcribing…';
+  toast('Sending to Whisper AI — this takes ~30 seconds…', 'success');
+
+  try {
+    const r = await fetch(`${PROXY}/fal/generate`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'fal-ai/whisper',
+        audio_url: url,
+        task: 'transcribe',
+        chunk_level: 'segment'
+      })
+    });
+    const { request_id } = await r.json();
+
+    // Poll for result
+    let result = null;
+    for (let i = 0; i < 30; i++) {
+      await sleep(3000);
+      const sr = await fetch(`${PROXY}/fal/status/${request_id}?model=fal-ai/whisper`);
+      const sd = await sr.json();
+      if (sd.status === 'COMPLETED') {
+        const rr = await fetch(`${PROXY}/fal/result/${request_id}?model=fal-ai/whisper`);
+        result = await rr.json();
+        break;
+      }
+    }
+
+    if (result && result.chunks) {
+      S.lyrics = result.chunks.map(c => ({
+        start: c.timestamp[0],
+        end: c.timestamp[1],
+        text: c.text.trim()
+      }));
+      renderLyricsTimeline();
+      const lyricsText = S.lyrics.map(l => `[${formatTime(l.start)}] ${l.text}`).join('\n');
+      document.getElementById('lyricsInput').value = lyricsText;
+      S.lyricsRaw = lyricsText;
+      toast('Lyrics transcribed!', 'success');
+    } else {
+      toast('Transcription failed — paste lyrics manually', 'error');
+    }
+  } catch(e) {
+    toast('Transcription error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🎤 Auto-Transcribe';
+  }
+}
+
+function renderLyricsTimeline() {
+  const c = document.getElementById('lyricsContainer');
+  c.style.display = 'block';
+  c.innerHTML = S.lyrics.map(l => `
+    <div class="lyric-line">
+      <div class="lyric-time">${formatTime(l.start)}</div>
+      <div class="lyric-text">${l.text}</div>
+    </div>
+  `).join('');
+}
+
+function showManualEntry() {
+  document.getElementById('audioLoaded').style.display = 'block';
+  document.getElementById('analysisResults').style.display = 'none';
+  document.getElementById('manualAnalysis').style.display = 'block';
+  document.getElementById('analysisPill').textContent = '✏️ Manual Entry';
+  document.getElementById('analysisPill').className = 'status-pill pill-analyzing';
+}
+
+function finishStep1() {
+  // Collect final values
+  const titleEl = document.getElementById('songTitleInput') || document.getElementById('songTitleManual');
+  const artistEl = document.getElementById('artistInput') || document.getElementById('artistManual');
+  const bpmEl = document.getElementById('bpmInput') || document.getElementById('bpmManual');
+
+  S.song.title = (titleEl?.value || '').trim() || 'Untitled';
+  S.song.artist = (artistEl?.value || '').trim();
+  S.song.bpm = parseInt(bpmEl?.value) || 120;
+  S.lyricsRaw = (document.getElementById('lyricsInput')?.value || document.getElementById('lyricsManual')?.value || '').trim();
+
+  // Parse sections from manual if needed
+  if (S.sections.length === 0) {
+    const structureText = document.getElementById('structureManual')?.value || '';
+    if (structureText) parseManualStructure(structureText);
+  }
+
+  if (S.sections.length === 0) setDefaultSections(S.song.duration || 180);
+
+  markStepDone(1);
+  goStep(2);
+}
+
+function parseManualStructure(text) {
+  S.sections = [];
+  text.split('\n').filter(l=>l.trim()).forEach((line, i) => {
+    const m = line.match(/(\w+):\s*(\d+)[:\-](\d+)s?/i);
+    if (m) {
+      S.sections.push({ id:`sec-${i}`, type:m[1].toLowerCase(), start:parseInt(m[2]), end:parseInt(m[3]), energy:0.5 });
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+// STEP 2 — STYLE
+// ═══════════════════════════════════════════════
+function selectStyle(key) {
+  document.querySelectorAll('.style-card').forEach(c => c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  S.style = key;
+  const style = STYLES[key];
+  document.getElementById('selectedStylePreview').style.display = 'block';
+  document.getElementById('styleDNABox').textContent = buildStyleDNA();
+}
+
+function buildStyleDNA() {
+  if (!S.style) return '';
+  const base = STYLES[S.style].promptDNA;
+  const custom = document.getElementById('customStyle')?.value?.trim() || '';
+  return base + (custom ? ', ' + custom : '');
+}
+
+function finishStep2() {
+  if (!S.style) { toast('Select a visual style first', 'error'); return; }
+  S.customStyle = document.getElementById('customStyle')?.value?.trim() || '';
+  markStepDone(2);
+  goStep(3);
+}
+
+// ═══════════════════════════════════════════════
+// STEP 3 — STORY
+// ═══════════════════════════════════════════════
+function setStoryMode(mode) {
+  S.storyMode = mode;
+  document.querySelectorAll('#panel-3 .style-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById(`mode-${mode}`).classList.add('selected');
+  document.getElementById('story-solo').style.display = mode==='solo' ? 'block' : 'none';
+  document.getElementById('story-narrative').style.display = mode==='story' ? 'block' : 'none';
+  document.getElementById('story-script').style.display = mode==='script' ? 'block' : 'none';
+}
+
+function parseStoryCharacters() {
+  const text = document.getElementById('storyText').value;
+  const nameRegex = /\b([A-Z][a-z]+ ?(?:[A-Z][a-z]+)?)\b/g;
+  const commonWords = new Set(['The','A','An','In','On','At','To','Of','For','And','But','Or','She','He','They','We','It','Her','His','Their','Our','His']);
+  const found = new Set();
+  let m;
+  while ((m = nameRegex.exec(text)) !== null) {
+    if (!commonWords.has(m[1])) found.add(m[1]);
+  }
+
+  if (found.size > 0) {
+    document.getElementById('detectedCharsPreview').style.display = 'block';
+    const list = document.getElementById('detectedCharsList');
+    list.innerHTML = [...found].slice(0,8).map(n => `
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:4px 10px;font-size:11px;cursor:pointer" onclick="preloadChar('${n}')">${n} +</span>
+    `).join('');
+  }
+}
+
+function preloadChar(name) {
+  document.getElementById('newCharName').value = name;
+  toast(`Click through to Step 4 to build out "${name}"`, 'success');
+}
+
+async function generateStory() {
+  if (!S.lyricsRaw) { toast('Add lyrics first (Step 1)', 'error'); return; }
+  const style = STYLES[S.style]?.name || 'cinematic';
+  const prompt = `Based on these song lyrics, write a short narrative story for a music video. Style: ${style}. Song: "${S.song.title}" by ${S.song.artist || 'Unknown'}.\n\nLyrics:\n${S.lyricsRaw.substring(0,500)}\n\nWrite a 2-3 paragraph story that could be visualized in a music video. Include character names and key scenes.`;
+  
+  toast('Generating story…', 'success');
+  try {
+    const r = await fetch(`${PROXY}/gemini/generate`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ contents:[{parts:[{text:prompt}]}] })
+    });
+    const d = await r.json();
+    const text = d.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (text) {
+      setStoryMode('story');
+      document.getElementById('storyText').value = text;
+      S.story = text;
+      parseStoryCharacters();
+      toast('Story generated!', 'success');
+    }
+  } catch(e) { toast('Story generation failed', 'error'); }
+}
+
+function autoParseScript() {
+  const text = document.getElementById('scriptText').value;
+  // Parse SCENE N headers
+  const scenes = text.split(/SCENE\s+\d+/i).filter(s => s.trim());
+  toast(`Found ${scenes.length} scenes in script`, 'success');
+}
+
+function finishStep3() {
+  S.story = document.getElementById('storyText')?.value ||
+            document.getElementById('scriptText')?.value ||
+            (document.getElementById('soloSetting')?.value + ' ' + document.getElementById('soloArc')?.value) || '';
+  markStepDone(3);
+  goStep(4);
+}
+
+// ═══════════════════════════════════════════════
+// STEP 4 — CHARACTERS
+// ═══════════════════════════════════════════════
+function addCharacter() {
+  const name = document.getElementById('newCharName').value.trim();
+  if (!name) { toast('Enter a character name', 'error'); return; }
+
+  const char = {
+    id: `char-${Date.now()}`,
+    name,
+    role: document.getElementById('newCharRole').value.trim(),
+    appearance: document.getElementById('newCharAppearance').value.trim(),
+    clothing: document.getElementById('newCharClothing').value.trim(),
+    distinct: document.getElementById('newCharDistinct').value.trim(),
+    portraitUrl: null,
+    portraitStatus: 'pending'
+  };
+  char.promptDNA = buildCharDNA(char);
+  S.characters.push(char);
+
+  // Clear form
+  ['newCharName','newCharRole','newCharAppearance','newCharClothing','newCharDistinct'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+
+  renderCharacters();
+  toast(`Character "${name}" added`, 'success');
+}
+
+function buildCharDNA(char) {
+  const parts = [char.name];
+  if (char.appearance) parts.push(char.appearance);
+  if (char.clothing) parts.push('wearing: ' + char.clothing);
+  if (char.distinct) parts.push(char.distinct);
+  return parts.join(', ');
+}
+
+function renderCharacters() {
+  const grid = document.getElementById('charCards');
+  const empty = document.getElementById('charsList').querySelector('div');
+
+  if (S.characters.length === 0) {
+    grid.style.display = 'none';
+    document.getElementById('charsList').innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)"><div style="font-size:32px;margin-bottom:10px">👤</div><div>No characters yet. Add one below.</div></div>';
+    return;
+  }
+
+  document.getElementById('charsList').innerHTML = '';
+  grid.style.display = 'grid';
+  grid.innerHTML = S.characters.map(c => `
+    <div class="char-card">
+      ${c.portraitUrl
+        ? `<img class="char-portrait" src="${c.portraitUrl}" alt="${c.name}">`
+        : `<div class="char-portrait-placeholder">${c.portraitStatus==='generating'?'<span class="pulse">⏳</span>':'🎭'}</div>`
+      }
+      <div class="char-body">
+        <div class="char-name">${c.name}</div>
+        <div class="char-role">${c.role || 'Character'}</div>
+        <div class="char-dna">${c.promptDNA.substring(0,120)}...</div>
+        <div class="btn-row" style="margin-top:10px">
+          <button class="btn btn-ghost btn-sm" onclick="generateCharPortrait('${c.id}')">🎨 ${c.portraitUrl?'Regenerate':'Generate Portrait'}</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="removeChar('${c.id}')">✕</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function removeChar(id) {
+  S.characters = S.characters.filter(c => c.id !== id);
+  renderCharacters();
+}
+
+async function generateCharPortrait(charId) {
+  // If no charId, create from current form values
+  let char;
+  if (charId) {
+    char = S.characters.find(c => c.id === charId);
+  } else {
+    const name = document.getElementById('newCharName').value.trim();
+    if (!name) { toast('Fill in character details first', 'error'); return; }
+    char = {
+      id: `char-${Date.now()}`,
+      name,
+      role: document.getElementById('newCharRole').value.trim(),
+      appearance: document.getElementById('newCharAppearance').value.trim(),
+      clothing: document.getElementById('newCharClothing').value.trim(),
+      distinct: document.getElementById('newCharDistinct').value.trim()
+    };
+    char.promptDNA = buildCharDNA(char);
+    S.characters.push(char);
+    ['newCharName','newCharRole','newCharAppearance','newCharClothing','newCharDistinct'].forEach(id => { document.getElementById(id).value = ''; });
+  }
+
+  if (!char) return;
+  char.portraitStatus = 'generating';
+  renderCharacters();
+  toast(`Generating portrait for ${char.name}…`, 'success');
+
+  const styleDNA = STYLES[S.style]?.promptDNA || 'cinematic portrait photography, professional lighting';
+  const prompt = `Portrait photograph, ${char.promptDNA}, facing camera, close-up portrait, ${styleDNA}, character reference sheet`;
+
+  try {
+    const r = await fetch(`${PROXY}/fal/generate`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ model:'fal-ai/flux-pro/v1.1-ultra', prompt, aspect_ratio:'3:4', num_images:1 })
+    });
+    const { request_id } = await r.json();
+
+    // Poll
+    for (let i = 0; i < 20; i++) {
+      await sleep(5000);
+      const sr = await fetch(`${PROXY}/fal/status/${request_id}?model=fal-ai/flux-pro`);
+      const sd = await sr.json();
+      if (sd.images?.[0]?.url) {
+        char.portraitUrl = sd.images[0].url;
+        char.portraitStatus = 'done';
+        renderCharacters();
+        toast(`Portrait for ${char.name} ready!`, 'success');
+        break;
+      }
+    }
+  } catch(e) {
+    char.portraitStatus = 'error';
+    renderCharacters();
+    toast('Portrait generation failed', 'error');
+  }
+}
+
+function finishStep4() {
+  markStepDone(4);
+  goStep(5);
+  buildStoryboard();
+}
+
+// ═══════════════════════════════════════════════
+// STEP 5 — STORYBOARD
+// ═══════════════════════════════════════════════
+function buildStoryboard() {
+  // Get lyrics per section
+  const lyricsBySec = assignLyricsToSections();
+
+  S.storyboard = S.sections.map((sec, i) => {
+    const secLyrics = lyricsBySec[sec.id] || '';
+    const action = autoActionForSection(sec, i, secLyrics);
+    const videoPrompt = buildVideoPrompt(sec, action, secLyrics, null);
+
+    return {
+      id: `sb-${i}`,
+      sectionId: sec.id,
+      sectionType: sec.type,
+      start: sec.start,
+      end: sec.end,
+      lyrics: secLyrics,
+      action,
+      charIds: S.characters.map(c => c.id),
+      beginFrame: { url: null, prompt: buildFramePrompt(sec, action, 'opening', secLyrics), status:'pending' },
+      endFrame: { url: null, prompt: buildFramePrompt(sec, action, 'closing', secLyrics), status:'pending' },
+      videoPrompt,
+      videoUrl: null,
+      videoStatus: 'pending'
+    };
+  });
+
+  renderStoryboard();
+}
+
+function assignLyricsToSections() {
+  const result = {};
+  if (!S.lyrics.length) {
+    // Parse raw lyrics and distribute evenly
+    const lines = S.lyricsRaw.split('\n').filter(l => l.trim());
+    const perSection = Math.ceil(lines.length / S.sections.length);
+    S.sections.forEach((sec, i) => {
+      result[sec.id] = lines.slice(i*perSection, (i+1)*perSection).join(' / ');
+    });
+    return result;
+  }
+
+  S.sections.forEach(sec => {
+    const matching = S.lyrics.filter(l => l.start >= sec.start && l.start < sec.end);
+    result[sec.id] = matching.map(l => l.text).join(' ');
+  });
+  return result;
+}
+
+function autoActionForSection(sec, idx, lyrics) {
+  const mode = S.storyMode;
+  if (mode === 'solo') {
+    const actions = {
+      'intro': 'Artist enters frame slowly, establishing shot of the environment',
+      'verse': 'Artist performs intimately, close-up shots, introspective',
+      'chorus': 'Wide dynamic shot, artist at full energy, full movement',
+      'bridge': 'Atmospheric interlude, slow motion, environmental shots',
+      'outro': 'Artist fades into the environment, final moments'
+    };
+    return actions[sec.type] || actions['verse'];
+  }
+  // For story/script modes, use the story text
+  if (S.story) {
+    // Try to match section of story to this section (divide evenly)
+    const words = S.story.split(' ');
+    const wordsPerSec = Math.ceil(words.length / S.sections.length);
+    const relevant = words.slice(idx * wordsPerSec, (idx+1) * wordsPerSec).join(' ');
+    return relevant.substring(0, 200);
+  }
+  return `Scene ${idx+1}: ${sec.type} — ${lyrics.substring(0, 100)}`;
+}
+
+function buildFramePrompt(sec, action, position, lyrics) {
+  const styleDNA = STYLES[S.style]?.promptDNA || '';
+  const customStyle = S.customStyle || '';
+  const charDNA = S.characters.map(c => c.promptDNA).join(' | ');
+  const songContext = S.song.title ? `for "${S.song.title}"` : '';
+
+  const positionDesc = position === 'opening'
+    ? 'establishing shot, beginning of scene'
+    : 'final moment of scene, closing image';
+
+  return `Music video ${songContext}, ${sec.type} section, ${positionDesc}, ${action.substring(0,150)}, ${charDNA ? 'characters: ' + charDNA.substring(0,200) + ', ' : ''}cinematic ${positionDesc}, ${styleDNA}${customStyle ? ', '+customStyle : ''}`.trim();
+}
+
+function buildVideoPrompt(sec, action, lyrics, beginFrameUrl) {
+  const styleDNA = STYLES[S.style]?.promptDNA || '';
+  const customStyle = S.customStyle || '';
+  const charDNA = S.characters.map(c => c.promptDNA).join('. ');
+
+  let prompt = `Music video ${sec.type} section. ${action}. `;
+  if (lyrics) prompt += `Mood: "${lyrics.substring(0,80)}". `;
+  if (charDNA) prompt += `${charDNA.substring(0,200)}. `;
+  prompt += `${styleDNA}`;
+  if (customStyle) prompt += `, ${customStyle}`;
+  prompt += '. Smooth cinematic camera movement, professional cinematography.';
+
+  return prompt.substring(0, 500);
+}
+
+function renderStoryboard() {
+  const grid = document.getElementById('storyboardGrid');
+  grid.innerHTML = S.storyboard.map((scene, i) => {
+    const sec = S.sections.find(s => s.id === scene.sectionId) || {};
+    return `
+    <div class="sb-card" id="sbcard-${scene.id}">
+      <div class="sb-header">
+        <div class="sb-scene-num">${i+1}</div>
+        <div class="sb-section-info">
+          <div class="sb-section-name">
+            <span class="section-badge badge-${scene.sectionType}">${scene.sectionType.toUpperCase()}</span>
+          </div>
+          <div class="sb-section-time">${formatTime(scene.start)} → ${formatTime(scene.end)} · ${scene.end - scene.start}s</div>
+          <div class="sb-lyrics-preview">${scene.lyrics.substring(0,80)}${scene.lyrics.length>80?'…':''}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="regenerateScene('${scene.id}')">↺ Rebuild</button>
+          <button class="btn btn-ghost btn-sm" onclick="generateBothFrames('${scene.id}')">🎨 Frames</button>
+        </div>
+      </div>
+
+      <div class="sb-body">
+        <!-- Begin Frame -->
+        <div class="sb-frame">
+          <div class="sb-frame-label">
+            🟢 BEGIN FRAME
+            <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:9px" onclick="generateFrame('${scene.id}','begin')">
+              ${scene.beginFrame.status==='generating'?'⏳':'↺'}
+            </button>
+          </div>
+          ${scene.beginFrame.url
+            ? `<img class="sb-frame-img" src="${scene.beginFrame.url}" alt="Begin frame">`
+            : `<div class="sb-frame-img-placeholder">${scene.beginFrame.status==='generating'?'<span class="pulse">⏳</span>':'🎬'}</div>`
+          }
+          <div class="sb-frame-prompt">${scene.beginFrame.prompt.substring(0,120)}…</div>
+        </div>
+
+        <!-- Action / Direction -->
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div>
+            <div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">SCENE ACTION</div>
+            <textarea style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;padding:8px;resize:vertical;min-height:80px;outline:none;font-family:inherit"
+              onchange="updateSceneAction('${scene.id}',this.value)">${scene.action}</textarea>
+          </div>
+          <div>
+            <div style="font-size:9px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">LYRICS</div>
+            <div style="font-size:10px;color:var(--muted);font-style:italic;line-height:1.6">"${scene.lyrics.substring(0,120) || '—'}"</div>
+          </div>
+          ${S.characters.length > 0 ? `
+          <div>
+            <div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">CHARACTERS</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px">
+              ${S.characters.map(c=>`<span style="font-size:9px;background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:2px 6px">${c.name}</span>`).join('')}
+            </div>
+          </div>` : ''}
+        </div>
+
+        <!-- End Frame -->
+        <div class="sb-frame">
+          <div class="sb-frame-label">
+            🔴 END FRAME
+            <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:9px" onclick="generateFrame('${scene.id}','end')">
+              ${scene.endFrame.status==='generating'?'⏳':'↺'}
+            </button>
+          </div>
+          ${scene.endFrame.url
+            ? `<img class="sb-frame-img" src="${scene.endFrame.url}" alt="End frame">`
+            : `<div class="sb-frame-img-placeholder">${scene.endFrame.status==='generating'?'<span class="pulse">⏳</span>':'🎬'}</div>`
+          }
+          <div class="sb-frame-prompt">${scene.endFrame.prompt.substring(0,120)}…</div>
+        </div>
+      </div>
+
+      <!-- Video Prompt (full width, editable) -->
+      <div style="padding:0 18px 18px">
+        <div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">🎬 VIDEO GENERATION PROMPT</div>
+        <textarea class="sb-video-prompt" onchange="updateVideoPrompt('${scene.id}',this.value)">${scene.videoPrompt}</textarea>
+      </div>
+    </div>
+    `;
+  }).join('');
+}
+
+function updateSceneAction(sceneId, action) {
+  const scene = S.storyboard.find(s => s.id === sceneId);
+  if (!scene) return;
+  scene.action = action;
+  // Rebuild video prompt
+  const sec = S.sections.find(s => s.id === scene.sectionId);
+  scene.videoPrompt = buildVideoPrompt(sec, action, scene.lyrics, scene.beginFrame.url);
+  // Update the textarea
+  const card = document.getElementById(`sbcard-${sceneId}`);
+  if (card) {
+    const promptTA = card.querySelector('.sb-video-prompt');
+    if (promptTA) promptTA.value = scene.videoPrompt;
+  }
+}
+
+function updateVideoPrompt(sceneId, prompt) {
+  const scene = S.storyboard.find(s => s.id === sceneId);
+  if (scene) scene.videoPrompt = prompt;
+}
+
+function regenerateScene(sceneId) {
+  const scene = S.storyboard.find(s => s.id === sceneId);
+  if (!scene) return;
+  const sec = S.sections.find(s => s.id === scene.sectionId);
+  const idx = S.storyboard.indexOf(scene);
+  scene.action = autoActionForSection(sec, idx, scene.lyrics);
+  scene.beginFrame.prompt = buildFramePrompt(sec, scene.action, 'opening', scene.lyrics);
+  scene.endFrame.prompt = buildFramePrompt(sec, scene.action, 'closing', scene.lyrics);
+  scene.videoPrompt = buildVideoPrompt(sec, scene.action, scene.lyrics, null);
+  renderStoryboard();
+}
+
+async function generateFrame(sceneId, which) {
+  const scene = S.storyboard.find(s => s.id === sceneId);
+  if (!scene) return;
+  const frame = which === 'begin' ? scene.beginFrame : scene.endFrame;
+  frame.status = 'generating';
+  renderStoryboard();
+
+  try {
+    const r = await fetch(`${PROXY}/fal/generate`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ model:'fal-ai/flux-pro/v1.1-ultra', prompt: frame.prompt, aspect_ratio:'16:9', num_images:1 })
+    });
+    const { request_id } = await r.json();
+
+    for (let i = 0; i < 20; i++) {
+      await sleep(5000);
+      const sr = await fetch(`${PROXY}/fal/status/${request_id}?model=fal-ai/flux-pro`);
+      const sd = await sr.json();
+      if (sd.images?.[0]?.url) {
+        frame.url = sd.images[0].url;
+        frame.status = 'done';
+        // If begin frame, use as basis for video prompt
+        if (which === 'begin') {
+          scene.videoPrompt = buildVideoPrompt(
+            S.sections.find(s => s.id === scene.sectionId),
+            scene.action, scene.lyrics, frame.url
+          );
+        }
+        renderStoryboard();
+        toast(`${which === 'begin' ? 'Begin' : 'End'} frame ready for scene ${sceneId}`, 'success');
+        return;
+      }
+    }
+    frame.status = 'error';
+    renderStoryboard();
+  } catch(e) {
+    frame.status = 'error';
+    renderStoryboard();
+    toast('Frame generation failed', 'error');
+  }
+}
+
+async function generateBothFrames(sceneId) {
+  await generateFrame(sceneId, 'begin');
+  await generateFrame(sceneId, 'end');
+}
+
+async function generateAllBeginFrames() {
+  toast(`Generating ${S.storyboard.length} begin frames in sequence…`, 'success');
+  for (const scene of S.storyboard) {
+    await generateFrame(scene.id, 'begin');
+  }
+}
+
+async function generateAllEndFrames() {
+  toast(`Generating ${S.storyboard.length} end frames in sequence…`, 'success');
+  for (const scene of S.storyboard) {
+    await generateFrame(scene.id, 'end');
+  }
+}
+
+function finishStep5() {
+  markStepDone(5);
+  goStep(6);
+  renderGenQueue();
+}
+
+// ═══════════════════════════════════════════════
+// STEP 6 — GENERATE VIDEOS
+// ═══════════════════════════════════════════════
+function renderGenQueue() {
+  const grid = document.getElementById('genGrid');
+  if (S.storyboard.length === 0) return;
+
+  grid.innerHTML = S.storyboard.map((scene, i) => `
+    <div class="gen-item" id="genitem-${scene.id}">
+      <div class="gen-scene-badge">${i+1}</div>
+      <div style="margin-right:8px">
+        ${scene.beginFrame.url
+          ? `<img style="width:64px;height:36px;border-radius:4px;object-fit:cover" src="${scene.beginFrame.url}">`
+          : `<div style="width:64px;height:36px;border-radius:4px;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:12px">🎬</div>`
+        }
+      </div>
+      <div class="gen-info">
+        <div class="gen-title">${scene.sectionType.toUpperCase()} · ${formatTime(scene.start)} – ${formatTime(scene.end)} (${scene.end - scene.start}s)</div>
+        <div class="gen-status ${scene.videoStatus}" id="genstatus-${scene.id}">
+          ${statusLabel(scene.videoStatus)}
+        </div>
+        <div class="progress-bar" id="genprog-${scene.id}" style="display:none">
+          <div class="progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+      ${scene.videoUrl
+        ? `<video style="width:80px;height:45px;border-radius:4px;object-fit:cover" src="${scene.videoUrl}"></video>`
+        : `<div style="width:80px;height:45px;border-radius:4px;background:var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:10px">Not yet</div>`
+      }
+      <button class="btn btn-ghost btn-sm" onclick="generateOneVideo('${scene.id}')">
+        ${scene.videoUrl ? '↺' : '▶'}
+      </button>
+    </div>
+  `).join('');
+}
+
+function statusLabel(status) {
+  switch(status) {
+    case 'pending': return '⬜ Ready to generate';
+    case 'queued': return '⏳ Queued…';
+    case 'generating': return '⚡ Generating…';
+    case 'done': return '✅ Done';
+    case 'error': return '❌ Failed — click ↺ to retry';
+    default: return status;
+  }
+}
+
+async function generateOneVideo(sceneId) {
+  const scene = S.storyboard.find(s => s.id === sceneId);
+  if (!scene) return;
+
+  const duration = Math.min(scene.end - scene.start, 8); // wan-t2v max ~8s
+  scene.videoStatus = 'queued';
+  updateGenStatus(sceneId, 'queued');
+
+  try {
+    const body = {
+      model: 'fal-ai/wan-t2v',
+      prompt: scene.videoPrompt,
+      aspect_ratio: '16:9'
+    };
+    // Use begin frame as image if available
+    if (scene.beginFrame.url) {
+      body.image_url = scene.beginFrame.url;
+    }
+
+    const r = await fetch(`${PROXY}/fal/generate`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const { request_id } = await r.json();
+
+    scene.videoStatus = 'generating';
+    updateGenStatus(sceneId, 'generating');
+
+    // Poll
+    for (let i = 0; i < 40; i++) {
+      await sleep(5000);
+      const sr = await fetch(`${PROXY}/fal/status/${request_id}?model=fal-ai/wan-t2v`);
+      const sd = await sr.json();
+
+      if (sd.status === 'COMPLETED' || sd.video?.url) {
+        const videoUrl = sd.video?.url;
+        if (videoUrl) {
+          scene.videoUrl = videoUrl;
+          scene.videoStatus = 'done';
+          S.generatedCount++;
+          updateGenStatus(sceneId, 'done', videoUrl);
+          updateGenProgressBar();
+          toast(`Clip ${sceneId} ready!`, 'success');
+          return;
+        } else {
+          const rr = await fetch(`${PROXY}/fal/result/${request_id}?model=fal-ai/wan-t2v`);
+          const rd = await rr.json();
+          if (rd.video?.url) {
+            scene.videoUrl = rd.video.url;
+            scene.videoStatus = 'done';
+            S.generatedCount++;
+            updateGenStatus(sceneId, 'done', rd.video.url);
+            updateGenProgressBar();
+            toast(`Clip ${sceneId} ready!`, 'success');
+            return;
+          }
+        }
+      }
+    }
+    scene.videoStatus = 'error';
+    updateGenStatus(sceneId, 'error');
+  } catch(e) {
+    scene.videoStatus = 'error';
+    updateGenStatus(sceneId, 'error');
+    toast('Video generation failed for scene ' + sceneId, 'error');
+  }
+}
+
+function updateGenStatus(sceneId, status, videoUrl) {
+  const statusEl = document.getElementById(`genstatus-${sceneId}`);
+  if (statusEl) {
+    statusEl.className = `gen-status ${status}`;
+    statusEl.textContent = statusLabel(status);
+  }
+  if (videoUrl) {
+    const item = document.getElementById(`genitem-${sceneId}`);
+    if (item) {
+      const placeholder = item.querySelector('div[style*="Not yet"]');
+      if (placeholder) placeholder.outerHTML = `<video style="width:80px;height:45px;border-radius:4px;object-fit:cover" src="${videoUrl}"></video>`;
+    }
+  }
+}
+
+function updateGenProgressBar() {
+  const total = S.storyboard.length;
+  const done = S.storyboard.filter(s => s.videoStatus === 'done').length;
+  const pct = Math.round((done/total)*100);
+  document.getElementById('genProgressBar').style.width = pct + '%';
+  document.getElementById('genProgress').textContent = `${done} / ${total} clips generated`;
+}
+
+async function generateAllVideos() {
+  const btn = document.getElementById('genAllBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating…';
+  toast(`Starting generation for ${S.storyboard.length} clips…`, 'success');
+
+  // Generate in batches of 2 (parallel, not to overwhelm API)
+  const pending = S.storyboard.filter(s => s.videoStatus !== 'done');
+  for (let i = 0; i < pending.length; i += 2) {
+    const batch = pending.slice(i, i+2);
+    await Promise.all(batch.map(s => generateOneVideo(s.id)));
+  }
+
+  btn.disabled = false;
+  btn.textContent = '⚡ Generate All Clips';
+  toast('All clips generated!', 'success');
+}
+
+function finishStep6() {
+  markStepDone(6);
+  goStep(7);
+  renderAssemblyTimeline();
+}
+
+// ═══════════════════════════════════════════════
+// STEP 7 — ASSEMBLE
+// ═══════════════════════════════════════════════
+function renderAssemblyTimeline() {
+  const timeline = document.getElementById('assemblyTimeline');
+  const clips = S.storyboard.filter(s => s.videoUrl);
+
+  if (clips.length === 0) {
+    timeline.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);width:100%">No clips generated yet.</div>';
+    return;
+  }
+
+  timeline.innerHTML = clips.map((scene, i) => `
+    ${i > 0 ? `<div class="timeline-transition">${transitionIcon(S.transition)}</div>` : ''}
+    <div class="timeline-clip">
+      <video class="timeline-thumb" src="${scene.videoUrl}" muted playsinline
+        onmouseover="this.play()" onmouseout="this.pause();this.currentTime=0"></video>
+      <div class="timeline-label">${scene.sectionType}<br>${formatTime(scene.start)}</div>
+    </div>
+  `).join('');
+}
+
+function transitionIcon(t) {
+  switch(t) {
+    case 'cut': return '|';
+    case 'fade': return '◐';
+    case 'dissolve': return '◑';
+    case 'whip': return '⟩';
+    default: return '|';
+  }
+}
+
+function setTransition(t) {
+  S.transition = t;
+  document.querySelectorAll('[id^="trans-"]').forEach(b => b.classList.remove('btn-primary'));
+  const btn = document.getElementById(`trans-${t}`);
+  if (btn) { btn.classList.remove('btn-ghost'); btn.classList.add('btn-primary'); }
+  renderAssemblyTimeline();
+}
+
+async function assembleInBrowser() {
+  const clips = S.storyboard.filter(s => s.videoUrl);
+  if (clips.length === 0) { toast('No clips to assemble', 'error'); return; }
+
+  const log = document.getElementById('assemblyLog');
+  const logText = document.getElementById('assemblyLogText');
+  log.style.display = 'block';
+  logText.textContent = 'Loading FFmpeg WASM…\n';
+
+  try {
+    // Dynamically load ffmpeg.wasm
+    if (!window.FFmpeg) {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js';
+      document.head.appendChild(script);
+      await new Promise(resolve => script.onload = resolve);
+    }
+
+    const { createFFmpeg, fetchFile } = FFmpeg;
+    const ffmpeg = createFFmpeg({ log: true });
+    await ffmpeg.load();
+    logText.textContent += 'FFmpeg loaded. Downloading clips…\n';
+
+    // Download all clips
+    const concat = [];
+    for (let i = 0; i < clips.length; i++) {
+      const scene = clips[i];
+      logText.textContent += `Downloading clip ${i+1}/${clips.length}…\n`;
+      const resp = await fetch(scene.videoUrl);
+      const data = await resp.arrayBuffer();
+      const filename = `clip${i}.mp4`;
+      ffmpeg.FS('writeFile', filename, new Uint8Array(data));
+
+      // Normalize clip to 720p 24fps
+      await ffmpeg.run('-i', filename, '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2:black,fps=24', '-c:v', 'libx264', '-preset', 'fast', '-an', `norm${i}.mp4`);
+      concat.push(`file 'norm${i}.mp4'`);
+    }
+
+    // Write concat list
+    ffmpeg.FS('writeFile', 'concat.txt', concat.join('\n'));
+    logText.textContent += 'Concatenating clips…\n';
+
+    await ffmpeg.run('-f', 'concat', '-safe', '0', '-i', 'concat.txt', '-c', 'copy', 'merged.mp4');
+
+    // If we have audio
+    let finalFile = 'merged.mp4';
+    if (S.song.url) {
+      logText.textContent += 'Adding audio…\n';
+      await ffmpeg.run('-i', 'merged.mp4', '-i', S.song.url, '-shortest', '-c:v', 'copy', '-c:a', 'aac', 'final.mp4');
+      finalFile = 'final.mp4';
+    }
+
+    const output = ffmpeg.FS('readFile', finalFile);
+    const blob = new Blob([output.buffer], { type:'video/mp4' });
+    const url = URL.createObjectURL(blob);
+
+    document.getElementById('finalVideoContainer').style.display = 'block';
+    document.getElementById('finalVideo').src = url;
+    document.getElementById('finalDownloadBtn').href = url;
+    document.getElementById('finalDownloadBtn').download = `${S.song.title || 'music-video'}.mp4`;
+
+    logText.textContent += '✅ Assembly complete!\n';
+    toast('Music video assembled!', 'success');
+
+  } catch(e) {
+    logText.textContent += `\n❌ Error: ${e.message}\n\nFalling back to download package…\n`;
+    toast('Browser assembly failed — use download package instead', 'error');
+    downloadPackage();
+  }
+}
+
+function downloadPackage() {
+  const clips = S.storyboard.filter(s => s.videoUrl);
+  const offset = parseInt(document.getElementById('audioOffset').value) || 0;
+  const transitionSec = S.transition === 'fade' ? 1 : 0;
+
+  let ffmpegCmd = '#!/bin/bash\n# Music Video Assembly Script\n# Generated by Music Video Creator\n\n';
+  ffmpegCmd += '# Step 1: Download clips\n';
+  clips.forEach((s,i) => { ffmpegCmd += `curl -L "${s.videoUrl}" -o clip${i}.mp4\n`; });
+  if (S.song.url) ffmpegCmd += `curl -L "${S.song.url}" -o audio.mp3\n`;
+
+  ffmpegCmd += '\n# Step 2: Normalize clips\n';
+  clips.forEach((_,i) => {
+    ffmpegCmd += `ffmpeg -i clip${i}.mp4 -vf "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2:black,fps=24" -c:v libx264 -preset fast -an norm${i}.mp4\n`;
+  });
+
+  ffmpegCmd += '\n# Step 3: Concatenate\n';
+  const concatContent = clips.map((_,i) => `file 'norm${i}.mp4'`).join('\n');
+  ffmpegCmd += `echo "${concatContent}" > concat.txt\n`;
+  ffmpegCmd += `ffmpeg -f concat -safe 0 -i concat.txt -c copy merged.mp4\n`;
+
+  if (S.song.url) {
+    ffmpegCmd += `\n# Step 4: Add audio\nffmpeg -i merged.mp4 -i audio.mp3 -itsoffset ${offset/1000} -shortest -c:v copy -c:a aac final.mp4\n`;
+  }
+  ffmpegCmd += '\necho "Done! Open final.mp4"';
+
+  const proj = {
+    project: exportProjectData(),
+    ffmpegScript: ffmpegCmd,
+    clips: clips.map((s,i) => ({ scene: i+1, type: s.sectionType, url: s.videoUrl, prompt: s.videoPrompt })),
+    audioUrl: S.song.url
+  };
+
+  const blob = new Blob([JSON.stringify(proj, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${S.song.title||'music-video'}-project.json`;
+  a.click();
+
+  // Also download the shell script
+  const scriptBlob = new Blob([ffmpegCmd], {type:'text/plain'});
+  const scriptUrl = URL.createObjectURL(scriptBlob);
+  const b = document.createElement('a');
+  b.href = scriptUrl;
+  b.download = 'assemble.sh';
+  setTimeout(() => b.click(), 500);
+
+  toast('Project package downloaded (JSON + assembly script)', 'success');
+}
+
+// ═══════════════════════════════════════════════
+// PROJECT SAVE / LOAD
+// ═══════════════════════════════════════════════
+function exportProjectData() {
+  return { song: S.song, sections: S.sections, lyrics: S.lyrics, lyricsRaw: S.lyricsRaw,
+    style: S.style, customStyle: S.customStyle, storyMode: S.storyMode, story: S.story,
+    characters: S.characters, storyboard: S.storyboard, transition: S.transition,
+    exportedAt: new Date().toISOString() };
+}
+
+function exportProject() {
+  const data = exportProjectData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${S.song.title||'project'}-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast('Project saved!', 'success');
+}
+
+function importProject() {
+  document.getElementById('projectFileInput').click();
+}
+
+function handleProjectImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      Object.assign(S, {
+        song: data.song || S.song,
+        sections: data.sections || [],
+        lyrics: data.lyrics || [],
+        lyricsRaw: data.lyricsRaw || '',
+        style: data.style || null,
+        customStyle: data.customStyle || '',
+        storyMode: data.storyMode || 'solo',
+        story: data.story || '',
+        characters: data.characters || [],
+        storyboard: data.storyboard || [],
+        transition: data.transition || 'cut'
+      });
+      toast('Project loaded! Resuming from storyboard.', 'success');
+      renderStoryboard();
+      renderCharacters();
+      goStep(5);
+    } catch(err) {
+      toast('Could not load project file', 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function saveProject() {
+  exportProject();
+}
+
+// ═══════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════
+function formatTime(secs) {
+  if (isNaN(secs)) return '0:00';
+  const m = Math.floor(secs / 60);
+  const s = Math.floor(secs % 60);
+  return `${m}:${s.toString().padStart(2,'0')}`;
+}
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+function toast(msg, type='success') {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// Drag-and-drop for upload zone
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('audio/')) {
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    document.getElementById('audioFile').files = dt.files;
+    handleFileUpload(document.getElementById('audioFile'));
+  }
+});
+
+// Initialize
+setStoryMode('solo');
+setTransition('cut');
+
+console.log('🎬 Music Video Creator v1.0 — Ready');
+</script>
+</body>
+</html>
