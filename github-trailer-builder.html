@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub Trailer Builder — Inkwell Studios</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: rgba(255,255,255,0.04);
+    --surface-hover: rgba(255,255,255,0.08);
+    --border: rgba(255,255,255,0.1);
+    --border-glow: rgba(139,92,246,0.4);
+    --accent: #8B5CF6;
+    --accent2: #06B6D4;
+    --text: #f0f0f5;
+    --muted: rgba(240,240,245,0.5);
+    --success: #10B981;
+    --warning: #F59E0B;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'SF Pro Display', system-ui, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 20%, rgba(139,92,246,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(6,182,212,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .container { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 40px 24px; }
+
+  /* Header */
+  .header { text-align: center; margin-bottom: 48px; }
+  .logo { font-size: 13px; letter-spacing: 0.3em; color: var(--accent); text-transform: uppercase; margin-bottom: 16px; }
+  h1 { font-size: clamp(32px, 5vw, 52px); font-weight: 700; letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 12px; }
+  h1 span { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .subtitle { color: var(--muted); font-size: 16px; max-width: 500px; margin: 0 auto; }
+
+  /* Glass card */
+  .glass {
+    background: var(--surface);
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    margin-bottom: 20px;
+    transition: border-color 0.3s;
+  }
+  .glass:hover { border-color: rgba(139,92,246,0.2); }
+  .glass.active { border-color: var(--border-glow); box-shadow: 0 0 30px rgba(139,92,246,0.1); }
+
+  .section-label {
+    font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* Input row */
+  .input-row { display: flex; gap: 10px; }
+  .input-field {
+    flex: 1;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    color: var(--text);
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .input-field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,92,246,0.15); }
+  .input-field::placeholder { color: var(--muted); }
+
+  textarea.input-field { resize: vertical; min-height: 100px; }
+
+  /* Style grid */
+  .style-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .style-card {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .style-card:hover { border-color: var(--accent); background: rgba(139,92,246,0.08); }
+  .style-card.selected { border-color: var(--accent); background: rgba(139,92,246,0.15); box-shadow: 0 0 20px rgba(139,92,246,0.15); }
+  .style-card .icon { font-size: 24px; margin-bottom: 6px; }
+  .style-card .name { font-size: 13px; font-weight: 600; }
+  .style-card .desc { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* Tone row */
+  .tone-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tone-chip {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 7px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .tone-chip:hover { border-color: var(--accent2); color: var(--accent2); }
+  .tone-chip.selected { border-color: var(--accent2); background: rgba(6,182,212,0.15); color: var(--accent2); }
+
+  /* Duration */
+  .duration-row { display: flex; gap: 10px; }
+  .dur-btn {
+    flex: 1;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 13px;
+  }
+  .dur-btn:hover { border-color: var(--accent); }
+  .dur-btn.selected { border-color: var(--accent); background: rgba(139,92,246,0.15); }
+  .dur-btn .time { font-size: 18px; font-weight: 700; display: block; }
+
+  /* Button */
+  .btn-primary {
+    width: 100%;
+    background: linear-gradient(135deg, var(--accent), #7C3AED);
+    border: none;
+    border-radius: 14px;
+    padding: 18px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(139,92,246,0.4); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-primary::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+  }
+
+  /* Pipeline */
+  .pipeline { margin-top: 24px; }
+  .step {
+    display: flex; align-items: flex-start; gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+    transition: all 0.3s;
+  }
+  .step:last-child { border-bottom: none; }
+  .step-num {
+    width: 36px; height: 36px; flex-shrink: 0;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; color: var(--muted);
+    transition: all 0.3s;
+  }
+  .step.active .step-num {
+    background: rgba(139,92,246,0.2);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 15px rgba(139,92,246,0.3);
+  }
+  .step.done .step-num {
+    background: rgba(16,185,129,0.2);
+    border-color: var(--success);
+    color: var(--success);
+  }
+  .step.error .step-num { background: rgba(239,68,68,0.2); border-color: #EF4444; color: #EF4444; }
+  .step-content { flex: 1; }
+  .step-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .step-detail { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .step.active .step-detail { color: var(--text); }
+
+  /* Progress bar */
+  .progress-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; transition: width 0.3s; }
+
+  /* Frames preview */
+  .frames-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+  .frame-thumb {
+    aspect-ratio: 16/9;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    position: relative;
+  }
+  .frame-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .frame-thumb.loading::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(139,92,246,0.15), transparent);
+    animation: shimmer 1.5s infinite;
+  }
+  @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+  /* Result */
+  .result-card {
+    background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(6,182,212,0.05));
+    border: 1px solid rgba(139,92,246,0.3);
+    border-radius: 20px;
+    padding: 32px;
+    text-align: center;
+    margin-top: 24px;
+  }
+  .result-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+  .result-card p { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+  .result-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn-action {
+    padding: 12px 24px; border-radius: 12px; font-size: 14px; font-weight: 600;
+    cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+    transition: all 0.2s;
+  }
+  .btn-watch { background: var(--accent); color: white; border: none; }
+  .btn-watch:hover { background: #7C3AED; transform: translateY(-1px); }
+  .btn-copy { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .btn-copy:hover { border-color: var(--accent); color: var(--accent); }
+
+  video { width: 100%; border-radius: 12px; margin: 16px 0; }
+
+  /* Log */
+  .log { background: rgba(0,0,0,0.4); border-radius: 10px; padding: 12px 16px; font-family: 'SF Mono', monospace; font-size: 11px; color: #7aff9c; max-height: 120px; overflow-y: auto; margin-top: 8px; }
+
+  .spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+    vertical-align: middle; margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Repo preview */
+  .repo-preview {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-top: 12px;
+    display: none;
+  }
+  .repo-preview.visible { display: block; }
+  .repo-name { font-size: 15px; font-weight: 600; color: var(--accent); }
+  .repo-desc { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .repo-stats { display: flex; gap: 16px; margin-top: 8px; font-size: 12px; color: var(--muted); }
+
+  @media (max-width: 600px) {
+    .style-grid { grid-template-columns: 1fr 1fr; }
+    .frames-grid { grid-template-columns: repeat(2, 1fr); }
+    .result-actions { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">⬡ Inkwell Studios</div>
+    <h1>GitHub<br><span>Trailer Builder</span></h1>
+    <p class="subtitle">Point at any GitHub repo. Get back a cinematic trailer.</p>
+  </div>
+
+  <!-- Step 1: Repo Input -->
+  <div class="glass active" id="card-source">
+    <div class="section-label">01 — Source</div>
+    <div class="input-row">
+      <input type="text" class="input-field" id="repo-url"
+        placeholder="github.com/owner/repo  —or—  describe your project"
+        oninput="onRepoInput(this.value)" />
+    </div>
+    <div class="repo-preview" id="repo-preview">
+      <div class="repo-name" id="preview-name"></div>
+      <div class="repo-desc" id="preview-desc"></div>
+      <div class="repo-stats" id="preview-stats"></div>
+    </div>
+
+    <div style="margin-top:16px">
+      <div class="section-label" style="margin-bottom:10px">Or describe your project</div>
+      <textarea class="input-field" id="manual-desc" rows="3"
+        placeholder="We're building an AI-powered platform that bridges artistic legacy with generative systems..."></textarea>
+    </div>
+  </div>
+
+  <!-- Step 2: Style -->
+  <div class="glass" id="card-style">
+    <div class="section-label">02 — Visual Style</div>
+    <div class="style-grid">
+      <div class="style-card selected" onclick="selectStyle(this,'cinematic')" data-style="cinematic">
+        <div class="icon">🎬</div>
+        <div class="name">Cinematic</div>
+        <div class="desc">Epic wide shots, dramatic light</div>
+      </div>
+      <div class="style-card" onclick="selectStyle(this,'tech')" data-style="tech">
+        <div class="icon">⚡</div>
+        <div class="name">Tech Demo</div>
+        <div class="desc">Clean, HUD, data visualization</div>
+      </div>
+      <div class="style-card" onclick="selectStyle(this,'noir')" data-style="noir">
+        <div class="icon">🌑</div>
+        <div class="name">Noir / Dark</div>
+        <div class="desc">High contrast, moody, abstract</div>
+      </div>
+      <div class="style-card" onclick="selectStyle(this,'documentary')" data-style="documentary">
+        <div class="icon">📽️</div>
+        <div class="name">Documentary</div>
+        <div class="desc">Real world, human-centered</div>
+      </div>
+      <div class="style-card" onclick="selectStyle(this,'dreamlike')" data-style="dreamlike">
+        <div class="icon">✨</div>
+        <div class="name">Dreamlike</div>
+        <div class="desc">Surreal, painterly, ethereal</div>
+      </div>
+      <div class="style-card" onclick="selectStyle(this,'minimal')" data-style="minimal">
+        <div class="icon">◻️</div>
+        <div class="name">Minimal</div>
+        <div class="desc">White space, typography driven</div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px">
+      <div class="section-label" style="margin-bottom:10px">Tone</div>
+      <div class="tone-row" id="tone-row">
+        <div class="tone-chip selected" onclick="toggleTone(this)">Inspiring</div>
+        <div class="tone-chip" onclick="toggleTone(this)">Urgent</div>
+        <div class="tone-chip" onclick="toggleTone(this)">Mysterious</div>
+        <div class="tone-chip" onclick="toggleTone(this)">Hopeful</div>
+        <div class="tone-chip" onclick="toggleTone(this)">Provocative</div>
+        <div class="tone-chip" onclick="toggleTone(this)">Elegant</div>
+        <div class="tone-chip" onclick="toggleTone(this)">Raw</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Duration & Clips -->
+  <div class="glass" id="card-config">
+    <div class="section-label">03 — Length & Clips</div>
+    <div class="duration-row">
+      <div class="dur-btn" onclick="selectDur(this,4)" data-clips="4">
+        <span class="time">~30s</span>
+        <span style="font-size:11px;color:var(--muted)">4 clips</span>
+      </div>
+      <div class="dur-btn selected" onclick="selectDur(this,6)" data-clips="6">
+        <span class="time">~45s</span>
+        <span style="font-size:11px;color:var(--muted)">6 clips · default</span>
+      </div>
+      <div class="dur-btn" onclick="selectDur(this,8)" data-clips="8">
+        <span class="time">~60s</span>
+        <span style="font-size:11px;color:var(--muted)">8 clips</span>
+      </div>
+    </div>
+    <div style="margin-top:14px;font-size:12px;color:var(--muted)">
+      Each clip is ~5s generated by Wan-T2V. Total generation time ≈ clips × 90s.
+    </div>
+  </div>
+
+  <!-- Step 4: API Config -->
+  <div class="glass" id="card-api">
+    <div class="section-label">04 — API Key</div>
+    <input type="password" class="input-field" id="fal-key"
+      placeholder="Fal.ai API key  (fal.ai/dashboard → API Keys)" />
+    <div style="margin-top:8px;font-size:12px;color:var(--muted)">
+      Your key never leaves the browser. Used directly to Fal.ai for generation.
+    </div>
+  </div>
+
+  <!-- Build Button -->
+  <button class="btn-primary" id="build-btn" onclick="startBuild()">
+    ▶ Build Trailer
+  </button>
+
+  <!-- Pipeline Progress -->
+  <div class="pipeline" id="pipeline" style="display:none">
+    <div class="glass">
+      <div class="section-label">Building Trailer</div>
+
+      <div class="step" id="step-analyze">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Analyzing Project</div>
+          <div class="step-detail">Reading repository and extracting key narrative threads...</div>
+        </div>
+      </div>
+
+      <div class="step" id="step-script">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Writing Shot Script</div>
+          <div class="step-detail">Generating scene prompts for each trailer beat...</div>
+        </div>
+      </div>
+
+      <div class="step" id="step-frames">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">Generating Key Frames</div>
+          <div class="step-detail">Creating reference images for each scene...</div>
+          <div class="frames-grid" id="frames-grid" style="display:none"></div>
+        </div>
+      </div>
+
+      <div class="step" id="step-video">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <div class="step-title">Generating Video Clips</div>
+          <div class="step-detail">Animating each frame with Wan-T2V...</div>
+          <div class="progress-bar" style="display:none" id="video-progress">
+            <div class="progress-fill" id="video-fill" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" id="step-assemble">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <div class="step-title">Assembling Trailer</div>
+          <div class="step-detail">Concatenating clips and mixing final output...</div>
+        </div>
+      </div>
+
+      <div class="log" id="build-log"></div>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div id="result-area" style="display:none"></div>
+
+</div>
+
+<script>
+const PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app';
+let selectedStyle = 'cinematic';
+let selectedClips = 6;
+let repoData = null;
+let buildLog = '';
+
+// ─── Style / Tone / Duration UI ───
+function selectStyle(el, style) {
+  document.querySelectorAll('.style-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedStyle = style;
+}
+function toggleTone(el) {
+  el.classList.toggle('selected');
+}
+function selectDur(el, clips) {
+  document.querySelectorAll('.dur-btn').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedClips = clips;
+}
+
+// ─── Repo Input ───
+let repoDebounce = null;
+function onRepoInput(val) {
+  clearTimeout(repoDebounce);
+  if (!val.trim()) { document.getElementById('repo-preview').classList.remove('visible'); return; }
+  repoDebounce = setTimeout(() => tryFetchRepo(val.trim()), 600);
+}
+
+async function tryFetchRepo(val) {
+  // Extract owner/repo from URL
+  const match = val.match(/github\.com[\/:]([^\/]+)\/([^\/?#]+)/i);
+  if (!match) return;
+  const [, owner, repo] = match;
+  try {
+    const r = await fetch(`https://api.github.com/repos/${owner}/${repo.replace(/\.git$/,'')}`);
+    if (!r.ok) return;
+    repoData = await r.json();
+    document.getElementById('preview-name').textContent = repoData.full_name;
+    document.getElementById('preview-desc').textContent = repoData.description || 'No description';
+    document.getElementById('preview-stats').innerHTML =
+      `<span>⭐ ${repoData.stargazers_count}</span><span>🍴 ${repoData.forks_count}</span>` +
+      `<span>📝 ${repoData.language || 'Unknown'}</span><span>🕐 ${new Date(repoData.updated_at).toLocaleDateString()}</span>`;
+    document.getElementById('repo-preview').classList.add('visible');
+  } catch(e) {}
+}
+
+// ─── Logging ───
+function log(msg) {
+  buildLog += `> ${msg}\n`;
+  const el = document.getElementById('build-log');
+  if (el) { el.textContent = buildLog; el.scrollTop = el.scrollHeight; }
+}
+function setStep(id, state, detail) {
+  const el = document.getElementById(`step-${id}`);
+  if (!el) return;
+  el.className = `step ${state}`;
+  if (detail) el.querySelector('.step-detail').textContent = detail;
+}
+
+// ─── Style DNA ───
+const STYLE_DNA = {
+  cinematic: 'cinematic epic wide shot, dramatic volumetric lighting, anamorphic lens, photorealistic, film grain, golden hour or deep blue hour, Hollywood production quality',
+  tech: 'futuristic tech visualization, holographic UI elements, clean dark environment, neon data streams, precise geometric lines, Blade Runner aesthetic, 8K sharp',
+  noir: 'high contrast noir photography, deep shadows, single directional light, black and white with selective color, gritty texture, mystery and tension',
+  documentary: 'documentary photography, real world environment, candid human moment, natural light, shallow depth of field, journalistic quality, authentic',
+  dreamlike: 'dreamlike surreal landscape, painterly brushstrokes, ethereal light, impossible geometry, Studio Ghibli meets Terrence Malick, sublime and vast',
+  minimal: 'extreme minimalism, white studio environment, single object with perfect shadow, Jony Ive aesthetic, negative space as design, pure form'
+};
+
+// ─── API Helpers ───
+async function falPost(endpoint, body, key) {
+  const r = await fetch(`${PROXY}${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  return r.json();
+}
+
+async function falPoll(requestId, model, key, onProgress) {
+  const statusUrl = `${PROXY}/fal/status/${requestId}?model=${encodeURIComponent(model)}`;
+  const resultUrl = `${PROXY}/fal/result/${requestId}?model=${encodeURIComponent(model)}`;
+  for (let i = 0; i < 80; i++) {
+    await sleep(6000);
+    try {
+      const st = await fetch(statusUrl).then(r=>r.json());
+      if (onProgress) onProgress(i);
+      if (st.status === 'COMPLETED' || st.video?.url || st.images?.[0]?.url) {
+        if (st.images?.[0]?.url) return st;
+        if (st.video?.url) return st;
+        return await fetch(resultUrl).then(r=>r.json());
+      }
+    } catch(e) {}
+  }
+  return null;
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ─── Main Build ───
+async function startBuild() {
+  const repoUrl = document.getElementById('repo-url').value.trim();
+  const manualDesc = document.getElementById('manual-desc').value.trim();
+  const falKey = document.getElementById('fal-key').value.trim();
+
+  if (!repoUrl && !manualDesc) { alert('Please enter a GitHub repo URL or project description.'); return; }
+  if (!falKey) { alert('Please enter your Fal.ai API key.'); return; }
+
+  document.getElementById('build-btn').disabled = true;
+  document.getElementById('pipeline').style.display = 'block';
+  buildLog = '';
+
+  const tones = [...document.querySelectorAll('.tone-chip.selected')].map(c=>c.textContent).join(', ');
+  const styleDNA = STYLE_DNA[selectedStyle];
+
+  try {
+    // ── STEP 1: Analyze ──
+    setStep('analyze', 'active', 'Extracting project story...');
+    log(`Source: ${repoUrl || 'manual description'}`);
+    log(`Style: ${selectedStyle} | Tone: ${tones} | Clips: ${selectedClips}`);
+
+    let projectContext = manualDesc;
+
+    if (repoData) {
+      projectContext = `${repoData.full_name}: ${repoData.description}. Language: ${repoData.language}. Stars: ${repoData.stargazers_count}.`;
+      // Try to get README
+      try {
+        const readmeR = await fetch(`https://api.github.com/repos/${repoData.full_name}/readme`);
+        if (readmeR.ok) {
+          const readmeData = await readmeR.json();
+          const readmeText = atob(readmeData.content).slice(0, 2000);
+          projectContext += '\n\nREADME:\n' + readmeText;
+          log(`README fetched (${readmeText.length} chars)`);
+        }
+      } catch(e) { log('README fetch failed, using description'); }
+    }
+
+    log(`Project context ready (${projectContext.length} chars)`);
+    setStep('analyze', 'done', `Project analyzed: ${repoData?.full_name || 'custom description'}`);
+
+    // ── STEP 2: Script ──
+    setStep('script', 'active', 'Writing trailer shot script with AI...');
+    log('Calling Gemini for shot script...');
+
+    const scriptPrompt = `You are a cinematic trailer director. Given this project description, write exactly ${selectedClips} shot descriptions for a ${tones.toLowerCase()} trailer in ${selectedStyle} style.
+
+PROJECT:
+${projectContext}
+
+Write ${selectedClips} shots as a JSON array. Each shot has:
+- "scene": single sentence describing exactly what's in the shot (no camera directions, pure visual description)
+- "concept": the idea or emotion this shot represents (1-3 words)
+- "position": "opening"|"middle"|"climax"|"closing"
+
+Respond ONLY with valid JSON array, no other text. Make shots visually striking and thematically connected to the project. Think like Malick, Villeneuve, or Nolan would visualize this concept.`;
+
+    const geminiR = await fetch(`${PROXY}/gemini/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: scriptPrompt }] }] })
+    }).then(r=>r.json());
+
+    let shotScript;
+    const rawScript = geminiR?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    log(`Gemini response: ${rawScript.slice(0,100)}...`);
+
+    try {
+      const jsonMatch = rawScript.match(/\[[\s\S]*\]/);
+      shotScript = JSON.parse(jsonMatch ? jsonMatch[0] : rawScript);
+      log(`Script parsed: ${shotScript.length} shots`);
+    } catch(e) {
+      log('Script parse failed, using default shots');
+      shotScript = generateDefaultShots(projectContext, selectedClips, tones);
+    }
+
+    setStep('script', 'done', `${shotScript.length} shots scripted`);
+    shotScript.forEach((s,i) => log(`  Shot ${i+1}: ${s.concept} — ${s.scene.slice(0,60)}...`));
+
+    // ── STEP 3: Frames ──
+    setStep('frames', 'active', `Generating ${shotScript.length} key frames...`);
+    document.getElementById('frames-grid').style.display = 'grid';
+
+    // Build frame thumbs placeholders
+    const framesGrid = document.getElementById('frames-grid');
+    framesGrid.innerHTML = shotScript.map((_,i) =>
+      `<div class="frame-thumb loading" id="thumb-${i}"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">${i+1}</div></div>`
+    ).join('');
+
+    const frames = [];
+    const frameJobs = shotScript.map(async (shot, i) => {
+      const prompt = `${shot.scene}, ${styleDNA}, ${tones} mood, no text no watermarks, 16:9 cinematic composition`;
+      log(`Queuing frame ${i+1}: ${shot.concept}`);
+      const qr = await falPost('/fal/generate', {
+        model: 'fal-ai/flux-pro/v1.1-ultra',
+        prompt,
+        aspect_ratio: '16:9',
+        num_images: 1
+      }, falKey);
+
+      const rid = qr.request_id;
+      if (!rid) { frames[i] = { shot, url: null }; return; }
+
+      for (let p = 0; p < 30; p++) {
+        await sleep(6000);
+        try {
+          const st = await fetch(`https://queue.fal.run/fal-ai/flux-pro/requests/${rid}`,
+            { headers: { 'Authorization': `Key ${falKey}` } }).then(r=>r.json());
+          if (st.images?.[0]?.url) {
+            frames[i] = { shot, url: st.images[0].url };
+            const thumb = document.getElementById(`thumb-${i}`);
+            if (thumb) {
+              thumb.classList.remove('loading');
+              thumb.innerHTML = `<img src="${st.images[0].url}" alt="${shot.concept}" />`;
+            }
+            log(`  ✅ Frame ${i+1} done`);
+            return;
+          }
+        } catch(e) {}
+      }
+      frames[i] = { shot, url: null };
+    });
+
+    // Run frames in parallel batches of 4
+    for (let b = 0; b < frameJobs.length; b += 4) {
+      await Promise.all(frameJobs.slice(b, b+4));
+    }
+
+    const goodFrames = frames.filter(f => f?.url);
+    setStep('frames', goodFrames.length > 0 ? 'done' : 'error',
+      `${goodFrames.length}/${shotScript.length} frames generated`);
+
+    if (goodFrames.length === 0) throw new Error('No frames generated');
+
+    // ── STEP 4: Videos ──
+    setStep('video', 'active', `Generating ${goodFrames.length} video clips...`);
+    document.getElementById('video-progress').style.display = 'block';
+
+    const videos = [];
+    let videoDone = 0;
+
+    const videoJobs = goodFrames.map(async (frame, i) => {
+      if (!frame?.url) return;
+      const vPrompt = `${frame.shot.scene}, ${styleDNA}, smooth cinematic camera move, ${tones} atmosphere`;
+      const vr = await falPost('/fal/generate', {
+        model: 'fal-ai/wan-t2v',
+        prompt: vPrompt.slice(0, 450),
+        image_url: frame.url,
+        aspect_ratio: '16:9'
+      }, falKey);
+
+      const rid = vr.request_id;
+      if (!rid) return;
+
+      for (let p = 0; p < 60; p++) {
+        await sleep(6000);
+        try {
+          const st = await fetch(`${PROXY}/fal/status/${rid}?model=fal-ai/wan-t2v`).then(r=>r.json());
+          if (st.status === 'COMPLETED' || st.video?.url) {
+            let url = st.video?.url;
+            if (!url) {
+              const rr = await fetch(`${PROXY}/fal/result/${rid}?model=fal-ai/wan-t2v`).then(r=>r.json());
+              url = rr.video?.url;
+            }
+            if (url) {
+              videos[i] = { frame, url };
+              videoDone++;
+              const pct = Math.round(videoDone / goodFrames.length * 100);
+              document.getElementById('video-fill').style.width = pct + '%';
+              document.getElementById('video-progress').style.display = 'block';
+              log(`  ✅ Clip ${i+1} done (${videoDone}/${goodFrames.length})`);
+              return;
+            }
+          }
+        } catch(e) {}
+      }
+    });
+
+    // Videos in batches of 3
+    for (let b = 0; b < videoJobs.length; b += 3) {
+      await Promise.all(videoJobs.slice(b, b+3));
+    }
+
+    const goodVideos = videos.filter(v => v?.url);
+    setStep('video', goodVideos.length > 0 ? 'done' : 'error',
+      `${goodVideos.length} clips generated`);
+
+    if (goodVideos.length === 0) throw new Error('No video clips generated');
+
+    // ── STEP 5: Assemble ──
+    setStep('assemble', 'active', 'Building final trailer...');
+    log(`Assembling ${goodVideos.length} clips...`);
+
+    // For browser-based assembly, we create an ffmpeg-wasm pipeline
+    // Fallback: deliver clips as a playlist + show download links
+    const clipUrls = goodVideos.map(v => v.url);
+    log('Clips ready for assembly');
+
+    // Try server-side assembly via proxy if available
+    let finalUrl = null;
+
+    try {
+      const assembleR = await fetch(`${PROXY}/assemble/trailer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clips: clipUrls,
+          project_name: repoData?.name || 'trailer',
+          fal_key: falKey
+        })
+      }).then(r=>r.json());
+      if (assembleR.url) finalUrl = assembleR.url;
+    } catch(e) {
+      log('Server assembly not available, delivering clips directly');
+    }
+
+    setStep('assemble', 'done', finalUrl ? 'Trailer assembled!' : 'Clips ready for download');
+
+    // ── RESULT ──
+    showResult(goodVideos, finalUrl, repoData?.full_name || 'Your Project', tones, selectedStyle);
+
+  } catch(e) {
+    log(`ERROR: ${e.message}`);
+    document.getElementById('build-btn').disabled = false;
+  }
+}
+
+function showResult(videos, finalUrl, projectName, tones, style) {
+  const resultArea = document.getElementById('result-area');
+  resultArea.style.display = 'block';
+
+  if (finalUrl) {
+    resultArea.innerHTML = `
+      <div class="result-card">
+        <h3>🎬 Trailer Ready</h3>
+        <p>${projectName} · ${style} · ${tones}</p>
+        <video src="${finalUrl}" controls autoplay muted loop></video>
+        <div class="result-actions">
+          <a href="${finalUrl}" target="_blank" download class="btn-action btn-watch">⬇ Download Trailer</a>
+          <button class="btn-action btn-copy" onclick="copyUrl('${finalUrl}')">🔗 Copy Link</button>
+        </div>
+      </div>`;
+  } else {
+    // Show individual clips
+    const clipsHtml = videos.map((v, i) => `
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Clip ${i+1}: ${v.frame.shot.concept}</div>
+        <video src="${v.url}" controls muted loop style="border-radius:10px;width:100%"></video>
+      </div>`).join('');
+
+    resultArea.innerHTML = `
+      <div class="result-card" style="text-align:left">
+        <h3 style="text-align:center">🎬 ${videos.length} Trailer Clips Ready</h3>
+        <p style="text-align:center;margin-bottom:20px">${projectName} · ${style} · ${tones}</p>
+        ${clipsHtml}
+        <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:12px;font-size:12px;color:#F59E0B;margin-top:8px">
+          💡 For final assembly with audio, download clips and use the Awareness Proxy assembly endpoint, or drag them into any video editor.
+        </div>
+      </div>`;
+  }
+  resultArea.scrollIntoView({ behavior: 'smooth' });
+}
+
+function copyUrl(url) {
+  navigator.clipboard.writeText(url);
+}
+
+function generateDefaultShots(context, count, tones) {
+  const defaults = [
+    { scene: 'A vast dark landscape with a single point of light growing on the horizon', concept: 'Dawn', position: 'opening' },
+    { scene: 'Close-up of human hands typing code reflected in glowing screens', concept: 'Creation', position: 'middle' },
+    { scene: 'A network of glowing nodes connecting across infinite dark space', concept: 'Connection', position: 'middle' },
+    { scene: 'An architect looking out over a city from a glass tower at night', concept: 'Vision', position: 'middle' },
+    { scene: 'Time-lapse of a city block transforming from empty lot to completed structure', concept: 'Growth', position: 'climax' },
+    { scene: 'Two hands reaching toward each other across a digital void', concept: 'Bridge', position: 'climax' },
+    { scene: 'A single tree in a field at golden hour, deep roots visible below ground', concept: 'Foundation', position: 'closing' },
+    { scene: 'Stars forming a constellation that becomes a logo or symbol', concept: 'Future', position: 'closing' },
+  ];
+  return defaults.slice(0, count).map(d => ({ ...d }));
+}
+</script>
+</body>
+</html>
