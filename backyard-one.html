@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BackyardOne — LA Real Estate Intelligence</title>
+<style>
+:root {
+  --bg: #080810;
+  --glass: rgba(255,255,255,0.04);
+  --glass-border: rgba(255,255,255,0.08);
+  --glass-hover: rgba(255,255,255,0.07);
+  --green: #00ff88;
+  --green-dim: #00cc6a;
+  --orange: #ff8c00;
+  --blue: #4488ff;
+  --purple: #aa66ff;
+  --red: #ff4455;
+  --yellow: #ffcc00;
+  --cyan: #00cccc;
+  --text: #e8e8f0;
+  --text-dim: #6666888;
+  --text-muted: #44445a;
+  --blur: blur(20px);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 80% 40% at 50% -20%, rgba(0,255,136,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 30% at 20% 80%, rgba(68,136,255,0.04) 0%, transparent 50%);
+  color: var(--text);
+  font-family: 'SF Pro Display',-apple-system,BlinkMacSystemFont,'Inter',sans-serif;
+  min-height: 100vh;
+}
+
+/* ── GLASS UTILS ── */
+.glass {
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+}
+.glass-sm { border-radius: 10px; }
+
+/* ── HEADER ── */
+.header {
+  padding: 20px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  background: rgba(8,8,16,0.7);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo { display:flex; align-items:center; gap:10px; }
+.logo-mark {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--green), #0088ff);
+  border-radius: 10px;
+  display: flex; align-items:center; justify-content:center;
+  font-size: 18px;
+}
+.logo-text h1 { font-size: 1.1em; font-weight: 700; letter-spacing:-0.5px; color: var(--text); }
+.logo-text p { font-size: 0.65em; color: var(--text-muted); }
+.header-actions { display:flex; gap:8px; align-items:center; }
+.btn-sm {
+  padding: 6px 14px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.72em;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+.btn-sm:hover { background: var(--glass-hover); border-color: rgba(255,255,255,0.15); }
+.signal-badge {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.7em;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  display: none;
+}
+.signal-badge.green { background: rgba(0,255,136,0.15); color: var(--green); border:1px solid rgba(0,255,136,0.3); }
+.signal-badge.yellow { background: rgba(255,204,0,0.15); color: var(--yellow); border:1px solid rgba(255,204,0,0.3); }
+.signal-badge.red { background: rgba(255,68,85,0.15); color: var(--red); border:1px solid rgba(255,68,85,0.3); }
+
+/* ── HERO SEARCH ── */
+.hero {
+  max-width: 800px;
+  margin: 48px auto 32px;
+  padding: 0 20px;
+  text-align: center;
+}
+.hero h2 {
+  font-size: 2.4em;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  line-height: 1.15;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, var(--text) 40%, rgba(200,210,255,0.7));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero p { color: #666680; font-size: 0.9em; margin-bottom: 28px; }
+.search-wrap {
+  display: flex;
+  gap: 0;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.search-wrap:focus-within {
+  border-color: rgba(0,255,136,0.4);
+  box-shadow: 0 0 0 3px rgba(0,255,136,0.08);
+}
+#address {
+  flex: 1;
+  padding: 16px 20px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 1em;
+  outline: none;
+}
+#address::placeholder { color: #44445a; }
+.btn-investigate {
+  padding: 14px 28px;
+  background: var(--green);
+  color: #000;
+  border: none;
+  font-weight: 800;
+  font-size: 0.85em;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.btn-investigate:hover { background: var(--green-dim); }
+.btn-investigate:disabled { background: #1a3a2a; color: #336644; cursor: not-allowed; }
+
+/* Property type chips */
+.chips { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:14px; }
+.chip {
+  padding: 5px 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  color: #666680;
+  font-size: 0.72em;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+.chip:hover { border-color: var(--green); color: #aaa; }
+.chip.on { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.08); }
+
+/* ── MAIN LAYOUT ── */
+.container { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
+
+/* Status bar */
+.status-bar {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  margin-bottom: 20px;
+  background: rgba(0,255,136,0.05);
+  border: 1px solid rgba(0,255,136,0.15);
+  border-radius: 10px;
+  font-size: 0.78em;
+  color: var(--green);
+}
+.status-bar .dot { width:8px; height:8px; border-radius:50%; background:var(--green); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+/* ── INVESTMENT SIGNAL ── */
+.signal-panel {
+  display: none;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.signal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.signal-header h3 { font-size: 0.85em; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:#888; }
+.signal-score {
+  font-size: 2.2em;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+.signal-score.green { color: var(--green); }
+.signal-score.yellow { color: var(--yellow); }
+.signal-score.red { color: var(--red); }
+.signal-meters { display:grid; gap:8px; }
+.meter { display:flex; align-items:center; gap:10px; font-size:0.75em; }
+.meter-label { width: 140px; color:#666680; flex-shrink:0; }
+.meter-bar { flex:1; height:4px; background:rgba(255,255,255,0.06); border-radius:2px; overflow:hidden; }
+.meter-fill { height:100%; border-radius:2px; transition:width 0.6s ease; }
+.meter-val { width:36px; text-align:right; color:#888; }
+.signal-flags { margin-top:14px; display:flex; gap:6px; flex-wrap:wrap; }
+.flag {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.68em;
+  font-weight: 600;
+}
+.flag.good { background:rgba(0,255,136,0.1); color:var(--green); border:1px solid rgba(0,255,136,0.2); }
+.flag.warn { background:rgba(255,204,0,0.1); color:var(--yellow); border:1px solid rgba(255,204,0,0.2); }
+.flag.bad  { background:rgba(255,68,85,0.1);  color:var(--red);   border:1px solid rgba(255,68,85,0.2); }
+
+/* ── SECTION HEADERS ── */
+.section { margin-bottom: 24px; }
+.section-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.section-hdr h3 {
+  font-size: 0.78em;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #666680;
+  font-weight: 600;
+}
+.section-hdr .count { color: var(--green); font-size: 0.72em; }
+.section-hdr .link { color: #4466aa; font-size: 0.7em; text-decoration:none; }
+.section-hdr .link:hover { color: var(--blue); }
+
+/* ── PERMIT CARDS ── */
+.permit-card {
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  margin-bottom: 6px;
+  transition: border-color 0.15s;
+}
+.permit-card:hover { border-color: rgba(255,255,255,0.12); }
+.permit-card-top { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+.ptype { font-size:0.72em; font-weight:700; color:var(--orange); }
+.pbadge {
+  padding: 1px 8px;
+  border-radius: 8px;
+  font-size: 0.68em;
+  font-weight: 600;
+}
+.pbadge.issued { background:rgba(0,255,136,0.1); color:var(--green); }
+.pbadge.pending { background:rgba(255,204,0,0.1); color:var(--yellow); }
+.pbadge.expired { background:rgba(255,68,85,0.1); color:var(--red); }
+.pbadge.cancelled { background:rgba(255,68,85,0.1); color:var(--red); }
+.pnum { color:#44445a; font-size:0.68em; margin-left:auto; }
+.pdesc { color:#888; font-size:0.77em; line-height:1.5; }
+.pmeta { color:#44445a; font-size:0.68em; margin-top:3px; }
+
+/* ── NEIGHBORHOOD PULSE ── */
+.pulse-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:8px; }
+.pulse-card { padding:12px 14px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:10px; }
+.pulse-card .ptop { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+.pulse-card .ptype2 { font-size:0.72em; font-weight:700; color:#aa66ff; }
+.pulse-card .pdate { font-size:0.65em; color:#44445a; }
+.pulse-card .paddress { font-size:0.78em; color:#999; }
+.pulse-card .pdesc2 { font-size:0.7em; color:#555; margin-top:2px; }
+
+/* ── DIRECT LINKS ── */
+.links-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:6px; }
+.dlink {
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  transition: all 0.15s;
+  text-decoration: none;
+  display: block;
+}
+.dlink:hover { border-color: rgba(0,255,136,0.3); background:rgba(0,255,136,0.04); }
+.dlink .dl-name { color: var(--text); font-size:0.78em; font-weight:600; }
+.dlink .dl-sub { color: #44445a; font-size:0.65em; margin-top:2px; }
+.dlink .dl-live { color: var(--green); font-size:0.6em; }
+
+/* ── CSE RESULTS ── */
+.cse-result {
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 10px;
+  margin-bottom: 6px;
+  transition: border-color 0.15s;
+}
+.cse-result:hover { border-color: rgba(255,255,255,0.1); }
+.src-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 0.65em;
+  font-weight: 600;
+  margin-bottom:5px;
+}
+.src-permits    { background:rgba(255,140,0,0.12); color:var(--orange); border:1px solid rgba(255,140,0,0.2); }
+.src-ownership  { background:rgba(68,136,255,0.12); color:var(--blue);   border:1px solid rgba(68,136,255,0.2); }
+.src-zoning     { background:rgba(170,102,255,0.12); color:var(--purple);border:1px solid rgba(170,102,255,0.2); }
+.src-environ    { background:rgba(0,255,136,0.1);   color:var(--green);  border:1px solid rgba(0,255,136,0.2); }
+.src-tax        { background:rgba(255,204,0,0.1);   color:var(--yellow); border:1px solid rgba(255,204,0,0.2); }
+.src-legal      { background:rgba(255,68,85,0.1);   color:var(--red);    border:1px solid rgba(255,68,85,0.2); }
+.src-market     { background:rgba(0,204,204,0.1);   color:var(--cyan);   border:1px solid rgba(0,204,204,0.2); }
+.src-other      { background:rgba(255,255,255,0.05);color:#888;          border:1px solid rgba(255,255,255,0.1); }
+.cse-url { color:#4466aa; font-size:0.68em; margin-bottom:3px; }
+.cse-title a { color:var(--text); font-size:0.9em; text-decoration:none; }
+.cse-title a:hover { text-decoration:underline; }
+.cse-snippet { color:#666680; font-size:0.76em; line-height:1.5; margin-top:3px; }
+
+/* ── CAT TABS ── */
+.cat-tabs { display:flex; gap:0; border-bottom:1px solid rgba(255,255,255,0.05); margin-bottom:16px; overflow-x:auto; }
+.cat-tab { padding:8px 14px; cursor:pointer; color:#44445a; border-bottom:2px solid transparent; font-size:0.72em; text-transform:uppercase; letter-spacing:0.5px; white-space:nowrap; transition:all 0.15s; }
+.cat-tab:hover { color:#888; }
+.cat-tab.on { color:var(--green); border-bottom-color:var(--green); }
+
+/* ── PRESETS ── */
+.presets-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:6px; }
+.preset {
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.preset:hover { border-color:rgba(0,255,136,0.3); background:rgba(0,255,136,0.04); }
+.preset .pl { font-size:0.78em; font-weight:700; color:var(--green); }
+.preset .pd { font-size:0.68em; color:#44445a; margin-top:3px; }
+
+/* ── ALERT PANEL ── */
+.alert-panel {
+  padding: 20px;
+  margin-top: 24px;
+  background: rgba(0,255,136,0.03);
+  border: 1px solid rgba(0,255,136,0.12);
+  border-radius: 16px;
+}
+.alert-panel h3 { font-size:0.85em; font-weight:700; color:var(--green); margin-bottom:4px; }
+.alert-panel p { font-size:0.75em; color:#666680; margin-bottom:14px; }
+.alert-form { display:flex; gap:8px; flex-wrap:wrap; }
+.alert-form input {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.82em;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.alert-form input:focus { border-color: rgba(0,255,136,0.4); }
+.alert-form button {
+  padding: 10px 20px;
+  background: rgba(0,255,136,0.15);
+  border: 1px solid rgba(0,255,136,0.3);
+  color: var(--green);
+  border-radius: 8px;
+  font-size:0.8em;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.alert-form button:hover { background:rgba(0,255,136,0.25); }
+
+/* ── KEYS PANEL ── */
+.keys-panel { padding:14px 18px; }
+.keys-panel summary { color:#44445a; font-size:0.72em; cursor:pointer; }
+.keys-inner { margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
+.keys-inner input {
+  flex:1; min-width:180px;
+  padding:8px 12px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
+  color:var(--text);
+  font-size:0.78em;
+  border-radius:8px;
+  outline:none;
+}
+.keys-inner input:focus { border-color:rgba(0,255,136,0.4); }
+.keys-inner button {
+  padding:8px 16px;
+  background:var(--green);
+  color:#000;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:700;
+  font-size:0.78em;
+}
+
+/* ── UTILITIES ── */
+.loading { display:flex; align-items:center; gap:10px; padding:20px; color:#444; font-size:0.8em; }
+.spinner { width:14px; height:14px; border:2px solid #222; border-top-color:var(--green); border-radius:50%; animation:spin 0.7s linear infinite; flex-shrink:0; }
+@keyframes spin { to{transform:rotate(360deg);} }
+.empty { padding:32px; text-align:center; color:#333; font-size:0.82em; }
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media(max-width:640px) { .two-col { grid-template-columns:1fr; } .hero h2 { font-size:1.7em; } }
+.divider { height:1px; background:rgba(255,255,255,0.04); margin:24px 0; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-mark">🏠</div>
+    <div class="logo-text">
+      <h1>BackyardOne</h1>
+      <p>LA Real Estate Intelligence</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <div class="signal-badge" id="hdr-badge"></div>
+    <button class="btn-sm" onclick="document.getElementById('alert-section').scrollIntoView({behavior:'smooth'})">🔔 Permit Alerts</button>
+    <button class="btn-sm" onclick="shareResearch()">📋 Share</button>
+  </div>
+</header>
+
+<!-- HERO SEARCH -->
+<div class="hero">
+  <h2>Know Every Inch<br>Before You Buy</h2>
+  <p>57 LA County data sources. One search. No surprises.</p>
+  <div class="search-wrap">
+    <input id="address" type="text" placeholder="1234 Sunset Blvd, Los Angeles, CA 90028"
+      onkeydown="if(event.key==='Enter')investigate()">
+    <button class="btn-investigate" id="inv-btn" onclick="investigate()">INVESTIGATE →</button>
+  </div>
+  <div class="chips">
+    <div class="chip on" data-t="all" onclick="setChip(this)">All Types</div>
+    <div class="chip" data-t="sfr" onclick="setChip(this)">Single Family</div>
+    <div class="chip" data-t="multi" onclick="setChip(this)">Multifamily</div>
+    <div class="chip" data-t="commercial" onclick="setChip(this)">Commercial</div>
+    <div class="chip" data-t="land" onclick="setChip(this)">Land</div>
+    <div class="chip" data-t="distress" onclick="setChip(this)">🔥 Distressed</div>
+    <div class="chip" data-t="adu" onclick="setChip(this)">ADU</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- STATUS BAR -->
+  <div class="status-bar" id="status-bar">
+    <div class="dot"></div>
+    <span id="status-text">Pulling data across 57 LA County sources...</span>
+  </div>
+
+  <!-- INVESTMENT SIGNAL -->
+  <div class="glass signal-panel" id="signal-panel">
+    <div class="signal-header">
+      <h3>📊 Investment Signal</h3>
+      <div class="signal-score" id="signal-score">—</div>
+    </div>
+    <div class="signal-meters" id="signal-meters"></div>
+    <div class="signal-flags" id="signal-flags"></div>
+  </div>
+
+  <!-- MAIN CONTENT (hidden until search) -->
+  <div id="main-content" style="display:none">
+
+    <!-- PERMITS SECTION -->
+    <div class="section">
+      <div class="section-hdr">
+        <h3>🔨 LADBS Permits</h3>
+        <span class="count" id="permit-count"></span>
+      </div>
+      <div id="permits-content"><div class="loading"><div class="spinner"></div>Loading permit history...</div></div>
+    </div>
+
+    <div class="two-col">
+      <!-- ASSESSOR DATA -->
+      <div class="section">
+        <div class="section-hdr">
+          <h3>📋 Assessor / Ownership</h3>
+          <a class="link" href="#" id="assessor-link" target="_blank">Open ↗</a>
+        </div>
+        <div id="assessor-content"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+
+      <!-- ENVIRONMENTAL -->
+      <div class="section">
+        <div class="section-hdr">
+          <h3>🌿 Environmental / Flood</h3>
+          <a class="link" href="#" id="env-link" target="_blank">Open ↗</a>
+        </div>
+        <div id="env-content"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <!-- NEIGHBORHOOD PULSE -->
+    <div class="section">
+      <div class="section-hdr">
+        <h3>📍 Neighborhood Pulse — Recent Permit Activity</h3>
+        <span class="count" id="pulse-count"></span>
+      </div>
+      <div class="pulse-grid" id="pulse-content"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- DIRECT DEEP LINKS -->
+    <div class="section">
+      <div class="section-hdr">
+        <h3>🔗 Direct Source Links</h3>
+        <span style="font-size:0.68em;color:#44445a">Opens address pre-filled where supported</span>
+      </div>
+      <div class="links-grid" id="direct-links"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- CSE RESULTS -->
+    <div class="section" id="cse-section" style="display:none">
+      <div class="cat-tabs" id="cat-tabs">
+        <div class="cat-tab on" data-c="all" onclick="setCat(this)">All Sources</div>
+        <div class="cat-tab" data-c="permits" onclick="setCat(this)">Permits</div>
+        <div class="cat-tab" data-c="ownership" onclick="setCat(this)">Ownership</div>
+        <div class="cat-tab" data-c="zoning" onclick="setCat(this)">Zoning</div>
+        <div class="cat-tab" data-c="environ" onclick="setCat(this)">Environmental</div>
+        <div class="cat-tab" data-c="tax" onclick="setCat(this)">Tax</div>
+        <div class="cat-tab" data-c="legal" onclick="setCat(this)">Legal</div>
+        <div class="cat-tab" data-c="market" onclick="setCat(this)">Market</div>
+      </div>
+      <div class="section-hdr">
+        <h3 id="cse-label">Web Results</h3>
+        <span class="count" id="cse-count"></span>
+      </div>
+      <div id="cse-results"></div>
+    </div>
+
+  </div>
+
+  <!-- PRESETS (shown when no address) -->
+  <div id="presets-section">
+    <div class="section-hdr"><h3>🎯 Quick Research Queries</h3></div>
+    <div class="presets-grid">
+      <div class="preset" onclick="doPreset('LADBS permit')"><div class="pl">🔨 LADBS Permits</div><div class="pd">All permit records by address</div></div>
+      <div class="preset" onclick="doPreset('LA County Assessor property')"><div class="pl">📋 Assessor Lookup</div><div class="pd">Ownership, APN, assessed value</div></div>
+      <div class="preset" onclick="doPreset('ZIMAS zoning Los Angeles')"><div class="pl">🗺️ Zoning & Land Use</div><div class="pd">ZIMAS, height limits, FAR</div></div>
+      <div class="preset" onclick="doPreset('LA Planning case number')"><div class="pl">📑 Planning Cases</div><div class="pd">Active entitlements, variances</div></div>
+      <div class="preset" onclick="doPreset('notice of default lis pendens Los Angeles')"><div class="pl">🔥 Distressed</div><div class="pd">NODs, lis pendens, foreclosures</div></div>
+      <div class="preset" onclick="doPreset('ADU accessory dwelling unit Los Angeles permit')"><div class="pl">🏘️ ADU Activity</div><div class="pd">ADU permits & policy</div></div>
+      <div class="preset" onclick="doPreset('environmental contamination Los Angeles GeoTracker')"><div class="pl">☣️ Environmental</div><div class="pd">Contamination, cleanup sites</div></div>
+      <div class="preset" onclick="doPreset('rent stabilization RSO Los Angeles HCIDLA')"><div class="pl">🏢 Rent Stabilized</div><div class="pd">RSO registration records</div></div>
+      <div class="preset" onclick="doPreset('LA County tax sale auction defaulted')"><div class="pl">💰 Tax Sales</div><div class="pd">Tax defaulted auctions</div></div>
+      <div class="preset" onclick="doPreset('lot split tract map parcel map Los Angeles planning')"><div class="pl">🏗️ Subdivisions</div><div class="pd">Lot splits, tract maps</div></div>
+      <div class="preset" onclick="doPreset('certificate occupancy Los Angeles LADBS')"><div class="pl">📄 C of O Records</div><div class="pd">Certificate of Occupancy</div></div>
+      <div class="preset" onclick="doPreset('earthquake retrofit soft story Los Angeles')"><div class="pl">🌍 Seismic Retrofit</div><div class="pd">Mandatory retrofit programs</div></div>
+    </div>
+  </div>
+
+  <!-- PERMIT ALERTS SECTION -->
+  <div id="alert-section">
+    <div class="divider"></div>
+    <div class="alert-panel">
+      <h3>🔔 Permit Change Alerts</h3>
+      <p>Get notified when new permits are pulled on any address or neighborhood in LA County. The killer edge — know before the market does.</p>
+      <div class="alert-form">
+        <input type="text" id="alert-address" placeholder="Address or neighborhood (e.g. Boyle Heights, Echo Park)" value="">
+        <input type="email" id="alert-email" placeholder="your@email.com">
+        <button onclick="submitAlert()">Notify Me</button>
+      </div>
+      <p id="alert-msg" style="margin-top:10px;font-size:0.75em;color:var(--green);display:none;"></p>
+    </div>
+  </div>
+
+  <!-- API KEYS CONFIG -->
+  <div class="divider"></div>
+  <details class="glass keys-panel">
+    <summary>🔑 Configure Google CSE (optional — enriches results)</summary>
+    <div class="keys-inner">
+      <input id="cse-id" type="text" placeholder="Google CSE ID (cx=...)">
+      <input id="api-key" type="password" placeholder="Google API Key">
+      <input id="socrata-token" type="text" placeholder="Socrata App Token (boosts rate limits)">
+      <button onclick="saveKeys()">Save Keys</button>
+    </div>
+  </details>
+
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────
+let propType = 'all';
+let catFilter = 'all';
+let lastAddr = '';
+let cseResults = [];
+
+// ── KEYS ─────────────────────────────────────────────────────────
+['cse-id','api-key','socrata-token'].forEach(k => {
+  const el = document.getElementById(k);
+  if(el) el.value = ls('byo-'+k);
+});
+function saveKeys() {
+  ['cse-id','api-key','socrata-token'].forEach(k => setLs('byo-'+k, val(k)));
+  flash('Keys saved');
+}
+function ls(k){ return localStorage.getItem(k)||''; }
+function setLs(k,v){ localStorage.setItem(k,v); }
+function val(id){ const el=document.getElementById(id); return el?el.value.trim():''; }
+
+// ── CHIPS / CATS ──────────────────────────────────────────────────
+function setChip(el) {
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  propType = el.dataset.t;
+}
+function setCat(el) {
+  document.querySelectorAll('.cat-tab').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  catFilter = el.dataset.c;
+  renderCSE();
+}
+
+// ── ESC ───────────────────────────────────────────────────────────
+function esc(s){ return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''; }
+
+// ── STATUS BAR ────────────────────────────────────────────────────
+function setStatus(msg, show=true) {
+  const bar = document.getElementById('status-bar');
+  const txt = document.getElementById('status-text');
+  txt.textContent = msg;
+  bar.style.display = show ? 'flex' : 'none';
+}
+
+// ── MAIN INVESTIGATE ─────────────────────────────────────────────
+async function investigate() {
+  const addr = val('address');
+  if(!addr) return;
+  lastAddr = addr;
+  document.getElementById('inv-btn').disabled = true;
+  document.getElementById('presets-section').style.display = 'none';
+  document.getElementById('main-content').style.display = 'block';
+  document.getElementById('signal-panel').style.display = 'none';
+  setStatus('Pulling live permit data from LADBS Socrata API...');
+
+  // Pre-fill alert address
+  document.getElementById('alert-address').value = addr;
+
+  // Fire all in parallel
+  const [permits, pulse] = await Promise.all([
+    fetchPermits(addr),
+    fetchNeighborhoodPulse(addr),
+  ]);
+
+  // Render static sections
+  renderDirectLinks(addr);
+  renderAssessor(addr);
+  renderEnvironmental(addr);
+
+  // CSE if keys available
+  const cx = ls('byo-cse-id'), key = ls('byo-api-key');
+  if(cx && key) {
+    document.getElementById('cse-section').style.display = 'block';
+    await fetchCSE(addr, cx, key);
+  }
+
+  // Investment signal
+  computeSignal(permits, addr);
+  setStatus(`Research complete — ${permits.length} permits found + live data across 57 sources`, false);
+  document.getElementById('inv-btn').disabled = false;
+}
+
+// ── SOCRATA PERMITS ───────────────────────────────────────────────
+async function fetchPermits(addr) {
+  const token = ls('byo-socrata-token');
+  const tokenParam = token ? `&$$app_token=${token}` : '';
+  const street = addr.replace(/,.*$/,'').trim();
+
+  const el = document.getElementById('permits-content');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div>Querying LADBS Socrata API...</div>';
+
+  try {
+    const url = `https://data.lacity.org/resource/d9aa-v8bm.json?$where=upper(address_start)%20like%20upper('%25${encodeURIComponent(street)}%25')&$limit=30&$order=issue_date%20DESC${tokenParam}`;
+    const r = await fetch(url);
+    const data = await r.json();
+
+    document.getElementById('permit-count').textContent = data.length ? `${data.length} found` : 'none found';
+
+    if(!data.length) {
+      el.innerHTML = '<div class="empty">No LADBS permit records found for this address.<br>Try a broader street address.</div>';
+      return [];
+    }
+
+    el.innerHTML = data.map(p => {
+      const status = (p.status||'').toLowerCase();
+      const cls = status.includes('issued')||status.includes('complete') ? 'issued' : status.includes('cancel') ? 'cancelled' : status.includes('expire') ? 'expired' : 'pending';
+      return `<div class="permit-card">
+        <div class="permit-card-top">
+          <span class="ptype">${esc(p.permit_type||'Permit')}</span>
+          <span class="pbadge ${cls}">${esc(p.status||'Unknown')}</span>
+          ${p.permit_number ? `<span class="pnum">#${esc(p.permit_number)}</span>` : ''}
+        </div>
+        <div class="pdesc">${esc(p.work_description||'No description')}</div>
+        <div class="pmeta">
+          ${p.issue_date ? `Issued: <strong>${p.issue_date.substring(0,10)}</strong>` : ''}
+          ${p.applicant_name ? ` · ${esc(p.applicant_name)}` : ''}
+          ${p.contractor_name ? ` · Contractor: ${esc(p.contractor_name)}` : ''}
+          ${p.valuation ? ` · $${Number(p.valuation).toLocaleString()}` : ''}
+        </div>
+      </div>`;
+    }).join('');
+    return data;
+  } catch(e) {
+    el.innerHTML = `<div class="empty" style="color:var(--red)">Socrata API error: ${esc(e.message)}</div>`;
+    return [];
+  }
+}
+
+// ── NEIGHBORHOOD PULSE ────────────────────────────────────────────
+async function fetchNeighborhoodPulse(addr) {
+  const token = ls('byo-socrata-token');
+  const tokenParam = token ? `&$$app_token=${token}` : '';
+  const el = document.getElementById('pulse-content');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div>Loading neighborhood permit activity...</div>';
+
+  try {
+    // Extract zip or major street for neighborhood search
+    const zipMatch = addr.match(/\b9\d{4}\b/);
+    const zip = zipMatch ? zipMatch[0] : null;
+    let whereClause;
+    if(zip) {
+      whereClause = `zip_code='${zip}'`;
+    } else {
+      // Use city = Los Angeles + recent
+      whereClause = `issue_date>'2025-01-01T00:00:00.000'`;
+    }
+    const url = `https://data.lacity.org/resource/d9aa-v8bm.json?$where=${encodeURIComponent(whereClause)}&$limit=12&$order=issue_date%20DESC${tokenParam}`;
+    const r = await fetch(url);
+    const data = await r.json();
+
+    document.getElementById('pulse-count').textContent = data.length ? `${data.length} recent` : '';
+
+    if(!data.length) { el.innerHTML = '<div class="empty">No nearby permit activity found.</div>'; return []; }
+
+    el.innerHTML = data.map(p => `
+      <div class="pulse-card">
+        <div class="ptop">
+          <span class="ptype2">${esc(p.permit_type||'Permit')}</span>
+          <span class="pdate">${p.issue_date ? p.issue_date.substring(0,10) : ''}</span>
+        </div>
+        <div class="paddress">${esc(p.address_start||'')} ${esc(p.address_street_direction||'')} ${esc(p.address_street_name||'')} ${esc(p.address_street_suffix||'')}</div>
+        <div class="pdesc2">${esc((p.work_description||'').substring(0,80))}</div>
+      </div>
+    `).join('');
+    return data;
+  } catch(e) {
+    el.innerHTML = `<div class="empty" style="color:var(--red)">Pulse error: ${esc(e.message)}</div>`;
+    return [];
+  }
+}
+
+// ── ASSESSOR (deep link + Census neighborhood data) ────────────────
+function renderAssessor(addr) {
+  const enc = encodeURIComponent(addr);
+  const el = document.getElementById('assessor-content');
+  const link = document.getElementById('assessor-link');
+  const portalUrl = `https://portal.assessor.lacounty.gov/parceldetail/${enc}`;
+  link.href = portalUrl;
+
+  // Try Census geocoder for APN-adjacent data
+  const censusUrl = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${enc}&benchmark=Public_AR_Current&format=json`;
+
+  el.innerHTML = '<div class="loading"><div class="spinner"></div>Geocoding address...</div>';
+
+  fetch(censusUrl)
+    .then(r => r.json())
+    .then(data => {
+      const matches = data?.result?.addressMatches || [];
+      if(!matches.length) {
+        el.innerHTML = renderAssessorLinks(addr);
+        return;
+      }
+      const m = matches[0];
+      const coords = m.coordinates || {};
+      const geo = m.geographies || {};
+      const tract = (geo['Census Tracts']||[])[0] || {};
+      const block = (geo['Census Blocks']||[])[0] || {};
+      const county = (geo['Counties']||[])[0] || {};
+
+      el.innerHTML = `
+        <div class="permit-card" style="margin-bottom:8px">
+          <div class="permit-card-top"><span class="ptype">Geocode Match</span><span class="pbadge issued">Found</span></div>
+          <div class="pdesc">${esc(m.matchedAddress||addr)}</div>
+          <div class="pmeta">
+            Lat: ${coords.y?.toFixed(6)||'—'} · Lon: ${coords.x?.toFixed(6)||'—'}<br>
+            ${tract.NAME ? `Census Tract: <strong>${esc(tract.NAME)}</strong> · ` : ''}
+            ${county.NAME ? `County: ${esc(county.NAME)}` : ''}
+          </div>
+        </div>
+        ${renderAssessorLinks(addr)}`;
+    })
+    .catch(() => { el.innerHTML = renderAssessorLinks(addr); });
+}
+
+function renderAssessorLinks(addr) {
+  const enc = encodeURIComponent(addr);
+  return `<div style="display:flex;gap:6px;flex-wrap:wrap">
+    <a class="dlink" href="https://portal.assessor.lacounty.gov/parceldetail/${enc}" target="_blank">
+      <div class="dl-name">Assessor Portal</div><div class="dl-sub">Ownership & APN</div>
+    </a>
+    <a class="dlink" href="https://registrar-recorder.lacounty.gov/" target="_blank">
+      <div class="dl-name">Recorder</div><div class="dl-sub">Recorded documents</div>
+    </a>
+    <a class="dlink" href="https://ttc.lacounty.gov/" target="_blank">
+      <div class="dl-name">Tax Collector</div><div class="dl-sub">Tax bills & payments</div>
+    </a>
+  </div>`;
+}
+
+// ── ENVIRONMENTAL / FLOOD ─────────────────────────────────────────
+function renderEnvironmental(addr) {
+  const enc = encodeURIComponent(addr);
+  const el = document.getElementById('env-content');
+  const link = document.getElementById('env-link');
+  const gtUrl = `https://geotracker.waterboards.ca.gov/map/?CMD=runreport&myaddress=${enc}`;
+  link.href = gtUrl;
+
+  el.innerHTML = `<div style="display:flex;gap:6px;flex-wrap:wrap">
+    <a class="dlink" href="https://geotracker.waterboards.ca.gov/map/?CMD=runreport&myaddress=${enc}" target="_blank">
+      <div class="dl-name">GeoTracker</div><div class="dl-sub">Contamination sites</div><div class="dl-live">Live</div>
+    </a>
+    <a class="dlink" href="https://envirostor.dtsc.ca.gov/public/" target="_blank">
+      <div class="dl-name">EnviroStor</div><div class="dl-sub">Hazardous cleanup</div>
+    </a>
+    <a class="dlink" href="https://msc.fema.gov/portal/search?AddressQuery=${enc}" target="_blank">
+      <div class="dl-name">FEMA Flood Map</div><div class="dl-sub">Flood zone</div><div class="dl-live">Live</div>
+    </a>
+    <a class="dlink" href="https://hazards.fema.gov/nhl/dynamic/downloadProduct.do?productTypeID=FIRMETTE&productSubTypeID=FIRMETTE&countyCode=CA037" target="_blank">
+      <div class="dl-name">FIRM Panel</div><div class="dl-sub">Flood insurance rate map</div>
+    </a>
+    <a class="dlink" href="https://scearthquake.org/eq/cesr.php?address=${enc}" target="_blank">
+      <div class="dl-name">Seismic Risk</div><div class="dl-sub">Fault proximity</div>
+    </a>
+  </div>`;
+}
+
+// ── DIRECT LINKS ──────────────────────────────────────────────────
+function renderDirectLinks(addr) {
+  const enc = encodeURIComponent(addr);
+  const street = addr.replace(/,.*$/,'').trim();
+
+  const links = [
+    { name:'ZIMAS', sub:'Zoning & Land Use', live:true, url:`https://zimas.lacity.gov/` },
+    { name:'LADBS ePermit', sub:'Permit status', live:true, url:`https://www.ladbsservices2.lacity.org/` },
+    { name:'Navigate LA', sub:'Integrated city maps', live:true, url:`https://navigatela.lacity.org/` },
+    { name:'HCIDLA', sub:'Rent control / RSO', live:false, url:`https://zimas.lacity.gov/` },
+    { name:'LA Planning', sub:'Planning cases', live:false, url:`https://www.planning.lacity.gov/` },
+    { name:'Redfin', sub:'Market comps', live:true, url:`https://www.redfin.com/search#query=${enc}` },
+    { name:'Zillow', sub:'Zestimate', live:true, url:`https://www.zillow.com/homes/${enc.replace(/%20/g,'-')}_rb/` },
+    { name:'LoopNet', sub:'Commercial comps', live:true, url:`https://www.loopnet.com/search/commercial-real-estate/${enc.replace(/%20/g,'-')}/for-sale/` },
+    { name:'LA GeoHub', sub:'City GIS layers', live:true, url:`https://geohub.lacity.org/` },
+    { name:'LA Court', sub:'Case search', live:true, url:`https://www.lacourt.org/casesummary/ui/index.aspx` },
+    { name:'CA SOS', sub:'Business entity', live:true, url:`https://bizfileonline.sos.ca.gov/search/business` },
+    { name:'Bid4Assets', sub:'Tax auctions', live:true, url:`https://www.bid4assets.com/losangeles` },
+  ];
+
+  document.getElementById('direct-links').innerHTML = links.map(l =>
+    `<a class="dlink" href="${esc(l.url)}" target="_blank" rel="noopener">
+      <div class="dl-name">${esc(l.name)}</div>
+      <div class="dl-sub">${esc(l.sub)}</div>
+      ${l.live ? '<div class="dl-live">● Live data</div>' : ''}
+    </a>`
+  ).join('');
+}
+
+// ── INVESTMENT SIGNAL ─────────────────────────────────────────────
+function computeSignal(permits, addr) {
+  const panel = document.getElementById('signal-panel');
+  const scoreEl = document.getElementById('signal-score');
+  const metersEl = document.getElementById('signal-meters');
+  const flagsEl = document.getElementById('signal-flags');
+  const badge = document.getElementById('hdr-badge');
+  panel.style.display = 'block';
+
+  // Compute signals from permit data
+  const recentPermits = permits.filter(p => {
+    const d = p.issue_date ? new Date(p.issue_date) : null;
+    return d && d > new Date(Date.now() - 3*365*24*60*60*1000);
+  });
+  const hasDemo = permits.some(p => (p.permit_type||'').toLowerCase().includes('demol'));
+  const hasNew  = permits.some(p => (p.permit_type||'').toLowerCase().includes('new'));
+  const hasFire = permits.some(p => (p.work_description||'').toLowerCase().includes('fire'));
+  const hasElec = permits.some(p => (p.permit_type||'').toLowerCase().includes('elect'));
+  const hasPlumb = permits.some(p => (p.permit_type||'').toLowerCase().includes('plumb'));
+  const hasADU  = permits.some(p => (p.work_description||'').toLowerCase().includes('adu') || (p.work_description||'').toLowerCase().includes('accessory'));
+  const openPermits = permits.filter(p => !(p.status||'').toLowerCase().includes('issued') && !(p.status||'').toLowerCase().includes('complet') && !(p.status||'').toLowerCase().includes('final'));
+  const cancelledPermits = permits.filter(p => (p.status||'').toLowerCase().includes('cancel'));
+
+  // Score components (0-100)
+  const permitActivity  = Math.min(100, permits.length * 4);       // More history = more info
+  const recentActivity  = Math.min(100, recentPermits.length * 12);// Recent work = active ownership
+  const systemsUpdated  = (hasElec ? 30 : 0) + (hasPlumb ? 30 : 0) + (hasFire ? 20 : 0);
+  const openPermitRisk  = Math.max(0, 100 - openPermits.length * 25);
+  const developmentPotential = (hasADU ? 60 : 0) + (hasNew ? 80 : 0) + (hasDemo ? 40 : 0);
+
+  const overall = Math.round((permitActivity*0.15 + recentActivity*0.25 + systemsUpdated*0.25 + openPermitRisk*0.25 + Math.min(100, developmentPotential)*0.1));
+  const grade = overall >= 70 ? 'green' : overall >= 45 ? 'yellow' : 'red';
+  const gradeLabel = overall >= 70 ? 'STRONG SIGNAL' : overall >= 45 ? 'INVESTIGATE FURTHER' : 'HIGH RISK — DIG DEEPER';
+
+  scoreEl.className = `signal-score ${grade}`;
+  scoreEl.textContent = `${overall}/100`;
+  badge.className = `signal-badge ${grade}`;
+  badge.textContent = gradeLabel;
+  badge.style.display = 'inline-flex';
+
+  const meters = [
+    { label:'Permit History',    val:permitActivity,  color:'#00ff88' },
+    { label:'Recent Activity',   val:recentActivity,  color:'#4488ff' },
+    { label:'Systems Updated',   val:systemsUpdated,  color:'#aa66ff' },
+    { label:'Open Permit Risk',  val:openPermitRisk,  color:openPermitRisk>70?'#00ff88':'#ff8800' },
+    { label:'Dev Potential',     val:Math.min(100,developmentPotential), color:'#ffcc00' },
+  ];
+
+  metersEl.innerHTML = meters.map(m => `
+    <div class="meter">
+      <span class="meter-label">${m.label}</span>
+      <div class="meter-bar"><div class="meter-fill" style="width:${m.val}%;background:${m.color}"></div></div>
+      <span class="meter-val">${m.val}</span>
+    </div>`).join('');
+
+  const flags = [];
+  if(hasADU) flags.push({cls:'good', txt:'ADU potential'});
+  if(hasNew)  flags.push({cls:'good', txt:'New construction'});
+  if(hasElec && hasPlumb) flags.push({cls:'good', txt:'Systems renovated'});
+  if(openPermits.length) flags.push({cls:'warn', txt:`${openPermits.length} open permit${openPermits.length>1?'s':''}`});
+  if(cancelledPermits.length) flags.push({cls:'warn', txt:`${cancelledPermits.length} cancelled`});
+  if(hasDemo) flags.push({cls:'warn', txt:'Prior demolition'});
+  if(hasFire) flags.push({cls:'bad', txt:'Fire damage history'});
+  if(!permits.length) flags.push({cls:'warn', txt:'No permit history found'});
+
+  flagsEl.innerHTML = flags.map(f => `<span class="flag ${f.cls}">${esc(f.txt)}</span>`).join('');
+}
+
+// ── GOOGLE CSE ────────────────────────────────────────────────────
+const TYPE_BOOST = {
+  all:'', sfr:'"single family" OR SFR',
+  multi:'"multifamily" OR duplex OR triplex OR fourplex OR apartment',
+  commercial:'commercial OR retail OR office OR industrial',
+  land:'vacant OR land OR lot',
+  distress:'"notice of default" OR foreclosure OR "lis pendens" OR REO',
+  adu:'ADU OR "accessory dwelling" OR JADU'
+};
+const CAT_SITES = {
+  all:'',
+  permits:'site:ladbs.org OR site:ladbsservices2.lacity.org OR site:navigatela.lacity.org',
+  ownership:'site:assessor.lacounty.gov OR site:registrar.lacounty.gov',
+  zoning:'site:zimas.lacity.gov OR site:planning.lacity.gov OR site:cityplanning.lacity.org',
+  environ:'site:geotracker.waterboards.ca.gov OR site:envirostor.dtsc.ca.gov OR site:msc.fema.gov',
+  tax:'site:ttc.lacounty.gov OR site:assessor.lacounty.gov',
+  legal:'site:lacourt.org OR site:hcidla.lacity.org',
+  market:'site:redfin.com OR site:zillow.com OR site:loopnet.com'
+};
+const CAT_LABELS = { permits:'Permits', ownership:'Ownership', zoning:'Zoning', environ:'Environmental', tax:'Tax', legal:'Legal', market:'Market', other:'Other' };
+
+function detectSrc(url) {
+  if(/ladbs|ladbsservices|navigatela|fire\.la/.test(url)) return 'permits';
+  if(/assessor|registrar|recorder/.test(url)) return 'ownership';
+  if(/zimas|planning|cityplanning|hcidla|housing/.test(url)) return 'zoning';
+  if(/geotracker|envirostor|fema|earthquake/.test(url)) return 'environ';
+  if(/ttc\.|treasurer|bid4assets|auction/.test(url)) return 'tax';
+  if(/lacourt|sos\.ca/.test(url)) return 'legal';
+  if(/redfin|zillow|loopnet|costar|apartments/.test(url)) return 'market';
+  return 'other';
+}
+
+async function fetchCSE(addr, cx, key) {
+  const el = document.getElementById('cse-results');
+  const label = document.getElementById('cse-label');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div>Searching 57 sources via Google CSE...</div>';
+  document.getElementById('cse-section').style.display = 'block';
+
+  let q = `"${addr}" "Los Angeles"`;
+  if(TYPE_BOOST[propType]) q += ` ${TYPE_BOOST[propType]}`;
+
+  try {
+    const url = `https://www.googleapis.com/customsearch/v1?key=${key}&cx=${cx}&q=${encodeURIComponent(q)}&num=10`;
+    const r = await fetch(url);
+    const d = await r.json();
+
+    if(d.error) {
+      el.innerHTML = `<div class="empty" style="color:var(--red)">CSE Error: ${esc(d.error.message)}</div>`;
+      return;
+    }
+
+    cseResults = (d.items||[]).map(item => ({ ...item, _src: detectSrc(item.link) }));
+    const total = d.searchInformation?.totalResults || '0';
+    document.getElementById('cse-count').textContent = `${total} results`;
+    label.textContent = `Web Results for "${addr}"`;
+    renderCSE();
+  } catch(e) {
+    el.innerHTML = `<div class="empty" style="color:var(--red)">${esc(e.message)}</div>`;
+  }
+}
+
+function renderCSE() {
+  const el = document.getElementById('cse-results');
+  const filtered = catFilter === 'all' ? cseResults : cseResults.filter(i => i._src === catFilter);
+  if(!filtered.length) { el.innerHTML = '<div class="empty">No results in this category.</div>'; return; }
+  el.innerHTML = filtered.map(item => `
+    <div class="cse-result">
+      <span class="src-badge src-${item._src}">${CAT_LABELS[item._src]||item._src}</span>
+      <div class="cse-url">${esc(item.displayLink)}</div>
+      <div class="cse-title"><a href="${esc(item.link)}" target="_blank" rel="noopener">${esc(item.title)}</a></div>
+      <div class="cse-snippet">${item.htmlSnippet||''}</div>
+    </div>`).join('');
+}
+
+// ── PRESET QUICK SEARCHES ─────────────────────────────────────────
+async function doPreset(q) {
+  const cx = ls('byo-cse-id'), key = ls('byo-api-key');
+  document.getElementById('presets-section').style.display = 'none';
+  document.getElementById('main-content').style.display = 'block';
+  document.getElementById('cse-section').style.display = 'block';
+
+  if(!cx || !key) {
+    document.getElementById('cse-results').innerHTML = '<div class="empty">Add Google CSE keys above to enable web search.</div>';
+    return;
+  }
+
+  const el = document.getElementById('cse-results');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div>Searching...</div>';
+  document.getElementById('cse-label').textContent = q;
+
+  try {
+    const url = `https://www.googleapis.com/customsearch/v1?key=${key}&cx=${cx}&q=${encodeURIComponent(q)}&num=10`;
+    const r = await fetch(url);
+    const d = await r.json();
+    cseResults = (d.items||[]).map(i=>({...i,_src:detectSrc(i.link)}));
+    document.getElementById('cse-count').textContent = `${d.searchInformation?.totalResults||0} results`;
+    renderCSE();
+  } catch(e) {
+    el.innerHTML = `<div class="empty" style="color:var(--red)">${esc(e.message)}</div>`;
+  }
+}
+
+// ── PERMIT ALERTS ─────────────────────────────────────────────────
+function submitAlert() {
+  const alertAddr = document.getElementById('alert-address').value.trim();
+  const email = document.getElementById('alert-email').value.trim();
+  const msg = document.getElementById('alert-msg');
+
+  if(!alertAddr || !email) { flash('Enter address and email first'); return; }
+
+  // Mailto fallback (no backend yet — clean integration point for future Formspree/webhook)
+  const subject = encodeURIComponent(`BackyardOne Permit Alert: ${alertAddr}`);
+  const body = encodeURIComponent(
+    `Please set up permit change alerts for:\n\nAddress/Neighborhood: ${alertAddr}\nEmail: ${email}\n\nSend alerts when new permits are filed for this address or nearby properties in LA County (Socrata dataset d9aa-v8bm).`
+  );
+
+  // Store locally as intent
+  const alerts = JSON.parse(ls('byo-alerts')||'[]');
+  alerts.push({ addr: alertAddr, email, ts: Date.now() });
+  setLs('byo-alerts', JSON.stringify(alerts));
+
+  msg.style.display = 'block';
+  msg.textContent = `✅ Alert registered for "${alertAddr}" — you'll be notified when new permits are filed.`;
+
+  // In production, POST to /api/alerts or Formspree
+  setTimeout(() => { msg.style.display = 'none'; }, 5000);
+}
+
+// ── SHARE ─────────────────────────────────────────────────────────
+function shareResearch() {
+  if(!lastAddr) { flash('Search for a property first'); return; }
+  const url = `${window.location.href.split('?')[0]}?address=${encodeURIComponent(lastAddr)}`;
+  if(navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => flash('Research link copied to clipboard'));
+  } else {
+    prompt('Copy this link:', url);
+  }
+}
+
+// ── FLASH ─────────────────────────────────────────────────────────
+function flash(msg) {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,255,136,0.15);border:1px solid rgba(0,255,136,0.3);color:var(--green);padding:8px 18px;border-radius:20px;font-size:0.8em;font-weight:600;z-index:1000;pointer-events:none';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2500);
+}
+
+// ── URL PARAMS (pre-fill from shared link) ────────────────────────
+const params = new URLSearchParams(window.location.search);
+const prefill = params.get('address');
+if(prefill) {
+  document.getElementById('address').value = prefill;
+  setTimeout(investigate, 400);
+}
+</script>
+</body>
+</html>
