@@ -1409,16 +1409,40 @@ const DEFAULT_VOICE = {id:'pNInz6obpgDQGcFmaJgB', stability:.65, sim:.78, style:
 
 // ── IMAGE GENERATION ────────────────────────────────────────────────
 async function falImage(prompt, aspect='16:9') {
+  // Proxy strips 'model' key, sends the rest directly to fal.run/{model}
+  // Params must be at top level — no 'input' wrapper
   try {
+    // Map aspect ratio to image_size for schnell fallback
+    const sizeMap = {'9:16':'portrait_4_3','16:9':'landscape_16_9','1:1':'square'};
     const r = await fetch(FAL_SYNC, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         model:'fal-ai/flux-pro/v1.1-ultra',
-        input:{ prompt, aspect_ratio: aspect, num_images:1, safety_tolerance:'2' }
+        prompt,
+        aspect_ratio: aspect,
+        num_images: 1
       })
     });
+    if(!r.ok) throw new Error('HTTP ' + r.status);
     const d = await r.json();
-    return d?.images?.[0]?.url || d?.image?.url || null;
+    const url = d?.images?.[0]?.url || d?.image?.url || null;
+    if(!url && d?.detail) {
+      // Fallback to schnell if flux-pro fails
+      console.warn('Flux Pro failed, trying schnell:', JSON.stringify(d.detail));
+      const r2 = await fetch(FAL_SYNC, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          model:'fal-ai/flux/schnell',
+          prompt,
+          image_size: sizeMap[aspect] || 'landscape_16_9',
+          num_inference_steps: 4,
+          num_images: 1
+        })
+      });
+      const d2 = await r2.json();
+      return d2?.images?.[0]?.url || null;
+    }
+    return url;
   } catch(e) { console.error('Fal image error:', e); return null; }
 }
 
@@ -1456,10 +1480,69 @@ function buildVideoPrompt(era, chars, act, loc, imgUrl) {
 }
 
 // ── VOICE GENERATION ─────────────────────────────────────────────
+
+// ── STAGE DIRECTION STRIPPER ────────────────────────────────────
+function cleanForSpeech(raw) {
+  if(!raw) return '';
+  let t = raw;
+  t = t.replace(/[*_#~`]/g, '');
+  // Strip bracketed stage directions: [Kneels], [lights dim], etc.
+  t = t.replace(/\[[^\]]{0,120}\]/g, '');
+  // Strip parenthetical stage notes (short, action-type content)
+  t = t.replace(/\(([^)]{0,80})\)/g, function(m, inner) {
+    var stageWords = /^(quietly|loudly|singing|crying|laughing|pause|beat|aside|to audience|turns|kneels|rises|whispers|shouts|to the|softly|firmly|bitterly|tenderly|slowly|fast|urgent|under breath|calling|praying|humming|rocking|trembling|exits|enters|crosses|sits|stands|looks|gestures|holds|lifts|lowers|raises|bows|faces|moves|walking|running)/i;
+    return stageWords.test(inner.trim()) ? '' : m;
+  });
+  // Strip all-caps stage direction lines
+  var lines = t.split('\n').filter(function(line) {
+    var stripped = line.trim();
+    if(!stripped) return false;
+    if(stripped === stripped.toUpperCase() && stripped.length < 70 && /^[A-Z\s:.,!—-]+$/.test(stripped)) return false;
+    if(/^(LIGHTS?|MUSIC|SOUND|SILENCE|PAUSE|BEAT|CURTAIN|BLACKOUT|SCENE|ACT\s|END OF|FADE|ENTER|EXIT|STAGE DIRECTION)/i.test(stripped)) return false;
+    if(/^(Cultural Anthropologist|Stage Director|Lighting Designer|Props Master|Vocal Coach|Band Director|Choreographer|Maestro|Narrator|Character Creation)\s*:/i.test(stripped)) return false;
+    return true;
+  });
+  t = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  return t || raw.substring(0, 200);
+}
+
+// ── VOICE PLAYBACK (button-DOM approach) ────────────────────────
+async function playVoiceFromBtn(btn) {
+  var idx = btn.dataset.soloIdx;
+  var charId = btn.dataset.charId;
+  var audioSlot = document.getElementById('vaudio-' + idx);
+  if(!audioSlot) return;
+
+  var existing = audioSlot.querySelector('audio');
+  if(existing) { existing.play(); return; }
+
+  var soloEl = btn.closest('.solo');
+  var contentEl = soloEl && soloEl.querySelector('.solo-content');
+  var rawText = contentEl ? contentEl.textContent : '';
+
+  btn.textContent = '⏳ Generating voice…';
+  btn.style.opacity = '.6';
+  btn.disabled = true;
+
+  var audioUrl = await generateVoice(rawText, charId);
+
+  btn.disabled = false;
+  btn.style.opacity = '1';
+
+  if(audioUrl) {
+    audioSlot.innerHTML = '<audio class="voice-audio" controls autoplay src="' + audioUrl + '"></audio>';
+    btn.textContent = '🔊 Play Again';
+  } else {
+    btn.textContent = '🎙 Voice unavailable';
+    btn.style.opacity = '.4';
+    toast('Voice generation unavailable — check ElevenLabs proxy', 'err');
+  }
+}
+
 async function generateVoice(text, charId) {
   const vp = VOICE_MAP[charId] || DEFAULT_VOICE;
-  // Clean text for speech
-  const spokenText = text.replace(/[*_#~`]/g,'').replace(/\n+/g,'\n').trim().substring(0,800);
+  // Clean text for speech — strip ALL stage directions before sending to TTS
+  const spokenText = cleanForSpeech(text).substring(0, 800);
   try {
     const r = await fetch(`${EL_TTS}/${vp.id}`, {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -1477,12 +1560,14 @@ async function generateVoice(text, charId) {
 
 // ── ASYNC VIDEO (WAN-T2V) ────────────────────────────────────────
 async function generateVideoAsync(prompt) {
+  // Proxy strips 'model', sends rest to queue.fal.run/{model}
   try {
     const r = await fetch(FAL_ASYNC, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         model:'fal-ai/wan-t2v',
-        input:{ prompt, duration:'5', aspect_ratio:'16:9' }
+        prompt,
+        aspect_ratio:'16:9'
       })
     });
     const d = await r.json();
@@ -1633,8 +1718,20 @@ async function generateMultimedia() {
 
     const vrow = document.createElement('div');
     vrow.className = 'voice-row';
-    vrow.innerHTML = `<button class="mm-btn-sm mm-voice" id="vbtn-${idx}" onclick="playVoice('${charId}',${idx},'${escAttr(text)}')">🎙 Hear Voice — ${charName}</button>
-      <span id="vaudio-${idx}"></span>`;
+    const voiceBtn = document.createElement('button');
+    voiceBtn.className = 'mm-btn-sm mm-voice';
+    voiceBtn.id = `vbtn-${idx}`;
+    voiceBtn.dataset.charId = charId;
+    voiceBtn.dataset.soloIdx = idx;
+    voiceBtn.textContent = `🎙 Hear Voice — ${charName}`;
+    voiceBtn.onclick = () => playVoiceFromBtn(voiceBtn);
+    const audioSlotEl = document.createElement('span');
+    audioSlotEl.id = `vaudio-${idx}`;
+    vrow.appendChild(voiceBtn);
+    vrow.appendChild(audioSlotEl);
+    // Store text on the solo element for later retrieval
+    soloEl.dataset.charId = charId;
+    soloEl.dataset.soloIdx = idx;
     soloEl.appendChild(vrow);
   });
 
@@ -1646,34 +1743,7 @@ async function generateMultimedia() {
   toast('Multimedia ready — portraits, storyboards, and voice players added', 'ok');
 }
 
-// ── VOICE PLAYBACK ────────────────────────────────────────────────
-async function playVoice(charId, idx, text) {
-  const btn = document.getElementById(`vbtn-${idx}`);
-  const audioSlot = document.getElementById(`vaudio-${idx}`);
-  if(!btn || !audioSlot) return;
-
-  // Check if audio already generated
-  const existing = audioSlot.querySelector('audio');
-  if(existing) { existing.play(); return; }
-
-  btn.textContent = '⏳ Generating voice…';
-  btn.style.opacity = '.6';
-  btn.disabled = true;
-
-  const audioUrl = await generateVoice(decodeURIComponent(text), charId);
-
-  btn.disabled = false;
-  btn.style.opacity = '1';
-
-  if(audioUrl) {
-    audioSlot.innerHTML = `<audio class="voice-audio" controls autoplay src="${audioUrl}"></audio>`;
-    btn.textContent = '🎙 Play Again';
-  } else {
-    btn.textContent = '🎙 Voice unavailable';
-    btn.style.opacity = '.4';
-    toast('Voice generation unavailable — check ElevenLabs proxy', 'err');
-  }
-}
+// playVoice → replaced by playVoiceFromBtn above
 
 function escAttr(s) {
   return encodeURIComponent(s.replace(/'/g,"\\'").substring(0,600));
