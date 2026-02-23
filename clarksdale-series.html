@@ -3011,8 +3011,9 @@ WHEN GENERATING CONTENT FOR THE SERIES, use this exact JSON format wrapped in ma
 RULES:
 - Always generate valid JSON inside the markers
 - -ity words for scores: use actual -ity words (Vitality, Authenticity, Complexity, Tenacity, Luminosity, Sovereignty, Intensity, Connectivity, Spirituality, Dignity, Resilience, Memory, Serenity, Gravity, Fury, etc.)
+- RACE: ALL characters in the Clarksdale Series are Black American. This is non-negotiable. Every single person — historical and fictional — is a Black American person from the Mississippi Delta or Great Migration diaspora. The visual prompt MUST begin with "Black American [man/woman/person]" — never omit this.
 - Characters must feel like real people from the Delta, not archetypes
-- Visual prompts: be specific (e.g. "elderly Black woman in 1890s field dress, Coahoma County cotton field, golden hour light, Gordon Parks documentary style, 35mm film, dignified")
+- Visual prompts: ALWAYS start with "Black American man" or "Black American woman", then add era-accurate clothing, setting, lighting, photography style. Example: "Black American woman, elderly, 1890s Coahoma County cotton field dress, head wrap, root doctor, golden hour light, Gordon Parks documentary style, 35mm film, dignified, photorealistic"
 - After the inject block, write a brief creative note explaining your choices`;
 
   /* ── Tool prompts ── */
@@ -3414,6 +3415,12 @@ Apply: For the Clarksdale Series as a studio IP — what specific audience, plat
   function renderCharacter(d, id) {
     const grid = document.getElementById('cs-chars-grid') || document.querySelector('#characters .chars-grid');
     if (!grid) return;
+    // Enforce Black American representation — all Clarksdale characters are Black American
+    if (d.visual) {
+      const vl = d.visual.toLowerCase();
+      const hasRace = ['black american','black woman','black man','black person','african american','black female','black male'].some(t => vl.includes(t));
+      if (!hasRace) d = {...d, visual: 'Black American person, ' + d.visual};
+    }
     const card = document.createElement('div');
     card.className = 'char-card cs-injected';
     card.id = 'cs-inj-' + id;
@@ -3534,9 +3541,22 @@ Apply: For the Clarksdale Series as a studio IP — what specific audience, plat
     const btn  = card.querySelector('[id^="cs-portbtn-"]') || card.querySelector('.cs-portrait-btn');
     const imgEl = card.querySelector('[id^="cs-charimg-"]') || card.querySelector('[data-visual]');
     if (!imgEl) return;
-    const visual = imgEl.dataset?.visual || card.querySelector('[data-visual]')?.dataset?.visual;
-    if (!visual) return;
+    let visual = imgEl.dataset?.visual || card.querySelector('[data-visual]')?.dataset?.visual;
+    // Synthesize visual prompt for hardcoded original cards that have no data-visual
+    if (!visual) {
+      const name = card.querySelector('.char-name')?.textContent?.trim() || '';
+      const era  = card.querySelector('.char-era')?.textContent?.trim() || '';
+      const desc = card.querySelector('.char-desc')?.textContent?.trim() || '';
+      if (!name) return;
+      visual = `Black American person, ${name}, ${era}, ${desc.slice(0,80)}, historical documentary photography, 35mm film, dignified, photorealistic`;
+    }
     if (btn) { btn.textContent = '⌛ Generating...'; btn.disabled = true; }
+
+    // Enforce Black American representation — all Clarksdale characters are Black American
+    const blackAmericanTerms = ['black american','black woman','black man','black person','african american','black female','black male'];
+    const visualLower = visual.toLowerCase();
+    const hasRace = blackAmericanTerms.some(t => visualLower.includes(t));
+    const enforcedVisual = hasRace ? visual : 'Black American person, ' + visual;
 
     try {
       const res = await fetch(FAL, {
@@ -3544,7 +3564,7 @@ Apply: For the Clarksdale Series as a studio IP — what specific audience, plat
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'fal-ai/flux/schnell',
-          prompt: visual + ', photorealistic, historical documentary style, high quality',
+          prompt: enforcedVisual + ', photorealistic, historical documentary style, high quality',
           image_size: 'portrait_4_3',
           num_images: 1,
           num_inference_steps: 8
