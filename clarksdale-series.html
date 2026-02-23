@@ -2611,5 +2611,518 @@ const sectionObs = new IntersectionObserver(entries => {
 }, { rootMargin: '-40% 0px -40% 0px' });
 sections.forEach(s => sectionObs.observe(s));
 </script>
+
+<!-- ═══════════════════════════════════════════════════════════
+     CLARKSDALE INTELLIGENCE — Floating Chat + Audience Tools
+     ═══════════════════════════════════════════════════════════ -->
+<style>
+/* ── Toggle Button ── */
+#cs-intel-toggle {
+  position: fixed; bottom: 28px; right: 28px; z-index: 9000;
+  display: flex; align-items: center; gap: 9px;
+  padding: 12px 20px; border-radius: 40px;
+  background: linear-gradient(135deg, #1a1206, #2a1e0a);
+  border: 1px solid rgba(200,151,58,.45);
+  box-shadow: 0 4px 32px rgba(200,151,58,.2), 0 2px 8px rgba(0,0,0,.5);
+  color: var(--gold); font-size: 13px; font-weight: 700; letter-spacing: .04em;
+  cursor: pointer; transition: all .25s;
+}
+#cs-intel-toggle:hover {
+  background: linear-gradient(135deg, #221808, #3a2a10);
+  box-shadow: 0 6px 40px rgba(200,151,58,.35), 0 2px 12px rgba(0,0,0,.5);
+  transform: translateY(-2px);
+}
+#cs-intel-toggle .toggle-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--gold); box-shadow: 0 0 10px var(--gold);
+  animation: cs-pulse 2s infinite;
+}
+@keyframes cs-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+
+/* ── Panel ── */
+#cs-intel-panel {
+  position: fixed; bottom: 90px; right: 28px; z-index: 8999;
+  width: 420px; height: 620px; max-height: calc(100vh - 110px);
+  display: flex; flex-direction: column;
+  background: rgba(10,7,4,.96);
+  border: 1px solid rgba(200,151,58,.3);
+  border-radius: 18px;
+  box-shadow: 0 12px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(200,151,58,.08), inset 0 1px 0 rgba(200,151,58,.08);
+  backdrop-filter: blur(24px);
+  transform: translateY(20px) scale(.97); opacity: 0; pointer-events: none;
+  transition: all .3s cubic-bezier(.4,0,.2,1);
+}
+#cs-intel-panel.open {
+  transform: translateY(0) scale(1); opacity: 1; pointer-events: all;
+}
+
+/* ── Panel Header ── */
+.cs-header {
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid rgba(200,151,58,.12);
+  flex-shrink: 0;
+}
+.cs-header-top {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+}
+.cs-title {
+  display: flex; align-items: center; gap: 10px;
+}
+.cs-title-icon {
+  width: 32px; height: 32px; border-radius: 10px;
+  background: linear-gradient(135deg, #C8973A, #8B5E1A);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.cs-title-text { font-size: 13px; font-weight: 700; color: var(--gold); letter-spacing: .04em; }
+.cs-title-sub { font-size: 9px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; margin-top: 1px; }
+.cs-close {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+  color: var(--muted); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.cs-close:hover { background: rgba(200,151,58,.1); color: var(--gold); border-color: rgba(200,151,58,.3); }
+
+/* ── Model Selector ── */
+.cs-model-row {
+  display: flex; gap: 6px;
+}
+.cs-model-btn {
+  flex: 1; padding: 6px 10px; border-radius: 8px; cursor: pointer;
+  border: 1px solid rgba(200,151,58,.15);
+  background: rgba(255,255,255,.02);
+  color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .03em;
+  transition: all .2s; text-align: center;
+}
+.cs-model-btn:hover { border-color: rgba(200,151,58,.3); color: var(--text); }
+.cs-model-btn.active {
+  background: rgba(200,151,58,.12); border-color: rgba(200,151,58,.5);
+  color: var(--gold);
+}
+
+/* ── Tools Bar ── */
+.cs-tools {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(200,151,58,.08);
+  display: flex; gap: 6px; flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.cs-tool-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 6px 10px; border-radius: 20px; cursor: pointer;
+  border: 1px solid rgba(200,151,58,.2);
+  background: rgba(200,151,58,.04);
+  color: var(--text); font-size: 10px; font-weight: 600;
+  transition: all .2s; white-space: nowrap;
+}
+.cs-tool-btn:hover { background: rgba(200,151,58,.12); border-color: rgba(200,151,58,.4); color: var(--gold); }
+.cs-tool-btn:active { transform: scale(.97); }
+
+/* ── Messages ── */
+.cs-messages {
+  flex: 1; overflow-y: auto; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 14px;
+  scroll-behavior: smooth;
+}
+.cs-messages::-webkit-scrollbar { width: 4px; }
+.cs-messages::-webkit-scrollbar-track { background: transparent; }
+.cs-messages::-webkit-scrollbar-thumb { background: rgba(200,151,58,.2); border-radius: 4px; }
+
+.cs-msg {
+  display: flex; gap: 10px; animation: cs-fadein .3s ease;
+}
+@keyframes cs-fadein { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.cs-msg.user { flex-direction: row-reverse; }
+.cs-msg-avatar {
+  width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 12px;
+  background: rgba(200,151,58,.15); border: 1px solid rgba(200,151,58,.25);
+}
+.cs-msg.user .cs-msg-avatar {
+  background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.1);
+}
+.cs-msg-bubble {
+  max-width: 88%; padding: 10px 13px; border-radius: 14px;
+  font-size: 12.5px; line-height: 1.65; color: var(--text);
+}
+.cs-msg.assistant .cs-msg-bubble {
+  background: rgba(200,151,58,.06);
+  border: 1px solid rgba(200,151,58,.12);
+  border-radius: 4px 14px 14px 14px;
+}
+.cs-msg.user .cs-msg-bubble {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px 4px 14px 14px;
+}
+.cs-msg-bubble h3 {
+  font-size: 11px; font-weight: 700; color: var(--gold); margin: 0 0 6px;
+  text-transform: uppercase; letter-spacing: .08em;
+}
+.cs-msg-bubble strong { color: var(--gold); }
+.cs-msg-bubble ul { margin: 6px 0; padding-left: 16px; }
+.cs-msg-bubble li { margin-bottom: 4px; }
+.cs-msg-bubble hr { border: none; border-top: 1px solid rgba(200,151,58,.2); margin: 8px 0; }
+.cs-msg-label {
+  font-size: 9px; color: var(--muted); margin-bottom: 3px;
+  text-transform: uppercase; letter-spacing: .08em;
+}
+
+/* Typing indicator */
+.cs-typing { display: flex; gap: 5px; padding: 6px 0; }
+.cs-typing span {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--gold); opacity: .4;
+  animation: cs-bounce .9s infinite;
+}
+.cs-typing span:nth-child(2) { animation-delay: .2s; }
+.cs-typing span:nth-child(3) { animation-delay: .4s; }
+@keyframes cs-bounce { 0%,100%{transform:translateY(0);opacity:.4} 50%{transform:translateY(-5px);opacity:1} }
+
+/* ── Input ── */
+.cs-input-row {
+  padding: 12px 14px 16px;
+  border-top: 1px solid rgba(200,151,58,.1);
+  flex-shrink: 0;
+  display: flex; gap: 8px; align-items: flex-end;
+}
+.cs-input {
+  flex: 1; padding: 10px 14px; border-radius: 12px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(200,151,58,.18);
+  color: var(--text); font-size: 13px; font-family: inherit;
+  resize: none; outline: none; line-height: 1.5; max-height: 100px; overflow-y: auto;
+  transition: border-color .2s;
+}
+.cs-input:focus { border-color: rgba(200,151,58,.45); background: rgba(200,151,58,.04); }
+.cs-input::placeholder { color: var(--muted); }
+.cs-send {
+  width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+  background: linear-gradient(135deg, #C8973A, #8B5E1A);
+  border: none; cursor: pointer; color: #000; font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.cs-send:hover { transform: scale(1.06); box-shadow: 0 4px 16px rgba(200,151,58,.4); }
+.cs-send:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+/* ── Empty state ── */
+.cs-empty {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 20px; text-align: center; gap: 8px;
+}
+.cs-empty-icon { font-size: 36px; opacity: .4; }
+.cs-empty-text { font-size: 12px; color: var(--muted); line-height: 1.6; max-width: 260px; }
+</style>
+
+<!-- Toggle Button -->
+<button id="cs-intel-toggle" onclick="csTogglePanel()">
+  <span class="toggle-dot"></span>
+  Clarksdale Intelligence
+</button>
+
+<!-- Chat Panel -->
+<div id="cs-intel-panel">
+  <!-- Header -->
+  <div class="cs-header">
+    <div class="cs-header-top">
+      <div class="cs-title">
+        <div class="cs-title-icon">🎸</div>
+        <div>
+          <div class="cs-title-text">Clarksdale Intelligence</div>
+          <div class="cs-title-sub">Content · Audience · Strategy</div>
+        </div>
+      </div>
+      <button class="cs-close" onclick="csTogglePanel()">✕</button>
+    </div>
+    <!-- Model selector -->
+    <div class="cs-model-row">
+      <button class="cs-model-btn active" data-model="flash" onclick="csSetModel(this,'flash')">⚡ Gemini Flash</button>
+      <button class="cs-model-btn" data-model="pro" onclick="csSetModel(this,'pro')">🔬 Gemini Pro</button>
+      <button class="cs-model-btn" data-model="iam" onclick="csSetModel(this,'iam')">◈ IAM Awareness</button>
+    </div>
+  </div>
+
+  <!-- Tool Presets -->
+  <div class="cs-tools">
+    <button class="cs-tool-btn" onclick="csTool('audience')">🎯 Audience</button>
+    <button class="cs-tool-btn" onclick="csTool('trends')">📈 Trends</button>
+    <button class="cs-tool-btn" onclick="csTool('scene')">🎬 Scene Ideas</button>
+    <button class="cs-tool-btn" onclick="csTool('character')">🎭 Character</button>
+    <button class="cs-tool-btn" onclick="csTool('platform')">🌐 Platform</button>
+    <button class="cs-tool-btn" onclick="csTool('suno')">🎵 Suno Prompt</button>
+  </div>
+
+  <!-- Messages -->
+  <div class="cs-messages" id="cs-messages">
+    <div class="cs-empty" id="cs-empty">
+      <div class="cs-empty-icon">🎸</div>
+      <div class="cs-empty-text">Ask anything about the Clarksdale Series — ideate content, find your audience, develop characters, or craft platform strategy.</div>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="cs-input-row">
+    <textarea class="cs-input" id="cs-input" rows="1" placeholder="Ask about content, audiences, characters..."
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();csSend()}"
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+    <button class="cs-send" id="cs-send-btn" onclick="csSend()">↑</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const GEMINI_PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+  const IAM_MCP      = 'https://iam-mcp-api-dev-328246068140.us-central1.run.app/mcp';
+
+  // ── Clarksdale world context ──
+  const SYSTEM_CONTEXT = `You are Clarksdale Intelligence — a specialized creative advisor embedded in The Clarksdale Series, an 8-era digital world exploring the Mississippi Delta as the origin point of American music and cultural identity.
+
+THE CLARKSDALE SERIES:
+- Spans 300 million years: geological formation → Indigenous civilization → Trail of Tears → Reconstruction → Great Migration → Civil Rights
+- 4 Eras: Mound Time (pre-1540), The Nations (1540-1830), The Removal (1830-1865), The Delta (1865-present)
+- 32 characters across 8 lineages: Fire/Blues, River/Sacred, Weaver/Art, Power/Politics, Birth/Healing, Voice/Song, Earth/Land, Eye/Vision
+- Core thesis: "The blues is a container" — like Grandmother Spider's clay pot, the church, the juke joint — every era passes grief, joy, and memory forward through vessels
+- Philosophy: The Trinity Graph (Social + Knowledge + Generative) reveals how cultural DNA replicates across time. Convergence of suffering, beauty, and land creates irreplaceable music.
+- Deep Time arc: 300M BCE sediment → Chickasaw mound cities → French/Spanish contact → Chickasaw Cession → Reconstruction sharecropping → Robert Johnson's crossroads → Chicago exodus → Civil Rights
+
+KEY CREATIVE ASSETS:
+- 7 narrative arc videos (AI-generated cinematic): Crossroads, Migration, Church, Juke Joint, Plantation, Chicago, Return
+- 32 fully developed characters with artifacts, voices, literary medium, literacy level
+- 6 Director Styles: Archivist (Alan Lomax's field recording energy), Poet (Terrence Malick's landscape reverence), Witness (Gordon Parks's documentary truth), Oracle (Todd Haynes's layered symbolism), Griot (African oral tradition urgency), Dreamer (Toni Morrison/John Singleton's mythic realism)
+- NotebookLM podcast notebook for Deep Dive audio content
+- Suno music generation in production
+- Grandmother Spider origin performance: 7-act Choctaw story of fire theft → clay pot as first container → "The blues is a container"
+
+AUDIENCE LANDSCAPE:
+- Blues music community: deep listeners on Spotify, YouTube, SiriusXM Bluesville
+- African American cultural heritage: family historians, HBCUs, church networks
+- Documentary/visual essay audience: Ken Burns fans, Questlove Supreme listeners, Criterion Collection subscribers
+- Digital humanities / AI-in-culture: researchers, curators, museum tech teams
+- Mississippi/Southern cultural tourism: Clarksdale Blues Trail visitors, Oxford American readers
+- Music educators, Americana community, songwriter/producer community
+- Film/TV music supervisors, streaming platforms seeking original IP
+
+Your role: Help ideate content, identify and develop audiences, deepen character narratives, design visual experiences, craft platform strategy, write distribution copy, and develop the Clarksdale Series into a fully realized cultural artifact.
+
+Be specific, evocative, and grounded in the actual historical/cultural context of the Delta. Avoid generic marketing language. Think like a museum curator who also understands algorithms.`;
+
+  const TOOL_PROMPTS = {
+    audience: `Research and map the full audience universe for the Clarksdale Series. Think in concentric circles:
+1. CORE audience (blues obsessives, Delta historians, African American cultural heritage): where do they live online? Which subreddits, newsletters, podcasts, YouTube channels, Instagram accounts?
+2. ADJACENT audience (documentary lovers, Americana fans, Southern lit readers): who bridges into them?
+3. EMERGING audience (AI art/culture watchers, digital humanities researchers): what's the hook?
+4. PLATFORM-SPECIFIC breakdown: what format works on TikTok vs Instagram vs YouTube vs Substack vs Twitter?
+Be specific with community names, account handles where possible, estimated reach, and why this content would resonate.`,
+
+    trends: `Identify the 5-7 strongest cultural trends that the Clarksdale Series is positioned to intersect with RIGHT NOW (early 2026). For each trend:
+- What's driving it
+- How the Clarksdale Series speaks to it specifically
+- Which platform/format captures it best
+- The risk of missing the window
+Consider: AI-generated culture credibility debates, blues/roots music resurgence, African American history reckoning, oral tradition + podcast renaissance, visual essay format growth, indigenous history reclamation, "slow content" vs. algorithm content.`,
+
+    scene: `Ideate 6 new visual scenes or video moments for the Clarksdale Series that haven't been created yet. Each should:
+- Be set in a specific historical moment and location
+- Feature a named character from the existing 32 (or a new one)
+- Have a visceral sensory anchor (sound, smell, light quality)
+- Carry symbolic weight that connects to the blues-as-container thesis
+- Be achievable as a 4-8 second AI video or a single iconic image
+Think cinematically. The Delta is specific: heat haze, clay soil, cotton fields, tin roofs, the smell of the river. Make it feel like it happened.`,
+
+    character: `Deep dive on the most dramatically compelling character arc in the Clarksdale Series. Choose the character who carries the most weight across eras — who inherits the most, sacrifices the most, and passes forward something essential.
+Build out:
+1. Their full biographical arc (what made them, what broke them, what they built)
+2. The specific artifact they carry and what it means across generations
+3. Three key scenes in their life that would work as video vignettes
+4. How their lineage connects to a living tradition today
+5. The performance/voice direction — how do they speak, what do they withhold?`,
+
+    platform: `Design a platform-by-platform distribution strategy for the Clarksdale Series across its first 90 days. For each platform:
+- Content format and cadence
+- Audience acquisition strategy
+- What unique angle the Clarksdale Series owns on that platform that nobody else does
+- Key metrics to watch
+Platforms to address: Instagram/Reels, TikTok, YouTube (long-form + Shorts), Twitter/X, Substack/newsletter, Spotify (podcast/playlist), Apple Music, physical/in-person (blues clubs, museums, universities).
+Include the sequencing: what launches when, and why.`,
+
+    suno: `Generate 4 Suno AI music prompts for the Clarksdale Series. Each prompt should:
+- Target a specific era (Mound Time / Nations / Removal / Delta)
+- Reference specific instrumentation that would exist in that era
+- Capture the emotional register of that chapter
+- Include Suno-specific style tags (BPM, mood, instrumentation)
+Format each as a ready-to-use Suno prompt that could be pasted directly.
+Remember: no real artist names. Use style descriptors (pre-war Delta blues, field holler, gospel shout, country blues fingerpicking, etc.)`
+  };
+
+  // ── State ──
+  window._csModel = 'flash';
+  window._csMsgs  = [];
+  window._csLoading = false;
+  window._csOpen = false;
+
+  window.csTogglePanel = function() {
+    window._csOpen = !window._csOpen;
+    document.getElementById('cs-intel-panel').classList.toggle('open', window._csOpen);
+  };
+
+  window.csSetModel = function(btn, model) {
+    document.querySelectorAll('.cs-model-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    window._csModel = model;
+  };
+
+  window.csTool = function(toolId) {
+    const prompt = TOOL_PROMPTS[toolId];
+    if (!prompt) return;
+    document.getElementById('cs-input').value = '';
+    csAppendMsg('user', prompt.split('\n')[0] + '...');
+    csCallModel(prompt);
+  };
+
+  window.csSend = function() {
+    const inp = document.getElementById('cs-input');
+    const text = inp.value.trim();
+    if (!text || window._csLoading) return;
+    inp.value = ''; inp.style.height = 'auto';
+    csAppendMsg('user', text);
+    csCallModel(text);
+  };
+
+  function csAppendMsg(role, content) {
+    // Hide empty state
+    const empty = document.getElementById('cs-empty');
+    if (empty) empty.style.display = 'none';
+
+    const msgs = document.getElementById('cs-messages');
+    const div = document.createElement('div');
+    div.className = `cs-msg ${role}`;
+    const isUser = role === 'user';
+    div.innerHTML = `
+      <div class="cs-msg-avatar">${isUser ? '👤' : '🎸'}</div>
+      <div>
+        <div class="cs-msg-label">${isUser ? 'You' : csModelLabel()}</div>
+        <div class="cs-msg-bubble">${csFormatMd(content)}</div>
+      </div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    window._csMsgs.push({ role, content });
+    return div;
+  }
+
+  function csModelLabel() {
+    const labels = { flash:'⚡ Gemini Flash', pro:'🔬 Gemini Pro', iam:'◈ IAM Awareness' };
+    return labels[window._csModel] || 'AI';
+  }
+
+  function csShowTyping() {
+    const empty = document.getElementById('cs-empty');
+    if (empty) empty.style.display = 'none';
+    const msgs = document.getElementById('cs-messages');
+    const div = document.createElement('div');
+    div.className = 'cs-msg assistant'; div.id = 'cs-typing-indicator';
+    div.innerHTML = `<div class="cs-msg-avatar">🎸</div><div><div class="cs-msg-label">${csModelLabel()}</div><div class="cs-msg-bubble"><div class="cs-typing"><span></span><span></span><span></span></div></div></div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return div;
+  }
+
+  async function csCallModel(userPrompt) {
+    if (window._csLoading) return;
+    window._csLoading = true;
+    document.getElementById('cs-send-btn').disabled = true;
+
+    const typing = csShowTyping();
+
+    try {
+      let result = '';
+      const model = window._csModel;
+
+      if (model === 'iam') {
+        result = await csCallIAM(userPrompt);
+      } else {
+        result = await csCallGemini(userPrompt, model);
+      }
+
+      typing.remove();
+      csAppendMsg('assistant', result);
+    } catch(e) {
+      typing.remove();
+      csAppendMsg('assistant', `⚠️ Error: ${e.message}. Try switching models or rephrasing.`);
+    }
+
+    window._csLoading = false;
+    document.getElementById('cs-send-btn').disabled = false;
+  }
+
+  async function csCallGemini(userPrompt, model) {
+    const modelId = model === 'pro' ? 'gemini-1.5-pro' : 'gemini-2.0-flash';
+    const history = window._csMsgs.slice(-6); // Last 3 exchanges
+    const contextParts = history.map(m =>
+      `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content.slice(0,400)}`
+    ).join('\n');
+
+    const fullPrompt = `${SYSTEM_CONTEXT}\n\n${contextParts ? 'Recent conversation:\n' + contextParts + '\n\n' : ''}User: ${userPrompt}`;
+
+    const res = await fetch(GEMINI_PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: modelId,
+        contents: [{ parts: [{ text: fullPrompt }] }],
+        generationConfig: { temperature: 0.85, maxOutputTokens: 1200 }
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error?.message || `HTTP ${res.status}`);
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text || JSON.stringify(data);
+  }
+
+  async function csCallIAM(userPrompt) {
+    // Use awareness_rune with Insight + Human runes for rich contextual analysis
+    const res = await fetch(IAM_MCP, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0', method: 'tools/call', id: Date.now(),
+        params: {
+          name: 'awareness_rune',
+          arguments: {
+            rune: 'Insight',
+            content: `${SYSTEM_CONTEXT.slice(0,600)}\n\nQuery: ${userPrompt}`,
+            secondary_runes: ['Human', 'Convergence']
+          }
+        }
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(JSON.stringify(data.error));
+    const content = data?.result?.content;
+    const rawText = Array.isArray(content)
+      ? content.map(c => c.type === 'text' ? c.text : JSON.stringify(c)).join('\n')
+      : JSON.stringify(data?.result);
+    // Prepend with Gemini for readable synthesis
+    return await csCallGemini(
+      `Based on this Trinity Graph / IAM analysis:\n\n${rawText.slice(0,1200)}\n\nProvide a clear, actionable response to: ${userPrompt}`,
+      'flash'
+    );
+  }
+
+  function csFormatMd(text) {
+    return text
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g,'<em>$1</em>')
+      .replace(/^#{1,3}\s(.+)$/gm,'<h3>$1</h3>')
+      .replace(/^[-•]\s(.+)$/gm,'<li>$1</li>')
+      .replace(/(<li>[\s\S]*<\/li>)/, '<ul>$1</ul>')
+      .replace(/---/g,'<hr/>')
+      .replace(/\n\n/g,'</p><p>')
+      .replace(/\n/g,'<br/>');
+  }
+
+})();
+</script>
+
 </body>
 </html>
