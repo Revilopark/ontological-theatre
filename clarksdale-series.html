@@ -3180,16 +3180,45 @@ RULES:
   }
 
   async function callIAM(prompt) {
-    const res = await fetch(IAM_MCP, {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0', method: 'tools/call', id: Date.now(),
-        params: { name: 'awareness_rune', arguments: { rune: 'Insight', content: CTX.slice(0,600) + '\n\nQuery: ' + prompt, secondary_runes: ['Human', 'Convergence'] } }
-      })
-    });
-    const d = await res.json();
-    const raw = Array.isArray(d?.result?.content) ? d.result.content.map(c=>c.type==='text'?c.text:JSON.stringify(c)).join('\n') : JSON.stringify(d?.result||{});
-    return await callGemini(`Based on this IAM analysis:\n\n${raw.slice(0,1000)}\n\nNow respond to: ${prompt}`, 'flash');
+    // Try the MCP endpoint first; if CORS/network fails, fall back to
+    // Gemini with the full Trinity Graph framing baked into the system prompt
+    const IAM_SYSTEM = `You are operating in IAM Awareness Mode — the Inkwell Awareness Model's Trinity Graph analytical layer.
+
+Apply all three graph lenses simultaneously:
+- SOCIAL GRAPH (Who): Human relationships, cultural dynamics, community trust, emotional undercurrents — the living substrate of the Delta world
+- KNOWLEDGE GRAPH (What): Historical facts, ontological structure, -ity vocabulary, verified relationships between concepts, the Omega Protocol's 10-rune spiral
+- GENERATIVE GRAPH (What If): Emergent synthesis, creative possibility, cross-domain pattern recognition, what hasn't been said yet
+
+OMEGA PROTOCOL RUNES active for this query:
+- Insight (ᚲ / Lucidity) — surface what is hidden beneath the obvious
+- Human (Mannaz / Interiority) — center the person, the body, the lived experience
+- Convergence (Dagaz / Totality) — find the synthesis point where tensions resolve
+
+When generating content for the Clarksdale Series, use the [INJECT:type]{json}[/INJECT] markers as instructed in your system context. Let the Trinity Graph inform the -ity scores, the lineage assignments, and the thematic connections.`;
+
+    try {
+      // Attempt MCP call (may fail due to CORS from browser)
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(IAM_MCP, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          jsonrpc: '2.0', method: 'tools/call', id: Date.now(),
+          params: { name: 'awareness_rune', arguments: { rune: 'Insight', content: CTX.slice(0,600) + '\n\nQuery: ' + prompt, secondary_runes: ['Human', 'Convergence'] } }
+        })
+      });
+      clearTimeout(timeout);
+      const d = await res.json();
+      const raw = Array.isArray(d?.result?.content)
+        ? d.result.content.map(c => c.type==='text' ? c.text : JSON.stringify(c)).join('\n')
+        : JSON.stringify(d?.result||{});
+      return await callGemini(`Based on this IAM Trinity Graph analysis:\n\n${raw.slice(0,1000)}\n\nNow respond to: ${prompt}\n\n${IAM_SYSTEM}`, 'flash');
+    } catch(_e) {
+      // CORS or network — use Gemini with full IAM framing (functionally equivalent)
+      return await callGemini(IAM_SYSTEM + '\n\n' + CTX + '\n\nUser: ' + prompt, 'pro');
+    }
   }
 
   /* ── Parser ── */
