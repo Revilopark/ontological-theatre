@@ -3304,6 +3304,11 @@ Apply: For the Clarksdale Series as a studio IP — what specific audience, plat
     saveInjections();
     updateCharacterCounts();
 
+    // Auto-regenerate portrait if visual provided with the update
+    if (d.visual && card) {
+      setTimeout(() => csGenPortrait(card.id, d.visual), 700);
+    }
+
     // Exit edit mode
     csExitEditMode();
 
@@ -3459,6 +3464,31 @@ Apply: For the Clarksdale Series as a studio IP — what specific audience, plat
 
     // Update all site-wide counts
     setTimeout(() => { updateCharacterCounts(); updateSectionCounts(); }, 100);
+
+    // Auto-generate portrait if visual prompt available and no saved portrait
+    if (!savedPortrait && d.visual) {
+      setTimeout(() => csGenPortrait('cs-inj-' + id), 600);
+    }
+  }
+
+  function csGetCharPortrait(name) {
+    // Look up a character's portrait by name from the chars grid
+    const cards = document.querySelectorAll('#cs-chars-grid .char-card');
+    for (const c of cards) {
+      const n = c.querySelector('.char-name')?.textContent?.trim() || '';
+      if (n.toLowerCase().includes(name.toLowerCase().slice(0, 8)) ||
+          name.toLowerCase().includes(n.toLowerCase().slice(0, 8))) {
+        const img = c.querySelector('img.char-img, img[src*="fal.media"]');
+        if (img?.src) return img.src;
+      }
+    }
+    return '';
+  }
+  function csPortraitCircle(name) {
+    const src = csGetCharPortrait(name);
+    return src
+      ? `<img src="${src}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid rgba(200,151,58,.4);" loading="lazy">`
+      : `<div style="width:44px;height:44px;border-radius:50%;background:rgba(200,151,58,.15);border:2px solid rgba(200,151,58,.3);display:flex;align-items:center;justify-content:center;font-size:20px;">🎸</div>`;
   }
 
   function renderSpark(d, id) {
@@ -3470,9 +3500,9 @@ Apply: For the Clarksdale Series as a studio IP — what specific audience, plat
     card.innerHTML = `
       <button class="cs-remove-btn" onclick="csRemoveInjection('${id}')" title="Remove">×</button>
       <div class="spark-portraits">
-        <div style="width:44px;height:44px;border-radius:50%;background:rgba(200,151,58,.15);border:2px solid rgba(200,151,58,.3);display:flex;align-items:center;justify-content:center;font-size:18px;">🎸</div>
+        ${csPortraitCircle(d.char1||'')}
         <div class="spark-bolt">⚡</div>
-        <div style="width:44px;height:44px;border-radius:50%;background:rgba(200,151,58,.15);border:2px solid rgba(200,151,58,.3);display:flex;align-items:center;justify-content:center;font-size:18px;">🎵</div>
+        ${csPortraitCircle(d.char2||'')}
         <div style="margin-left:12px">
           <div class="spark-type-tags">
             <span class="spark-type">${esc(d.type1||'')}</span>
@@ -3534,15 +3564,31 @@ Apply: For the Clarksdale Series as a studio IP — what specific audience, plat
   }
 
   /* ── Portrait generation ── */
-  window.csGenPortrait = async function(cardId) {
-    // cardId can be the full card element ID (e.g. "cs-inj-abc123" or "orig-robert-johnson")
+  window.csGenPortrait = async function(cardId, visualOverride) {
+    // cardId: full card element ID (e.g. "cs-inj-abc123" or "orig-robert-johnson")
+    // visualOverride: optional prompt to use instead of stored one (used by Modify flow)
     const card = document.getElementById(cardId);
     if (!card) return;
     const btn  = card.querySelector('[id^="cs-portbtn-"]') || card.querySelector('.cs-portrait-btn');
-    const imgEl = card.querySelector('[id^="cs-charimg-"]') || card.querySelector('[data-visual]');
-    if (!imgEl) return;
-    let visual = imgEl.dataset?.visual || card.querySelector('[data-visual]')?.dataset?.visual;
-    // Synthesize visual prompt for hardcoded original cards that have no data-visual
+
+    // Find portrait target — could be the placeholder div or an existing img to replace
+    let imgEl = card.querySelector('[id^="cs-charimg-"]') || card.querySelector('[data-visual]');
+    let isRegen = false;
+    if (!imgEl) {
+      // Placeholder was already replaced — find existing portrait img/wrapper to replace
+      imgEl = card.querySelector('img.char-img') || card.querySelector('div[style*="height:220px"] img')
+                ?.closest('div') || card.querySelector('div[style*="height:140px"]');
+      if (!imgEl) {
+        // Last resort: find any img in the card's top area
+        const firstImg = card.querySelector('img');
+        if (firstImg) { imgEl = firstImg; isRegen = true; }
+        else return;
+      }
+      isRegen = true;
+    }
+
+    let visual = visualOverride || imgEl.dataset?.visual || card.querySelector('[data-visual]')?.dataset?.visual;
+    // Synthesize visual for cards with no stored prompt (original hardcoded cards)
     if (!visual) {
       const name = card.querySelector('.char-name')?.textContent?.trim() || '';
       const era  = card.querySelector('.char-era')?.textContent?.trim() || '';
@@ -3573,12 +3619,21 @@ Apply: For the Clarksdale Series as a studio IP — what specific audience, plat
       const data = await res.json();
       const url = data?.images?.[0]?.url;
       if (url) {
-        // Replace placeholder with rendered portrait
-        const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'height:220px;overflow:hidden;';
-        wrapper.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">`;
-        imgEl.replaceWith(wrapper);
-        if (btn) { btn.textContent = '✓ Portrait Generated'; btn.style.color = '#0d9488'; }
+        // Replace placeholder or update existing portrait
+        if (isRegen && imgEl.tagName === 'IMG') {
+          // Just swap src on an existing <img>
+          imgEl.src = url;
+        } else if (isRegen) {
+          // Replace wrapper content
+          imgEl.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">`;
+        } else {
+          // First time: replace the placeholder div with a portrait wrapper
+          const wrapper = document.createElement('div');
+          wrapper.style.cssText = 'height:220px;overflow:hidden;';
+          wrapper.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">`;
+          imgEl.replaceWith(wrapper);
+        }
+        if (btn) { btn.textContent = '↺ Regenerate'; btn.disabled = false; btn.style.color = 'var(--gold)'; }
 
         // Update stored data — find item by short id
         const shortId = cardId.replace('cs-inj-', '');
