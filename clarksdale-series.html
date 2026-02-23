@@ -2612,515 +2612,700 @@ const sectionObs = new IntersectionObserver(entries => {
 sections.forEach(s => sectionObs.observe(s));
 </script>
 
-<!-- ═══════════════════════════════════════════════════════════
-     CLARKSDALE INTELLIGENCE — Floating Chat + Audience Tools
-     ═══════════════════════════════════════════════════════════ -->
+
+<!-- ═══════════════════════════════════════════════════════════════
+     CLARKSDALE INTELLIGENCE v2 — Live-Write Chat
+     Generates content and injects it directly into the Series
+     ═══════════════════════════════════════════════════════════════ -->
 <style>
 /* ── Toggle Button ── */
 #cs-intel-toggle {
-  position: fixed; bottom: 28px; right: 28px; z-index: 9000;
-  display: flex; align-items: center; gap: 9px;
-  padding: 12px 20px; border-radius: 40px;
-  background: linear-gradient(135deg, #1a1206, #2a1e0a);
-  border: 1px solid rgba(200,151,58,.45);
-  box-shadow: 0 4px 32px rgba(200,151,58,.2), 0 2px 8px rgba(0,0,0,.5);
-  color: var(--gold); font-size: 13px; font-weight: 700; letter-spacing: .04em;
-  cursor: pointer; transition: all .25s;
+  position:fixed;bottom:28px;right:28px;z-index:9000;
+  display:flex;align-items:center;gap:9px;
+  padding:12px 20px;border-radius:40px;
+  background:linear-gradient(135deg,#1a1206,#2a1e0a);
+  border:1px solid rgba(200,151,58,.45);
+  box-shadow:0 4px 32px rgba(200,151,58,.2),0 2px 8px rgba(0,0,0,.5);
+  color:var(--gold);font-size:13px;font-weight:700;letter-spacing:.04em;
+  cursor:pointer;transition:all .25s;
 }
-#cs-intel-toggle:hover {
-  background: linear-gradient(135deg, #221808, #3a2a10);
-  box-shadow: 0 6px 40px rgba(200,151,58,.35), 0 2px 12px rgba(0,0,0,.5);
-  transform: translateY(-2px);
+#cs-intel-toggle:hover{
+  background:linear-gradient(135deg,#221808,#3a2a10);
+  box-shadow:0 6px 40px rgba(200,151,58,.35),0 2px 12px rgba(0,0,0,.5);
+  transform:translateY(-2px);
 }
-#cs-intel-toggle .toggle-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--gold); box-shadow: 0 0 10px var(--gold);
-  animation: cs-pulse 2s infinite;
+#cs-intel-toggle .toggle-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--gold);box-shadow:0 0 10px var(--gold);
+  animation:cs-pulse 2s infinite;
 }
-@keyframes cs-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+@keyframes cs-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
 
 /* ── Panel ── */
-#cs-intel-panel {
-  position: fixed; bottom: 90px; right: 28px; z-index: 8999;
-  width: 420px; height: 620px; max-height: calc(100vh - 110px);
-  display: flex; flex-direction: column;
-  background: rgba(10,7,4,.96);
-  border: 1px solid rgba(200,151,58,.3);
-  border-radius: 18px;
-  box-shadow: 0 12px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(200,151,58,.08), inset 0 1px 0 rgba(200,151,58,.08);
-  backdrop-filter: blur(24px);
-  transform: translateY(20px) scale(.97); opacity: 0; pointer-events: none;
-  transition: all .3s cubic-bezier(.4,0,.2,1);
+#cs-intel-panel{
+  position:fixed;bottom:90px;right:28px;z-index:8999;
+  width:440px;height:660px;max-height:calc(100vh - 110px);
+  display:flex;flex-direction:column;
+  background:rgba(10,7,4,.97);
+  border:1px solid rgba(200,151,58,.3);
+  border-radius:18px;
+  box-shadow:0 12px 60px rgba(0,0,0,.7),0 0 0 1px rgba(200,151,58,.06),inset 0 1px 0 rgba(200,151,58,.08);
+  backdrop-filter:blur(24px);
+  transform:translateY(20px) scale(.97);opacity:0;pointer-events:none;
+  transition:all .3s cubic-bezier(.4,0,.2,1);
 }
-#cs-intel-panel.open {
-  transform: translateY(0) scale(1); opacity: 1; pointer-events: all;
-}
+#cs-intel-panel.open{transform:translateY(0) scale(1);opacity:1;pointer-events:all;}
 
-/* ── Panel Header ── */
-.cs-header {
-  padding: 16px 18px 12px;
-  border-bottom: 1px solid rgba(200,151,58,.12);
-  flex-shrink: 0;
-}
-.cs-header-top {
-  display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
-}
-.cs-title {
-  display: flex; align-items: center; gap: 10px;
-}
-.cs-title-icon {
-  width: 32px; height: 32px; border-radius: 10px;
-  background: linear-gradient(135deg, #C8973A, #8B5E1A);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px;
-}
-.cs-title-text { font-size: 13px; font-weight: 700; color: var(--gold); letter-spacing: .04em; }
-.cs-title-sub { font-size: 9px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; margin-top: 1px; }
-.cs-close {
-  width: 28px; height: 28px; border-radius: 8px;
-  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
-  color: var(--muted); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;
-  transition: all .2s;
-}
-.cs-close:hover { background: rgba(200,151,58,.1); color: var(--gold); border-color: rgba(200,151,58,.3); }
+/* ── Header ── */
+.cs-header{padding:14px 16px 10px;border-bottom:1px solid rgba(200,151,58,.12);flex-shrink:0;}
+.cs-header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.cs-title{display:flex;align-items:center;gap:10px;}
+.cs-title-icon{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#C8973A,#8B5E1A);display:flex;align-items:center;justify-content:center;font-size:16px;}
+.cs-title-text{font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.04em;}
+.cs-title-sub{font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:1px;}
+.cs-header-actions{display:flex;align-items:center;gap:6px;}
+.cs-counter{font-size:9px;color:var(--muted);padding:2px 7px;border-radius:10px;background:rgba(200,151,58,.08);border:1px solid rgba(200,151,58,.15);}
+.cs-counter.has-items{color:var(--gold);background:rgba(200,151,58,.15);border-color:rgba(200,151,58,.35);}
+.cs-close{width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.cs-close:hover{background:rgba(200,151,58,.1);color:var(--gold);border-color:rgba(200,151,58,.3);}
 
-/* ── Model Selector ── */
-.cs-model-row {
-  display: flex; gap: 6px;
-}
-.cs-model-btn {
-  flex: 1; padding: 6px 10px; border-radius: 8px; cursor: pointer;
-  border: 1px solid rgba(200,151,58,.15);
-  background: rgba(255,255,255,.02);
-  color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .03em;
-  transition: all .2s; text-align: center;
-}
-.cs-model-btn:hover { border-color: rgba(200,151,58,.3); color: var(--text); }
-.cs-model-btn.active {
-  background: rgba(200,151,58,.12); border-color: rgba(200,151,58,.5);
-  color: var(--gold);
-}
+/* ── Model Row ── */
+.cs-model-row{display:flex;gap:5px;}
+.cs-model-btn{flex:1;padding:5px 8px;border-radius:7px;cursor:pointer;border:1px solid rgba(200,151,58,.12);background:rgba(255,255,255,.02);color:var(--muted);font-size:9px;font-weight:600;letter-spacing:.03em;transition:all .2s;text-align:center;}
+.cs-model-btn:hover{border-color:rgba(200,151,58,.3);color:var(--text);}
+.cs-model-btn.active{background:rgba(200,151,58,.12);border-color:rgba(200,151,58,.5);color:var(--gold);}
 
 /* ── Tools Bar ── */
-.cs-tools {
-  padding: 10px 14px;
-  border-bottom: 1px solid rgba(200,151,58,.08);
-  display: flex; gap: 6px; flex-wrap: wrap;
-  flex-shrink: 0;
-}
-.cs-tool-btn {
-  display: flex; align-items: center; gap: 5px;
-  padding: 6px 10px; border-radius: 20px; cursor: pointer;
-  border: 1px solid rgba(200,151,58,.2);
-  background: rgba(200,151,58,.04);
-  color: var(--text); font-size: 10px; font-weight: 600;
-  transition: all .2s; white-space: nowrap;
-}
-.cs-tool-btn:hover { background: rgba(200,151,58,.12); border-color: rgba(200,151,58,.4); color: var(--gold); }
-.cs-tool-btn:active { transform: scale(.97); }
+.cs-tools{padding:8px 12px;border-bottom:1px solid rgba(200,151,58,.08);display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0;}
+.cs-tool-btn{display:flex;align-items:center;gap:4px;padding:5px 9px;border-radius:16px;cursor:pointer;border:1px solid rgba(200,151,58,.18);background:rgba(200,151,58,.04);color:var(--text);font-size:9.5px;font-weight:600;transition:all .2s;white-space:nowrap;}
+.cs-tool-btn:hover{background:rgba(200,151,58,.12);border-color:rgba(200,151,58,.4);color:var(--gold);}
 
 /* ── Messages ── */
-.cs-messages {
-  flex: 1; overflow-y: auto; padding: 14px 16px;
-  display: flex; flex-direction: column; gap: 14px;
-  scroll-behavior: smooth;
-}
-.cs-messages::-webkit-scrollbar { width: 4px; }
-.cs-messages::-webkit-scrollbar-track { background: transparent; }
-.cs-messages::-webkit-scrollbar-thumb { background: rgba(200,151,58,.2); border-radius: 4px; }
+.cs-messages{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth;}
+.cs-messages::-webkit-scrollbar{width:3px;}
+.cs-messages::-webkit-scrollbar-thumb{background:rgba(200,151,58,.2);border-radius:4px;}
 
-.cs-msg {
-  display: flex; gap: 10px; animation: cs-fadein .3s ease;
-}
-@keyframes cs-fadein { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-.cs-msg.user { flex-direction: row-reverse; }
-.cs-msg-avatar {
-  width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center; font-size: 12px;
-  background: rgba(200,151,58,.15); border: 1px solid rgba(200,151,58,.25);
-}
-.cs-msg.user .cs-msg-avatar {
-  background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.1);
-}
-.cs-msg-bubble {
-  max-width: 88%; padding: 10px 13px; border-radius: 14px;
-  font-size: 12.5px; line-height: 1.65; color: var(--text);
-}
-.cs-msg.assistant .cs-msg-bubble {
-  background: rgba(200,151,58,.06);
-  border: 1px solid rgba(200,151,58,.12);
-  border-radius: 4px 14px 14px 14px;
-}
-.cs-msg.user .cs-msg-bubble {
-  background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 14px 4px 14px 14px;
-}
-.cs-msg-bubble h3 {
-  font-size: 11px; font-weight: 700; color: var(--gold); margin: 0 0 6px;
-  text-transform: uppercase; letter-spacing: .08em;
-}
-.cs-msg-bubble strong { color: var(--gold); }
-.cs-msg-bubble ul { margin: 6px 0; padding-left: 16px; }
-.cs-msg-bubble li { margin-bottom: 4px; }
-.cs-msg-bubble hr { border: none; border-top: 1px solid rgba(200,151,58,.2); margin: 8px 0; }
-.cs-msg-label {
-  font-size: 9px; color: var(--muted); margin-bottom: 3px;
-  text-transform: uppercase; letter-spacing: .08em;
-}
+.cs-msg{display:flex;gap:8px;animation:cs-fadein .3s ease;}
+@keyframes cs-fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.cs-msg.user{flex-direction:row-reverse;}
+.cs-msg-avatar{width:24px;height:24px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;background:rgba(200,151,58,.12);border:1px solid rgba(200,151,58,.2);}
+.cs-msg.user .cs-msg-avatar{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);}
+.cs-msg-inner{max-width:92%;}
+.cs-msg-label{font-size:9px;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.07em;}
+.cs-msg.user .cs-msg-label{text-align:right;}
+.cs-msg-bubble{padding:9px 12px;border-radius:12px;font-size:12px;line-height:1.65;color:var(--text);}
+.cs-msg.assistant .cs-msg-bubble{background:rgba(200,151,58,.05);border:1px solid rgba(200,151,58,.1);border-radius:3px 12px 12px 12px;}
+.cs-msg.user .cs-msg-bubble{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px 3px 12px 12px;}
+.cs-msg-bubble strong{color:var(--gold);}
+.cs-msg-bubble h3{font-size:10px;font-weight:700;color:var(--gold);margin:0 0 5px;text-transform:uppercase;letter-spacing:.07em;}
+.cs-msg-bubble ul{margin:4px 0;padding-left:14px;}
+.cs-msg-bubble li{margin-bottom:3px;}
 
-/* Typing indicator */
-.cs-typing { display: flex; gap: 5px; padding: 6px 0; }
-.cs-typing span {
-  width: 5px; height: 5px; border-radius: 50%;
-  background: var(--gold); opacity: .4;
-  animation: cs-bounce .9s infinite;
-}
-.cs-typing span:nth-child(2) { animation-delay: .2s; }
-.cs-typing span:nth-child(3) { animation-delay: .4s; }
-@keyframes cs-bounce { 0%,100%{transform:translateY(0);opacity:.4} 50%{transform:translateY(-5px);opacity:1} }
+/* ── Inject Preview Card ── */
+.cs-inject-card{margin-top:8px;border:1px solid rgba(200,151,58,.35);border-radius:10px;overflow:hidden;background:rgba(200,151,58,.04);}
+.cs-inject-header{padding:8px 12px;background:rgba(200,151,58,.1);border-bottom:1px solid rgba(200,151,58,.2);display:flex;align-items:center;justify-content:space-between;}
+.cs-inject-type{font-size:9px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;}
+.cs-inject-body{padding:10px 12px;font-size:11px;line-height:1.6;color:var(--text);}
+.cs-inject-name{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:3px;}
+.cs-inject-sub{font-size:10px;color:var(--muted);margin-bottom:6px;}
+.cs-inject-desc{font-size:11px;color:var(--text);opacity:.85;line-height:1.55;}
+.cs-inject-ity{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px;}
+.cs-inject-ity span{font-size:9px;padding:2px 7px;background:rgba(200,151,58,.12);border:1px solid rgba(200,151,58,.25);border-radius:10px;color:var(--gold);}
+.cs-add-btn{margin:8px 12px 10px;padding:7px 14px;border-radius:8px;border:1px solid rgba(200,151,58,.45);background:rgba(200,151,58,.1);color:var(--gold);font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;width:calc(100% - 24px);}
+.cs-add-btn:hover{background:rgba(200,151,58,.2);box-shadow:0 4px 16px rgba(200,151,58,.2);}
+.cs-add-btn.added{background:rgba(13,148,136,.1);border-color:rgba(13,148,136,.4);color:#0d9488;cursor:default;}
+
+/* ── Typing indicator ── */
+.cs-typing{display:flex;gap:4px;padding:5px 0;}
+.cs-typing span{width:5px;height:5px;border-radius:50%;background:var(--gold);opacity:.4;animation:cs-bounce .9s infinite;}
+.cs-typing span:nth-child(2){animation-delay:.2s;}
+.cs-typing span:nth-child(3){animation-delay:.4s;}
+@keyframes cs-bounce{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(-5px);opacity:1}}
 
 /* ── Input ── */
-.cs-input-row {
-  padding: 12px 14px 16px;
-  border-top: 1px solid rgba(200,151,58,.1);
-  flex-shrink: 0;
-  display: flex; gap: 8px; align-items: flex-end;
-}
-.cs-input {
-  flex: 1; padding: 10px 14px; border-radius: 12px;
-  background: rgba(255,255,255,.04); border: 1px solid rgba(200,151,58,.18);
-  color: var(--text); font-size: 13px; font-family: inherit;
-  resize: none; outline: none; line-height: 1.5; max-height: 100px; overflow-y: auto;
-  transition: border-color .2s;
-}
-.cs-input:focus { border-color: rgba(200,151,58,.45); background: rgba(200,151,58,.04); }
-.cs-input::placeholder { color: var(--muted); }
-.cs-send {
-  width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
-  background: linear-gradient(135deg, #C8973A, #8B5E1A);
-  border: none; cursor: pointer; color: #000; font-size: 15px;
-  display: flex; align-items: center; justify-content: center;
-  transition: all .2s;
-}
-.cs-send:hover { transform: scale(1.06); box-shadow: 0 4px 16px rgba(200,151,58,.4); }
-.cs-send:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+.cs-input-row{padding:10px 12px 14px;border-top:1px solid rgba(200,151,58,.1);flex-shrink:0;display:flex;gap:7px;align-items:flex-end;}
+.cs-input{flex:1;padding:9px 12px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(200,151,58,.16);color:var(--text);font-size:12px;font-family:inherit;resize:none;outline:none;line-height:1.5;max-height:90px;overflow-y:auto;transition:border-color .2s;}
+.cs-input:focus{border-color:rgba(200,151,58,.45);background:rgba(200,151,58,.04);}
+.cs-input::placeholder{color:var(--muted);}
+.cs-send{width:36px;height:36px;border-radius:9px;flex-shrink:0;background:linear-gradient(135deg,#C8973A,#8B5E1A);border:none;cursor:pointer;color:#000;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.cs-send:hover{transform:scale(1.06);box-shadow:0 4px 16px rgba(200,151,58,.4);}
+.cs-send:disabled{opacity:.4;cursor:not-allowed;transform:none;}
 
-/* ── Empty state ── */
-.cs-empty {
-  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 20px; text-align: center; gap: 8px;
-}
-.cs-empty-icon { font-size: 36px; opacity: .4; }
-.cs-empty-text { font-size: 12px; color: var(--muted); line-height: 1.6; max-width: 260px; }
+/* ── Empty State ── */
+.cs-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;gap:8px;}
+.cs-empty-icon{font-size:34px;opacity:.35;}
+.cs-empty-text{font-size:11.5px;color:var(--muted);line-height:1.65;max-width:270px;}
+
+/* ── Toast ── */
+.cs-toast{position:fixed;bottom:90px;right:28px;z-index:9500;padding:10px 16px;border-radius:10px;background:rgba(13,148,136,.9);border:1px solid rgba(13,148,136,.5);color:#fff;font-size:12px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.4);transform:translateY(10px);opacity:0;transition:all .3s;pointer-events:none;display:flex;align-items:center;gap:8px;}
+.cs-toast.show{transform:translateY(0);opacity:1;}
+
+/* ── AI-injected content markers ── */
+.cs-injected{border:1px solid rgba(200,151,58,.5) !important;box-shadow:0 0 20px rgba(200,151,58,.1) !important;position:relative;}
+.cs-injected::before{content:'✦ Clarksdale Intelligence';position:absolute;top:-1px;right:12px;font-size:8px;font-weight:700;letter-spacing:.08em;color:#000;background:var(--gold);padding:2px 7px;border-radius:0 0 5px 5px;z-index:10;}
+.cs-injected .cs-remove-btn{position:absolute;top:8px;left:10px;width:18px;height:18px;border-radius:4px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:11;transition:all .2s;padding:0;}
+.cs-injected .cs-remove-btn:hover{background:rgba(185,28,28,.7);color:#fff;border-color:rgba(185,28,28,.5);}
 </style>
 
-<!-- Toggle Button -->
+<!-- ── Toast ── -->
+<div class="cs-toast" id="cs-toast"></div>
+
+<!-- ── Toggle Button ── -->
 <button id="cs-intel-toggle" onclick="csTogglePanel()">
   <span class="toggle-dot"></span>
   Clarksdale Intelligence
+  <span class="cs-counter" id="cs-toggle-counter">0 added</span>
 </button>
 
-<!-- Chat Panel -->
+<!-- ── Chat Panel ── -->
 <div id="cs-intel-panel">
-  <!-- Header -->
   <div class="cs-header">
     <div class="cs-header-top">
       <div class="cs-title">
         <div class="cs-title-icon">🎸</div>
         <div>
           <div class="cs-title-text">Clarksdale Intelligence</div>
-          <div class="cs-title-sub">Content · Audience · Strategy</div>
+          <div class="cs-title-sub">Ideate · Generate · Write to Series</div>
         </div>
       </div>
-      <button class="cs-close" onclick="csTogglePanel()">✕</button>
+      <div class="cs-header-actions">
+        <span class="cs-counter" id="cs-panel-counter">0 added</span>
+        <button class="cs-close" onclick="csTogglePanel()">✕</button>
+      </div>
     </div>
-    <!-- Model selector -->
     <div class="cs-model-row">
-      <button class="cs-model-btn active" data-model="flash" onclick="csSetModel(this,'flash')">⚡ Gemini Flash</button>
-      <button class="cs-model-btn" data-model="pro" onclick="csSetModel(this,'pro')">🔬 Gemini Pro</button>
-      <button class="cs-model-btn" data-model="iam" onclick="csSetModel(this,'iam')">◈ IAM Awareness</button>
+      <button class="cs-model-btn active" data-model="flash" onclick="csSetModel(this,'flash')">⚡ Flash</button>
+      <button class="cs-model-btn" data-model="pro" onclick="csSetModel(this,'pro')">🔬 Pro</button>
+      <button class="cs-model-btn" data-model="iam" onclick="csSetModel(this,'iam')">◈ IAM</button>
     </div>
   </div>
 
-  <!-- Tool Presets -->
   <div class="cs-tools">
+    <button class="cs-tool-btn" onclick="csTool('character')">🎭 New Character</button>
+    <button class="cs-tool-btn" onclick="csTool('spark')">⚡ New Spark</button>
+    <button class="cs-tool-btn" onclick="csTool('scene')">🎬 New Scene</button>
+    <button class="cs-tool-btn" onclick="csTool('theme')">🌊 New Theme</button>
     <button class="cs-tool-btn" onclick="csTool('audience')">🎯 Audience</button>
-    <button class="cs-tool-btn" onclick="csTool('trends')">📈 Trends</button>
-    <button class="cs-tool-btn" onclick="csTool('scene')">🎬 Scene Ideas</button>
-    <button class="cs-tool-btn" onclick="csTool('character')">🎭 Character</button>
     <button class="cs-tool-btn" onclick="csTool('platform')">🌐 Platform</button>
-    <button class="cs-tool-btn" onclick="csTool('suno')">🎵 Suno Prompt</button>
+    <button class="cs-tool-btn" onclick="csTool('suno')">🎵 Suno</button>
   </div>
 
-  <!-- Messages -->
   <div class="cs-messages" id="cs-messages">
     <div class="cs-empty" id="cs-empty">
       <div class="cs-empty-icon">🎸</div>
-      <div class="cs-empty-text">Ask anything about the Clarksdale Series — ideate content, find your audience, develop characters, or craft platform strategy.</div>
+      <div class="cs-empty-text">Ask anything about the Clarksdale Series — or use the tools above to generate new characters, sparks, scenes, and themes that will be added directly to the Series.</div>
     </div>
   </div>
 
-  <!-- Input -->
   <div class="cs-input-row">
-    <textarea class="cs-input" id="cs-input" rows="1" placeholder="Ask about content, audiences, characters..."
+    <textarea class="cs-input" id="cs-input" rows="1"
+      placeholder="Create a new character, write a spark, add a scene..."
       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();csSend()}"
-      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,90)+'px'"></textarea>
     <button class="cs-send" id="cs-send-btn" onclick="csSend()">↑</button>
   </div>
 </div>
 
 <script>
 (function(){
-  const GEMINI_PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
-  const IAM_MCP      = 'https://iam-mcp-api-dev-328246068140.us-central1.run.app/mcp';
+  const GEMINI  = 'https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+  const FAL     = 'https://awareness-proxy-328246068140.us-central1.run.app/fal/generate-sync';
+  const IAM_MCP = 'https://iam-mcp-api-dev-328246068140.us-central1.run.app/mcp';
 
-  // ── Clarksdale world context ──
-  const SYSTEM_CONTEXT = `You are Clarksdale Intelligence — a specialized creative advisor embedded in The Clarksdale Series, an 8-era digital world exploring the Mississippi Delta as the origin point of American music and cultural identity.
+  /* ── World context for the AI ── */
+  const CTX = `You are Clarksdale Intelligence — a creative AI embedded in The Clarksdale Series.
 
-THE CLARKSDALE SERIES:
-- Spans 300 million years: geological formation → Indigenous civilization → Trail of Tears → Reconstruction → Great Migration → Civil Rights
-- 4 Eras: Mound Time (pre-1540), The Nations (1540-1830), The Removal (1830-1865), The Delta (1865-present)
-- 32 characters across 8 lineages: Fire/Blues, River/Sacred, Weaver/Art, Power/Politics, Birth/Healing, Voice/Song, Earth/Land, Eye/Vision
-- Core thesis: "The blues is a container" — like Grandmother Spider's clay pot, the church, the juke joint — every era passes grief, joy, and memory forward through vessels
-- Philosophy: The Trinity Graph (Social + Knowledge + Generative) reveals how cultural DNA replicates across time. Convergence of suffering, beauty, and land creates irreplaceable music.
-- Deep Time arc: 300M BCE sediment → Chickasaw mound cities → French/Spanish contact → Chickasaw Cession → Reconstruction sharecropping → Robert Johnson's crossroads → Chicago exodus → Civil Rights
+THE CLARKSDALE SERIES is a 300-million-year digital world exploring the Mississippi Delta as the origin of American music.
+- 4 Eras: Mound Time (pre-1540) · The Nations (1540-1830) · The Removal (1830-1865) · The Delta (1865-present)
+- 8 Lineages: Fire/Blues · River/Sacred · Weaver/Art · Power/Politics · Birth/Healing · Voice/Song · Earth/Land · Eye/Vision
+- 32 named characters (8 historical, 24 archetype). Historical: Robert Johnson, Bessie Smith, Muddy Waters, Son House, Sister Rosetta Tharpe. Local archetypes: Clara Mae Watkins (Healer), Leroy "Dice" Washington (Trickster), Rev. Elijah Cross (Divided Soul)
+- Core thesis: "The blues is a container" — grief, joy, and memory pass forward through vessels (clay pot → church → juke joint → electric guitar)
+- Deep Time: 300M BCE clay → Chickasaw mound cities → Trail of Tears → sharecropping → Great Migration → Civil Rights
+- 6 Director Styles: Archivist (Lomax) · Poet (Malick) · Witness (Parks) · Oracle (Haynes) · Griot · Dreamer (Morrison)
 
-KEY CREATIVE ASSETS:
-- 7 narrative arc videos (AI-generated cinematic): Crossroads, Migration, Church, Juke Joint, Plantation, Chicago, Return
-- 32 fully developed characters with artifacts, voices, literary medium, literacy level
-- 6 Director Styles: Archivist (Alan Lomax's field recording energy), Poet (Terrence Malick's landscape reverence), Witness (Gordon Parks's documentary truth), Oracle (Todd Haynes's layered symbolism), Griot (African oral tradition urgency), Dreamer (Toni Morrison/John Singleton's mythic realism)
-- NotebookLM podcast notebook for Deep Dive audio content
-- Suno music generation in production
-- Grandmother Spider origin performance: 7-act Choctaw story of fire theft → clay pot as first container → "The blues is a container"
+WHEN GENERATING CONTENT FOR THE SERIES, use this exact JSON format wrapped in markers:
+[INJECT:character]
+{
+  "name": "Full Name",
+  "title": "The Archetype",
+  "era": "Date range · Role · Location",
+  "lineage": "Fire|River|Weaver|Power|Birth|Voice|Earth|Eye",
+  "ity1": {"label": "ITY-WORD", "value": 0.97},
+  "ity2": {"label": "ITY-WORD", "value": 0.95},
+  "ity3": {"label": "ITY-WORD", "value": 0.93},
+  "desc": "2-3 sentence description. Evocative. Specific. Historical. No clichés.",
+  "visual": "Portrait prompt for Fal/Flux: [specific visual description of person, era-accurate clothing, setting, lighting, photography style]"
+}
+[/INJECT]
 
-AUDIENCE LANDSCAPE:
-- Blues music community: deep listeners on Spotify, YouTube, SiriusXM Bluesville
-- African American cultural heritage: family historians, HBCUs, church networks
-- Documentary/visual essay audience: Ken Burns fans, Questlove Supreme listeners, Criterion Collection subscribers
-- Digital humanities / AI-in-culture: researchers, curators, museum tech teams
-- Mississippi/Southern cultural tourism: Clarksdale Blues Trail visitors, Oxford American readers
-- Music educators, Americana community, songwriter/producer community
-- Film/TV music supervisors, streaming platforms seeking original IP
+[INJECT:spark]
+{
+  "char1": "Name One",
+  "char2": "Name Two",
+  "type1": "Tension Type",
+  "type2": "Tension Type",
+  "title": "The Moment Title",
+  "score": 0.88,
+  "body": "Vivid scene-setting paragraph. 3-5 sentences. Specific sensory detail. Historical accuracy. The writing should feel like Toni Morrison describing a crossroads moment."
+}
+[/INJECT]
 
-Your role: Help ideate content, identify and develop audiences, deepen character narratives, design visual experiences, craft platform strategy, write distribution copy, and develop the Clarksdale Series into a fully realized cultural artifact.
+[INJECT:scene]
+{
+  "act": "ACT VIII",
+  "rune": "ᛃ",
+  "ity": "ITY-WORD",
+  "name": "The Scene Title",
+  "desc": "2-3 sentence description of what happens in this act. Specific. Grounded in the Delta world."
+}
+[/INJECT]
 
-Be specific, evocative, and grounded in the actual historical/cultural context of the Delta. Avoid generic marketing language. Think like a museum curator who also understands algorithms.`;
+[INJECT:theme]
+{
+  "title": "Theme Title",
+  "era": "Mound Time|The Nations|The Removal|The Delta|All Eras",
+  "ity": "ITY-WORD",
+  "body": "3-5 sentence thematic essay on this aspect of the Clarksdale world. Specific historical or cultural insight. How it connects to the blues-as-container thesis.",
+  "connection": "One sentence on how this theme connects to a living cultural tradition today."
+}
+[/INJECT]
 
-  const TOOL_PROMPTS = {
-    audience: `Research and map the full audience universe for the Clarksdale Series. Think in concentric circles:
-1. CORE audience (blues obsessives, Delta historians, African American cultural heritage): where do they live online? Which subreddits, newsletters, podcasts, YouTube channels, Instagram accounts?
-2. ADJACENT audience (documentary lovers, Americana fans, Southern lit readers): who bridges into them?
-3. EMERGING audience (AI art/culture watchers, digital humanities researchers): what's the hook?
-4. PLATFORM-SPECIFIC breakdown: what format works on TikTok vs Instagram vs YouTube vs Substack vs Twitter?
-Be specific with community names, account handles where possible, estimated reach, and why this content would resonate.`,
+RULES:
+- Always generate valid JSON inside the markers
+- -ity words for scores: use actual -ity words (Vitality, Authenticity, Complexity, Tenacity, Luminosity, Sovereignty, Intensity, Connectivity, Spirituality, Dignity, Resilience, Memory, Serenity, Gravity, Fury, etc.)
+- Characters must feel like real people from the Delta, not archetypes
+- Visual prompts: be specific (e.g. "elderly Black woman in 1890s field dress, Coahoma County cotton field, golden hour light, Gordon Parks documentary style, 35mm film, dignified")
+- After the inject block, write a brief creative note explaining your choices`;
 
-    trends: `Identify the 5-7 strongest cultural trends that the Clarksdale Series is positioned to intersect with RIGHT NOW (early 2026). For each trend:
-- What's driving it
-- How the Clarksdale Series speaks to it specifically
-- Which platform/format captures it best
-- The risk of missing the window
-Consider: AI-generated culture credibility debates, blues/roots music resurgence, African American history reckoning, oral tradition + podcast renaissance, visual essay format growth, indigenous history reclamation, "slow content" vs. algorithm content.`,
+  /* ── Tool prompts ── */
+  const TOOLS = {
+    character: `Create a new original character for the Clarksdale Series. Choose an era and lineage we haven't fully explored yet. This character should carry something essential that the existing 32 don't. Generate a complete character using the [INJECT:character] format, then explain your creative decisions.`,
 
-    scene: `Ideate 6 new visual scenes or video moments for the Clarksdale Series that haven't been created yet. Each should:
-- Be set in a specific historical moment and location
-- Feature a named character from the existing 32 (or a new one)
-- Have a visceral sensory anchor (sound, smell, light quality)
-- Carry symbolic weight that connects to the blues-as-container thesis
-- Be achievable as a 4-8 second AI video or a single iconic image
-Think cinematically. The Delta is specific: heat haze, clay soil, cotton fields, tin roofs, the smell of the river. Make it feel like it happened.`,
+    spark: `Create a new spark — a collision between two characters in the Clarksdale Series. The tension should reveal something about the Delta that hasn't been shown yet. Could be historical figures, local archetypes, or one of each. Use [INJECT:spark] format, then explain why this meeting matters.`,
 
-    character: `Deep dive on the most dramatically compelling character arc in the Clarksdale Series. Choose the character who carries the most weight across eras — who inherits the most, sacrifices the most, and passes forward something essential.
-Build out:
-1. Their full biographical arc (what made them, what broke them, what they built)
-2. The specific artifact they carry and what it means across generations
-3. Three key scenes in their life that would work as video vignettes
-4. How their lineage connects to a living tradition today
-5. The performance/voice direction — how do they speak, what do they withhold?`,
+    scene: `Add a new scene to the 7-Act Story Arc. This should be an 8th act, or an alternate reading of an existing act. It should connect directly to the blues-as-container thesis and reveal something in the Delta story that the existing 7 acts don't reach. Use [INJECT:scene] format.`,
 
-    platform: `Design a platform-by-platform distribution strategy for the Clarksdale Series across its first 90 days. For each platform:
-- Content format and cadence
-- Audience acquisition strategy
-- What unique angle the Clarksdale Series owns on that platform that nobody else does
-- Key metrics to watch
-Platforms to address: Instagram/Reels, TikTok, YouTube (long-form + Shorts), Twitter/X, Substack/newsletter, Spotify (podcast/playlist), Apple Music, physical/in-person (blues clubs, museums, universities).
-Include the sequencing: what launches when, and why.`,
+    theme: `Surface a hidden theme in the Clarksdale world — something that runs beneath the surface of the Delta story that hasn't been named yet. This could be about land, labor, water, silence, translation, inheritance, or resistance. Use [INJECT:theme] format.`,
 
-    suno: `Generate 4 Suno AI music prompts for the Clarksdale Series. Each prompt should:
-- Target a specific era (Mound Time / Nations / Removal / Delta)
-- Reference specific instrumentation that would exist in that era
-- Capture the emotional register of that chapter
-- Include Suno-specific style tags (BPM, mood, instrumentation)
-Format each as a ready-to-use Suno prompt that could be pasted directly.
-Remember: no real artist names. Use style descriptors (pre-war Delta blues, field holler, gospel shout, country blues fingerpicking, etc.)`
+    audience: `Identify the 5 most important audiences for the Clarksdale Series right now (early 2026). For each: where they live online, what specifically about this project would hook them, and what format/platform reaches them best. Be specific — names of accounts, communities, platforms, and why the Delta thesis resonates with each group.`,
+
+    platform: `Design a 90-day platform launch sequence for the Clarksdale Series. What goes where, when, and why. Format: Instagram, TikTok, YouTube (long-form + Shorts), Substack, Twitter/X, Spotify (podcast). Include what makes the Clarksdale Series uniquely ownable on each platform that no other project can claim.`,
+
+    suno: `Generate 3 ready-to-use Suno v5 prompts for the Clarksdale Series. Each should target a different era (Mound Time, Removal, Delta) with historically accurate instrumentation, emotional register, and Suno style tags. No real artist names. Output as numbered prompts, each on a clear line, ready to paste.`
   };
 
-  // ── State ──
-  window._csModel = 'flash';
-  window._csMsgs  = [];
-  window._csLoading = false;
-  window._csOpen = false;
+  /* ── State ── */
+  let _model = 'flash', _msgs = [], _loading = false, _open = false, _injected = [];
 
+  /* ── Init: restore from localStorage ── */
+  function init() {
+    try {
+      const saved = JSON.parse(localStorage.getItem('cs_injections') || '[]');
+      saved.forEach(item => { if (item.added) applyInjection(item, true); });
+      _injected = saved;
+      updateCounter();
+    } catch(e) {}
+  }
+
+  /* ── Public API ── */
   window.csTogglePanel = function() {
-    window._csOpen = !window._csOpen;
-    document.getElementById('cs-intel-panel').classList.toggle('open', window._csOpen);
+    _open = !_open;
+    document.getElementById('cs-intel-panel').classList.toggle('open', _open);
   };
-
   window.csSetModel = function(btn, model) {
     document.querySelectorAll('.cs-model-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    window._csModel = model;
+    _model = model;
   };
-
-  window.csTool = function(toolId) {
-    const prompt = TOOL_PROMPTS[toolId];
-    if (!prompt) return;
-    document.getElementById('cs-input').value = '';
-    csAppendMsg('user', prompt.split('\n')[0] + '...');
-    csCallModel(prompt);
+  window.csTool = function(id) {
+    if (!TOOLS[id]) return;
+    appendMsg('user', TOOLS[id].split('\n')[0]);
+    callModel(TOOLS[id]);
   };
-
   window.csSend = function() {
     const inp = document.getElementById('cs-input');
     const text = inp.value.trim();
-    if (!text || window._csLoading) return;
+    if (!text || _loading) return;
     inp.value = ''; inp.style.height = 'auto';
-    csAppendMsg('user', text);
-    csCallModel(text);
+    appendMsg('user', text);
+    callModel(text);
+  };
+  window.csAddToSeries = function(btnEl, injectId) {
+    const item = _injected.find(i => i.id === injectId);
+    if (!item || item.added) return;
+    item.added = true;
+    applyInjection(item, false);
+    saveInjections();
+    updateCounter();
+    btnEl.textContent = '✓ Added to Series';
+    btnEl.classList.add('added');
+    btnEl.disabled = true;
+    showToast('✦ Added to the Clarksdale Series');
+  };
+  window.csRemoveInjection = function(id) {
+    const el = document.getElementById('cs-inj-' + id);
+    if (el) el.remove();
+    const item = _injected.find(i => i.id === id);
+    if (item) item.added = false;
+    saveInjections();
+    updateCounter();
+    showToast('Removed from Series');
   };
 
-  function csAppendMsg(role, content) {
-    // Hide empty state
+  /* ── Injection rendering ── */
+  function applyInjection(item, silent) {
+    const id = item.id;
+    if (document.getElementById('cs-inj-' + id)) return; // already present
+    switch(item.type) {
+      case 'character': renderCharacter(item.data, id); break;
+      case 'spark':     renderSpark(item.data, id); break;
+      case 'scene':     renderScene(item.data, id); break;
+      case 'theme':     renderTheme(item.data, id); break;
+    }
+    if (!silent) {
+      // Scroll to injected element
+      setTimeout(() => {
+        const el = document.getElementById('cs-inj-' + id);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 400);
+    }
+  }
+
+  function renderCharacter(d, id) {
+    const grid = document.querySelector('#characters .chars-grid');
+    if (!grid) return;
+    const card = document.createElement('div');
+    card.className = 'char-card cs-injected';
+    card.id = 'cs-inj-' + id;
+    card.innerHTML = `
+      <button class="cs-remove-btn" onclick="csRemoveInjection('${id}')" title="Remove">×</button>
+      <div class="char-img" style="height:140px;background:linear-gradient(135deg,rgba(200,151,58,.15),rgba(200,151,58,.05));display:flex;align-items:center;justify-content:center;font-size:48px;border-bottom:1px solid rgba(200,151,58,.2);" data-visual="${(d.visual||'').replace(/"/g,'&quot;')}" id="cs-charimg-${id}">
+        <span style="opacity:.3">🎸</span>
+      </div>
+      <div class="char-body">
+        <span class="char-arch">${esc(d.title||'')}</span>
+        <div class="char-name">${esc(d.name||'')}</div>
+        <div class="char-era">${esc(d.era||'')}</div>
+        ${d.ity1?`<div class="ity-bar-row"><div class="ity-bar-lbl"><span>${esc(d.ity1.label)}</span><span>${d.ity1.value}</span></div><div class="ity-track"><div class="ity-fill" style="width:${Math.round(d.ity1.value*100)}%"></div></div></div>`:''}
+        ${d.ity2?`<div class="ity-bar-row"><div class="ity-bar-lbl"><span>${esc(d.ity2.label)}</span><span>${d.ity2.value}</span></div><div class="ity-track"><div class="ity-fill" style="width:${Math.round(d.ity2.value*100)}%"></div></div></div>`:''}
+        ${d.ity3?`<div class="ity-bar-row"><div class="ity-bar-lbl"><span>${esc(d.ity3.label)}</span><span>${d.ity3.value}</span></div><div class="ity-track"><div class="ity-fill" style="width:${Math.round(d.ity3.value*100)}%"></div></div></div>`:''}
+        <p class="char-desc">${esc(d.desc||'')}</p>
+        <div class="char-id">✦ AI Generated · ${esc(d.lineage||'')} Lineage</div>
+        ${d.visual?`<button onclick="csGenPortrait('${id}')" style="margin-top:8px;width:100%;padding:6px;border-radius:6px;background:rgba(200,151,58,.1);border:1px solid rgba(200,151,58,.25);color:var(--gold);font-size:10px;cursor:pointer;font-weight:600;" id="cs-portbtn-${id}">✦ Generate Portrait</button>`:''}
+      </div>`;
+    grid.appendChild(card);
+  }
+
+  function renderSpark(d, id) {
+    const grid = document.querySelector('#sparks .sparks-grid');
+    if (!grid) return;
+    const card = document.createElement('div');
+    card.className = 'spark-card cs-injected';
+    card.id = 'cs-inj-' + id;
+    card.innerHTML = `
+      <button class="cs-remove-btn" onclick="csRemoveInjection('${id}')" title="Remove">×</button>
+      <div class="spark-portraits">
+        <div style="width:44px;height:44px;border-radius:50%;background:rgba(200,151,58,.15);border:2px solid rgba(200,151,58,.3);display:flex;align-items:center;justify-content:center;font-size:18px;">🎸</div>
+        <div class="spark-bolt">⚡</div>
+        <div style="width:44px;height:44px;border-radius:50%;background:rgba(200,151,58,.15);border:2px solid rgba(200,151,58,.3);display:flex;align-items:center;justify-content:center;font-size:18px;">🎵</div>
+        <div style="margin-left:12px">
+          <div class="spark-type-tags">
+            <span class="spark-type">${esc(d.type1||'')}</span>
+            <span class="spark-type">${esc(d.type2||'')}</span>
+          </div>
+          <div class="spark-chars" style="font-size:12px;color:var(--text);font-weight:600">${esc(d.char1||'')} × ${esc(d.char2||'')}</div>
+        </div>
+      </div>
+      <div class="spark-meta">
+        <div class="spark-title">${esc(d.title||'')}</div>
+        <div class="convergence-row"><div class="conv-num">${d.score||'—'}</div><div class="conv-lbl">convergence score<br><small style="color:var(--border)">ai-generated</small></div></div>
+        <blockquote class="spark-quote">${esc(d.body||'')}</blockquote>
+      </div>`;
+    grid.appendChild(card);
+  }
+
+  function renderScene(d, id) {
+    const grid = document.querySelector('#narrative .acts-grid');
+    if (!grid) return;
+    const card = document.createElement('div');
+    card.className = 'act-card cs-injected';
+    card.id = 'cs-inj-' + id;
+    card.innerHTML = `
+      <button class="cs-remove-btn" onclick="csRemoveInjection('${id}')" title="Remove">×</button>
+      <div class="act-num">${esc(d.act||'NEW')}</div>
+      <div class="act-rune">${d.rune||'✦'}</div>
+      <div class="act-ity">${esc(d.ity||'')}</div>
+      <div class="act-name">${esc(d.name||'')}</div>
+      <div class="act-desc">${esc(d.desc||'')}</div>`;
+    grid.appendChild(card);
+  }
+
+  function renderTheme(d, id) {
+    // Inject into world section or create a contributions block
+    let target = document.querySelector('#world .container');
+    if (!target) target = document.querySelector('#characters .container');
+    if (!target) return;
+    let contribs = document.getElementById('cs-themes-block');
+    if (!contribs) {
+      contribs = document.createElement('div');
+      contribs.id = 'cs-themes-block';
+      contribs.style.cssText = 'margin-top:48px;';
+      contribs.innerHTML = '<div class="section-eyebrow" style="margin-bottom:16px;">✦ Intelligence Contributions — Themes</div><div id="cs-themes-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;"></div>';
+      target.appendChild(contribs);
+    }
+    const themeGrid = document.getElementById('cs-themes-grid');
+    const card = document.createElement('div');
+    card.className = 'cs-injected';
+    card.id = 'cs-inj-' + id;
+    card.style.cssText = 'background:var(--card);border-radius:12px;padding:20px;position:relative;';
+    card.innerHTML = `
+      <button class="cs-remove-btn" onclick="csRemoveInjection('${id}')" title="Remove">×</button>
+      <div style="font-size:9px;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">${esc(d.era||'')} · ${esc(d.ity||'')}</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:10px;">${esc(d.title||'')}</div>
+      <p style="font-size:12px;color:var(--muted);line-height:1.7;">${esc(d.body||'')}</p>
+      ${d.connection?`<p style="font-size:11px;color:var(--gold);margin-top:10px;padding-top:10px;border-top:1px solid rgba(200,151,58,.15);font-style:italic;">${esc(d.connection)}</p>`:''}`;
+    themeGrid.appendChild(card);
+  }
+
+  /* ── Portrait generation ── */
+  window.csGenPortrait = async function(id) {
+    const btn = document.getElementById('cs-portbtn-' + id);
+    const imgEl = document.getElementById('cs-charimg-' + id);
+    if (!btn || !imgEl) return;
+    const visual = imgEl.dataset.visual;
+    if (!visual) return;
+    btn.textContent = '⌛ Generating...'; btn.disabled = true;
+    try {
+      const res = await fetch(FAL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'fal-ai/flux/schnell',
+          prompt: visual + ', photorealistic, historical documentary style, high quality',
+          image_size: 'portrait_4_3',
+          num_images: 1,
+          num_inference_steps: 8
+        })
+      });
+      const data = await res.json();
+      const url = data?.images?.[0]?.url;
+      if (url) {
+        imgEl.style.cssText = 'height:220px;overflow:hidden;';
+        imgEl.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">`;
+        btn.textContent = '✓ Portrait Generated'; btn.style.color = '#0d9488';
+        // Update stored data
+        const item = _injected.find(i => i.id === id);
+        if (item) { item.data.portrait = url; saveInjections(); }
+      } else throw new Error('No image returned');
+    } catch(e) {
+      btn.textContent = '✕ Failed — retry'; btn.disabled = false;
+      btn.style.color = '#dc2626';
+    }
+  };
+
+  /* ── Chat core ── */
+  function appendMsg(role, content) {
     const empty = document.getElementById('cs-empty');
     if (empty) empty.style.display = 'none';
-
     const msgs = document.getElementById('cs-messages');
     const div = document.createElement('div');
     div.className = `cs-msg ${role}`;
     const isUser = role === 'user';
     div.innerHTML = `
       <div class="cs-msg-avatar">${isUser ? '👤' : '🎸'}</div>
-      <div>
-        <div class="cs-msg-label">${isUser ? 'You' : csModelLabel()}</div>
-        <div class="cs-msg-bubble">${csFormatMd(content)}</div>
+      <div class="cs-msg-inner">
+        <div class="cs-msg-label">${isUser ? 'You' : modelLabel()}</div>
+        <div class="cs-msg-bubble">${fmtMd(content)}</div>
       </div>`;
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
-    window._csMsgs.push({ role, content });
+    _msgs.push({ role, content });
     return div;
   }
 
-  function csModelLabel() {
-    const labels = { flash:'⚡ Gemini Flash', pro:'🔬 Gemini Pro', iam:'◈ IAM Awareness' };
-    return labels[window._csModel] || 'AI';
-  }
-
-  function csShowTyping() {
+  function showTyping() {
     const empty = document.getElementById('cs-empty');
     if (empty) empty.style.display = 'none';
     const msgs = document.getElementById('cs-messages');
     const div = document.createElement('div');
-    div.className = 'cs-msg assistant'; div.id = 'cs-typing-indicator';
-    div.innerHTML = `<div class="cs-msg-avatar">🎸</div><div><div class="cs-msg-label">${csModelLabel()}</div><div class="cs-msg-bubble"><div class="cs-typing"><span></span><span></span><span></span></div></div></div>`;
+    div.className = 'cs-msg assistant'; div.id = 'cs-typing';
+    div.innerHTML = `<div class="cs-msg-avatar">🎸</div><div class="cs-msg-inner"><div class="cs-msg-label">${modelLabel()}</div><div class="cs-msg-bubble"><div class="cs-typing"><span></span><span></span><span></span></div></div></div>`;
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
     return div;
   }
 
-  async function csCallModel(userPrompt) {
-    if (window._csLoading) return;
-    window._csLoading = true;
+  async function callModel(userPrompt) {
+    if (_loading) return;
+    _loading = true;
     document.getElementById('cs-send-btn').disabled = true;
-
-    const typing = csShowTyping();
-
+    const typing = showTyping();
     try {
-      let result = '';
-      const model = window._csModel;
-
-      if (model === 'iam') {
-        result = await csCallIAM(userPrompt);
+      let raw = '';
+      if (_model === 'iam') {
+        raw = await callIAM(userPrompt);
       } else {
-        result = await csCallGemini(userPrompt, model);
+        raw = await callGemini(userPrompt, _model);
       }
-
       typing.remove();
-      csAppendMsg('assistant', result);
+      // Parse inject blocks
+      const { clean, injectables } = parseInjectables(raw);
+      // Show clean text
+      if (clean.trim()) appendMsg('assistant', clean);
+      // Show inject cards
+      injectables.forEach(item => showInjectCard(item));
     } catch(e) {
       typing.remove();
-      csAppendMsg('assistant', `⚠️ Error: ${e.message}. Try switching models or rephrasing.`);
+      appendMsg('assistant', `⚠ ${e.message}`);
     }
-
-    window._csLoading = false;
+    _loading = false;
     document.getElementById('cs-send-btn').disabled = false;
   }
 
-  async function csCallGemini(userPrompt, model) {
+  async function callGemini(prompt, model) {
     const modelId = model === 'pro' ? 'gemini-1.5-pro' : 'gemini-2.0-flash';
-    const history = window._csMsgs.slice(-6); // Last 3 exchanges
-    const contextParts = history.map(m =>
-      `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content.slice(0,400)}`
-    ).join('\n');
-
-    const fullPrompt = `${SYSTEM_CONTEXT}\n\n${contextParts ? 'Recent conversation:\n' + contextParts + '\n\n' : ''}User: ${userPrompt}`;
-
-    const res = await fetch(GEMINI_PROXY, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const history = _msgs.slice(-6).map(m => `${m.role==='user'?'User':'Assistant'}: ${m.content.slice(0,400)}`).join('\n');
+    const full = `${CTX}\n\n${history?'Recent:\n'+history+'\n\n':''}User: ${prompt}`;
+    const res = await fetch(GEMINI, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: modelId,
-        contents: [{ parts: [{ text: fullPrompt }] }],
-        generationConfig: { temperature: 0.85, maxOutputTokens: 1200 }
+        contents: [{ parts: [{ text: full }] }],
+        generationConfig: { temperature: 0.88, maxOutputTokens: 1800 }
       })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error?.message || `HTTP ${res.status}`);
-    return data?.candidates?.[0]?.content?.parts?.[0]?.text || JSON.stringify(data);
+    const d = await res.json();
+    if (!res.ok) throw new Error(d?.error?.message || `HTTP ${res.status}`);
+    return d?.candidates?.[0]?.content?.parts?.[0]?.text || '';
   }
 
-  async function csCallIAM(userPrompt) {
-    // Use awareness_rune with Insight + Human runes for rich contextual analysis
+  async function callIAM(prompt) {
     const res = await fetch(IAM_MCP, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({
         jsonrpc: '2.0', method: 'tools/call', id: Date.now(),
-        params: {
-          name: 'awareness_rune',
-          arguments: {
-            rune: 'Insight',
-            content: `${SYSTEM_CONTEXT.slice(0,600)}\n\nQuery: ${userPrompt}`,
-            secondary_runes: ['Human', 'Convergence']
-          }
-        }
+        params: { name: 'awareness_rune', arguments: { rune: 'Insight', content: CTX.slice(0,600) + '\n\nQuery: ' + prompt, secondary_runes: ['Human', 'Convergence'] } }
       })
     });
-    const data = await res.json();
-    if (data.error) throw new Error(JSON.stringify(data.error));
-    const content = data?.result?.content;
-    const rawText = Array.isArray(content)
-      ? content.map(c => c.type === 'text' ? c.text : JSON.stringify(c)).join('\n')
-      : JSON.stringify(data?.result);
-    // Prepend with Gemini for readable synthesis
-    return await csCallGemini(
-      `Based on this Trinity Graph / IAM analysis:\n\n${rawText.slice(0,1200)}\n\nProvide a clear, actionable response to: ${userPrompt}`,
-      'flash'
-    );
+    const d = await res.json();
+    const raw = Array.isArray(d?.result?.content) ? d.result.content.map(c=>c.type==='text'?c.text:JSON.stringify(c)).join('\n') : JSON.stringify(d?.result||{});
+    return await callGemini(`Based on this IAM analysis:\n\n${raw.slice(0,1000)}\n\nNow respond to: ${prompt}`, 'flash');
   }
 
-  function csFormatMd(text) {
-    return text
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  /* ── Parser ── */
+  function parseInjectables(text) {
+    const injectables = [];
+    const clean = text.replace(/\[INJECT:(\w+)\]([\s\S]*?)\[\/INJECT\]/g, (_, type, jsonStr) => {
+      try {
+        const data = JSON.parse(jsonStr.trim());
+        injectables.push({ id: uid(), type, data });
+      } catch(e) {
+        // Try to extract partial data
+        try {
+          const partial = jsonStr.trim().replace(/,\s*$/, '').replace(/^\s*\{/, '{');
+          const data = JSON.parse(partial + (partial.endsWith('}') ? '' : '}'));
+          injectables.push({ id: uid(), type, data });
+        } catch(e2) {
+          injectables.push({ id: uid(), type, data: { raw: jsonStr.trim() }, parseError: true });
+        }
+      }
+      return ''; // Remove from clean text
+    }).trim();
+    return { clean, injectables };
+  }
+
+  /* ── Inject card in chat ── */
+  function showInjectCard(item) {
+    const empty = document.getElementById('cs-empty');
+    if (empty) empty.style.display = 'none';
+    const msgs = document.getElementById('cs-messages');
+    const div = document.createElement('div');
+    div.className = 'cs-msg assistant';
+    const preview = buildPreview(item);
+    const btnId = 'cs-addbtn-' + item.id;
+    div.innerHTML = `
+      <div class="cs-msg-avatar">✦</div>
+      <div class="cs-msg-inner" style="max-width:95%">
+        <div class="cs-msg-label">New ${item.type} · Ready to add</div>
+        <div class="cs-inject-card">
+          <div class="cs-inject-header">
+            <span class="cs-inject-type">✦ ${item.type.toUpperCase()}</span>
+            <span style="font-size:9px;color:var(--muted)">click to add to series →</span>
+          </div>
+          <div class="cs-inject-body">${preview}</div>
+          <button class="cs-add-btn" id="${btnId}" onclick="csAddToSeries(this,'${item.id}')">✦ Add to Clarksdale Series</button>
+        </div>
+      </div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    // Store in pending list
+    _injected.push({ ...item, added: false });
+    saveInjections();
+  }
+
+  function buildPreview(item) {
+    const d = item.data;
+    if (item.parseError) return `<div style="color:#dc2626;font-size:11px;">Parse error — raw: ${esc(d.raw||'').slice(0,200)}</div>`;
+    switch(item.type) {
+      case 'character':
+        return `<div class="cs-inject-name">${esc(d.name||'?')} <span style="font-size:10px;font-weight:400;color:var(--muted)">— ${esc(d.title||'')}</span></div>
+                <div class="cs-inject-sub">${esc(d.era||'')} · ${esc(d.lineage||'')} Lineage</div>
+                <div class="cs-inject-desc">${esc(d.desc||'')}</div>
+                <div class="cs-inject-ity">${[d.ity1,d.ity2,d.ity3].filter(Boolean).map(x=>`<span>${esc(x.label)} ${x.value}</span>`).join('')}</div>`;
+      case 'spark':
+        return `<div class="cs-inject-name">${esc(d.char1||'?')} × ${esc(d.char2||'?')}</div>
+                <div class="cs-inject-sub">${esc(d.title||'')} · Convergence ${d.score||'—'}</div>
+                <div class="cs-inject-desc">${esc(d.body||'').slice(0,200)}${(d.body||'').length>200?'…':''}</div>`;
+      case 'scene':
+        return `<div class="cs-inject-name">${esc(d.act||'')} — ${esc(d.name||'')}</div>
+                <div class="cs-inject-sub">${d.rune||'✦'} ${esc(d.ity||'')}</div>
+                <div class="cs-inject-desc">${esc(d.desc||'')}</div>`;
+      case 'theme':
+        return `<div class="cs-inject-name">${esc(d.title||'?')}</div>
+                <div class="cs-inject-sub">${esc(d.era||'')} · ${esc(d.ity||'')}</div>
+                <div class="cs-inject-desc">${esc(d.body||'').slice(0,200)}${(d.body||'').length>200?'…':''}</div>`;
+      default:
+        return `<pre style="font-size:10px;overflow:auto;max-height:100px">${esc(JSON.stringify(d,null,2))}</pre>`;
+    }
+  }
+
+  /* ── Utils ── */
+  function modelLabel() {
+    return { flash:'⚡ Gemini Flash', pro:'🔬 Gemini Pro', iam:'◈ IAM Awareness' }[_model] || 'AI';
+  }
+  function updateCounter() {
+    const count = _injected.filter(i => i.added).length;
+    const label = `${count} added`;
+    const el1 = document.getElementById('cs-panel-counter');
+    const el2 = document.getElementById('cs-toggle-counter');
+    [el1, el2].forEach(el => {
+      if (!el) return;
+      el.textContent = label;
+      el.classList.toggle('has-items', count > 0);
+    });
+  }
+  function saveInjections() {
+    try { localStorage.setItem('cs_injections', JSON.stringify(_injected)); } catch(e) {}
+  }
+  function showToast(msg) {
+    const t = document.getElementById('cs-toast');
+    if (!t) return;
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtMd(t) {
+    return esc(t)
       .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
       .replace(/\*(.+?)\*/g,'<em>$1</em>')
       .replace(/^#{1,3}\s(.+)$/gm,'<h3>$1</h3>')
       .replace(/^[-•]\s(.+)$/gm,'<li>$1</li>')
-      .replace(/(<li>[\s\S]*<\/li>)/, '<ul>$1</ul>')
-      .replace(/---/g,'<hr/>')
       .replace(/\n\n/g,'</p><p>')
       .replace(/\n/g,'<br/>');
   }
 
+  init();
 })();
 </script>
 
