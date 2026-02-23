@@ -262,10 +262,14 @@ async function api(path, opts={}) {
 
 // ── Load places ───────────────────────────────────────────────────────────
 async function loadPlaces() {
+  const wid = state.world?.id || localStorage.getItem('trinity_active_world_id');
+  if (!wid) {
+    document.getElementById('place-grid').innerHTML = `<div class="empty"><div class="empty-icon">🌍</div><div class="empty-text">No world active.<br><small>Open World Builder and set an active world to load its places.</small></div></div>`;
+    document.getElementById('place-count').textContent = 'No world';
+    return;
+  }
   try {
-    const wid = state.world?.id || localStorage.getItem('trinity_active_world_id');
-    const url = wid ? `/places?world_id=${wid}` : '/places';
-    const data = await api(url);
+    const data = await api(`/places?world_id=${wid}`);
     state.places = data || [];
     state.filtered = [...state.places];
     renderGrid();
