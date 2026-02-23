@@ -2751,6 +2751,20 @@ sections.forEach(s => sectionObs.observe(s));
 .cs-rune-btn{padding:4px 8px;border-radius:6px;cursor:pointer;border:1px solid rgba(139,92,246,.2);background:rgba(139,92,246,.04);color:rgba(167,139,250,.6);font-size:9px;font-weight:600;transition:all .2s;white-space:nowrap;}
 .cs-rune-btn:hover{border-color:rgba(139,92,246,.4);color:#a78bfa;background:rgba(139,92,246,.1);}
 .cs-rune-btn.active{background:rgba(139,92,246,.18);border-color:rgba(139,92,246,.6);color:#c4b5fd;}
+/* ── Modify button ── */
+.cs-modify-btn{margin-top:7px;width:100%;padding:6px;border-radius:6px;
+  background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2);
+  color:#a78bfa;font-size:10px;cursor:pointer;font-weight:600;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  transition:all .2s;font-family:inherit;}
+.cs-modify-btn:hover{background:rgba(139,92,246,.15);border-color:rgba(139,92,246,.45);color:#c4b5fd;}
+/* Edit mode highlight on card */
+.cs-edit-active{box-shadow:0 0 0 2px #a78bfa, 0 0 20px rgba(139,92,246,.3) !important;transition:box-shadow .3s !important;}
+/* Apply button variant */
+.cs-add-btn.apply-mode{background:rgba(139,92,246,.12);border-color:rgba(139,92,246,.5);color:#c4b5fd;}
+.cs-add-btn.apply-mode:hover{background:rgba(139,92,246,.25);box-shadow:0 4px 16px rgba(139,92,246,.3);}
+/* Sync flash */
+@keyframes cs-sync-flash{0%{box-shadow:0 0 0 2px #C8973A,0 0 40px rgba(200,151,58,.5)}100%{box-shadow:none}}
 
 /* ── Tools Bar ── */
 .cs-tools{padding:8px 12px;border-bottom:1px solid rgba(200,151,58,.08);display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0;}
@@ -3080,6 +3094,7 @@ Apply: For the Clarksdale Series as a studio IP — what specific audience, plat
 
   /* ── State ── */
   let _model = 'flash', _rune = 'Insight', _msgs = [], _loading = false, _open = false, _injected = [];
+  let _editingCardId = null; // null = new content; string = editing existing card id
 
   /* ── Init: restore from localStorage ── */
   function init() {
@@ -3088,15 +3103,198 @@ Apply: For the Clarksdale Series as a studio IP — what specific audience, plat
       saved.forEach(item => { if (item.added) applyInjection(item, true); });
       _injected = saved;
       updateCounter();
-      // Update all site stats to reflect any restored injections
+      // Update all site stats
       setTimeout(() => { updateCharacterCounts(); updateSectionCounts(); }, 200);
     } catch(e) {}
+
+    // Add Modify buttons to all original (non-AI) character cards
+    setTimeout(() => {
+      document.querySelectorAll('.char-card:not(.cs-injected)').forEach(card => {
+        if (card.querySelector('.cs-modify-btn')) return; // already has one
+        const btn = document.createElement('button');
+        btn.className = 'cs-modify-btn';
+        btn.innerHTML = '↺ Modify via Intelligence';
+        btn.onclick = () => csModifyCharacter(card);
+        const charBody = card.querySelector('.char-body');
+        if (charBody) charBody.appendChild(btn);
+      });
+    }, 300);
   }
 
   /* ── Public API ── */
   window.csTogglePanel = function() {
     _open = !_open;
     document.getElementById('cs-intel-panel').classList.toggle('open', _open);
+    // Cancel edit mode when panel is closed
+    if (!_open && _editingCardId) csExitEditMode();
+  };
+
+  /* ── Extract character data from any card's DOM ── */
+  function csExtractCharacterFromCard(card) {
+    const name  = card.querySelector('.char-name')?.textContent?.trim() || '';
+    const title = card.querySelector('.char-arch')?.textContent?.trim() || '';
+    const era   = card.querySelector('.char-era')?.textContent?.trim() || '';
+    const desc  = card.querySelector('.char-desc')?.textContent?.trim() || '';
+    const imgEl = card.querySelector('img.char-img');
+    const portrait = imgEl?.src && !imgEl.src.endsWith('undefined') ? imgEl.src : '';
+    const visual = card.querySelector('[data-visual]')?.dataset?.visual || '';
+    // Extract lineage from char-id if available
+    const idEl = card.querySelector('.char-id');
+    const lineageMatch = (idEl?.textContent || '').match(/(\w+) Lineage/);
+    const lineage = lineageMatch ? lineageMatch[1] : '';
+    // Extract ity scores
+    const ityRows = [...card.querySelectorAll('.ity-bar-row')];
+    const itys = ityRows.map(row => ({
+      label: row.querySelector('.ity-bar-lbl span:first-child')?.textContent?.trim() || '',
+      value: parseFloat(row.querySelector('.ity-bar-lbl span:last-child')?.textContent) || 0
+    }));
+    return { name, title, era, desc, portrait, visual, lineage,
+      ity1: itys[0], ity2: itys[1], ity3: itys[2] };
+  }
+
+  /* ── Open Intelligence in edit mode for a specific card ── */
+  window.csModifyCharacter = function(cardEl) {
+    // Assign stable ID to the card if it doesn't have one
+    if (!cardEl.id) {
+      const name = cardEl.querySelector('.char-name')?.textContent || 'char';
+      cardEl.id = 'orig-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/,'');
+    }
+    _editingCardId = cardEl.id;
+
+    // Highlight the card being edited
+    document.querySelectorAll('.cs-edit-active').forEach(el => el.classList.remove('cs-edit-active'));
+    cardEl.classList.add('cs-edit-active');
+
+    // Open Intelligence panel
+    if (!_open) { _open = true; document.getElementById('cs-intel-panel').classList.add('open'); }
+
+    // Switch to Forge rune (best for content creation)
+    _rune = 'Forge';
+    document.querySelectorAll('.cs-rune-btn').forEach(b => b.classList.toggle('active', b.dataset.rune === 'Forge'));
+    if (_model !== 'iam') {
+      _model = 'iam';
+      document.querySelectorAll('.cs-model-btn').forEach(b => b.classList.toggle('active', b.dataset.model === 'iam'));
+      const runeRow = document.getElementById('cs-rune-row');
+      if (runeRow) runeRow.style.display = 'block';
+    }
+
+    // Extract current character data for context
+    const d = csExtractCharacterFromCard(cardEl);
+    const ityText = [d.ity1, d.ity2, d.ity3].filter(Boolean)
+      .map(i => `${i.label} ${i.value}`).join(', ');
+
+    // Clear prior messages
+    const msgs = document.getElementById('cs-messages');
+    msgs.innerHTML = '';
+    _msgs = [];
+    const empty = document.getElementById('cs-empty');
+    if (empty) empty.style.display = 'none';
+
+    // Load character context into chat
+    appendMsg('assistant',
+      `↺ **Edit Mode: ${d.name}** — The ${d.title}\n\n` +
+      `**Current profile:**\n${d.era}\n\n"${d.desc.slice(0,200)}${d.desc.length>200?'…':''}"\n\n` +
+      `**-ity scores:** ${ityText || 'none'}\n\n` +
+      `Tell me what to change — description, -ity values, era, title, visual style, or anything else. ` +
+      `I'll generate the update and you can apply it directly to ${d.name}'s card.`
+    );
+  };
+
+  /* ── Exit edit mode ── */
+  function csExitEditMode() {
+    if (_editingCardId) {
+      const card = document.getElementById(_editingCardId);
+      if (card) card.classList.remove('cs-edit-active');
+    }
+    _editingCardId = null;
+  }
+
+  /* ── Sync updated character data back to an existing card ── */
+  function csSyncCardDOM(card, d) {
+    const name  = card.querySelector('.char-name');
+    const title = card.querySelector('.char-arch');
+    const era   = card.querySelector('.char-era');
+    const desc  = card.querySelector('.char-desc');
+    if (name  && d.name)  name.textContent  = d.name;
+    if (title && d.title) title.textContent = d.title;
+    if (era   && d.era)   era.textContent   = d.era;
+    if (desc  && d.desc)  desc.textContent  = d.desc;
+
+    // Update ity bars
+    const rows = card.querySelectorAll('.ity-bar-row');
+    const newItys = [d.ity1, d.ity2, d.ity3].filter(Boolean);
+    rows.forEach((row, i) => {
+      if (!newItys[i]) return;
+      const lbl  = row.querySelector('.ity-bar-lbl span:first-child');
+      const val  = row.querySelector('.ity-bar-lbl span:last-child');
+      const fill = row.querySelector('.ity-fill');
+      if (lbl)  lbl.textContent  = newItys[i].label;
+      if (val)  val.textContent  = String(newItys[i].value);
+      if (fill) fill.style.width = Math.round(newItys[i].value * 100) + '%';
+    });
+
+    // Update portrait if newly generated
+    if (d.portrait) {
+      const imgEl = card.querySelector('img.char-img');
+      if (imgEl) {
+        imgEl.src = d.portrait;
+      } else {
+        // Replace the placeholder div with an img
+        const placeholder = card.querySelector('[id^="cs-charimg-"]');
+        if (placeholder) {
+          const img = document.createElement('img');
+          img.className = 'char-img'; img.src = d.portrait;
+          img.style.cssText = 'width:100%;height:220px;object-fit:cover;display:block;';
+          placeholder.replaceWith(img);
+        }
+      }
+    }
+
+    // Sync flash animation
+    card.style.animation = 'cs-sync-flash 1.5s ease forwards';
+    setTimeout(() => { card.style.animation = ''; }, 1600);
+  }
+
+  /* ── Apply updated character data to an existing card ── */
+  window.csApplyCharacterUpdate = function(btnEl, injectId, targetCardId) {
+    const inject = _injected.find(i => i.id === injectId);
+    if (!inject) return;
+    const d = inject.data;
+
+    const card = document.getElementById(targetCardId);
+    if (!card) { showToast('Card not found — try refreshing'); return; }
+
+    // Sync all DOM elements
+    csSyncCardDOM(card, d);
+
+    // If it's an AI-generated card, update stored data in _injected
+    const aiInjectId = targetCardId.replace('cs-inj-', '');
+    const storedItem = _injected.find(i => i.id === aiInjectId && i.type === 'character');
+    if (storedItem) {
+      storedItem.data = { ...storedItem.data, ...d };
+    }
+
+    // Remove the pending inject entry
+    _injected = _injected.filter(i => i.id !== injectId);
+    saveInjections();
+    updateCharacterCounts();
+
+    // Exit edit mode
+    csExitEditMode();
+
+    // Update button UI
+    btnEl.textContent = '✓ Changes Applied';
+    btnEl.classList.remove('apply-mode');
+    btnEl.classList.add('added');
+    btnEl.disabled = true;
+
+    showToast(`✦ ${d.name || 'Character'} updated`);
+
+    // Close panel after short delay
+    setTimeout(() => {
+      _open = false;
+      document.getElementById('cs-intel-panel').classList.remove('open');
+    }, 900);
   };
   window.csSetModel = function(btn, model) {
     document.querySelectorAll('.cs-model-btn').forEach(b => b.classList.remove('active'));
@@ -3215,7 +3413,8 @@ Apply: For the Clarksdale Series as a studio IP — what specific audience, plat
         ${d.ity3?`<div class="ity-bar-row"><div class="ity-bar-lbl"><span>${esc(d.ity3.label)}</span><span>${d.ity3.value}</span></div><div class="ity-track"><div class="ity-fill" style="width:${Math.round(d.ity3.value*100)}%"></div></div></div>`:''}
         <p class="char-desc">${esc(d.desc||'')}</p>
         <div class="char-id">✦ AI Generated · ${esc(d.lineage||'')} Lineage</div>
-        ${d.visual&&!savedPortrait?`<button onclick="csGenPortrait('${id}')" style="margin-top:8px;width:100%;padding:6px;border-radius:6px;background:rgba(200,151,58,.1);border:1px solid rgba(200,151,58,.25);color:var(--gold);font-size:10px;cursor:pointer;font-weight:600;" id="cs-portbtn-${id}">✦ Generate Portrait</button>`:''}
+        ${d.visual&&!savedPortrait?`<button onclick="csGenPortrait('cs-inj-${id}')" style="margin-top:8px;width:100%;padding:6px;border-radius:6px;background:rgba(200,151,58,.1);border:1px solid rgba(200,151,58,.25);color:var(--gold);font-size:10px;cursor:pointer;font-weight:600;" id="cs-portbtn-${id}">✦ Generate Portrait</button>`:''}
+        <button class="cs-modify-btn" onclick="csModifyCharacter(document.getElementById('cs-inj-${id}'))">↺ Modify via Intelligence</button>
       </div>`;
     grid.appendChild(card);
 
@@ -3304,13 +3503,17 @@ Apply: For the Clarksdale Series as a studio IP — what specific audience, plat
   }
 
   /* ── Portrait generation ── */
-  window.csGenPortrait = async function(id) {
-    const btn = document.getElementById('cs-portbtn-' + id);
-    const imgEl = document.getElementById('cs-charimg-' + id);
-    if (!btn || !imgEl) return;
-    const visual = imgEl.dataset.visual;
+  window.csGenPortrait = async function(cardId) {
+    // cardId can be the full card element ID (e.g. "cs-inj-abc123" or "orig-robert-johnson")
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    const btn  = card.querySelector('[id^="cs-portbtn-"]') || card.querySelector('.cs-portrait-btn');
+    const imgEl = card.querySelector('[id^="cs-charimg-"]') || card.querySelector('[data-visual]');
+    if (!imgEl) return;
+    const visual = imgEl.dataset?.visual || card.querySelector('[data-visual]')?.dataset?.visual;
     if (!visual) return;
-    btn.textContent = '⌛ Generating...'; btn.disabled = true;
+    if (btn) { btn.textContent = '⌛ Generating...'; btn.disabled = true; }
+
     try {
       const res = await fetch(FAL, {
         method: 'POST',
@@ -3326,16 +3529,23 @@ Apply: For the Clarksdale Series as a studio IP — what specific audience, plat
       const data = await res.json();
       const url = data?.images?.[0]?.url;
       if (url) {
-        imgEl.style.cssText = 'height:220px;overflow:hidden;';
-        imgEl.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">`;
-        btn.textContent = '✓ Portrait Generated'; btn.style.color = '#0d9488';
-        // Update stored data
-        const item = _injected.find(i => i.id === id);
+        // Replace placeholder with rendered portrait
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'height:220px;overflow:hidden;';
+        wrapper.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">`;
+        imgEl.replaceWith(wrapper);
+        if (btn) { btn.textContent = '✓ Portrait Generated'; btn.style.color = '#0d9488'; }
+
+        // Update stored data — find item by short id
+        const shortId = cardId.replace('cs-inj-', '');
+        const item = _injected.find(i => i.id === shortId && i.type === 'character');
         if (item) { item.data.portrait = url; saveInjections(); }
+
+        // Also sync via csSyncCardDOM so any existing render updates
+        if (item) csSyncCardDOM(card, { portrait: url });
       } else throw new Error('No image returned');
     } catch(e) {
-      btn.textContent = '✕ Failed — retry'; btn.disabled = false;
-      btn.style.color = '#dc2626';
+      if (btn) { btn.textContent = '✕ Failed — retry'; btn.disabled = false; btn.style.color = '#dc2626'; }
     }
   };
 
@@ -3401,7 +3611,21 @@ Apply: For the Clarksdale Series as a studio IP — what specific audience, plat
   async function callGemini(prompt, model) {
     const modelId = model === 'pro' ? 'gemini-1.5-pro' : 'gemini-2.0-flash';
     const history = _msgs.slice(-6).map(m => `${m.role==='user'?'User':'Assistant'}: ${m.content.slice(0,400)}`).join('\n');
-    const full = `${CTX}\n\n${history?'Recent:\n'+history+'\n\n':''}User: ${prompt}`;
+
+    // In edit mode, inject a specific modification instruction
+    let editCtx = '';
+    if (_editingCardId) {
+      const card = document.getElementById(_editingCardId);
+      const d = card ? csExtractCharacterFromCard(card) : null;
+      if (d) {
+        editCtx = `\n\nEDIT MODE: You are modifying the existing character "${d.name}" (${d.title}). ` +
+          `DO NOT create a new character. Generate a [INJECT:character] block that includes ALL fields ` +
+          `(name, title, era, lineage, ity1, ity2, ity3, desc, visual) — apply only the requested changes ` +
+          `and preserve everything else. The [INJECT:character] output will be synced directly to ${d.name}'s card on the page.\n`;
+      }
+    }
+
+    const full = `${CTX}${editCtx}\n\n${history?'Recent:\n'+history+'\n\n':''}User: ${prompt}`;
     const res = await fetch(GEMINI, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -3487,24 +3711,48 @@ Generative: [creative/emergent dimension]
     div.className = 'cs-msg assistant';
     const preview = buildPreview(item);
     const btnId = 'cs-addbtn-' + item.id;
+
+    // Edit mode: if we're modifying an existing card, show "Apply Changes" instead
+    const isEditMode = !!_editingCardId && item.type === 'character';
+    const targetCardId = isEditMode ? _editingCardId : null;
+    const targetName = isEditMode
+      ? (document.getElementById(_editingCardId)?.querySelector('.char-name')?.textContent || 'character')
+      : null;
+
+    const btnLabel = isEditMode
+      ? `↺ Apply Changes to ${targetName}`
+      : '✦ Add to Clarksdale Series';
+    const btnOnclick = isEditMode
+      ? `csApplyCharacterUpdate(this,'${item.id}','${targetCardId}')`
+      : `csAddToSeries(this,'${item.id}')`;
+    const btnClass = isEditMode ? 'cs-add-btn apply-mode' : 'cs-add-btn';
+    const headerHint = isEditMode
+      ? `↺ syncs to ${targetName}'s card`
+      : 'click to add to series →';
+
     div.innerHTML = `
       <div class="cs-msg-avatar">✦</div>
       <div class="cs-msg-inner" style="max-width:95%">
-        <div class="cs-msg-label">New ${item.type} · Ready to add</div>
+        <div class="cs-msg-label">${isEditMode ? `Update for ${targetName}` : `New ${item.type} · Ready to add`}</div>
         <div class="cs-inject-card">
           <div class="cs-inject-header">
-            <span class="cs-inject-type">✦ ${item.type.toUpperCase()}</span>
-            <span style="font-size:9px;color:var(--muted)">click to add to series →</span>
+            <span class="cs-inject-type">${isEditMode ? '↺ UPDATE' : `✦ ${item.type.toUpperCase()}`}</span>
+            <span style="font-size:9px;color:var(--muted)">${headerHint}</span>
           </div>
           <div class="cs-inject-body">${preview}</div>
-          <button class="cs-add-btn" id="${btnId}" onclick="csAddToSeries(this,'${item.id}')">✦ Add to Clarksdale Series</button>
+          <button class="${btnClass}" id="${btnId}" onclick="${btnOnclick}">${btnLabel}</button>
         </div>
       </div>`;
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
-    // Store in pending list
-    _injected.push({ ...item, added: false });
-    saveInjections();
+    // Store in pending list (only if not edit mode — edits don't persist as new entries)
+    if (!isEditMode) {
+      _injected.push({ ...item, added: false });
+      saveInjections();
+    } else {
+      // Temp entry so csApplyCharacterUpdate can find the data
+      _injected.push({ ...item, added: false, isUpdate: true, targetCardId });
+    }
   }
 
   function buildPreview(item) {
