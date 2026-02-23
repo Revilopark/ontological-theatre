@@ -1800,6 +1800,43 @@ async function generateSinglePortrait(charId, slotId) {
 }
 
 
+// ── DEEP LINK FROM CLARKSDALE SERIES ──────────────────────────
+// Handle ?era=mound|nations|removal|delta from Clarksdale Series deep time links
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const eraParam = params.get('era');
+  if(eraParam) {
+    // Map Clarksdale param names to OT era IDs
+    const eraMap = {'mound':'mound','nations':'nations','removal':'removal','delta':'delta','deltaBlues':'delta'};
+    const targetEra = eraMap[eraParam];
+    if(targetEra) {
+      // Wait for DOM then select that era
+      window.addEventListener('load', () => {
+        // Show the perform tab
+        showTab('perform');
+        // Select the matching era card if era selection UI is showing
+        const eraCards = document.querySelectorAll('.era-card');
+        eraCards.forEach(card => {
+          if(card.dataset.era === targetEra) {
+            card.click();
+            card.scrollIntoView({behavior:'smooth',block:'center'});
+            // Visual pulse
+            card.style.boxShadow = '0 0 0 3px rgba(139,92,246,.5)';
+            setTimeout(()=>card.style.boxShadow='',2000);
+          }
+        });
+        // Also try era buttons/pills
+        document.querySelectorAll('[data-era]').forEach(el => {
+          if(el.dataset.era === targetEra) {
+            el.click();
+          }
+        });
+      });
+    }
+  }
+})();
+
+
 renderEras();
 </script>
 </body>
