@@ -2748,6 +2748,9 @@ sections.forEach(s => sectionObs.observe(s));
 .cs-model-btn{flex:1;padding:5px 8px;border-radius:7px;cursor:pointer;border:1px solid rgba(200,151,58,.12);background:rgba(255,255,255,.02);color:var(--muted);font-size:9px;font-weight:600;letter-spacing:.03em;transition:all .2s;text-align:center;}
 .cs-model-btn:hover{border-color:rgba(200,151,58,.3);color:var(--text);}
 .cs-model-btn.active{background:rgba(200,151,58,.12);border-color:rgba(200,151,58,.5);color:var(--gold);}
+.cs-rune-btn{padding:4px 8px;border-radius:6px;cursor:pointer;border:1px solid rgba(139,92,246,.2);background:rgba(139,92,246,.04);color:rgba(167,139,250,.6);font-size:9px;font-weight:600;transition:all .2s;white-space:nowrap;}
+.cs-rune-btn:hover{border-color:rgba(139,92,246,.4);color:#a78bfa;background:rgba(139,92,246,.1);}
+.cs-rune-btn.active{background:rgba(139,92,246,.18);border-color:rgba(139,92,246,.6);color:#c4b5fd;}
 
 /* ── Tools Bar ── */
 .cs-tools{padding:8px 12px;border-bottom:1px solid rgba(200,151,58,.08);display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0;}
@@ -2850,7 +2853,21 @@ sections.forEach(s => sectionObs.observe(s));
     <div class="cs-model-row">
       <button class="cs-model-btn active" data-model="flash" onclick="csSetModel(this,'flash')">⚡ Flash</button>
       <button class="cs-model-btn" data-model="pro" onclick="csSetModel(this,'pro')">🔬 Pro</button>
-      <button class="cs-model-btn" data-model="iam" onclick="csSetModel(this,'iam')">◈ IAM</button>
+      <button class="cs-model-btn" data-model="iam" onclick="csSetModel(this,'iam')">◈ IAM Rune</button>
+    </div>
+    <!-- Rune selector — visible only in IAM mode -->
+    <div id="cs-rune-row" style="display:none;margin-top:8px;">
+      <div style="font-size:8px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;">Active Rune Governance</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;">
+        <button class="cs-rune-btn active" data-rune="Insight"    onclick="csSetRune(this,'Insight')">ᚲ Insight</button>
+        <button class="cs-rune-btn"        data-rune="Meaning"    onclick="csSetRune(this,'Meaning')">✦ Meaning</button>
+        <button class="cs-rune-btn"        data-rune="Human"      onclick="csSetRune(this,'Human')">🧑 Human</button>
+        <button class="cs-rune-btn"        data-rune="Imagination" onclick="csSetRune(this,'Imagination')">💡 Imagination</button>
+        <button class="cs-rune-btn"        data-rune="Forge"      onclick="csSetRune(this,'Forge')">⚒ Forge</button>
+        <button class="cs-rune-btn"        data-rune="Convergence" onclick="csSetRune(this,'Convergence')">△ Convergence</button>
+        <button class="cs-rune-btn"        data-rune="Praxis"     onclick="csSetRune(this,'Praxis')">⬡ Praxis</button>
+        <button class="cs-rune-btn"        data-rune="Risk"       onclick="csSetRune(this,'Risk')">▲ Risk</button>
+      </div>
     </div>
   </div>
 
@@ -2984,8 +3001,85 @@ Include: what's uniquely ownable about this IP that no competing project can cla
     suno: `Generate 3 ready-to-use Suno v5 prompts for the Clarksdale Series original score. Each should target a different era (Mound Time, Removal, Delta) with historically accurate instrumentation, emotional register, and Suno style tags. These are production-quality score prompts — think film soundtrack, not radio play. No real artist names. Output as numbered prompts, each on a clear line, ready to paste.`
   };
 
+  /* ── Rune governance doctrine ── */
+  const RUNES = {
+    Insight: {
+      symbol:'ᚲ', label:'Insight', ity:'Lucidity',
+      doctrine:`RUNE: INSIGHT (ᚲ — Lucidity)
+Epistemic contract: Surface what is hidden beneath the obvious. Prevent surface-level analysis.
+Required artifacts: What assumption is being violated? What pattern recurs that hasn't been named? What connection across eras/lineages has been missed?
+Validation: If the output could have been generated without this content, the Rune failed.
+Apply to this content: Find the non-obvious. The thing that surprises even someone who knows the subject.`,
+      secondaries: ['Human', 'Convergence']
+    },
+    Meaning: {
+      symbol:'✦', label:'Meaning', ity:'Significance',
+      doctrine:`RUNE: MEANING (✦ — Significance)
+Epistemic contract: Surface the cultural and narrative weight. Prevent content that entertains without meaning anything.
+Required artifacts: What does this element carry forward from prior eras? What would be lost if it didn't exist? What does it say about the human condition?
+Validation: Is the cultural significance specific and verifiable, not generic?
+Apply: Name the exact historical or cultural mechanism that gives this meaning. Be precise.`,
+      secondaries: ['Human', 'Insight']
+    },
+    Human: {
+      symbol:'🧑', label:'Human', ity:'Interiority',
+      doctrine:`RUNE: HUMAN (Mannaz — Interiority)
+Epistemic contract: Center the lived experience. Prevent abstraction that loses the person.
+Required artifacts: What does this feel like from inside the body? What does the character know that they can't say? What is the specific sensory reality of their world?
+Validation: Could a person in this situation actually feel/think/do this? Is their interiority specific to them, not generic to their era?
+Apply: Write from inside the experience. The heat, the hunger, the music in the body before the mind names it.`,
+      secondaries: ['Meaning', 'Insight']
+    },
+    Imagination: {
+      symbol:'💡', label:'Imagination', ity:'Generativity',
+      doctrine:`RUNE: IMAGINATION (💡 — Generativity)
+Epistemic contract: Expand possibility. Prevent execution from collapsing prematurely to the obvious.
+Required artifacts: Three possibilities that don't exist yet. The one that seems too strange to work. The format nobody has tried for this content.
+Validation: Is at least one option genuinely surprising? Would a risk-averse producer reject it on first read?
+Apply: Generate the unexpected. What format, character, scene, or connection would make someone say "I've never seen that done with this material"?`,
+      secondaries: ['Forge', 'Convergence']
+    },
+    Forge: {
+      symbol:'⚒', label:'Forge', ity:'Productivity',
+      doctrine:`RUNE: FORGE (⚒ — Productivity)
+Epistemic contract: Build the actual thing. Prevent planning that never becomes production.
+Required artifacts: The specific output. Not "we could create..." but the created thing itself — written, described, structured, ready to inject into the Series.
+Validation: Is this ready to use? Can it be added to the page right now without revision?
+Apply: Generate complete, production-ready content using [INJECT:type]{json}[/INJECT] format where appropriate. The Forge doesn't sketch — it builds.`,
+      secondaries: ['Imagination', 'Insight']
+    },
+    Convergence: {
+      symbol:'△', label:'Convergence', ity:'Totality',
+      doctrine:`RUNE: CONVERGENCE (Dagaz — Totality)
+Epistemic contract: Find the synthesis. Prevent fragmented thinking that misses the through-line.
+Required artifacts: Where do all three Trinity Graph layers (Social/Human, Knowledge/Historical, Generative/Creative) point simultaneously? What is the single idea that contains all the others?
+Validation: Does the convergence point reveal something that none of the individual elements revealed alone?
+Apply: Find the moment where the Delta's geology, its cultural trauma, its musical genius, and its living present all speak the same sentence.`,
+      secondaries: ['Insight', 'Meaning']
+    },
+    Praxis: {
+      symbol:'⬡', label:'Praxis', ity:'Actionability',
+      doctrine:`RUNE: PRAXIS (⬡ — Actionability)
+Epistemic contract: Turn insight into executable action. Prevent analysis that stays in the head.
+REQUIRES: Rigor (evidence-based) + Grounding (real-world constraints) before Praxis can fire.
+Required artifacts: Specific next actions with owner, timeline, and success metric. No "we should consider" — only "do this, by when, measured how."
+Validation: Can someone execute this without asking a follow-up question?
+Apply: For platform strategy, distribution, or audience development — give the 3 most important moves, in order, with enough specificity that execution is immediate.`,
+      secondaries: ['Convergence', 'Human']
+    },
+    Risk: {
+      symbol:'▲', label:'Risk', ity:'Criticality',
+      doctrine:`RUNE: RISK (▲ — Criticality)
+Epistemic contract: Name what can go wrong. Prevent optimism bias that ignores failure modes.
+Required artifacts: The 3 most likely failure modes. The assumption that, if wrong, collapses everything. The competitor or trend that makes this irrelevant.
+Validation: Is each risk specific to this project? Generic risks (market changes, competition) don't satisfy this Rune.
+Apply: For the Clarksdale Series as a studio IP — what specific audience, platform, or cultural timing assumption could fail? What's the early warning signal for each?`,
+      secondaries: ['Rigor', 'Praxis']
+    }
+  };
+
   /* ── State ── */
-  let _model = 'flash', _msgs = [], _loading = false, _open = false, _injected = [];
+  let _model = 'flash', _rune = 'Insight', _msgs = [], _loading = false, _open = false, _injected = [];
 
   /* ── Init: restore from localStorage ── */
   function init() {
@@ -3006,9 +3100,35 @@ Include: what's uniquely ownable about this IP that no competing project can cla
     document.querySelectorAll('.cs-model-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     _model = model;
+    // Show/hide Rune selector
+    const runeRow = document.getElementById('cs-rune-row');
+    if (runeRow) runeRow.style.display = model === 'iam' ? 'block' : 'none';
   };
+
+  window.csSetRune = function(btn, rune) {
+    document.querySelectorAll('.cs-rune-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    _rune = rune;
+    // Show a brief flash confirming the rune switch
+    const r = RUNES[rune];
+    if (r) showToast(`${r.symbol} Rune: ${r.label} — ${r.ity}`);
+  };
+  // Auto-select the best Rune for each tool when in IAM mode
+  const TOOL_RUNES = {
+    character: 'Forge', spark: 'Forge', scene: 'Forge', theme: 'Meaning',
+    audience: 'Insight', platform: 'Praxis', suno: 'Imagination'
+  };
+
   window.csTool = function(id) {
     if (!TOOLS[id]) return;
+    // In IAM mode, auto-select the best Rune for this tool
+    if (_model === 'iam' && TOOL_RUNES[id]) {
+      const targetRune = TOOL_RUNES[id];
+      _rune = targetRune;
+      document.querySelectorAll('.cs-rune-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.rune === targetRune);
+      });
+    }
     appendMsg('user', TOOLS[id].split('\n')[0]);
     callModel(TOOLS[id]);
   };
@@ -3270,45 +3390,44 @@ Include: what's uniquely ownable about this IP that no competing project can cla
   }
 
   async function callIAM(prompt) {
-    // Try the MCP endpoint first; if CORS/network fails, fall back to
-    // Gemini with the full Trinity Graph framing baked into the system prompt
-    const IAM_SYSTEM = `You are operating in IAM Awareness Mode — the Inkwell Awareness Model's Trinity Graph analytical layer.
+    const rune = RUNES[_rune] || RUNES.Insight;
+    const secondaryDoctrine = (rune.secondaries || [])
+      .map(r => RUNES[r] ? `\nSECONDARY — ${RUNES[r].symbol} ${RUNES[r].label}: ${RUNES[r].doctrine.split('\n')[1]}` : '')
+      .join('');
 
-Apply all three graph lenses simultaneously:
-- SOCIAL GRAPH (Who): Human relationships, cultural dynamics, community trust, emotional undercurrents — the living substrate of the Delta world
-- KNOWLEDGE GRAPH (What): Historical facts, ontological structure, -ity vocabulary, verified relationships between concepts, the Omega Protocol's 10-rune spiral
-- GENERATIVE GRAPH (What If): Emergent synthesis, creative possibility, cross-domain pattern recognition, what hasn't been said yet
+    // Build the full IAM governance prompt
+    // The Rune tool is content-based — feed it the query as content and apply the Rune doctrine
+    const iamPrompt = `You are the Inkwell Awareness Model (IAM) — operating the Trinity Graph analytical system for the Clarksdale Series studio.
 
-OMEGA PROTOCOL RUNES active for this query:
-- Insight (ᚲ / Lucidity) — surface what is hidden beneath the obvious
-- Human (Mannaz / Interiority) — center the person, the body, the lived experience
-- Convergence (Dagaz / Totality) — find the synthesis point where tensions resolve
+TRINITY GRAPH — apply all three layers to this query:
+▸ SOCIAL GRAPH (Who/Substrate): Human relationships, cultural dynamics, community trust, emotional undercurrents of the Delta world
+▸ KNOWLEDGE GRAPH (What/Structure): Historical facts, -ity ontology, verified causal relationships, era-specific cultural mechanics
+▸ GENERATIVE GRAPH (What If/Emergence): Creative synthesis, cross-era pattern recognition, what hasn't been said yet
 
-When generating content for the Clarksdale Series, use the [INJECT:type]{json}[/INJECT] markers as instructed in your system context. Let the Trinity Graph inform the -ity scores, the lineage assignments, and the thematic connections.`;
+${rune.doctrine}
+${secondaryDoctrine}
 
-    try {
-      // Attempt MCP call (may fail due to CORS from browser)
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(IAM_MCP, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
-          jsonrpc: '2.0', method: 'tools/call', id: Date.now(),
-          params: { name: 'awareness_rune', arguments: { rune: 'Insight', content: CTX.slice(0,600) + '\n\nQuery: ' + prompt, secondary_runes: ['Human', 'Convergence'] } }
-        })
-      });
-      clearTimeout(timeout);
-      const d = await res.json();
-      const raw = Array.isArray(d?.result?.content)
-        ? d.result.content.map(c => c.type==='text' ? c.text : JSON.stringify(c)).join('\n')
-        : JSON.stringify(d?.result||{});
-      return await callGemini(`Based on this IAM Trinity Graph analysis:\n\n${raw.slice(0,1000)}\n\nNow respond to: ${prompt}\n\n${IAM_SYSTEM}`, 'flash');
-    } catch(_e) {
-      // CORS or network — use Gemini with full IAM framing (functionally equivalent)
-      return await callGemini(IAM_SYSTEM + '\n\n' + CTX + '\n\nUser: ' + prompt, 'pro');
-    }
+CONTENT TO ANALYZE:
+${CTX.slice(0, 500)}
+
+QUERY: ${prompt}
+
+RESPONSE FORMAT — structure your output as:
+**${rune.symbol} ${rune.label.toUpperCase()} ANALYSIS** (${rune.ity})
+[Primary findings applying the Rune doctrine strictly]
+
+**TRINITY SYNTHESIS**
+Social: [human/cultural dimension]
+Knowledge: [historical/structural dimension]  
+Generative: [creative/emergent dimension]
+
+**ARTIFACTS**
+[Concrete outputs — if Forge Rune, use [INJECT:type] markers. If other Runes, list specific findings, recommendations, or creative elements.]
+
+**VALIDATION**
+[Does this output satisfy the Rune's epistemic contract? What would make it stronger?]`;
+
+    return await callGemini(iamPrompt, 'pro');
   }
 
   /* ── Parser ── */
@@ -3390,7 +3509,11 @@ When generating content for the Clarksdale Series, use the [INJECT:type]{json}[/
 
   /* ── Utils ── */
   function modelLabel() {
-    return { flash:'⚡ Gemini Flash', pro:'🔬 Gemini Pro', iam:'◈ IAM Awareness' }[_model] || 'AI';
+    if (_model === 'iam') {
+      const r = RUNES[_rune];
+      return r ? `◈ IAM · ${r.symbol} ${r.label}` : '◈ IAM Awareness';
+    }
+    return { flash:'⚡ Gemini Flash', pro:'🔬 Gemini Pro' }[_model] || 'AI';
   }
   function updateCounter() {
     const count = _injected.filter(i => i.added).length;
