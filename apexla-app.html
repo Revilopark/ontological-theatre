@@ -568,10 +568,10 @@ async function loadLeads() {
   container.innerHTML = '<div class="loading"><div class="spin"></div>Scanning permit data for ' + currentZip + '...</div>';
 
   try {
-    // Single query, proper encoding, 10s timeout
+    // Single query — do NOT use URLSearchParams (encodes $ to %24, breaks Socrata)
+    // encodeURIComponent handles the value; $where/$limit/$order stay literal in the key
     const where = `work_description like '%ROOF%' AND zip_code='${currentZip}'`;
-    const params = new URLSearchParams({ '$where': where, '$limit': '100', '$order': 'status_date DESC' });
-    const url = `${LADBS}?${params.toString()}`;
+    const url = `${LADBS}?$where=${encodeURIComponent(where)}&$limit=100&$order=status_date+DESC`;
 
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 10000);
