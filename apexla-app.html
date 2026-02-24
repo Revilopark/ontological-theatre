@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ApexLA — Roofing Intelligence Platform</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{
+  --bg:#0A0C10;--card:#12161E;--card2:#181D28;--gold:#E8A920;--gold2:#F5C84A;
+  --text:#F0EEE8;--muted:#7A8090;--teal:#4AAEBC;--green:#4CAF74;--red:#EF5360;
+  --glass:rgba(255,255,255,0.04);--gb:rgba(255,255,255,0.07);--radius:14px;
+  --border:rgba(255,255,255,0.08);--sidebar:260px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;flex-direction:column}
+
+/* TOP BAR */
+.topbar{height:56px;background:rgba(10,12,16,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:16px;flex-shrink:0;z-index:100}
+.topbar-logo{font-size:17px;font-weight:800;letter-spacing:-0.5px;margin-right:8px}
+.topbar-logo .apex{color:var(--gold)}
+.topbar-badge{background:rgba(232,169,32,0.15);border:1px solid rgba(232,169,32,0.3);color:var(--gold);font-size:10px;padding:3px 10px;border-radius:20px;font-weight:700;letter-spacing:0.5px}
+.topbar-sep{flex:1}
+.topbar-territory{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.topbar-territory select{background:var(--glass);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:8px;font-size:13px;outline:none}
+.topbar-notif{width:32px;height:32px;border-radius:8px;background:var(--glass);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;position:relative}
+.notif-dot{position:absolute;top:4px;right:4px;width:7px;height:7px;background:var(--red);border-radius:50%;border:1px solid var(--bg)}
+
+/* LAYOUT */
+.app-body{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar);background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar-section{padding:20px 16px 8px}
+.sidebar-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;padding:0 8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:all .2s;margin-bottom:2px;font-size:14px;color:var(--muted)}
+.nav-item:hover{background:var(--glass);color:var(--text)}
+.nav-item.active{background:rgba(232,169,32,0.1);color:var(--gold);font-weight:600}
+.nav-item .nav-icon{font-size:16px;width:24px;text-align:center;flex-shrink:0}
+.nav-item .nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px}
+.sidebar-stats{padding:16px;margin:8px;background:var(--glass);border:1px solid var(--border);border-radius:var(--radius)}
+.sstat{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px}
+.sstat:not(:last-child){border-bottom:1px solid var(--border)}
+.sstat-label{color:var(--muted)}
+.sstat-val{font-weight:700;color:var(--gold)}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.tab-content{display:none;flex:1;overflow-y:auto;padding:24px}
+.tab-content.active{display:flex;flex-direction:column;gap:20px}
+
+/* PANELS */
+.panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.panel-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.panel-title{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.panel-body{padding:20px}
+
+/* BUTTONS */
+.btn{padding:9px 18px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:7px}
+.btn-gold{background:var(--gold);color:#000}
+.btn-gold:hover{background:var(--gold2)}
+.btn-ghost{background:var(--glass);border:1px solid var(--border);color:var(--text)}
+.btn-ghost:hover{background:var(--gb)}
+.btn-sm{padding:6px 14px;font-size:13px}
+.btn-danger{background:rgba(239,83,96,0.15);border:1px solid rgba(239,83,96,0.3);color:var(--red)}
+
+/* INPUTS */
+.inp{background:var(--card2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:14px;padding:10px 14px;outline:none;transition:border .2s;width:100%}
+.inp:focus{border-color:rgba(232,169,32,0.5)}
+.inp::placeholder{color:var(--muted)}
+.inp-row{display:flex;gap:10px}
+.inp-group{display:flex;flex-direction:column;gap:6px;flex:1}
+.inp-label{font-size:12px;color:var(--muted);font-weight:500}
+
+/* LEAD CARDS */
+.lead-list{display:flex;flex-direction:column;gap:8px}
+.lead-card{display:grid;grid-template-columns:48px 1fr auto;gap:12px;align-items:center;padding:14px 16px;background:var(--glass);border:1px solid var(--border);border-radius:10px;transition:all .2s;cursor:pointer}
+.lead-card:hover{border-color:rgba(232,169,32,0.3);background:rgba(232,169,32,0.03)}
+.lead-card.hot{border-color:rgba(232,169,32,0.25);background:rgba(232,169,32,0.04)}
+.score-badge{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800}
+.score-high{background:rgba(232,169,32,0.2);color:var(--gold)}
+.score-med{background:rgba(74,174,188,0.15);color:var(--teal)}
+.score-low{background:var(--glass);color:var(--muted)}
+.lead-info h4{font-size:14px;font-weight:700;margin-bottom:3px}
+.lead-info .lead-meta{font-size:12px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
+.lead-info .lead-tags{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.tag{font-size:11px;padding:2px 8px;border-radius:4px}
+.tag-fire{background:rgba(239,83,96,0.15);color:var(--red)}
+.tag-old{background:rgba(232,169,32,0.15);color:var(--gold)}
+.tag-stall{background:rgba(74,174,188,0.15);color:var(--teal)}
+.tag-cool{background:rgba(76,175,80,0.15);color:var(--green)}
+.tag-owner{background:rgba(255,255,255,0.08);color:var(--muted)}
+.lead-right{text-align:right}
+.lead-val{font-size:16px;font-weight:800;color:var(--gold)}
+.lead-actions{display:flex;gap:6px;margin-top:6px}
+
+/* MAP */
+#map{height:400px;border-radius:var(--radius);overflow:hidden}
+.leaflet-container{background:#0D1018}
+
+/* ESTIMATE */
+.est-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.est-section{background:var(--glass);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.est-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px}
+.est-row:last-child{border:none}
+.est-row .label{color:var(--muted)}
+.est-row .val{font-weight:700}
+.est-total-box{background:rgba(232,169,32,0.08);border:1px solid rgba(232,169,32,0.25);border-radius:var(--radius);padding:20px;display:flex;justify-content:space-between;align-items:center}
+.est-total-label{font-size:13px;color:var(--muted);margin-bottom:4px}
+.est-total-amount{font-size:32px;font-weight:800;color:var(--gold);letter-spacing:-1px}
+.tier-tabs{display:flex;gap:8px;margin-bottom:16px}
+.tier-tab{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--glass);color:var(--muted);transition:all .2s}
+.tier-tab.active{background:rgba(232,169,32,0.15);border-color:rgba(232,169,32,0.4);color:var(--gold)}
+
+/* PIPELINE */
+.pipeline-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.pipeline-col{background:var(--glass);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.col-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
+.col-dot{width:8px;height:8px;border-radius:50%}
+.dot-open{background:var(--gold)}
+.dot-won{background:var(--green)}
+.dot-lost{background:var(--red)}
+.col-count{font-size:11px;color:var(--muted)}
+.bid-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;cursor:pointer;transition:all .2s}
+.bid-card:hover{border-color:rgba(232,169,32,0.3)}
+.bid-addr{font-size:13px;font-weight:700;margin-bottom:4px}
+.bid-meta{font-size:12px;color:var(--muted);margin-bottom:8px}
+.bid-val{font-size:17px;font-weight:800;color:var(--gold)}
+.bid-due{font-size:11px;color:var(--muted);margin-top:4px}
+.bid-due.urgent{color:var(--red)}
+
+/* PERMITS */
+.permit-list{display:flex;flex-direction:column;gap:8px}
+.permit-card{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;padding:14px 16px;background:var(--glass);border:1px solid var(--border);border-radius:10px}
+.permit-card.warn-border{border-color:rgba(232,169,32,0.35)}
+.permit-card.alert-border{border-color:rgba(239,83,96,0.35);background:rgba(239,83,96,0.03)}
+.permit-icon{font-size:20px;text-align:center}
+.permit-info h4{font-size:14px;font-weight:700;margin-bottom:2px}
+.permit-info .permit-meta{font-size:12px;color:var(--muted)}
+.status-badge{font-size:11px;padding:4px 12px;border-radius:20px;font-weight:700;white-space:nowrap}
+.sb-warn{background:rgba(232,169,32,0.15);color:var(--gold)}
+.sb-ok{background:rgba(76,175,80,0.15);color:var(--green)}
+.sb-alert{background:rgba(239,83,96,0.15);color:var(--red)}
+.sb-info{background:var(--glass);color:var(--muted)}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.stat-card .s-num{font-size:32px;font-weight:800;letter-spacing:-1px;color:var(--gold)}
+.stat-card .s-label{font-size:12px;color:var(--muted);margin-top:4px}
+.stat-card .s-change{font-size:12px;color:var(--green);margin-top:8px}
+
+/* LOADING */
+.loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:32px;color:var(--muted);font-size:14px}
+.spin{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* EMPTY */
+.empty{text-align:center;padding:48px 24px;color:var(--muted)}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty h3{font-size:16px;color:var(--text);margin-bottom:8px}
+.empty p{font-size:14px;line-height:1.6}
+
+/* TOOLTIP / MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:24px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:20px;max-width:560px;width:100%;max-height:80vh;overflow-y:auto}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.modal-body{padding:24px}
+.modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px}
+
+/* MISC */
+.flex{display:flex}
+.flex-col{display:flex;flex-direction:column}
+.items-center{align-items:center}
+.justify-between{justify-content:space-between}
+.gap-8{gap:8px}
+.gap-12{gap:12px}
+.gap-16{gap:16px}
+.mt-8{margin-top:8px}
+.mt-16{margin-top:16px}
+.text-muted{color:var(--muted)}
+.text-gold{color:var(--gold)}
+.text-sm{font-size:13px}
+.text-xs{font-size:11px}
+.font-bold{font-weight:700}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo"><span class="apex">Apex</span>LA</div>
+  <div class="topbar-badge">BETA</div>
+  <div class="topbar-sep"></div>
+  <div class="topbar-territory">
+    Territory:
+    <select id="territory-select" onchange="setTerritory(this.value)">
+      <option value="90049">Bel Air / Westwood (90049)</option>
+      <option value="90210">Beverly Hills (90210)</option>
+      <option value="91401">Van Nuys (91401)</option>
+      <option value="90028">Hollywood (90028)</option>
+      <option value="90026">Silver Lake (90026)</option>
+      <option value="90018">Mid-City (90018)</option>
+      <option value="90037">South LA (90037)</option>
+      <option value="90004">Koreatown (90004)</option>
+    </select>
+  </div>
+  <div class="topbar-notif" onclick="alert('3 permits need attention')">🔔<div class="notif-dot"></div></div>
+</div>
+
+<!-- APP BODY -->
+<div class="app-body">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-section">
+    <div class="sidebar-label">Intelligence</div>
+    <div class="nav-item active" onclick="showTab('radar')">
+      <span class="nav-icon">📡</span> Roof Radar
+      <span class="nav-badge" id="radar-badge">12</span>
+    </div>
+    <div class="nav-item" onclick="showTab('map')">
+      <span class="nav-icon">🗺</span> Territory Map
+    </div>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Operations</div>
+    <div class="nav-item" onclick="showTab('estimator')">
+      <span class="nav-icon">📋</span> Roof Estimator
+    </div>
+    <div class="nav-item" onclick="showTab('bids')">
+      <span class="nav-icon">💼</span> Bid Tracker
+      <span class="nav-badge" id="bid-badge" style="background:var(--gold);color:#000">0</span>
+    </div>
+    <div class="nav-item" onclick="showTab('permits')">
+      <span class="nav-icon">🔒</span> Permit Command
+      <span class="nav-badge" id="permit-badge">3</span>
+    </div>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Your Stats</div>
+    <div class="sidebar-stats">
+      <div class="sstat"><span class="sstat-label">Leads today</span><span class="sstat-val" id="stat-leads">—</span></div>
+      <div class="sstat"><span class="sstat-label">Open bids</span><span class="sstat-val" id="stat-bids">0</span></div>
+      <div class="sstat"><span class="sstat-label">Active permits</span><span class="sstat-val" id="stat-permits">3</span></div>
+      <div class="sstat"><span class="sstat-label">Win rate</span><span class="sstat-val">67%</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <!-- ROOF RADAR -->
+  <div class="tab-content active" id="tab-radar">
+    <div class="flex items-center justify-between">
+      <div>
+        <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px">Roof Radar</div>
+        <div class="text-muted text-sm mt-8">Today's ranked leads in your territory</div>
+      </div>
+      <div class="flex gap-8">
+        <select class="inp" style="width:auto" id="radar-filter" onchange="filterLeads()">
+          <option value="all">All leads</option>
+          <option value="fire">Fire zone</option>
+          <option value="stall">Stalled permits</option>
+          <option value="old">Overdue roofs</option>
+        </select>
+        <button class="btn btn-gold" onclick="loadLeads()">🔄 Refresh</button>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="s-num" id="r-total">—</div><div class="s-label">Leads in territory</div></div>
+      <div class="stat-card"><div class="s-num" id="r-high">—</div><div class="s-label">High urgency (80+)</div></div>
+      <div class="stat-card"><div class="s-num" id="r-value">—</div><div class="s-label">Est. pipeline value</div></div>
+      <div class="stat-card"><div class="s-num" id="r-fire">—</div><div class="s-label">Fire zone properties</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">📡 Live Lead Feed <span id="lead-zip-label" style="font-size:12px;color:var(--muted);font-weight:400"></span></div>
+        <div class="text-xs text-muted">Sorted by urgency score</div>
+      </div>
+      <div class="panel-body">
+        <div id="leads-container">
+          <div class="loading"><div class="spin"></div>Loading permit data...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TERRITORY MAP -->
+  <div class="tab-content" id="tab-map">
+    <div>
+      <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px">Territory Map</div>
+      <div class="text-muted text-sm mt-8">Live permit activity across Los Angeles</div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">🗺 LA Roofing Activity Map</div>
+        <div class="flex gap-8">
+          <span style="font-size:11px;background:rgba(232,169,32,0.15);color:var(--gold);padding:3px 10px;border-radius:4px">● Active permits</span>
+          <span style="font-size:11px;background:rgba(239,83,96,0.15);color:var(--red);padding:3px 10px;border-radius:4px">● Fire zone</span>
+          <span style="font-size:11px;background:rgba(74,174,188,0.15);color:var(--teal);padding:3px 10px;border-radius:4px">● Untapped</span>
+        </div>
+      </div>
+      <div class="panel-body" style="padding:0">
+        <div id="map"></div>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="s-num">47</div><div class="s-label">Active roofing permits in LA</div><div class="s-change">↑ 12 this week</div></div>
+      <div class="stat-card"><div class="s-num">8</div><div class="s-label">Active competitors in your zip</div></div>
+      <div class="stat-card"><div class="s-num">3</div><div class="s-label">Untapped zones detected</div><div class="s-change">↑ New this week</div></div>
+      <div class="stat-card"><div class="s-num">$2.1M</div><div class="s-label">Est. permit value on map</div></div>
+    </div>
+  </div>
+
+  <!-- ROOF ESTIMATOR -->
+  <div class="tab-content" id="tab-estimator">
+    <div>
+      <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px">Roof Estimator</div>
+      <div class="text-muted text-sm mt-8">From address to proposal in under 8 minutes</div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">🏠 Property Lookup</div></div>
+      <div class="panel-body">
+        <div class="inp-row">
+          <div class="inp-group" style="flex:3">
+            <div class="inp-label">Street Address</div>
+            <input class="inp" id="est-address" placeholder="e.g. 1842 Westwood Blvd" />
+          </div>
+          <div class="inp-group" style="flex:1">
+            <div class="inp-label">ZIP Code</div>
+            <input class="inp" id="est-zip" placeholder="90049" maxlength="5" />
+          </div>
+          <div class="inp-group" style="flex:1;justify-content:flex-end">
+            <div class="inp-label">&nbsp;</div>
+            <button class="btn btn-gold" onclick="runEstimate()">Generate Estimate</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="estimate-result" style="display:none">
+      <div class="est-grid">
+        <div class="est-section">
+          <div style="font-size:13px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:16px">PROPERTY INTEL</div>
+          <div class="est-row"><span class="label">Address</span><span class="val" id="e-address">—</span></div>
+          <div class="est-row"><span class="label">Property type</span><span class="val" id="e-type">—</span></div>
+          <div class="est-row"><span class="label">Est. roof area</span><span class="val" id="e-area">—</span></div>
+          <div class="est-row"><span class="label">Year built</span><span class="val" id="e-year">—</span></div>
+          <div class="est-row"><span class="label">Fire zone</span><span class="val" id="e-fire">—</span></div>
+          <div class="est-row"><span class="label">Title 24 Cool Roof</span><span class="val" id="e-coolroof">Required</span></div>
+          <div class="est-row"><span class="label">Permit history</span><span class="val" id="e-permits">—</span></div>
+          <div class="est-row"><span class="label">Zip comp avg</span><span class="val" id="e-comp">—</span></div>
+        </div>
+        <div class="est-section">
+          <div style="font-size:13px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:12px">ESTIMATE</div>
+          <div class="tier-tabs">
+            <div class="tier-tab active" onclick="setTier('basic',this)">Basic</div>
+            <div class="tier-tab" onclick="setTier('standard',this)">Standard</div>
+            <div class="tier-tab" onclick="setTier('premium',this)">Premium</div>
+          </div>
+          <div id="est-line-items"></div>
+          <hr class="divider">
+          <div class="est-total-box">
+            <div>
+              <div class="est-total-label" id="est-tier-label">Basic Estimate</div>
+              <div style="font-size:11px;color:var(--muted)">Includes LADBS permit fee</div>
+            </div>
+            <div class="est-total-amount" id="est-total">$0</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:16px">
+            <button class="btn btn-gold" onclick="sendProposal()">Send Proposal</button>
+            <button class="btn btn-ghost" onclick="saveToBids()">Save to Bid Tracker</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">📋 Permit History</div></div>
+        <div class="panel-body"><div id="permit-history-result" class="text-sm text-muted">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BID TRACKER -->
+  <div class="tab-content" id="tab-bids">
+    <div class="flex items-center justify-between">
+      <div>
+        <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px">Bid Tracker</div>
+        <div class="text-muted text-sm mt-8">Your full roofing pipeline</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="showAddBid()">+ Add Bid</button>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="s-num" id="b-open">0</div><div class="s-label">Open bids</div></div>
+      <div class="stat-card"><div class="s-num" id="b-won">0</div><div class="s-label">Won this month</div><div class="s-change" id="b-won-val"></div></div>
+      <div class="stat-card"><div class="s-num" id="b-rate">—</div><div class="s-label">Win rate</div></div>
+      <div class="stat-card"><div class="s-num" id="b-pipeline">$0</div><div class="s-label">Open pipeline value</div></div>
+    </div>
+    <div class="pipeline-grid">
+      <div class="pipeline-col">
+        <div class="col-header">
+          <div class="col-title"><div class="col-dot dot-open"></div>Open Bids</div>
+          <div class="col-count" id="col-open-count">0</div>
+        </div>
+        <div id="col-open"></div>
+      </div>
+      <div class="pipeline-col">
+        <div class="col-header">
+          <div class="col-title"><div class="col-dot dot-won"></div>Won</div>
+          <div class="col-count" id="col-won-count">0</div>
+        </div>
+        <div id="col-won"></div>
+      </div>
+      <div class="pipeline-col">
+        <div class="col-header">
+          <div class="col-title"><div class="col-dot dot-lost"></div>Lost</div>
+          <div class="col-count" id="col-lost-count">0</div>
+        </div>
+        <div id="col-lost"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERMIT COMMAND -->
+  <div class="tab-content" id="tab-permits">
+    <div class="flex items-center justify-between">
+      <div>
+        <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px">Permit Command</div>
+        <div class="text-muted text-sm mt-8">Track every permit. Miss nothing.</div>
+      </div>
+      <div class="flex gap-8">
+        <input class="inp" id="permit-lookup-addr" placeholder="Enter address to look up" style="width:280px">
+        <button class="btn btn-gold" onclick="lookupPermit()">Look Up</button>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="s-num" id="p-active">3</div><div class="s-label">Active permits</div></div>
+      <div class="stat-card"><div class="s-num" id="p-urgent">1</div><div class="s-label">Need attention</div></div>
+      <div class="stat-card"><div class="s-num" id="p-expiring">1</div><div class="s-label">Expiring soon</div></div>
+      <div class="stat-card"><div class="s-num" id="p-done">4</div><div class="s-label">Finaled this month</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">🔒 Active Permits</div></div>
+      <div class="panel-body">
+        <div class="permit-list" id="permit-list">
+          <div class="permit-card alert-border">
+            <div class="permit-icon">🔴</div>
+            <div class="permit-info">
+              <h4>9205 Venice Blvd</h4>
+              <div class="permit-meta">Reroof · Permit #24-10-22891 · Expires in 12 days — no inspection scheduled</div>
+            </div>
+            <div class="status-badge sb-alert">Urgent</div>
+          </div>
+          <div class="permit-card warn-border">
+            <div class="permit-icon">⚠️</div>
+            <div class="permit-info">
+              <h4>3821 Sunset Dr</h4>
+              <div class="permit-meta">Cool Roof · Permit #24-09-17443 · Inspection window opens in 3 days</div>
+            </div>
+            <div class="status-badge sb-warn">Schedule now</div>
+          </div>
+          <div class="permit-card warn-border">
+            <div class="permit-icon">🏠</div>
+            <div class="permit-info">
+              <h4>1104 Manning Ave</h4>
+              <div class="permit-meta">VHFHSZ · Class A material required · Permit #24-10-33102 · In progress</div>
+            </div>
+            <div class="status-badge sb-warn">Compliance check</div>
+          </div>
+          <div class="permit-card">
+            <div class="permit-icon">✅</div>
+            <div class="permit-info">
+              <h4>445 N Doheny Dr</h4>
+              <div class="permit-meta">Full reroof · Permit #24-08-09821 · Finaled Oct 14 · Review sent</div>
+            </div>
+            <div class="status-badge sb-ok">Complete</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="permit-lookup-result" style="display:none">
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">🔍 Permit Lookup Result</div></div>
+        <div class="panel-body"><div id="permit-lookup-content" class="text-sm"></div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /app-body -->
+
+<!-- ADD BID MODAL -->
+<div class="modal-overlay" id="add-bid-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div style="font-size:17px;font-weight:800">Add Bid</div>
+      <button class="modal-close" onclick="closeModal('add-bid-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="flex-col gap-16">
+        <div class="inp-group"><div class="inp-label">Address</div><input class="inp" id="bid-addr" placeholder="123 Sunset Blvd"></div>
+        <div class="inp-row">
+          <div class="inp-group"><div class="inp-label">Bid Amount ($)</div><input class="inp" id="bid-amount" type="number" placeholder="14500"></div>
+          <div class="inp-group"><div class="inp-label">Job Type</div>
+            <select class="inp" id="bid-type">
+              <option>SFR Reroof</option><option>Apartment Reroof</option><option>Commercial Flat</option><option>Cool Roof Upgrade</option><option>Fire Damage Repair</option><option>Tile Replacement</option>
+            </select>
+          </div>
+        </div>
+        <div class="inp-group"><div class="inp-label">Contact Name (optional)</div><input class="inp" id="bid-contact" placeholder="Homeowner name"></div>
+        <div class="inp-group"><div class="inp-label">Notes</div><textarea class="inp" id="bid-notes" placeholder="Any notes..." style="height:70px;resize:none"></textarea></div>
+        <button class="btn btn-gold" style="width:100%" onclick="addBid()">Add to Pipeline</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app';
+const LADBS = 'https://data.lacity.org/resource/d9aa-v8bm.json';
+
+let currentZip = '90049';
+let allLeads = [];
+let _map = null;
+
+// ── NAV ──
+function showTab(id) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (id === 'map') initMap();
+  if (id === 'radar') loadLeads();
+  if (id === 'bids') renderBids();
+}
+
+function setTerritory(zip) {
+  currentZip = zip;
+  loadLeads();
+}
+
+// ── ROOF RADAR ──
+async function loadLeads() {
+  const container = document.getElementById('leads-container');
+  document.getElementById('lead-zip-label').textContent = `— ${currentZip}`;
+  container.innerHTML = '<div class="loading"><div class="spin"></div>Scanning permit data for ' + currentZip + '...</div>';
+
+  try {
+    const queries = [
+      `work_description like '%25REROOF%25'`,
+      `work_description like '%25COOL ROOF%25'`,
+      `work_description like '%25ROOF REPLACEMENT%25'`,
+      `work_description like '%25REPLACE ROOF%25'`,
+      `work_description like '%25ROOF REPAIR%25'`
+    ];
+    
+    let allPermits = [];
+    for (const q of queries) {
+      const url = `${LADBS}?$where=${encodeURIComponent(q + ` AND zip_code='${currentZip}'`)}&$limit=50&$order=issue_date DESC`;
+      const r = await fetch(url);
+      if (r.ok) {
+        const data = await r.json();
+        allPermits = allPermits.concat(data);
+      }
+    }
+
+    // Deduplicate and build leads
+    const seen = new Set();
+    const leads = [];
+    for (const p of allPermits) {
+      const key = p.pcis_permit || (p.address_start + p.street_name);
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const addr = `${p.address_start || ''} ${p.street_name || ''} ${p.street_suffix || ''}`.trim();
+      const val = parseInt(p.valuation || '0');
+      const issueDate = p.issue_date ? new Date(p.issue_date) : null;
+      const statusDate = p.status_date ? new Date(p.status_date) : null;
+      const isStalled = p.latest_status === 'Issued' && statusDate && (Date.now() - statusDate) > 7776e6;
+      const isExpired = p.latest_status === 'Permit Expired';
+      const isFireDesc = /fire/i.test(p.work_description || '');
+      const isCoolRoof = /cool roof/i.test(p.work_description || '');
+      const isOwnerBuilder = (p.contractors_business_name || '').includes('OWNER');
+
+      // Score
+      let score = 50;
+      if (isExpired || isStalled) score += 20;
+      if (isFireDesc) score += 15;
+      if (val > 20000) score += 10;
+      if (isOwnerBuilder) score += 10;
+      if (isCoolRoof) score -= 5;
+      score = Math.min(99, Math.max(30, score));
+
+      // Estimate value
+      const estLow = Math.max(val * 0.8, 8000);
+      const estHigh = Math.max(val * 1.3, 25000);
+      const estStr = val > 0 ? `~$${Math.round(val/1000)*1000 >= 1000 ? (Math.round(val/1000))+'K' : val}` : `~$${Math.floor(Math.random()*20+10)}K`;
+
+      const tags = [];
+      if (isFireDesc) tags.push({cls:'tag-fire', text:'🔥 Fire dmg'});
+      if (isStalled) tags.push({cls:'tag-stall', text:'⏸ Stalled '+Math.round((Date.now()-statusDate)/86400000)+'d'});
+      if (isExpired) tags.push({cls:'tag-old', text:'⚠ Expired'});
+      if (isCoolRoof) tags.push({cls:'tag-cool', text:'❄ Cool roof'});
+      if (isOwnerBuilder) tags.push({cls:'tag-owner', text:'👤 Owner-builder'});
+
+      leads.push({ addr, score, estStr, val, tags, p, isFireDesc, isStalled });
+    }
+
+    leads.sort((a,b) => b.score - a.score);
+    allLeads = leads;
+
+    // Update stats
+    const highCount = leads.filter(l => l.score >= 80).length;
+    const totalVal = leads.reduce((s,l) => s + (l.val||15000), 0);
+    const fireCount = leads.filter(l => l.isFireDesc).length;
+    document.getElementById('r-total').textContent = leads.length;
+    document.getElementById('r-high').textContent = highCount;
+    document.getElementById('r-value').textContent = '$' + (totalVal/1000).toFixed(0) + 'K';
+    document.getElementById('r-fire').textContent = fireCount;
+    document.getElementById('stat-leads').textContent = leads.length;
+    document.getElementById('radar-badge').textContent = leads.length;
+
+    renderLeads(leads);
+  } catch(e) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><h3>Error loading data</h3><p>${e.message}</p></div>`;
+  }
+}
+
+function filterLeads() {
+  const f = document.getElementById('radar-filter').value;
+  let filtered = allLeads;
+  if (f === 'fire') filtered = allLeads.filter(l => l.isFireDesc);
+  else if (f === 'stall') filtered = allLeads.filter(l => l.isStalled);
+  renderLeads(filtered);
+}
+
+function renderLeads(leads) {
+  const container = document.getElementById('leads-container');
+  if (!leads.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">📡</div><h3>No roofing leads found</h3><p>Try a different territory or check back tomorrow.</p></div>`;
+    return;
+  }
+  container.innerHTML = '<div class="lead-list">' + leads.slice(0, 30).map(l => {
+    const sc = l.score >= 80 ? 'score-high' : l.score >= 60 ? 'score-med' : 'score-low';
+    const hot = l.score >= 80 ? 'hot' : '';
+    const tags = l.tags.map(t => `<span class="tag ${t.cls}">${t.text}</span>`).join('');
+    const status = l.p.latest_status || 'Unknown';
+    return `<div class="lead-card ${hot}" onclick="openEstimatorFromLead('${l.addr.replace(/'/g,"\\'")}','${currentZip}')">
+      <div class="score-badge ${sc}">${l.score}</div>
+      <div class="lead-info">
+        <h4>${l.addr || 'Unknown address'}</h4>
+        <div class="lead-meta">
+          <span>${l.p.permit_sub_type||'Property'}</span>
+          <span>Status: ${status}</span>
+          ${l.p.contractors_business_name ? '<span>Contractor: '+l.p.contractors_business_name+'</span>' : ''}
+        </div>
+        ${tags ? `<div class="lead-tags">${tags}</div>` : ''}
+      </div>
+      <div class="lead-right">
+        <div class="lead-val">${l.estStr}</div>
+        <div class="lead-actions">
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openEstimatorFromLead('${l.addr.replace(/'/g,"\\'")}','${currentZip}')">Estimate</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+function openEstimatorFromLead(addr, zip) {
+  showTabById('estimator');
+  document.getElementById('est-address').value = addr;
+  document.getElementById('est-zip').value = zip;
+  runEstimate();
+}
+
+function showTabById(id) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.toLowerCase().includes(id === 'estimator' ? 'estimate' : id)) n.classList.add('active');
+  });
+}
+
+// ── MAP ──
+function initMap() {
+  if (_map) return;
+  _map = L.map('map', { center: [34.05, -118.25], zoom: 11, zoomControl: true });
+  
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap contributors © CARTO', maxZoom: 19
+  }).addTo(_map);
+
+  // Roofing activity clusters (representative LA neighborhoods)
+  const spots = [
+    { lat: 34.07, lon: -118.44, size: 30, color: '#E8A920', label: 'Bel Air / Westwood', type: 'active', jobs: 12 },
+    { lat: 34.09, lon: -118.40, size: 45, color: '#E8A920', label: 'Beverly Hills', type: 'active', jobs: 18 },
+    { lat: 34.18, lon: -118.45, size: 25, color: '#EF5360', label: 'Woodland Hills', type: 'fire', jobs: 9 },
+    { lat: 34.22, lon: -118.53, size: 40, color: '#EF5360', label: 'Chatsworth (fire zone)', type: 'fire', jobs: 22 },
+    { lat: 34.14, lon: -118.36, size: 20, color: '#4AAEBC', label: 'North Hollywood', type: 'untapped', jobs: 3 },
+    { lat: 34.05, lon: -118.26, size: 35, color: '#E8A920', label: 'Downtown / Silver Lake', type: 'active', jobs: 14 },
+    { lat: 34.02, lon: -118.28, size: 20, color: '#4AAEBC', label: 'South LA', type: 'untapped', jobs: 2 },
+    { lat: 34.00, lon: -118.47, size: 30, color: '#E8A920', label: 'Culver City / Venice', type: 'active', jobs: 11 },
+    { lat: 34.12, lon: -118.20, size: 18, color: '#4AAEBC', label: 'Glendale area', type: 'untapped', jobs: 4 },
+    { lat: 34.08, lon: -118.33, size: 25, color: '#E8A920', label: 'Koreatown / Mid-City', type: 'active', jobs: 8 },
+  ];
+
+  spots.forEach(s => {
+    const circle = L.circleMarker([s.lat, s.lon], {
+      radius: s.size / 3,
+      fillColor: s.color,
+      color: s.color,
+      weight: 1,
+      opacity: 0.8,
+      fillOpacity: 0.3
+    }).addTo(_map);
+    
+    circle.bindPopup(`
+      <div style="background:#12161E;color:#F0EEE8;padding:12px;border-radius:8px;min-width:200px;font-family:-apple-system,sans-serif">
+        <div style="font-weight:800;margin-bottom:4px">${s.label}</div>
+        <div style="font-size:12px;color:#7A8090;margin-bottom:8px">${s.type === 'fire' ? '🔥 Fire Hazard Zone' : s.type === 'untapped' ? '🔵 Untapped market' : '⭐ Active zone'}</div>
+        <div style="font-size:14px;font-weight:700;color:#E8A920">${s.jobs} roofing opportunities</div>
+      </div>
+    `, { className: 'dark-popup' });
+  });
+}
+
+// ── ESTIMATOR ──
+let estData = null;
+
+async function runEstimate() {
+  const addr = document.getElementById('est-address').value.trim();
+  const zip = document.getElementById('est-zip').value.trim() || currentZip;
+  if (!addr) { alert('Please enter an address'); return; }
+
+  document.getElementById('estimate-result').style.display = 'none';
+  
+  // Show loading state
+  const btn = event.target;
+  btn.textContent = 'Loading...';
+  btn.disabled = true;
+
+  try {
+    // Call BackyardOne via proxy for permit history
+    let permitText = '';
+    try {
+      const proxyResp = await fetch(`${PROXY}/byo/lookup_permits`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: addr, zip })
+      });
+      if (proxyResp.ok) {
+        const proxyData = await proxyResp.json();
+        permitText = proxyData.result || '';
+      }
+    } catch(e) {
+      // Proxy not available, proceed with LADBS data
+    }
+
+    // Also query LADBS directly for comp data
+    const ladbs_url = `${LADBS}?$where=${encodeURIComponent(`work_description like '%ROOF%' AND zip_code='${zip}'`)}&$select=valuation&$limit=50`;
+    let compValues = [];
+    try {
+      const lResp = await fetch(ladbs_url);
+      if (lResp.ok) {
+        const lData = await lResp.json();
+        compValues = lData.map(d => parseInt(d.valuation||0)).filter(v => v > 1000);
+      }
+    } catch(e) {}
+
+    const compAvg = compValues.length ? Math.round(compValues.reduce((a,b)=>a+b,0)/compValues.length) : 16800;
+
+    // Generate estimate based on address/zip
+    const seed = addr.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+    const roofArea = 1800 + (seed % 1400);
+    const yearBuilt = 1960 + (seed % 55);
+    const roofAge = 2026 - yearBuilt;
+    const isFireZone = zip >= '91300' && zip <= '91399';
+    const propTypes = ['SFR', 'Duplex', 'SFR', 'SFR', 'Apartment'];
+    const propType = propTypes[seed % propTypes.length];
+
+    estData = {
+      addr, zip, roofArea, yearBuilt, roofAge, isFireZone, propType, compAvg,
+      permitText, compValues: compValues.length
+    };
+
+    // Render
+    document.getElementById('e-address').textContent = addr;
+    document.getElementById('e-type').textContent = propType;
+    document.getElementById('e-area').textContent = roofArea.toLocaleString() + ' sq ft';
+    document.getElementById('e-year').textContent = yearBuilt + ' (~' + roofAge + ' yrs old)';
+    document.getElementById('e-fire').innerHTML = isFireZone ? '<span style="color:#EF5360">⚠️ VHFHSZ — Class A required</span>' : '<span style="color:#4CAF74">✓ Standard zone</span>';
+    document.getElementById('e-coolroof').innerHTML = '<span style="color:#E8A920">Required (Title 24)</span>';
+    document.getElementById('e-permits').textContent = compValues.length > 0 ? 'Available' : 'No prior roofing permits';
+    document.getElementById('e-comp').textContent = '$' + compAvg.toLocaleString() + ' (avg ' + (compValues.length) + ' jobs)';
+
+    if (permitText) {
+      document.getElementById('permit-history-result').innerHTML = permitText.replace(/\n/g,'<br>').replace(/#{1,3} /g,'<strong>').replace(/\n/g,'</strong>\n');
+    } else {
+      document.getElementById('permit-history-result').textContent = 'No permit history found or proxy not connected.';
+    }
+
+    setTier('standard', document.querySelector('.tier-tab:nth-child(2)'));
+    document.getElementById('estimate-result').style.display = 'block';
+
+  } catch(e) {
+    alert('Error generating estimate: ' + e.message);
+  } finally {
+    btn.textContent = 'Generate Estimate';
+    btn.disabled = false;
+  }
+}
+
+function setTier(tier, el) {
+  document.querySelectorAll('.tier-tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (!estData) return;
+  
+  const { roofArea, isFireZone } = estData;
+  const sqft = roofArea;
+  
+  const tiers = {
+    basic: { 
+      material: isFireZone ? 'Class A Fiberglass Shingle' : 'Standard Fiberglass Shingle',
+      matRate: 2.80, laborRate: 2.20, overhead: 1.15
+    },
+    standard: {
+      material: isFireZone ? 'Class A Architectural Shingle' : 'Architectural Shingle (CRRC)',
+      matRate: 3.60, laborRate: 2.60, overhead: 1.20
+    },
+    premium: {
+      material: isFireZone ? 'Class A Metal / Concrete Tile' : 'Concrete Tile / Metal',
+      matRate: 5.80, laborRate: 4.20, overhead: 1.25
+    }
+  };
+
+  const t = tiers[tier];
+  const matCost = Math.round(sqft * t.matRate);
+  const laborCost = Math.round(sqft * t.laborRate);
+  const tearOff = Math.round(sqft * 0.45);
+  const disposal = 350;
+  const permitFee = 410;
+  const subtotal = matCost + laborCost + tearOff + disposal + permitFee;
+  const total = Math.round(subtotal * t.overhead);
+
+  document.getElementById('est-tier-label').textContent = tier.charAt(0).toUpperCase() + tier.slice(1) + ' Estimate';
+  document.getElementById('est-total').textContent = '$' + total.toLocaleString();
+  document.getElementById('est-line-items').innerHTML = `
+    <div class="est-row"><span class="label">Material (${estData.roofArea} sq ft)</span><span class="val">$${matCost.toLocaleString()}</span></div>
+    <div class="est-row"><span class="label">Labor</span><span class="val">$${laborCost.toLocaleString()}</span></div>
+    <div class="est-row"><span class="label">Tear-off & haul</span><span class="val">$${tearOff.toLocaleString()}</span></div>
+    <div class="est-row"><span class="label">Disposal fee</span><span class="val">$${disposal}</span></div>
+    <div class="est-row"><span class="label">LADBS permit fee</span><span class="val">$${permitFee}</span></div>
+    <div class="est-row"><span class="label" style="font-size:11px;color:var(--teal)">✓ ${t.material}</span><span class="val" style="font-size:11px;color:var(--muted)">Zip avg: $${estData.compAvg.toLocaleString()}</span></div>
+  `;
+}
+
+function sendProposal() {
+  if (!estData) return;
+  const total = document.getElementById('est-total').textContent;
+  alert(`Proposal for ${estData.addr}\nTotal: ${total}\n\n(In production: sends branded PDF with e-signature link)`);
+}
+
+function saveToBids() {
+  if (!estData) return;
+  const total = parseInt(document.getElementById('est-total').textContent.replace(/\D/g,''));
+  const bids = JSON.parse(localStorage.getItem('apexla_bids') || '[]');
+  bids.push({
+    id: Date.now(),
+    addr: estData.addr,
+    amount: total,
+    type: estData.propType + ' Reroof',
+    status: 'open',
+    created: new Date().toISOString(),
+    followUp: new Date(Date.now() + 3*86400000).toISOString()
+  });
+  localStorage.setItem('apexla_bids', JSON.stringify(bids));
+  showTabById('bids');
+  renderBids();
+}
+
+// ── BID TRACKER ──
+function getBids() { return JSON.parse(localStorage.getItem('apexla_bids') || '[]'); }
+function saveBids(bids) { localStorage.setItem('apexla_bids', JSON.stringify(bids)); }
+
+function renderBids() {
+  const bids = getBids();
+  const open = bids.filter(b => b.status === 'open');
+  const won = bids.filter(b => b.status === 'won');
+  const lost = bids.filter(b => b.status === 'lost');
+  
+  document.getElementById('b-open').textContent = open.length;
+  document.getElementById('b-won').textContent = won.length;
+  document.getElementById('b-rate').textContent = bids.length ? Math.round(won.length/bids.length*100)+'%' : '—';
+  
+  const pipeVal = open.reduce((s,b) => s + (b.amount||0), 0);
+  document.getElementById('b-pipeline').textContent = '$' + (pipeVal/1000).toFixed(0) + 'K';
+  
+  const wonVal = won.reduce((s,b) => s + (b.amount||0), 0);
+  if (wonVal) document.getElementById('b-won-val').textContent = '$' + (wonVal/1000).toFixed(0)+'K won';
+
+  document.getElementById('col-open-count').textContent = open.length;
+  document.getElementById('col-won-count').textContent = won.length;
+  document.getElementById('col-lost-count').textContent = lost.length;
+  document.getElementById('stat-bids').textContent = open.length;
+  document.getElementById('bid-badge').textContent = open.length;
+
+  const renderCol = (items, colId) => {
+    const el = document.getElementById(colId);
+    if (!items.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px 0">No bids</div>'; return; }
+    el.innerHTML = items.map(b => {
+      const fu = new Date(b.followUp);
+      const fuStr = fu.toLocaleDateString('en-US', {month:'short',day:'numeric'});
+      const isUrgent = b.status === 'open' && fu < new Date();
+      return `<div class="bid-card">
+        <div class="bid-addr">${b.addr}</div>
+        <div class="bid-meta">${b.type || 'Roofing job'}</div>
+        <div class="bid-val">$${(b.amount||0).toLocaleString()}</div>
+        <div class="bid-due ${isUrgent?'urgent'}">Follow up: ${fuStr}</div>
+        ${b.status === 'open' ? `
+        <div style="display:flex;gap:6px;margin-top:10px">
+          <button class="btn btn-sm" style="background:rgba(76,175,80,0.15);color:#4CAF74;border:1px solid rgba(76,175,80,0.3)" onclick="moveBid(${b.id},'won')">Won</button>
+          <button class="btn btn-sm btn-danger" onclick="moveBid(${b.id},'lost')">Lost</button>
+        </div>` : ''}
+      </div>`;
+    }).join('');
+  };
+  
+  renderCol(open, 'col-open');
+  renderCol(won, 'col-won');
+  renderCol(lost, 'col-lost');
+}
+
+function moveBid(id, status) {
+  const bids = getBids();
+  const b = bids.find(b => b.id === id);
+  if (b) b.status = status;
+  saveBids(bids);
+  renderBids();
+}
+
+function showAddBid() { document.getElementById('add-bid-modal').classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function addBid() {
+  const addr = document.getElementById('bid-addr').value.trim();
+  const amount = parseInt(document.getElementById('bid-amount').value) || 0;
+  const type = document.getElementById('bid-type').value;
+  const contact = document.getElementById('bid-contact').value;
+  const notes = document.getElementById('bid-notes').value;
+  if (!addr) { alert('Please enter an address'); return; }
+  const bids = getBids();
+  bids.push({ id: Date.now(), addr, amount, type, contact, notes, status: 'open', created: new Date().toISOString(), followUp: new Date(Date.now()+3*86400000).toISOString() });
+  saveBids(bids);
+  closeModal('add-bid-modal');
+  renderBids();
+  ['bid-addr','bid-amount','bid-contact','bid-notes'].forEach(id => document.getElementById(id).value = '');
+}
+
+// ── PERMIT COMMAND ──
+async function lookupPermit() {
+  const addr = document.getElementById('permit-lookup-addr').value.trim();
+  if (!addr) return;
+  
+  const resultDiv = document.getElementById('permit-lookup-result');
+  const contentDiv = document.getElementById('permit-lookup-content');
+  resultDiv.style.display = 'block';
+  contentDiv.innerHTML = '<div class="loading"><div class="spin"></div>Looking up ' + addr + '...</div>';
+
+  try {
+    const resp = await fetch(`${PROXY}/byo/lookup_permits`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address: addr })
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      contentDiv.innerHTML = `<pre style="white-space:pre-wrap;font-size:13px;color:var(--text);font-family:inherit">${data.result || 'No permits found.'}</pre>`;
+    } else {
+      throw new Error('Proxy returned ' + resp.status);
+    }
+  } catch(e) {
+    contentDiv.innerHTML = `<div class="empty"><div class="empty-icon">🔌</div><h3>Proxy not connected</h3><p>Deploy the awareness proxy with BackyardOne routes to enable live permit lookup. Error: ${e.message}</p></div>`;
+  }
+}
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', () => {
+  loadLeads();
+  renderBids();
+});
+</script>
+</body>
+</html>
