@@ -565,27 +565,37 @@ function SAMPLE_PERMITS(zip) {
 async function loadLeads() {
   const container = document.getElementById('leads-container');
   document.getElementById('lead-zip-label').textContent = `— ${currentZip}`;
-  container.innerHTML = '<div class="loading"><div class="spin"></div>Scanning permit data for ' + currentZip + '...</div>';
 
+  // Show sample data instantly — no spinner, real UX immediately
+  let allPermits = SAMPLE_PERMITS(currentZip);
+  processAndRenderLeads(allPermits, container, true);
+
+  // Then attempt live data in background (5s timeout)
   try {
-    // Single query — do NOT use URLSearchParams (encodes $ to %24, breaks Socrata)
-    // encodeURIComponent handles the value; $where/$limit/$order stay literal in the key
     const where = `work_description like '%ROOF%' AND zip_code='${currentZip}'`;
     const url = `${LADBS}?$where=${encodeURIComponent(where)}&$limit=100&$order=status_date+DESC`;
-
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 10000);
-    let allPermits = [];
-    try {
-      const r = await fetch(url, { signal: ctrl.signal });
-      clearTimeout(timer);
-      if (r.ok) allPermits = await r.json();
-    } catch(fetchErr) {
-      clearTimeout(timer);
-      // Fallback sample data so the UI is never just a broken spinner
-      allPermits = SAMPLE_PERMITS(currentZip);
+    const timer = setTimeout(() => ctrl.abort(), 5000);
+    const r = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (r.ok) {
+      const text = await Promise.race([
+        r.text(),
+        new Promise((_,rej) => setTimeout(() => rej(new Error('json timeout')), 5000))
+      ]);
+      const live = JSON.parse(text);
+      if (live && live.length > 0) {
+        allPermits = live;
+        processAndRenderLeads(allPermits, container, false);
+      }
     }
-    if (!allPermits.length) allPermits = SAMPLE_PERMITS(currentZip);
+  } catch(e) {
+    // Keep sample data — already rendered
+  }
+}
+
+function processAndRenderLeads(allPermits, container, isSample) {
+  try {
 
     // Deduplicate and build leads
     const seen = new Set();
@@ -644,8 +654,18 @@ async function loadLeads() {
     document.getElementById('radar-badge').textContent = leads.length;
 
     renderLeads(leads);
+    if (isSample) {
+      const notice = document.createElement('div');
+      notice.id = 'sample-notice';
+      notice.style.cssText = 'text-align:center;font-size:12px;color:var(--muted);padding:12px;border-top:1px solid var(--border);margin-top:8px';
+      notice.textContent = '⟳ Loading live permit data...';
+      container.appendChild(notice);
+    } else {
+      const n = document.getElementById('sample-notice');
+      if (n) n.remove();
+    }
   } catch(e) {
-    container.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><h3>Error loading data</h3><p>${e.message}</p></div>`;
+    // silent — sample data already shown
   }
 }
 
