@@ -293,29 +293,62 @@ select.terr{background:rgba(255,255,255,0.06);border:1px solid var(--border);col
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── DATA ──────────────────────────────────────────────────────
-const BASE_LEADS = {
+const BL = {
   '90049':[
     {score:94,addr:'1842 Westwood Blvd',type:'SFR',meta:'Roof: 24 yrs · Post-fire zone',val:18500,tags:['t-fire','t-old'],tagLabels:['🔥 Fire dmg','⚠ Overdue'],isF:true,isSt:false},
-    {score:87,addr:'934 Gayley Ave',type:'Apartment',meta:'Permit stalled 110 days',val:32000,tags:['t-stall'],tagLabels:['⏸ Stalled 110d'],isF:false,isSt:true},
+    {score:87,addr:'934 Gayley Ave',type:'Apt',meta:'Permit stalled 110 days',val:32000,tags:['t-stall'],tagLabels:['⏸ Stalled 110d'],isF:false,isSt:true},
     {score:81,addr:'10880 Wilshire Blvd',type:'Commercial',meta:'Permit expired · Owner-builder',val:62000,tags:['t-old','t-own'],tagLabels:['⚠ Expired','👤 Owner-builder'],isF:false,isSt:false},
-    {score:71,addr:'11205 Ohio Ave',type:'SFR',meta:'Roof: 19 yrs · Cool roof req.',val:14200,tags:['t-cool'],tagLabels:['❄ Cool roof'],isF:false,isSt:false},
+    {score:71,addr:'11205 Ohio Ave',type:'SFR',meta:'Roof: 19 yrs · Cool roof req',val:14200,tags:['t-cool'],tagLabels:['❄ Cool roof'],isF:false,isSt:false},
     {score:64,addr:'2241 Veterans Ave',type:'SFR',meta:'Stalled 80 days',val:16800,tags:['t-stall'],tagLabels:['⏸ Stalled 80d'],isF:false,isSt:true},
-    {score:58,addr:'544 Hilgard Ave',type:'SFR',meta:'Permit expired 2022',val:21000,tags:['t-old'],tagLabels:['⚠ Expired'],isF:false,isSt:false},
+    {score:58,addr:'544 Hilgard Ave',type:'SFR',meta:'Permit expired 2022',val:21000,tags:['t-old'],tagLabels:['⚠ Expired'],isF:false,isSt:false}
   ],
   '90210':[
-    {score:96,addr:'801 N Hillcrest Rd',type:'SFR',meta:'Fire damage · Owner-builder · Roof: 28 yrs',val:55000,tags:['t-fire','t-own'],tagLabels:['🔥 Fire dmg','👤 Owner-builder'],isF:true,isSt:false},
+    {score:96,addr:'801 N Hillcrest Rd',type:'SFR',meta:'Fire damage · Owner-builder',val:55000,tags:['t-fire','t-own'],tagLabels:['🔥 Fire dmg','👤 Owner-builder'],isF:true,isSt:false},
     {score:88,addr:'1020 Laurel Way',type:'SFR',meta:'Stalled 95 days',val:44000,tags:['t-stall'],tagLabels:['⏸ Stalled 95d'],isF:false,isSt:true},
-    {score:79,addr:'612 N Elm Dr',type:'SFR',meta:'Roof: 22 yrs · Post-fire zone',val:38000,tags:['t-fire'],tagLabels:['🔥 Fire zone'],isF:true,isSt:false},
-    {score:67,addr:'414 N Maple Dr',type:'Duplex',meta:'Cool roof required · Permit expired',val:28000,tags:['t-cool','t-old'],tagLabels:['❄ Cool roof','⚠ Expired'],isF:false,isSt:false},
+    {score:79,addr:'612 N Elm Dr',type:'SFR',meta:'Roof: 22 yrs · Fire zone',val:38000,tags:['t-fire'],tagLabels:['🔥 Fire zone'],isF:true,isSt:false},
+    {score:67,addr:'414 N Maple Dr',type:'Duplex',meta:'Cool roof required · Expired',val:28000,tags:['t-cool','t-old'],tagLabels:['❄ Cool roof','⚠ Expired'],isF:false,isSt:false}
   ],
-  'default':[
-    {score:91,addr:'4821 Sunset Blvd',type:'Commercial',meta:'Permit expired · Fire zone',val:48000,tags:['t-fire','t-old'],tagLabels:['🔥 Fire zone','⚠ Expired'],isF:true,isSt:false},
-    {score:82,addr:'1104 N Vermont Ave',type:'SFR',meta:'Stalled 120 days · Owner-builder',val:19500,tags:['t-stall','t-own'],tagLabels:['⏸ Stalled 120d','👤 Owner-builder'],isF:false,isSt:true},
-    {score:74,addr:'3301 Glendale Blvd',type:'Apartment',meta:'Roof: 21 yrs · Cool roof',val:42000,tags:['t-cool'],tagLabels:['❄ Cool roof'],isF:false,isSt:false},
-    {score:63,addr:'2219 Fletcher Dr',type:'SFR',meta:'Permit expired 2021',val:15800,tags:['t-old'],tagLabels:['⚠ Expired'],isF:false,isSt:false},
-    {score:55,addr:'822 N Figueroa St',type:'SFR',meta:'Roof: 18 yrs',val:12500,tags:[],tagLabels:[],isF:false,isSt:false},
+  '91401':[
+    {score:89,addr:'6550 Sepulveda Blvd',type:'Commercial',meta:'Permit expired · Owner-builder',val:44000,tags:['t-old','t-own'],tagLabels:['⚠ Expired','👤 Owner-builder'],isF:false,isSt:false},
+    {score:83,addr:'14600 Hamlin St',type:'Apt',meta:'Stalled 95 days · Roof: 22 yrs',val:38000,tags:['t-stall'],tagLabels:['⏸ Stalled 95d'],isF:false,isSt:true},
+    {score:74,addr:'7320 Kester Ave',type:'SFR',meta:'Permit expired 2023',val:16500,tags:['t-old'],tagLabels:['⚠ Expired'],isF:false,isSt:false},
+    {score:66,addr:'6811 Hazeltine Ave',type:'SFR',meta:'Cool roof required · Roof: 20 yrs',val:14800,tags:['t-cool'],tagLabels:['❄ Cool roof'],isF:false,isSt:false},
+    {score:55,addr:'15100 Sherman Way',type:'Commercial',meta:'Roof: 18 yrs',val:22000,tags:[],tagLabels:[],isF:false,isSt:false}
+  ],
+  '90028':[
+    {score:91,addr:'6255 Sunset Blvd',type:'Commercial',meta:'Permit expired · Roof: 26 yrs',val:58000,tags:['t-old'],tagLabels:['⚠ Expired'],isF:false,isSt:false},
+    {score:82,addr:'1735 N Cahuenga Blvd',type:'Apt',meta:'Stalled 88 days',val:29000,tags:['t-stall'],tagLabels:['⏸ Stalled 88d'],isF:false,isSt:true},
+    {score:73,addr:'6400 Hollywood Blvd',type:'Commercial',meta:'Cool roof req · Owner-builder',val:41000,tags:['t-cool','t-own'],tagLabels:['❄ Cool roof','👤 Owner-builder'],isF:false,isSt:false},
+    {score:60,addr:'1611 N Las Palmas Ave',type:'SFR',meta:'Roof: 21 yrs',val:17200,tags:[],tagLabels:[],isF:false,isSt:false}
+  ],
+  '90026':[
+    {score:88,addr:'2100 Sunset Blvd',type:'Commercial',meta:'Permit expired · Roof: 24 yrs',val:47000,tags:['t-old'],tagLabels:['⚠ Expired'],isF:false,isSt:false},
+    {score:79,addr:'3401 Glendale Blvd',type:'Apt',meta:'Stalled 102 days · Owner-builder',val:35000,tags:['t-stall','t-own'],tagLabels:['⏸ Stalled 102d','👤 Owner-builder'],isF:false,isSt:true},
+    {score:68,addr:'1812 Lucile Ave',type:'SFR',meta:'Cool roof required',val:15400,tags:['t-cool'],tagLabels:['❄ Cool roof'],isF:false,isSt:false},
+    {score:57,addr:'2830 Rowena Ave',type:'SFR',meta:'Roof: 19 yrs',val:13800,tags:[],tagLabels:[],isF:false,isSt:false}
+  ],
+  '90018':[
+    {score:86,addr:'4200 W Adams Blvd',type:'Commercial',meta:'Permit expired · Owner-builder',val:36000,tags:['t-old','t-own'],tagLabels:['⚠ Expired','👤 Owner-builder'],isF:false,isSt:false},
+    {score:77,addr:'3810 Crenshaw Blvd',type:'Apt',meta:'Stalled 75 days',val:42000,tags:['t-stall'],tagLabels:['⏸ Stalled 75d'],isF:false,isSt:true},
+    {score:65,addr:'1944 S Gramercy Pl',type:'SFR',meta:'Roof: 23 yrs · Cool roof req',val:14600,tags:['t-cool'],tagLabels:['❄ Cool roof'],isF:false,isSt:false},
+    {score:54,addr:'4601 W Pico Blvd',type:'SFR',meta:'Roof: 17 yrs',val:12900,tags:[],tagLabels:[],isF:false,isSt:false}
+  ],
+  '90037':[
+    {score:85,addr:'4800 S Figueroa St',type:'Commercial',meta:'Permit expired · Roof: 25 yrs',val:39000,tags:['t-old'],tagLabels:['⚠ Expired'],isF:false,isSt:false},
+    {score:76,addr:'316 W 48th St',type:'SFR',meta:'Owner-builder · Stalled 91 days',val:16200,tags:['t-stall','t-own'],tagLabels:['⏸ Stalled 91d','👤 Owner-builder'],isF:false,isSt:true},
+    {score:63,addr:'5501 S Vermont Ave',type:'Apt',meta:'Cool roof req · Roof: 20 yrs',val:31000,tags:['t-cool'],tagLabels:['❄ Cool roof'],isF:false,isSt:false},
+    {score:52,addr:'4122 S Hoover St',type:'SFR',meta:'Roof: 16 yrs',val:11800,tags:[],tagLabels:[],isF:false,isSt:false}
+  ],
+  '90004':[
+    {score:87,addr:'3850 W 6th St',type:'Apt',meta:'Permit expired · Owner-builder',val:52000,tags:['t-old','t-own'],tagLabels:['⚠ Expired','👤 Owner-builder'],isF:false,isSt:false},
+    {score:78,addr:'4100 W 3rd St',type:'Commercial',meta:'Stalled 84 days',val:44000,tags:['t-stall'],tagLabels:['⏸ Stalled 84d'],isF:false,isSt:true},
+    {score:67,addr:'724 N Kingsley Dr',type:'SFR',meta:'Cool roof req · Roof: 22 yrs',val:18500,tags:['t-cool'],tagLabels:['❄ Cool roof'],isF:false,isSt:false},
+    {score:56,addr:'4401 Beverly Blvd',type:'Commercial',meta:'Roof: 19 yrs',val:28000,tags:[],tagLabels:[],isF:false,isSt:false}
   ]
 };
+function getLeads(zip) {
+  return BL[zip] || BL['90049'];
+}
 
 let currentZip = '90049';
 let allLeads = [];
@@ -335,7 +368,7 @@ function go(id, el) {
 function changeZip(z) { currentZip = z; loadLeads(); }
 
 // ── LEADS ─────────────────────────────────────────────────────
-function getLeads(zip) { return BASE_LEADS[zip] || BASE_LEADS['default']; }
+// getLeads defined above with BL
 
 function loadLeads() {
   allLeads = getLeads(currentZip);
