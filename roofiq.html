@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoofIQ — AI-Powered Roofing Intelligence for ApexLA</title>
+<meta name="description" content="Satellite roof measurement, permit intelligence, auto-bidding, and targeted ad generation for roofing contractors.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FF5500' stroke-width='2'><path d='M2 20L12 4l10 16'/></svg>">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #07090F; overflow-x: hidden; }
+  #root { min-height: 100vh; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+// ─── KEYS ──────────────────────────────────────────────────────
+const PROXY = "https://awareness-proxy-328246068140.us-central1.run.app"; // All API calls route through here
+
+// ─── MATERIALS & COSTS ─────────────────────────────────────────
+const MATS = {
+  "3-Tab Asphalt":         {mat:1.50,labor:2.00,warranty:"20–25 yr",tier:"Good"},
+  "Architectural Shingle": {mat:2.25,labor:2.50,warranty:"30 yr",tier:"Better"},
+  "Premium Designer":      {mat:4.00,labor:3.00,warranty:"50 yr",tier:"Best"},
+  "Metal Standing Seam":   {mat:7.50,labor:5.00,warranty:"40–70 yr",tier:"Premium"},
+  "Tile (Clay/Concrete)":  {mat:8.00,labor:6.00,warranty:"50+ yr",tier:"Premium+"},
+};
+const COMP = {simple:{l:"Simple (Gable)",f:1},moderate:{l:"Moderate (Hip/Valley)",f:1.15},complex:{l:"Complex (Multi-level)",f:1.35},extreme:{l:"Extreme (Dormers/Turrets)",f:1.55}};
+const PITCH = {low:{l:"Low (2–4/12)",f:1,r:[0,18.4]},standard:{l:"Standard (5–7/12)",f:1.1,r:[18.4,30.3]},steep:{l:"Steep (8–10/12)",f:1.25,r:[30.3,39.8]},extreme:{l:"Extreme (11+/12)",f:1.45,r:[39.8,90]}};
+const WASTE = {simple:1.10,moderate:1.13,complex:1.17,extreme:1.22};
+const EX = {tearOff:1.25,underlay:0.45,ice:0.75,dump:450,permit:350,gutter:6.50};
+
+// ─── HELPERS ───────────────────────────────────────────────────
+const $ = n=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(n);
+const $k = n=>n>=1e6?`$${(n/1e6).toFixed(1)}M`:n>=1e3?`$${(n/1e3).toFixed(0)}K`:$(n);
+const m2s = m=>Math.round(m*10.7639);
+const pCat = d=>{for(const[k,v]of Object.entries(PITCH))if(d>=v.r[0]&&d<v.r[1])return k;return"standard"};
+const pRat = d=>`${Math.round(Math.tan(d*Math.PI/180)*12)}/12`;
+const azD = a=>["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"][Math.round(a/22.5)%16];
+const eRoof = (sq,fl)=>Math.round((sq/Math.max(fl,1))*1.15);
+
+const inferComp = (p,sol)=>{if(sol){const s=sol.solarPotential?.roofSegmentStats?.length||0;return s>=8?"extreme":s>=5?"complex":s>=3?"moderate":"simple";}const fl=p.features?.floorCount||1,sq=p.squareFootage||0;return fl>=3||sq>5000?"extreme":fl>=2||sq>3000?"complex":sq>1800?"moderate":"simple";};
+const inferMat = p=>{const r=(p.features?.roofType||"").toLowerCase();return r.includes("metal")||r.includes("standing")?"Metal Standing Seam":r.includes("tile")||r.includes("clay")?"Tile (Clay/Concrete)":r.includes("architect")||r.includes("comp")?"Architectural Shingle":r.includes("asphalt")||r.includes("shingle")?"3-Tab Asphalt":"Architectural Shingle";};
+
+function calcBid(ra,mat,comp,pitch,opts={}) {
+  const m=MATS[mat],c=COMP[comp],p=PITCH[pitch],w=WASTE[comp];
+  const ea=ra*w,mc=ea*m.mat,lc=ea*m.labor*c.f*p.f;
+  const to=opts.tearOff?ea*EX.tearOff:0,un=ea*EX.underlay,ic=opts.iceShield?ea*0.15*EX.ice:0,gu=opts.gutters?Math.sqrt(ra)*4*EX.gutter:0;
+  const sub=mc+lc+to+un+ic+gu+EX.dump+EX.permit,oh=sub*0.15,pr=sub*0.20;
+  return{roofArea:Math.round(ra),ea:Math.round(ea),mc:Math.round(mc),lc:Math.round(lc),to:Math.round(to),un:Math.round(un),ic:Math.round(ic),gu:Math.round(gu),dump:EX.dump,perm:EX.permit,sub:Math.round(sub),oh:Math.round(oh),pr:Math.round(pr),total:Math.round(sub+oh+pr),psf:((sub+oh+pr)/ra).toFixed(2),warranty:m.warranty,tier:m.tier};
+}
+
+// ─── DEEP RENTCAST MINING ──────────────────────────────────────
+function mineRentcast(p) {
+  const signals = [];
+  const ta = p.taxAssessments||{}, yrs = Object.keys(ta).sort();
+
+  // Assessment trend analysis
+  if (yrs.length >= 2) {
+    const vals = yrs.map(y=>({y,v:ta[y]?.value||0,land:ta[y]?.land||0,imp:ta[y]?.improvements||0})).filter(x=>x.v>0);
+    if (vals.length >= 2) {
+      const first=vals[0], last=vals[vals.length-1];
+      const totalPct = ((last.v-first.v)/first.v*100);
+      signals.push({key:"assessTrend",val:totalPct,label:`Assessment ${totalPct>0?"+":""}${totalPct.toFixed(0)}% over ${vals.length}yrs (${$k(first.v)}→${$k(last.v)})`});
+
+      // Improvement vs land split — if improvements flat but land up, no work done
+      if (first.imp>0 && last.imp>0) {
+        const impPct = ((last.imp-first.imp)/first.imp*100);
+        const landPct = first.land>0?((last.land-first.land)/first.land*100):0;
+        if (impPct < 10 && landPct > 20) {
+          signals.push({key:"noImprovements",val:true,label:`Improvements flat (${impPct>0?"+":""}${impPct.toFixed(0)}%) while land rose ${landPct.toFixed(0)}% — NO recent renovation`});
+        } else if (impPct > 30) {
+          signals.push({key:"recentWork",val:true,label:`Improvement value jumped ${impPct.toFixed(0)}% — possible recent renovation`});
+        }
+      }
+
+      // Year-over-year spikes (detect specific improvement events)
+      for (let i=1;i<vals.length;i++) {
+        const yoy = vals[i-1].v>0 ? ((vals[i].v-vals[i-1].v)/vals[i-1].v*100) : 0;
+        if (yoy > 15) signals.push({key:"spike",val:yoy,label:`Assessment spike in ${vals[i].y}: +${yoy.toFixed(0)}% (${$k(vals[i-1].v)}→${$k(vals[i].v)}) — possible permitted work`});
+      }
+    }
+  }
+
+  // Owner tenure
+  if (p.lastSaleDate) {
+    const tenure = (Date.now()-new Date(p.lastSaleDate).getTime())/(365.25*24*3600000);
+    signals.push({key:"tenure",val:tenure,label:`Owner tenure: ${tenure.toFixed(1)} years (purchased ${new Date(p.lastSaleDate).toLocaleDateString()} for ${$(p.lastSalePrice||0)})`});
+    if (tenure<=2) signals.push({key:"newOwner",val:true,label:"New owner (<2yr) — 40% higher renovation probability"});
+    if (tenure>=15) signals.push({key:"longOwner",val:true,label:"Long-term owner (15+yr) — deferred maintenance likely"});
+  }
+
+  // Roof type life expectancy
+  const rt = (p.features?.roofType||"").toLowerCase();
+  const age = p.yearBuilt ? 2026-p.yearBuilt : 0;
+  if (rt && age) {
+    let life = 25; // default
+    if (rt.includes("3-tab")||rt.includes("asphalt")) life = 20;
+    else if (rt.includes("architect")) life = 30;
+    else if (rt.includes("metal")) life = 50;
+    else if (rt.includes("tile")) life = 50;
+    else if (rt.includes("wood")||rt.includes("shake")) life = 15;
+    const roofAge = Math.min(age, life+10); // can't be older than house
+    const pctLife = (roofAge/life*100);
+    signals.push({key:"roofLife",val:pctLife,label:`${p.features.roofType}: ~${life}yr life, property ${age}yr old (${pctLife.toFixed(0)}% of cycle)`});
+    if (pctLife >= 100) signals.push({key:"pastLife",val:true,label:`CRITICAL: Roof material past expected lifespan`});
+  }
+
+  // Square footage / value ratio (undermaintained = low value/sqft)
+  const val = p.lastSalePrice||p._assessedValue||0;
+  if (val > 0 && (p.squareFootage||0) > 0) {
+    const psf = val/p.squareFootage;
+    signals.push({key:"valPerSf",val:psf,label:`Value/sqft: $${psf.toFixed(0)} — ${psf<150?"below market (undermaintained?)":psf<300?"market rate":"premium property"}`});
+  }
+
+  // Features mining
+  if (p.features?.cooling) signals.push({key:"cooling",val:p.features.cooling,label:`Cooling: ${p.features.cooling}`});
+  if (p.features?.heating) signals.push({key:"heating",val:p.features.heating,label:`Heating: ${p.features.heating}`});
+  if (p.features?.condition) signals.push({key:"condition",val:p.features.condition,label:`Condition: ${p.features.condition}`});
+  if (p.features?.pool) signals.push({key:"pool",val:true,label:"Has pool — higher-value homeowner"});
+  if (p.features?.fireplace) signals.push({key:"fireplace",val:true,label:"Has fireplace — invest in home"});
+
+  return signals;
+}
+
+// ─── PROPENSITY SCORING ────────────────────────────────────────
+function scoreProperty(p) {
+  let s=0; const r=[];
+  const age = p.yearBuilt ? 2026-p.yearBuilt : 0;
+  const mined = mineRentcast(p);
+
+  // Age
+  if(age>=25){s+=30;r.push({t:`Built ${p.yearBuilt} — roof past useful life (${age}yrs)`,w:30,c:"age"});}
+  else if(age>=18){s+=22;r.push({t:`Approaching replacement (${age}yrs)`,w:22,c:"age"});}
+  else if(age>=12){s+=10;r.push({t:`Inspection window (${age}yrs)`,w:10,c:"age"});}
+
+  // Value
+  const val=p.lastSalePrice||p._assessedValue||0;
+  if(val>500000){s+=15;r.push({t:`High-value (${$k(val)}) — premium material opportunity`,w:15,c:"value"});}
+  else if(val>250000){s+=10;r.push({t:`Mid-range (${$k(val)})`,w:10,c:"value"});}
+  else if(val>100000){s+=5;r.push({t:`Entry-level (${$k(val)})`,w:5,c:"value"});}
+
+  // Size & type
+  if((p.squareFootage||0)>3000){s+=10;r.push({t:`Large (${p.squareFootage.toLocaleString()}sf) — high job value`,w:10,c:"size"});}
+  if((p.features?.floorCount||1)>=2){s+=5;r.push({t:"Multi-story — complexity premium",w:5,c:"size"});}
+  if(p.propertyType==="Single Family"){s+=8;r.push({t:"Single family — ideal target",w:8,c:"type"});}
+  if(p.ownerOccupied){s+=5;r.push({t:"Owner-occupied — decision-maker on-site",w:5,c:"owner"});}
+
+  // Mined signals → score
+  const noImp = mined.find(x=>x.key==="noImprovements");
+  if(noImp){s+=10;r.push({t:noImp.label,w:10,c:"assess"});}
+  const recentWork = mined.find(x=>x.key==="recentWork");
+  if(recentWork){s-=5;r.push({t:recentWork.label,w:-5,c:"assess"});}
+  const pastLife = mined.find(x=>x.key==="pastLife");
+  if(pastLife){s+=12;r.push({t:pastLife.label,w:12,c:"roof"});}
+  const newOwner = mined.find(x=>x.key==="newOwner");
+  if(newOwner){s+=8;r.push({t:newOwner.label,w:8,c:"owner"});}
+  const longOwner = mined.find(x=>x.key==="longOwner");
+  if(longOwner){s+=6;r.push({t:longOwner.label,w:6,c:"owner"});}
+
+  // Shovels permit data
+  if(p._shovelsPermits!==undefined) {
+    const rp = (p._shovelsPermits||[]).filter(x=>(x.tags||[]).includes("roofing")||(x.description||"").toLowerCase().includes("roof"));
+    if(rp.length===0&&age>=10){s+=12;r.push({t:`No roofing permits found in Shovels (180M records) — ${age}yr old property`,w:12,c:"permit"});}
+    else if(rp.length>0) {
+      const latest = rp.sort((a,b)=>(b.file_date||"").localeCompare(a.file_date||""))[0];
+      const yrsAgo = latest.file_date ? ((Date.now()-new Date(latest.file_date).getTime())/(365.25*24*3600000)).toFixed(1) : "?";
+      if(parseFloat(yrsAgo)>15){s+=10;r.push({t:`Last roof permit: ${latest.file_date} (${yrsAgo}yrs ago)`,w:10,c:"permit"});}
+      else if(parseFloat(yrsAgo)>8){s+=5;r.push({t:`Roof permit ${yrsAgo}yrs ago — approaching cycle`,w:5,c:"permit"});}
+      else{r.push({t:`Recent roof permit: ${latest.file_date} (${yrsAgo}yrs ago)`,w:0,c:"permit"});}
+    }
+  }
+  if(p._aiPermitScore){s+=p._aiPermitScore;r.push({t:p._aiPermitReason,w:p._aiPermitScore,c:"ai"});}
+
+  // Roof material
+  const rt=(p.features?.roofType||"").toLowerCase();
+  if(rt.includes("asphalt")||rt.includes("shingle")||rt.includes("comp")||rt.includes("3-tab")){s+=5;r.push({t:`${p.features.roofType} — standard replacement material`,w:5,c:"roof"});}
+
+  s=Math.max(0,Math.min(s,100));
+  return{score:s,priority:s>=70?"HOT":s>=45?"WARM":"COOL",reasons:r,mined};
+}
+
+// ─── APIs ──────────────────────────────────────────────────────
+async function callRentcast(prompt) {
+  // Parse intent from prompt
+  const addrMatch = prompt.match(/address="([^"]+)"/);
+  const zipMatch  = prompt.match(/zipCode="([^"]+)"/);
+  const isAVM     = prompt.includes("/avm/value") || prompt.includes("avm/value");
+  try {
+    if (isAVM && addrMatch) {
+      const r = await fetch(`${PROXY}/rentcast/avm`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({address:addrMatch[1],compCount:5})});
+      if (!r.ok) return {properties:[],valuation:null};
+      const val = await r.json();
+      return {properties:[], valuation: val?.price ? val : null};
+    }
+    const params = addrMatch ? {address:addrMatch[1],limit:10} : zipMatch ? {zipCode:zipMatch[1],propertyType:"Single Family",limit:15} : null;
+    if (!params) return {properties:[],valuation:null};
+    const r = await fetch(`${PROXY}/rentcast/properties`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(params)});
+    if (!r.ok) {
+      const err = await r.text();
+      return {properties:[],valuation:null,raw:err.slice(0,200)};
+    }
+    const data = await r.json();
+    // Rentcast returns array for zip search, single object for address
+    const properties = Array.isArray(data) ? data : (data?.id ? [data] : data?.properties || []);
+    return {properties: properties.filter(Boolean), valuation:null};
+  } catch(e) {
+    return {properties:[],valuation:null,raw:e.message};
+  }
+}
+
+async function callSolar(lat,lng,key){try{const r=await fetch(`https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&key=${key}`);return r.ok?await r.json():null;}catch{return null;}}
+
+// Permit lookup — LADBS (LA) via BackyardOne, Shovels.ai (national) via proxy
+async function callShovels(zipCode, address) {
+  // 1. Try LADBS via BackyardOne (works for LA County addresses)
+  if (address) {
+    try {
+      const r = await fetch(`${PROXY}/byo/lookup_permits`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({address})});
+      if (r.ok) {
+        const data = await r.json();
+        const permits = data?.raw?.result?.structuredContent?.data?.permits || [];
+        if (permits.length > 0) {
+          return permits.map(p=>({description:p.work_description||p.description||"Roofing permit",file_date:p.issue_date||p.permit_date,tags:["roofing"],jurisdiction:"Los Angeles LADBS",permit_number:p.permit_number}));
+        }
+      }
+    } catch {}
+  }
+  // 2. Fallback: Shovels.ai national database via proxy (needs SHOVELS_KEY in Cloud Run)
+  try {
+    const r = await fetch(`${PROXY}/shovels/permits`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({geo_id:zipCode,size:50})});
+    if (r.ok) { const data=await r.json(); return data.items||[]; }
+  } catch {}
+  return [];
+}
+
+// Legacy alias kept for compatibility
+async function callShovelsViaProxy(zipCode, address) {
+  return callShovels(zipCode, address);
+}
+
+// AI inference of permit history from property characteristics
+async function inferPermits(prop, mined) {
+  const ta = prop.taxAssessments||{};
+  const yrs = Object.keys(ta).sort();
+  const assessHistory = yrs.map(y=>`${y}: total=${$k(ta[y]?.value||0)}, land=${$k(ta[y]?.land||0)}, improvements=${$k(ta[y]?.improvements||0)}`).join("\n");
+  const spikes = mined.filter(x=>x.key==="spike").map(x=>x.label).join("; ");
+  const prompt = `Analyze this property for ROOFING permit probability. Return ONLY valid JSON, no prose.\n\nPROPERTY: ${prop.formattedAddress}\nBuilt: ${prop.yearBuilt} (${2026-(prop.yearBuilt||2000)}yrs old)\nRoof: ${prop.features?.roofType||"Unknown"}\nSqFt: ${prop.squareFootage||"?"}\nStories: ${prop.features?.floorCount||1}\nLast sale: ${prop.lastSaleDate||"?"} for ${$(prop.lastSalePrice||0)}\nOwner-occupied: ${prop.ownerOccupied}\nCondition: ${prop.features?.condition||"?"}\n\nTAX ASSESSMENT HISTORY:\n${assessHistory||"None available"}\n\nASSESSMENT SPIKES: ${spikes||"None"}\n\nBased on: 1) Roof material lifespan 2) Assessment patterns 3) Property age 4) Owner tenure 5) Regional weather exposure\n\nReturn exactly: {"estimatedLastRoofWork":"YYYY or never","confidence":"high/medium/low","yearsSinceRoof":0,"reasoning":"1 sentence","score":0}`;
+  try {
+    const r = await fetch(`${PROXY}/gemini/generate`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
+    const d = await r.json();
+    const text=(d.candidates||[{content:{parts:[{text:""}]}}])[0].content.parts[0].text||"";
+    return JSON.parse(text.replace(/```json\s*/g,"").replace(/```/g,"").trim());
+  } catch { return null; }
+}
+
+async function callAI(prop,bid,cfg,val,solar,permits,mined) {
+  const pv=val?.price||prop.lastSalePrice||0;
+  const sInfo=solar?`\nSATELLITE: ${m2s(solar.solarPotential?.wholeRoofStats?.areaMeters2||0)}sf measured, ${solar.solarPotential?.roofSegmentStats?.length||0} segments`:"";
+  const pInfo=permits?.length?`\nPERMITS (Shovels): ${permits.length} roofing permits in zip, ${permits.filter(x=>x.description?.toLowerCase().includes(prop.formattedAddress?.split(",")[0]?.trim().toLowerCase())||false).length} at this address`:"";
+  const minedStr=mined?.slice(0,6).map(m=>m.label).join("\n")||"";
+  const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:600,
+      messages:[{role:"user",content:`Expert roofing sales consultant. 5 sentences max. SPECIFIC & ACTIONABLE — reference actual data.\n\nPROPERTY: ${prop.formattedAddress}\n${prop.squareFootage}sf, ${prop.features?.floorCount||1} stories, built ${prop.yearBuilt}\nRoof: ${prop.features?.roofType||"?"} | Value: ${$(pv)}${sInfo}${pInfo}\nOwner: ${prop.owner?.names?.join(", ")||"Unknown"} | Occupied: ${prop.ownerOccupied}\n\nDATA INTELLIGENCE:\n${minedStr}\n\nBID: ${$(bid.total)} for ${cfg.material} ($${bid.psf}/sf) | ${bid.warranty}\n\nCover: 1) Lead with strongest data point 2) Competitive positioning 3) Specific upsell based on property 4) Create urgency from data 5) Recommended approach angle (door knock vs mail vs call)`}]})});
+  const d=await res.json();return(d.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("")||"";
+}
+
+// ─── STORAGE ───────────────────────────────────────────────────
+const store={
+  save:async(n,d)=>{try{await window.storage.set(`riq:${n}`,JSON.stringify({...d,at:new Date().toISOString()}));return true;}catch{return false;}},
+  load:async n=>{try{const r=await window.storage.get(`riq:${n}`);return r?JSON.parse(r.value):null;}catch{return null;}},
+  list:async()=>{try{const r=await window.storage.list("riq:");return r?.keys?.map(k=>k.replace("riq:",""))||[];}catch{return[];}},
+  del:async n=>{try{await window.storage.delete(`riq:${n}`);return true;}catch{return false;}},
+};
+
+// ─── ICONS ─────────────────────────────────────────────────────
+const I={
+  Search:()=><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  Home:()=><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  Zap:()=><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+  Dol:()=><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>,
+  Tgt:()=><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+  Rt:()=><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>,
+  Alrt:()=><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+  Chk:()=><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  Spn:()=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{animation:"spin 1s linear infinite"}}><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>,
+  Roof:()=><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M2 20L12 4l10 16"/><path d="M6 20v-6h4v6"/><path d="M14 20v-4h4v4"/></svg>,
+  Sat:()=><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M13 7L9 3 5 7l4 4"/><path d="M17 11l4 4-4 4-4-4"/><circle cx="19" cy="5" r="2"/></svg>,
+  Sv:()=><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+  Fld:()=><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>,
+  Tr:()=><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>,
+  Usr:()=><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  Prm:()=><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+  Brn:()=><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>,
+  Ad:()=><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 9l2 4h-1l2-4"/><path d="M14 9h2.5a1.5 1.5 0 010 3H14V9z"/></svg>,
+  Mail:()=><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+  Globe:()=><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
+  Crosshair:()=><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>,
+};
+
+// ─── COMPONENT ─────────────────────────────────────────────────
+const RoofIQApp = function RoofIQ() {
+  const [view, setView] = useState("search");
+  const [addr, setAddr] = useState("");
+  const [zip, setZip] = useState("");
+  const [solKey, setSolKey] = useState("");
+  const [showKeys, setShowKeys] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [lm, setLm] = useState("");
+  const [err, setErr] = useState(null);
+  const [props, setProps] = useState([]);
+  const [sel, setSel] = useState(null);
+  const [solar, setSolar] = useState(null);
+  const [permits, setPermits] = useState([]);
+  const [val, setVal] = useState(null);
+  const [cfg, setCfg] = useState({material:"Architectural Shingle",complexity:"moderate",pitch:"standard",tearOff:true,iceShield:false,gutters:false});
+  const [bid, setBid] = useState(null);
+  const [ai, setAi] = useState("");
+  const [aiL, setAiL] = useState(false);
+  const [hov, setHov] = useState(null);
+  const [projs, setProjs] = useState([]);
+  const [pName, setPName] = useState("");
+  const [showP, setShowP] = useState(false);
+  const [sMsg, setSMsg] = useState("");
+  const [adTab, setAdTab] = useState(0);
+  const [co, setCo] = useState({name:"Summit Roofing Co.",phone:"(615) 555-0187",url:"SummitRoofing.com",lic:"TN #12847",rating:"4.9",reviews:"347",yrs:"18",fin:"0% for 18mo"});
+
+  useEffect(()=>{store.list().then(setProjs);},[]);
+
+  // ── SEARCH ───────────────────────────────────────────────
+  const search = useCallback(async()=>{
+    const q=addr.trim()||zip.trim(); if(!q)return;
+    setLoading(true);setErr(null);setProps([]);setLm("Querying Rentcast via MCP...");
+    try{
+      const prompt=addr.trim()
+        ?`Use Rentcast properties endpoint with address="${addr.trim()}" and limit=10. Return ALL fields including features (roofType, exteriorType, floorCount, cooling, heating, condition, pool, fireplace, garageSpaces), taxAssessments WITH land and improvements breakdown for each year, owner object, ownerOccupied boolean, lastSaleDate, lastSalePrice, latitude, longitude.`
+        :`Use Rentcast properties endpoint with zipCode="${zip.trim()}" and propertyType="Single Family" and limit=15. Return ALL fields.`;
+      const result=await callRentcast(prompt);
+      if(!result.properties.length){setErr(result.raw?`No results. ${result.raw.slice(0,200)}`:"No properties found. Try: Street, City, State, Zip");}
+      else{
+        const enriched=result.properties.map(p=>{const ta=p.taxAssessments||{},yrs=Object.keys(ta).sort();return{...p,_assessedValue:yrs.length?ta[yrs[yrs.length-1]]?.value:null};});
+        setProps(enriched);setView("results");
+      }
+    }catch(e){setErr(e.message);}
+    finally{setLoading(false);setLm("");}
+  },[addr,zip]);
+
+  // ── SELECT ───────────────────────────────────────────────
+  const pick = useCallback(async(prop)=>{
+    setSel(prop);setVal(null);setSolar(null);setPermits([]);setAi("");
+    const mat=inferMat(prop);let comp=inferComp(prop,null),pitch="standard";
+    let ra=eRoof(prop.squareFootage||2000,prop.features?.floorCount||1);
+    let nc={...cfg,material:mat,complexity:comp,pitch};setCfg(nc);
+    setBid(calcBid(ra,nc.material,nc.complexity,nc.pitch,nc));
+    setView("bid");setAiL(true);
+
+    // 1. Solar
+    let sol=null;
+    if(solKey&&prop.latitude&&prop.longitude){
+      setLm("📡 Measuring roof via satellite...");
+      sol=await callSolar(prop.latitude,prop.longitude,solKey);
+      if(sol?.solarPotential){setSolar(sol);const wr=sol.solarPotential.wholeRoofStats;if(wr?.areaMeters2)ra=m2s(wr.areaMeters2);const sg=sol.solarPotential.roofSegmentStats||[];if(sg.length){const lg=sg.reduce((a,s)=>(s.stats?.areaMeters2||0)>(a.stats?.areaMeters2||0)?s:a,sg[0]);pitch=pCat(lg.pitchDegrees||0);comp=inferComp(prop,sol);}nc={...nc,complexity:comp,pitch};setCfg(nc);setBid(calcBid(ra,nc.material,nc.complexity,nc.pitch,nc));}
+    }
+
+    // 2. Shovels permits
+    const propZip=prop.zipCode||(prop.formattedAddress?.match(/\d{5}/)?.[0])||"";
+    if(propZip){
+      setLm("🔍 Searching Shovels.ai permits (180M records)...");
+      const shovData=await callShovels(propZip,prop.formattedAddress||"");
+      setPermits(shovData);prop._shovelsPermits=shovData;
+    }
+
+    // 3. AI permit inference
+    setLm("🧠 AI analyzing permit probability...");
+    const mined=mineRentcast(prop);
+    const aiPerm=await inferPermits(prop,mined);
+    if(aiPerm){prop._aiPermitScore=aiPerm.score||0;prop._aiPermitReason=`AI inference (${aiPerm.confidence}): ${aiPerm.reasoning||`Est. last roof: ${aiPerm.estimatedLastRoofWork}, ~${aiPerm.yearsSinceRoof}yr ago`}`;}
+
+    // 4. Valuation
+    setLm("💰 Fetching valuation...");
+    try{const vr=await callRentcast(`Use Rentcast /avm/value with address="${prop.formattedAddress}" and compCount=5.`);if(vr.valuation)setVal(vr.valuation);}catch{}
+
+    // 5. AI strategy
+    setLm("🎯 Generating sales strategy...");
+    try{setAi(await callAI(prop,calcBid(ra,nc.material,nc.complexity,nc.pitch,nc),nc,val,sol,permits,mined));}catch{}
+    setAiL(false);setLm("");
+  },[cfg,solKey]);
+
+  useEffect(()=>{
+    if(sel&&view==="bid"){let ra=eRoof(sel.squareFootage||2000,sel.features?.floorCount||1);if(solar?.solarPotential?.wholeRoofStats?.areaMeters2)ra=m2s(solar.solarPotential.wholeRoofStats.areaMeters2);setBid(calcBid(ra,cfg.material,cfg.complexity,cfg.pitch,cfg));}
+  },[cfg,sel,view,solar]);
+
+  // Save/Load
+  const doSave=async()=>{const n=pName.trim()||`${addr||zip} ${new Date().toLocaleDateString()}`;const ok=await store.save(n,{props,sel,solar,permits,val,cfg,bid,ai,addr,zip});setSMsg(ok?`✓ Saved "${n}"`:"Failed");setProjs(await store.list());setTimeout(()=>setSMsg(""),3000);};
+  const doLoad=async n=>{const d=await store.load(n);if(!d)return;setProps(d.props||[]);setSel(d.sel);setSolar(d.solar);setPermits(d.permits||[]);setVal(d.val);setCfg(d.cfg||cfg);setBid(d.bid);setAi(d.ai||"");setAddr(d.addr||"");setZip(d.zip||"");setView(d.sel?"bid":d.props?.length?"results":"search");setShowP(false);};
+
+  // Styles
+  const o="rgba(255,85,0,",w="rgba(255,255,255,";
+  const S={
+    app:{fontFamily:"'Instrument Sans',sans-serif",background:"#07090F",color:"#DDE3F0",minHeight:"100vh"},
+    glow:{position:"fixed",inset:0,background:`radial-gradient(ellipse at 15% -10%,${o}0.07) 0%,transparent 55%),radial-gradient(ellipse at 85% 110%,rgba(30,120,255,0.04) 0%,transparent 55%)`,pointerEvents:"none",zIndex:0},
+    wr:{position:"relative",zIndex:1,maxWidth:1020,margin:"0 auto",padding:"0 28px 60px"},
+    hd:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 0",borderBottom:`1px solid ${w}0.05)`,flexWrap:"wrap",gap:8},
+    logo:{display:"flex",alignItems:"center",gap:10},
+    lt:{fontSize:21,fontWeight:800,background:"linear-gradient(135deg,#FF5500,#FF8C00)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"},
+    tg:{fontSize:8,fontWeight:800,letterSpacing:"0.12em",textTransform:"uppercase",background:`${o}0.12)`,color:"#FF6B1A",padding:"3px 7px",borderRadius:3},
+    nv:{display:"flex",gap:3,alignItems:"center"},
+    nb:a=>({padding:"7px 14px",borderRadius:7,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"inherit",background:a?`${o}0.12)`:"transparent",color:a?"#FF6B1A":"#3D4A6B"}),
+    sc:{padding:"36px 0"},
+    h1:{fontSize:38,fontWeight:900,lineHeight:1.05,letterSpacing:"-0.035em",margin:"0 0 14px"},
+    ac:{background:"linear-gradient(135deg,#FF5500,#FF8C00)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"},
+    sb:{fontSize:15,color:"#4D5A7B",lineHeight:1.65,margin:"0 0 22px",maxWidth:560},
+    sx:{display:"flex",gap:10,alignItems:"stretch",background:`${w}0.025)`,border:`1px solid ${w}0.06)`,borderRadius:14,padding:7},
+    ip:{flex:1,padding:"13px 16px",borderRadius:9,border:`1px solid ${w}0.06)`,background:"rgba(0,0,0,0.35)",color:"#DDE3F0",fontSize:14,fontFamily:"inherit",outline:"none"},
+    ips:{width:90,padding:"13px 10px",borderRadius:9,border:`1px solid ${w}0.06)`,background:"rgba(0,0,0,0.35)",color:"#DDE3F0",fontSize:14,fontFamily:"inherit",outline:"none",textAlign:"center"},
+    bt:{display:"flex",alignItems:"center",gap:7,padding:"13px 24px",borderRadius:9,border:"none",cursor:"pointer",background:"linear-gradient(135deg,#FF5500,#E04A00)",color:"#fff",fontSize:14,fontWeight:800,fontFamily:"inherit",whiteSpace:"nowrap"},
+    bs:c=>({display:"inline-flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:7,border:"none",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit",background:c||`${w}0.04)`,color:c?"#fff":"#6B7FA0"}),
+    cd:h=>({background:h?`${o}0.025)`:`${w}0.02)`,border:`1px solid ${h?`${o}0.2)`:`${w}0.05)`}`,borderRadius:14,padding:20,marginBottom:10,cursor:"pointer",transition:"all 0.15s"}),
+    cs:{background:`${w}0.02)`,border:`1px solid ${w}0.05)`,borderRadius:14,padding:20,marginBottom:10},
+    bg:p=>({display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:5,fontSize:10,fontWeight:800,background:p==="HOT"?"rgba(255,50,30,0.12)":p==="WARM"?`${o}0.12)`:"rgba(80,160,255,0.12)",color:p==="HOT"?"#FF3B1E":p==="WARM"?"#FF8C00":"#509CFF"}),
+    ml:{fontSize:10,color:"#3D4A6B",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.09em"},
+    mv:{fontSize:14,fontWeight:700,color:"#DDE3F0",marginTop:2},
+    sl:{width:"100%",padding:"11px 12px",borderRadius:9,border:`1px solid ${w}0.07)`,background:"rgba(0,0,0,0.4)",color:"#DDE3F0",fontSize:13,fontFamily:"inherit",outline:"none",appearance:"none"},
+    lb:{fontSize:11,fontWeight:700,color:"#4D5A7B",marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.07em"},
+    tl:on=>({display:"flex",alignItems:"center",gap:9,padding:"9px 12px",borderRadius:9,border:`1px solid ${on?`${o}0.25)`:`${w}0.05)`}`,background:on?`${o}0.06)`:"rgba(0,0,0,0.15)",cursor:"pointer"}),
+    dt:on=>({width:16,height:16,borderRadius:4,background:on?"#FF5500":`${w}0.08)`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}),
+    tt:{background:`linear-gradient(135deg,${o}0.08),rgba(255,140,0,0.03))`,border:`1px solid ${o}0.15)`,borderRadius:14,padding:28,textAlign:"center",marginBottom:22},
+    pr:{fontSize:48,fontWeight:900,letterSpacing:"-0.04em",background:"linear-gradient(135deg,#FF5500,#FF8C00)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"},
+    ln:{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:`1px solid ${w}0.03)`,fontSize:13},
+    bk:{display:"inline-flex",alignItems:"center",gap:5,padding:"7px 0",border:"none",background:"none",color:"#4D5A7B",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:18},
+    ai:{background:"rgba(30,120,255,0.05)",border:"1px solid rgba(30,120,255,0.1)",borderRadius:11,padding:18,marginTop:14,fontSize:13,lineHeight:1.75,color:"#8DA4C8"},
+    er:{background:"rgba(255,50,30,0.06)",border:"1px solid rgba(255,50,30,0.15)",borderRadius:11,padding:14,display:"flex",gap:9,fontSize:13,color:"#FF6B4A",marginTop:10},
+    ft:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12,marginTop:24},
+    fc:{background:`${w}0.015)`,border:`1px solid ${w}0.04)`,borderRadius:12,padding:14},
+    fi:{width:30,height:30,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",background:`${o}0.08)`,color:"#FF6B1A",marginBottom:6},
+    so:{background:"rgba(30,200,120,0.04)",border:"1px solid rgba(30,200,120,0.12)",borderRadius:12,padding:18,marginBottom:12},
+    pm:{background:"rgba(180,130,255,0.04)",border:"1px solid rgba(180,130,255,0.1)",borderRadius:12,padding:18,marginBottom:12},
+    vl:{background:"rgba(30,120,255,0.04)",border:"1px solid rgba(30,120,255,0.08)",borderRadius:11,padding:16,marginBottom:12},
+    cr:{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:`1px solid ${w}0.02)`,fontSize:12,color:"#6B7FA0"},
+    tb:t=>({fontSize:10,fontWeight:800,padding:"2px 7px",borderRadius:4,marginLeft:8,background:t.includes("Premium")?"rgba(180,130,255,0.12)":t==="Best"?"rgba(255,200,0,0.12)":t==="Better"?"rgba(30,200,120,0.12)":`${w}0.06)`,color:t.includes("Premium")?"#B482FF":t==="Best"?"#FFD000":t==="Better"?"#1EC878":"#6B7FA0"}),
+    lb2:{display:"flex",alignItems:"center",gap:9,padding:"12px 16px",marginTop:10,borderRadius:9,background:`${o}0.04)`,border:`1px solid ${o}0.1)`,fontSize:13,color:"#FF8C00"},
+    kx:{marginTop:12,background:`${w}0.02)`,border:`1px solid ${w}0.06)`,borderRadius:11,padding:14},
+    ki:{width:"100%",padding:"10px 12px",borderRadius:8,border:`1px solid ${w}0.06)`,background:"rgba(0,0,0,0.3)",color:"#DDE3F0",fontSize:13,fontFamily:"inherit",outline:"none",marginTop:6},
+    pp:{background:`${w}0.03)`,border:`1px solid ${w}0.06)`,borderRadius:12,padding:14,marginTop:12},
+    pw:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${w}0.03)`,fontSize:13},
+    cc:c=>({fontSize:10,padding:"2px 7px",borderRadius:3,background:c==="age"?"rgba(255,50,30,0.06)":c==="permit"||c==="ai"?"rgba(180,130,255,0.06)":c==="owner"?"rgba(30,200,120,0.06)":c==="assess"?"rgba(255,200,0,0.06)":c==="roof"?"rgba(255,85,0,0.06)":`${w}0.03)`,color:c==="age"?"#FF6B4A":c==="permit"||c==="ai"?"#B482FF":c==="owner"?"#1EC878":c==="assess"?"#FFD000":c==="roof"?"#FF8C00":"#5D6F95"}),
+  };
+
+  const cols=["#FF5500","#FF8C00","#FFD000","#1EC878","#509CFF","#B482FF","#FF6B9D","#6B7FA0"];
+  const hasSol=!!solar?.solarPotential;const segs=solar?.solarPotential?.roofSegmentStats;const wr=solar?.solarPotential?.wholeRoofStats;
+  const sc=sel?scoreProperty(sel):null;
+
+  return(<div style={S.app}>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}input::placeholder{color:#3D4A6B}select option{background:#0D1117;color:#DDE3F0}*::-webkit-scrollbar{width:5px}*::-webkit-scrollbar-thumb{background:${w}0.08);border-radius:3px}`}</style>
+    <div style={S.glow}/><div style={S.wr}>
+    {/* HDR */}
+    <header style={S.hd}>
+      <div style={S.logo}><I.Roof/><span style={S.lt}>RoofIQ</span><span style={S.tg}>v7 · Powered by BackyardOne + Gemini</span></div>
+      <nav style={S.nv}>
+        <button style={S.nb(view==="search")} onClick={()=>setView("search")}>Search</button>
+        <button style={S.nb(view==="results")} onClick={()=>props.length&&setView("results")}>Results{props.length?` (${props.length})`:""}</button>
+        <button style={S.nb(view==="bid")} onClick={()=>bid&&setView("bid")}>Bid</button>
+        <button style={S.nb(view==="ads")} onClick={()=>sel&&bid&&setView("ads")}><I.Ad/> Ads</button>
+        <span style={{width:1,height:20,background:`${w}0.08)`,margin:"0 4px"}}/>
+        <button style={S.bs()} onClick={()=>setShowP(!showP)}><I.Fld/> Projects</button>
+        {(sel||props.length>0)&&<button style={S.bs("linear-gradient(135deg,#FF5500,#E04A00)")} onClick={doSave}><I.Sv/> Save</button>}
+      </nav>
+    </header>
+    {sMsg&&<div style={{...S.lb2,background:"rgba(30,200,120,0.06)",border:"1px solid rgba(30,200,120,0.15)",color:"#1EC878"}}><I.Chk/>{sMsg}</div>}
+
+    {showP&&<div style={S.pp}>
+      <div style={{display:"flex",gap:10,marginBottom:12}}><input style={{...S.ki,marginTop:0,flex:1}} placeholder="Project name" value={pName} onChange={e=>setPName(e.target.value)}/><button style={S.bs("linear-gradient(135deg,#FF5500,#E04A00)")} onClick={doSave}><I.Sv/> Save</button></div>
+      {projs.length===0?<div style={{fontSize:12,color:"#3D4A6B"}}>No saved projects</div>:projs.map(p=><div key={p} style={S.pw}><span style={{fontWeight:700,cursor:"pointer"}} onClick={()=>doLoad(p)}>{p}</span><div style={{display:"flex",gap:6}}><button style={{...S.bs(),padding:"4px 8px"}} onClick={()=>doLoad(p)}>Load</button><button style={{...S.bs(),padding:"4px 8px",color:"#FF4444"}} onClick={()=>{store.del(p);store.list().then(setProjs);}}><I.Tr/></button></div></div>)}
+    </div>}
+
+    {/* ═══ SEARCH ═══ */}
+    {view==="search"&&<div style={S.sc}>
+      <h1 style={S.h1}>Measure. Score. Bid.<br/><span style={S.ac}>Win more roofs.</span></h1>
+      <p style={S.sb}>Satellite measurement · Shovels.ai permits · Rentcast property intelligence · AI propensity scoring · Auto-bid engine.</p>
+      <div style={S.sx}>
+        <input style={S.ip} placeholder="Full address: Street, City, State, Zip" value={addr} onChange={e=>{setAddr(e.target.value);setZip("");}} onKeyDown={e=>e.key==="Enter"&&search()}/>
+        <span style={{display:"flex",alignItems:"center",color:"#3D4A6B",fontSize:12,fontWeight:700}}>or</span>
+        <input style={S.ips} placeholder="Zip" value={zip} maxLength={5} onChange={e=>{setZip(e.target.value);setAddr("");}} onKeyDown={e=>e.key==="Enter"&&search()}/>
+        <button style={S.bt} onClick={search} disabled={loading}>{loading?<I.Spn/>:<><I.Search/> Search</>}</button>
+      </div>
+      {loading&&lm&&<div style={S.lb2}><I.Spn/>{lm}</div>}
+      {err&&<div style={S.er}><I.Alrt/><div>{err}</div></div>}
+      <div style={S.kx}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}} onClick={()=>setShowKeys(!showKeys)}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}><I.Sat/><span style={{fontSize:13,fontWeight:700,color:solKey?"#1EC878":"#6B7FA0"}}>{solKey?"✓ Solar API connected":"Add Google Solar API key (optional)"}</span></div>
+          <span style={{fontSize:11,color:"#3D4A6B"}}>{showKeys?"▲":"▼"}</span>
+        </div>
+        {showKeys&&<div><input style={S.ki} type="password" placeholder="Google Cloud API key" value={solKey} onChange={e=>setSolKey(e.target.value)}/><div style={{fontSize:11,color:"#3D4A6B",marginTop:6,lineHeight:1.5}}>Enables satellite roof measurement. Without it, area is estimated + AI infers from property data.</div></div>}
+      </div>
+      <div style={S.ft}>
+        {[{i:<I.Sat/>,t:"Satellite Measurement",d:"Google Solar API — area, pitch, azimuth per segment"},{i:<I.Prm/>,t:"Shovels.ai Permits",d:"180M permits — roofing history by zip & address"},{i:<I.Brn/>,t:"AI Permit Inference",d:"Predicts roof work from assessments, age, features"},{i:<I.Tgt/>,t:"Propensity Engine",d:"12 signals: tax trends, owner tenure, material life, permits"}].map((f,i)=><div key={i} style={S.fc}><div style={S.fi}>{f.i}</div><div style={{fontSize:12,fontWeight:800,marginBottom:3}}>{f.t}</div><div style={{fontSize:11,color:"#4D5A7B",lineHeight:1.4}}>{f.d}</div></div>)}
+      </div>
+    </div>}
+
+    {/* ═══ RESULTS ═══ */}
+    {view==="results"&&<div style={S.sc}>
+      <button style={S.bk} onClick={()=>setView("search")}>← New search</button>
+      <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 3px"}}>{props.length} Properties</h2>
+      <p style={{color:"#4D5A7B",fontSize:13,margin:"0 0 18px"}}>Ranked by replacement propensity · Click for full analysis</p>
+      {[...props].sort((a,b)=>scoreProperty(b).score-scoreProperty(a).score).map((p,idx)=>{
+        const{score,priority,reasons,mined}=scoreProperty(p);const v=p.lastSalePrice||p._assessedValue;
+        return(<div key={p.id||idx} style={S.cd(hov===idx)} onClick={()=>pick(p)} onMouseEnter={()=>setHov(idx)} onMouseLeave={()=>setHov(null)}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+            <div><div style={{display:"flex",alignItems:"center",gap:9,marginBottom:3}}><I.Home/><span style={{fontSize:15,fontWeight:800}}>{p.formattedAddress||"—"}</span></div>
+              <div style={{fontSize:12,color:"#4D5A7B"}}>{p.county?`${p.county} Co · `:""}{p.propertyType||""}{p.ownerOccupied?" · Owner-occupied":""}</div></div>
+            <div style={{display:"flex",alignItems:"center",gap:9}}><span style={S.bg(priority)}>{priority==="HOT"?"🔥":priority==="WARM"?"⚡":"❄️"} {score}</span><I.Rt/></div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:10,marginBottom:8}}>
+            {[{l:"Sq Ft",v:p.squareFootage?.toLocaleString()||"—"},{l:"Built",v:p.yearBuilt||"—"},{l:"Roof",v:p.features?.roofType||"—"},{l:"Stories",v:p.features?.floorCount||"1"},{l:"Value",v:v?$k(v):"—"},{l:"Est Roof",v:`${eRoof(p.squareFootage||2000,p.features?.floorCount||1).toLocaleString()} sf`}].map((m,i)=><div key={i}><div style={S.ml}>{m.l}</div><div style={S.mv}>{m.v}</div></div>)}
+          </div>
+          {p.owner&&<div style={{fontSize:11,color:"#5D6F95",marginBottom:5,display:"flex",alignItems:"center",gap:6}}><I.Usr/>{p.owner.names?.join(", ")||"—"}</div>}
+          <div style={{display:"flex",flexWrap:"wrap",gap:4}}>{reasons.slice(0,5).map((r,i)=><span key={i} style={S.cc(r.c)}>{r.t}</span>)}</div>
+        </div>);
+      })}
+    </div>}
+
+    {/* ═══ BID ═══ */}
+    {view==="bid"&&sel&&bid&&<div style={S.sc}>
+      <button style={S.bk} onClick={()=>setView("results")}>← Back</button>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:22}}>
+        <div><h2 style={{fontSize:22,fontWeight:800,margin:"0 0 3px"}}>Auto-Generated Bid</h2><div style={{fontSize:13,color:"#4D5A7B"}}>{sel.formattedAddress}</div></div>
+        <span style={S.bg(sc.priority)}>Score: {sc.score}/100</span>
+      </div>
+
+      <div style={S.tt}>
+        <div style={{fontSize:11,color:"#5D6F95",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.09em",marginBottom:3}}>Total Bid Price</div>
+        <div style={S.pr}>{$(bid.total)}</div>
+        <div style={{fontSize:13,color:"#6B7FA0",marginTop:4}}>${bid.psf}/sf · {bid.roofArea.toLocaleString()} sf{hasSol?" (measured)":""} · {bid.warranty}<span style={S.tb(bid.tier)}>{bid.tier}</span></div>
+        {hasSol&&<div style={{fontSize:11,color:"#1EC878",marginTop:6,fontWeight:700}}>📡 Satellite-measured roof</div>}
+      </div>
+
+      {/* Solar */}
+      {hasSol&&<div style={S.so}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,fontWeight:800,fontSize:13,color:"#1EC878"}}><I.Sat/> Satellite Roof Measurement</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12,marginBottom:8}}>
+          <div><div style={S.ml}>Total</div><div style={S.mv}>{m2s(wr?.areaMeters2||0).toLocaleString()} sf</div></div>
+          <div><div style={S.ml}>Ground</div><div style={S.mv}>{m2s(wr?.groundAreaMeters2||0).toLocaleString()} sf</div></div>
+          <div><div style={S.ml}>Segments</div><div style={S.mv}>{segs?.length||0}</div></div>
+          <div><div style={S.ml}>Quality</div><div style={S.mv}>{solar.imageryQuality||"—"}</div></div>
+        </div>
+        {segs?.length>0&&<><div style={{display:"flex",height:24,borderRadius:6,overflow:"hidden",marginBottom:8}}>{segs.map((sg,i)=>{const p=(sg.stats?.areaMeters2||0)/(segs.reduce((a,s)=>a+(s.stats?.areaMeters2||0),0))*100;return p<1?null:<div key={i} title={`Seg ${i+1}`} style={{width:`${p}%`,background:cols[i%8],display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:800,color:"rgba(0,0,0,0.6)"}}>{p>8?`${Math.round(p)}%`:""}</div>;})}</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(165px,1fr))",gap:6}}>{segs.slice(0,8).map((sg,i)=><div key={i} style={{background:"rgba(0,0,0,0.2)",borderRadius:7,padding:"8px 10px",borderLeft:`3px solid ${cols[i%8]}`}}><div style={{fontSize:10,fontWeight:800,color:cols[i%8]}}>SEG {i+1}</div><div style={{fontSize:14,fontWeight:800}}>{m2s(sg.stats?.areaMeters2||0).toLocaleString()} sf</div><div style={{fontSize:11,color:"#6B7FA0"}}>{(sg.pitchDegrees||0).toFixed(1)}° ({pRat(sg.pitchDegrees||0)}) · {azD(sg.azimuthDegrees||0)}</div></div>)}</div></>}
+      </div>}
+
+      {/* Permits */}
+      {permits.length>0&&<div style={S.pm}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,fontWeight:800,fontSize:13,color:"#B482FF"}}><I.Prm/> Shovels.ai Permit Data — {permits.length} roofing permits in zip</div>
+        {permits.slice(0,8).map((pm,i)=><div key={i} style={S.cr}><span style={{color:"#8DA4C8",flex:1}}>{pm.description?.slice(0,80)||pm.tags?.join(", ")||"Roofing permit"}</span><span style={{fontWeight:700,whiteSpace:"nowrap"}}>{pm.file_date||pm.issue_date||"—"}{pm.jurisdiction?` · ${pm.jurisdiction}`:""}</span></div>)}
+        {permits.length>8&&<div style={{fontSize:11,color:"#4D5A7B",marginTop:6}}>+ {permits.length-8} more permits</div>}
+      </div>}
+
+      {/* Owner */}
+      {sel.owner&&<div style={{...S.cs,marginBottom:12}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,fontWeight:800,fontSize:13}}><I.Usr/> Owner</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          {sel.owner.names&&<div><div style={S.ml}>Name</div><div style={S.mv}>{sel.owner.names.join(", ")}</div></div>}
+          {sel.ownerOccupied!=null&&<div><div style={S.ml}>Occupied</div><div style={S.mv}>{sel.ownerOccupied?"Yes":"No (Absentee)"}</div></div>}
+          {sel.lastSaleDate&&<div><div style={S.ml}>Purchased</div><div style={S.mv}>{new Date(sel.lastSaleDate).toLocaleDateString()} ({$(sel.lastSalePrice||0)})</div></div>}
+          {sel.owner.mailingAddress&&<div><div style={S.ml}>Mailing</div><div style={S.mv}>{typeof sel.owner.mailingAddress==="object"?Object.values(sel.owner.mailingAddress).filter(Boolean).join(", "):sel.owner.mailingAddress}</div></div>}
+        </div>
+      </div>}
+
+      {/* Good/Better/Best */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:16}}>
+        {["3-Tab Asphalt","Architectural Shingle","Premium Designer"].map(mat=>{const m=MATS[mat],b=calcBid(bid.roofArea,mat,cfg.complexity,cfg.pitch,cfg),a=cfg.material===mat;
+          return<div key={mat} style={{background:a?`${o}0.06)`:`${w}0.015)`,border:`1px solid ${a?`${o}0.25)`:`${w}0.04)`}`,borderRadius:11,padding:14,cursor:"pointer",textAlign:"center"}} onClick={()=>setCfg(c=>({...c,material:mat}))}>
+            <div style={{fontSize:10,fontWeight:800,color:a?"#FF6B1A":"#4D5A7B",textTransform:"uppercase",marginBottom:4}}>{m.tier}</div>
+            <div style={{fontSize:22,fontWeight:900,color:a?"#FF6B1A":"#8DA4C8",marginBottom:2}}>{$(b.total)}</div>
+            <div style={{fontSize:11,color:"#4D5A7B"}}>{mat}</div><div style={{fontSize:10,color:"#3D4A6B",marginTop:2}}>{m.warranty}</div>
+          </div>;})}
+      </div>
+
+      {/* Valuation */}
+      {val&&<div style={S.vl}>
+        <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:8,fontWeight:800,fontSize:13,color:"#509CFF"}}><I.Dol/> AVM</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:8}}>
+          <div><div style={S.ml}>Est</div><div style={S.mv}>{$(val.price)}</div></div>
+          <div><div style={S.ml}>Low</div><div style={S.mv}>{$(val.priceRangeLow)}</div></div>
+          <div><div style={S.ml}>High</div><div style={S.mv}>{$(val.priceRangeHigh)}</div></div>
+        </div>
+        {val.comparables?.slice(0,3).map((c,i)=><div key={i} style={S.cr}><span>{c.formattedAddress}</span><span style={{fontWeight:700,color:"#8DA4C8"}}>{$(c.price)}</span></div>)}
+      </div>}
+
+      {/* Config */}
+      <div style={S.cs}>
+        <div style={{fontSize:13,fontWeight:800,marginBottom:12,display:"flex",alignItems:"center",gap:7}}><I.Roof/> Configuration</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          <div><label style={S.lb}>Material</label><select style={S.sl} value={cfg.material} onChange={e=>setCfg(c=>({...c,material:e.target.value}))}>{Object.entries(MATS).map(([k,v])=><option key={k}>{k}</option>)}</select></div>
+          <div><label style={S.lb}>Complexity</label><select style={S.sl} value={cfg.complexity} onChange={e=>setCfg(c=>({...c,complexity:e.target.value}))}>{Object.entries(COMP).map(([k,v])=><option key={k} value={k}>{v.l}</option>)}</select></div>
+          <div><label style={S.lb}>Pitch</label><select style={S.sl} value={cfg.pitch} onChange={e=>setCfg(c=>({...c,pitch:e.target.value}))}>{Object.entries(PITCH).map(([k,v])=><option key={k} value={k}>{v.l}</option>)}</select></div>
+          <div style={{display:"flex",flexDirection:"column",gap:5}}><label style={S.lb}>Add-Ons</label>
+            {[{k:"tearOff",l:"Tear-off"},{k:"iceShield",l:"Ice shield"},{k:"gutters",l:"Gutters"}].map(x=><div key={x.k} style={S.tl(cfg[x.k])} onClick={()=>setCfg(c=>({...c,[x.k]:!c[x.k]}))}><div style={S.dt(cfg[x.k])}>{cfg[x.k]&&<I.Chk/>}</div><span style={{fontSize:12,fontWeight:700,color:cfg[x.k]?"#DDE3F0":"#4D5A7B"}}>{x.l}</span></div>)}
+          </div>
+        </div>
+      </div>
+
+      {/* Cost */}
+      <div style={{...S.cs,marginTop:8}}>
+        <div style={{fontSize:13,fontWeight:800,marginBottom:8}}><I.Dol/> Breakdown</div>
+        {[{l:`Materials — ${cfg.material}`,v:bid.mc},{l:`Labor`,v:bid.lc},bid.to>0&&{l:"Tear-off",v:bid.to},{l:"Underlayment",v:bid.un},bid.ic>0&&{l:"Ice shield",v:bid.ic},bid.gu>0&&{l:"Gutters",v:bid.gu},{l:"Dumpster",v:bid.dump},{l:"Permits",v:bid.perm}].filter(Boolean).map((x,i)=><div key={i} style={S.ln}><span style={{color:"#6B7FA0"}}>{x.l}</span><span style={{fontWeight:700}}>{$(x.v)}</span></div>)}
+        <div style={{...S.ln,color:"#4D5A7B",fontSize:12,borderBottom:"none"}}><span>Sub</span><span>{$(bid.sub)}</span></div>
+        <div style={{...S.ln,color:"#4D5A7B",fontSize:12}}><span>OH 15%</span><span>{$(bid.oh)}</span></div>
+        <div style={{...S.ln,borderBottom:`2px solid ${o}0.2)`,paddingBottom:12}}><span style={{fontWeight:800,color:"#FF6B1A"}}>Profit 20%</span><span style={{fontWeight:800,color:"#FF6B1A"}}>{$(bid.pr)}</span></div>
+        <div style={{display:"flex",justifyContent:"space-between",paddingTop:12,fontSize:17,fontWeight:900}}><span>TOTAL</span><span style={{color:"#FF5500"}}>{$(bid.total)}</span></div>
+      </div>
+
+      {/* AI */}
+      <div style={S.ai}>
+        <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:7,fontWeight:800,color:"#509CFF",fontSize:12}}><I.Zap/> AI Sales Strategy</div>
+        {aiL?<div style={{display:"flex",alignItems:"center",gap:7,color:"#4D5A7B"}}><I.Spn/>{lm||"Generating..."}</div>:<div style={{whiteSpace:"pre-wrap"}}>{ai||"..."}</div>}
+      </div>
+
+      {/* Generate Ads CTA */}
+      <button onClick={()=>setView("ads")} style={{width:"100%",padding:"16px",borderRadius:12,border:`1px solid ${o}0.2)`,background:`linear-gradient(135deg,${o}0.06),rgba(255,140,0,0.02))`,cursor:"pointer",fontFamily:"inherit",marginTop:14,display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+        <I.Ad/><span style={{fontSize:14,fontWeight:800,color:"#FF6B1A"}}>Generate Targeted Ads</span><span style={{fontSize:12,color:"#4D5A7B"}}>— Sniper · Neighborhood · Conquest</span>
+      </button>
+
+      {/* Propensity detail */}
+      <div style={{...S.cs,marginTop:12}}>
+        <div style={{fontSize:13,fontWeight:800,marginBottom:10}}><I.Tgt/> Replacement Propensity</div>
+        {sc.reasons.map((r,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",fontSize:13,borderBottom:`1px solid ${w}0.02)`}}>
+          <span style={S.cc(r.c)}>{r.t}</span><span style={{fontSize:11,fontWeight:800,color:r.w>0?"#1EC878":r.w<0?"#FF4444":"#3D4A6B"}}>{r.w>0?"+":""}{r.w}</span>
+        </div>)}
+        <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,fontSize:14,fontWeight:800}}><span>Total</span><span style={{color:sc.priority==="HOT"?"#FF3B1E":sc.priority==="WARM"?"#FF8C00":"#509CFF"}}>{sc.score}/100 ({sc.priority})</span></div>
+      </div>
+
+      {/* Rentcast deep data */}
+      <div style={{...S.cs,marginTop:12}}>
+        <div style={{fontSize:13,fontWeight:800,marginBottom:10}}><I.Home/> Rentcast Property Intelligence</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:10}}>
+          {[{l:"Sq Ft",v:(sel.squareFootage||0).toLocaleString()},{l:"Built",v:sel.yearBuilt},{l:"Beds",v:sel.bedrooms},{l:"Baths",v:sel.bathrooms},{l:"Lot",v:sel.lotSize?`${sel.lotSize.toLocaleString()} sf`:"—"},{l:"Roof",v:sel.features?.roofType||"—"},{l:"Exterior",v:sel.features?.exteriorType||"—"},{l:"Garage",v:sel.features?.garageSpaces?`${sel.features.garageSpaces}-car`:"—"}].map((m,i)=><div key={i}><div style={S.ml}>{m.l}</div><div style={S.mv}>{m.v||"—"}</div></div>)}
+        </div>
+        {/* Assessment history */}
+        {Object.keys(sel.taxAssessments||{}).length>0&&<div style={{borderTop:`1px solid ${w}0.04)`,paddingTop:10,marginTop:6}}>
+          <div style={{fontSize:11,fontWeight:700,color:"#4D5A7B",marginBottom:6}}>TAX ASSESSMENT HISTORY</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:6}}>
+            {Object.entries(sel.taxAssessments).sort(([a],[b])=>a.localeCompare(b)).slice(-6).map(([yr,d])=><div key={yr} style={{background:"rgba(0,0,0,0.15)",borderRadius:6,padding:"6px 8px"}}>
+              <div style={{fontSize:10,color:"#3D4A6B",fontWeight:700}}>{yr}</div>
+              <div style={{fontSize:13,fontWeight:800}}>{$k(d?.value||0)}</div>
+              {d?.improvements!=null&&<div style={{fontSize:10,color:"#4D5A7B"}}>Imp: {$k(d.improvements)} · Land: {$k(d.land||0)}</div>}
+            </div>)}
+          </div>
+        </div>}
+        {/* Mined signals */}
+        {sc.mined?.length>0&&<div style={{borderTop:`1px solid ${w}0.04)`,paddingTop:10,marginTop:10}}>
+          <div style={{fontSize:11,fontWeight:700,color:"#4D5A7B",marginBottom:6}}>DATA INTELLIGENCE SIGNALS</div>
+          {sc.mined.filter(m=>!["cooling","heating","fireplace","pool"].includes(m.key)).slice(0,8).map((m,i)=><div key={i} style={{fontSize:12,color:"#6B7FA0",padding:"3px 0",borderBottom:`1px solid ${w}0.02)`}}><span style={{color:"#FF8C00",fontSize:8,marginRight:8}}>●</span>{m.label}</div>)}
+        </div>}
+      </div>
+    </div>}
+
+    {/* ═══ ADS ═══ */}
+    {view==="ads"&&sel&&bid&&(()=>{
+      const age=sel.yearBuilt?2026-sel.yearBuilt:25;
+      const hood=sel.county||sel.formattedAddress?.split(",")[1]?.trim()||"Your Neighborhood";
+      const city=sel.formattedAddress?.split(",").slice(-2,-1)[0]?.trim()||"";
+      const st=sel.formattedAddress?.split(",").pop()?.trim().split(" ")[0]||"";
+      const zipC=sel.zipCode||sel.formattedAddress?.match(/\d{5}/)?.[0]||"";
+      const owner=sel.owner?.names?.join(" & ")||"Homeowner";
+      const lastName=sel.owner?.names?.[0]?.split(" ").pop()||"Homeowner";
+      const shortAddr=sel.formattedAddress?.split(",")[0]||sel.formattedAddress;
+      const bidGood=calcBid(bid.roofArea,"3-Tab Asphalt",cfg.complexity,cfg.pitch,cfg).total;
+      const bidBest=calcBid(bid.roofArea,"Premium Designer",cfg.complexity,cfg.pitch,cfg).total;
+      const noPermit=sel._shovelsPermits!==undefined?(sel._shovelsPermits||[]).filter(x=>(x.tags||[]).includes("roofing")).length===0:true;
+      const permYrs=noPermit?Math.min(age,20):"?";
+
+      return <div style={S.sc}>
+      <button style={S.bk} onClick={()=>setView("bid")}>← Back to Bid</button>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+        <div><h2 style={{fontSize:22,fontWeight:800,margin:"0 0 3px"}}>Ad Generator</h2><div style={{fontSize:13,color:"#4D5A7B"}}>{sel.formattedAddress} · Score {sc.score}/100</div></div>
+        <span style={S.bg(sc.priority)}>{sc.priority}</span>
+      </div>
+
+      {/* Company editor */}
+      <div style={{...S.cs,marginBottom:16}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+          <div style={{fontSize:12,fontWeight:800,display:"flex",alignItems:"center",gap:6}}><I.Roof/> Your Company</div>
+          <span style={{fontSize:10,color:"#3D4A6B"}}>Edit to customize ads</span>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+          {[["Company","name"],["Phone","phone"],["Website","url"],["License","lic"],["Rating","rating"],["Reviews","reviews"],["Yrs in Biz","yrs"],["Financing","fin"]].map(([l,k])=>
+            <div key={k}><div style={S.ml}>{l}</div><input value={co[k]} onChange={e=>setCo(x=>({...x,[k]:e.target.value}))} style={{width:"100%",padding:"6px 8px",borderRadius:6,border:`1px solid ${w}0.06)`,background:"rgba(0,0,0,0.25)",color:"#DDE3F0",fontSize:12,fontFamily:"inherit",outline:"none",marginTop:3,boxSizing:"border-box"}}/></div>
+          )}
+        </div>
+      </div>
+
+      {/* 3 Tab Selector */}
+      <div style={{display:"flex",gap:6,marginBottom:22}}>
+        {[{icon:<I.Crosshair/>,l:"Sniper",sub:"Direct to homeowner",color:"#FF3B1E"},{icon:<I.Globe/>,l:"Neighborhood",sub:"Geo-targeted social",color:"#FF8C00"},{icon:<I.Ad/>,l:"Conquest",sub:"Display / retargeting",color:"#509CFF"}].map((t,i)=>
+          <button key={i} onClick={()=>setAdTab(i)} style={{flex:1,padding:"14px 16px",borderRadius:11,border:`1px solid ${adTab===i?t.color+"40":"rgba(255,255,255,0.05)"}`,background:adTab===i?t.color+"0A":"rgba(255,255,255,0.015)",cursor:"pointer",textAlign:"left",fontFamily:"inherit"}}>
+            <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:3}}><span style={{color:adTab===i?t.color:"#4D5A7B"}}>{t.icon}</span><span style={{fontSize:13,fontWeight:800,color:adTab===i?t.color:"#6B7FA0"}}>{t.l}</span></div>
+            <div style={{fontSize:11,color:"#3D4A6B"}}>{t.sub}</div>
+          </button>
+        )}
+      </div>
+
+      {/* ─── SNIPER: Direct Mail to Homeowner ─── */}
+      {adTab===0&&<div>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+          <span style={{fontSize:10,padding:"3px 8px",borderRadius:4,background:"rgba(255,50,30,0.08)",color:"#FF3B1E",fontWeight:700}}>🎯 1:1 Targeting · {owner}</span>
+          <span style={{fontSize:10,padding:"3px 8px",borderRadius:4,background:"rgba(255,50,30,0.08)",color:"#FF3B1E",fontWeight:700}}>Score: {sc.score}/100 {sc.priority}</span>
+          <span style={{fontSize:10,padding:"3px 8px",borderRadius:4,background:"rgba(255,255,255,0.04)",color:"#6B7FA0",fontWeight:700}}>Channel: First-class mail + door hanger</span>
+        </div>
+
+        {/* Direct mail piece */}
+        <div style={{borderRadius:4,overflow:"hidden",background:"#FEFCF8",color:"#2D2A24",maxWidth:560,margin:"0 auto",boxShadow:"0 2px 24px rgba(0,0,0,0.25)"}}>
+          <div style={{background:"linear-gradient(135deg,#1A1008,#2D1800)",padding:"24px 32px",color:"white",position:"relative",overflow:"hidden"}}>
+            <div style={{position:"absolute",top:-20,right:-20,width:120,height:120,borderRadius:"50%",background:"radial-gradient(circle,rgba(255,85,0,0.2),transparent 70%)"}}/>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",position:"relative"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:38,height:38,borderRadius:8,background:"linear-gradient(135deg,#FF5500,#E04A00)",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M2 20L12 4l10 16"/></svg></div><div><div style={{fontSize:16,fontWeight:800}}>{co.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.5)"}}>{co.phone} · {co.url}</div></div></div>
+              <div style={{fontSize:10,color:"rgba(255,255,255,0.4)",textAlign:"right"}}>{co.lic}<br/>⭐ {co.rating} ({co.reviews} reviews)</div>
+            </div>
+          </div>
+          <div style={{padding:"28px 36px",fontFamily:"Georgia,serif"}}>
+            <div style={{fontSize:12,color:"#8B8680",marginBottom:18}}>{new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</div>
+            <div style={{fontSize:14,color:"#5C574F",marginBottom:18,lineHeight:1.4}}>{owner}<br/>{shortAddr}<br/>{city}, {st} {zipC}</div>
+            <div style={{fontSize:15,lineHeight:1.85,color:"#3D3930"}}>
+              <p style={{margin:"0 0 14px"}}>Dear {lastName} family,</p>
+              <p style={{margin:"0 0 14px"}}>We're reaching out to homeowners in <strong>{hood}</strong> whose homes were built around <strong>{sel.yearBuilt}</strong>. Your home at <strong>{shortAddr}</strong> has a roof that is now <strong style={{color:"#C44000"}}>{age} years old</strong>.</p>
+              <p style={{margin:"0 0 14px"}}>For {(sel.features?.roofType||"asphalt shingle").toLowerCase()} roofing, the recommended replacement window is 25–30 years. {noPermit?<>Our records show <strong style={{color:"#C44000"}}>no roofing permits at your address in {permYrs}+ years</strong>, suggesting your roof may be original.</>:<>Based on the age of your home, your roof is approaching the end of its serviceable life.</>}</p>
+              <p style={{margin:"0 0 14px"}}>We'd like to offer a <strong>complimentary roof inspection</strong> — no obligation, no pressure. We'll assess your roof's condition and provide a written report.</p>
+            </div>
+            <div style={{background:"#F5F0E8",borderRadius:10,padding:"18px 22px",margin:"20px 0",border:"1px solid #E8E0D0"}}>
+              <div style={{fontSize:10,fontWeight:700,color:"#8B8680",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Estimate for {shortAddr} (~{bid.roofArea.toLocaleString()} sf roof)</div>
+              <div style={{display:"flex",justifyContent:"space-around"}}>
+                {[{t:"Good",n:"3-Tab Asphalt",p:bidGood,w:"20-25 yr"},{t:"Better",n:cfg.material,p:bid.total,w:bid.warranty},{t:"Best",n:"Premium Designer",p:bidBest,w:"50 yr"}].map((x,i)=>
+                  <div key={i} style={{textAlign:"center"}}><div style={{fontSize:10,fontWeight:700,color:i===1?"#C44000":"#8B8680",textTransform:"uppercase"}}>{i===1?"★ ":""}{x.t}</div><div style={{fontSize:i===1?24:18,fontWeight:800,color:i===1?"#C44000":"#3D3930"}}>{$k(x.p)}</div><div style={{fontSize:10,color:"#8B8680"}}>{x.n}</div><div style={{fontSize:9,color:"#AAA49C"}}>{x.w} warranty</div></div>
+                )}
+              </div>
+              <div style={{textAlign:"center",fontSize:11,color:"#8B8680",marginTop:10,borderTop:"1px solid #E0D8C8",paddingTop:8}}>Financing: <strong style={{color:"#3D3930"}}>{co.fin}</strong></div>
+            </div>
+            <div style={{fontSize:15,lineHeight:1.85,color:"#3D3930"}}>
+              <p style={{margin:"0 0 14px"}}>Call <strong>{co.phone}</strong> or visit <strong>{co.url}</strong>. Mention code <strong style={{fontFamily:"'Courier New',monospace",background:"#F5F0E8",padding:"2px 8px",borderRadius:4}}>{hood.toUpperCase().replace(/\s/g,"").slice(0,6)}-{sel.yearBuilt}</strong> for priority scheduling.</p>
+              <p style={{margin:0}}>Sincerely,<br/><em>The {co.name} Team</em></p>
+            </div>
+          </div>
+          <div style={{padding:"12px 36px",borderTop:"1px solid #E8E0D0",background:"#F9F6F0",display:"flex",justifyContent:"space-between",fontSize:11,color:"#AAA49C"}}>
+            <span>⭐ {co.rating}/5 · {co.reviews} reviews · {co.yrs} years</span><span>{co.lic}</span>
+          </div>
+        </div>
+        <div style={{marginTop:14,padding:12,borderRadius:9,background:"rgba(255,255,255,0.02)",border:`1px solid ${w}0.05)`,fontSize:11,color:"#4A5568",lineHeight:1.7}}>
+          <strong style={{color:"#6B7FA0"}}>Specs:</strong> 8.5×11" letter, 80lb matte · Hand-addressed #10 envelope (42% higher open rate) · Pair with door hanger on UV-coated 16pt stock · QR code to personalized landing page · Cost: ~$2.85/piece · <strong style={{color:"#FF6B1A"}}>Send only to HOT leads (70+) for ROI</strong>
+        </div>
+      </div>}
+
+      {/* ─── NEIGHBORHOOD: Facebook/Instagram Geo-Targeted ─── */}
+      {adTab===1&&<div>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+          <span style={{fontSize:10,padding:"3px 8px",borderRadius:4,background:"rgba(255,140,0,0.08)",color:"#FF8C00",fontWeight:700}}>📍 {hood}, {city} · 5mi radius</span>
+          <span style={{fontSize:10,padding:"3px 8px",borderRadius:4,background:"rgba(255,140,0,0.08)",color:"#FF8C00",fontWeight:700}}>Homeowners · 35-65 · Home Improvement</span>
+          <span style={{fontSize:10,padding:"3px 8px",borderRadius:4,background:"rgba(255,255,255,0.04)",color:"#6B7FA0",fontWeight:700}}>Channel: Facebook + Instagram Feed/Stories</span>
+        </div>
+
+        {/* Facebook Ad */}
+        <div style={{borderRadius:14,overflow:"hidden",background:"#FFFFFF",color:"#1A1A2E",maxWidth:500,margin:"0 auto",boxShadow:"0 6px 32px rgba(0,0,0,0.3)"}}>
+          <div style={{padding:"12px 14px",display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:40,height:40,borderRadius:"50%",background:"linear-gradient(135deg,#FF5500,#C44000)",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M2 20L12 4l10 16"/></svg></div>
+            <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:"#1A1A2E"}}>{co.name} <span style={{color:"#1877F2",fontSize:11}}>✓</span></div><div style={{fontSize:11,color:"#65676B"}}>Sponsored · 📍 {hood}</div></div>
+          </div>
+          <div style={{padding:"0 14px 12px",fontSize:13.5,lineHeight:1.55,color:"#1C1E21"}}>
+            <strong>⚠️ {hood} Homeowners:</strong> Most homes here were built around {sel.yearBuilt}. Your roof is <strong>{age}+ years old</strong> — past the replacement window for asphalt shingles.<br/><br/>Don't wait for a leak. <strong>Free inspections this week.</strong><br/><span style={{color:"#65676B",fontSize:12}}>...see more</span>
+          </div>
+          <div style={{background:"linear-gradient(135deg,#1A0A00 0%,#2D1200 50%,#0D0D1A 100%)",padding:"36px 28px",position:"relative",overflow:"hidden"}}>
+            <div style={{position:"absolute",inset:0,background:"repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(255,85,0,0.01) 2px,rgba(255,85,0,0.01) 4px)"}}/>
+            <div style={{position:"absolute",top:-30,right:-30,width:160,height:160,borderRadius:"50%",background:"radial-gradient(circle,rgba(255,85,0,0.15),transparent 70%)"}}/>
+            <div style={{position:"relative",zIndex:1}}>
+              <div style={{fontFamily:"Georgia,serif",fontSize:32,color:"#FFFFFF",lineHeight:1.15,marginBottom:14}}>Your roof is<br/><span style={{color:"#FF6B1A"}}>{age} years old.</span><br/>Is it ready?</div>
+              <div style={{fontSize:13,color:"rgba(255,255,255,0.55)",lineHeight:1.6,marginBottom:18,maxWidth:360}}>Homes built around {sel.yearBuilt} in {hood} are in the critical replacement window. Most haven't had a roofing permit in over a decade.</div>
+              <div style={{display:"flex",gap:8}}>
+                {[{l:"Avg Age",v:`${age} yr`,c:"#FF6B1A"},{l:"No Permits",v:`${permYrs}+ yr`,c:"#FF4444"},{l:"Quote",v:"$0",c:"#1EC878"}].map((x,i)=>
+                  <div key={i} style={{background:"rgba(255,255,255,0.07)",borderRadius:8,padding:"8px 14px"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.35)",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em"}}>{x.l}</div><div style={{fontSize:20,fontWeight:800,color:x.c}}>{x.v}</div></div>
+                )}
+              </div>
+            </div>
+          </div>
+          <div style={{padding:"10px 14px",borderTop:"1px solid #E4E6EB",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div><div style={{fontSize:11,color:"#65676B",textTransform:"uppercase"}}>{co.url}</div><div style={{fontSize:14,fontWeight:700,color:"#1C1E21"}}>Free Roof Inspection — {hood}</div><div style={{fontSize:11,color:"#65676B"}}>⭐ {co.rating} ({co.reviews} reviews) · {co.fin}</div></div>
+            <button style={{padding:"9px 20px",borderRadius:6,border:"none",background:"#1877F2",color:"white",fontSize:13,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>Book Now</button>
+          </div>
+          <div style={{padding:"8px 14px 10px",borderTop:"1px solid #E4E6EB",display:"flex",justifyContent:"space-between",color:"#65676B",fontSize:12,fontWeight:600}}><span>👍 ❤️ 124</span><span>38 comments · 12 shares</span></div>
+        </div>
+        <div style={{marginTop:14,padding:12,borderRadius:9,background:"rgba(255,255,255,0.02)",border:`1px solid ${w}0.05)`,fontSize:11,color:"#4A5568",lineHeight:1.7}}>
+          <strong style={{color:"#6B7FA0"}}>Campaign:</strong> Objective: Lead Gen · Audience: {hood} + 5mi, homeowners 35-65, interests (home improvement, HGTV, Lowe's) · Exclude renters · Reach: 8-12K · Budget: $25-50/day · Placement: Feed + Stories + Reels · Est. CPL: $18-35
+        </div>
+      </div>}
+
+      {/* ─── CONQUEST: Google Display + Retargeting ─── */}
+      {adTab===2&&<div>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+          <span style={{fontSize:10,padding:"3px 8px",borderRadius:4,background:"rgba(80,156,255,0.08)",color:"#509CFF",fontWeight:700}}>🔄 Retargeting + In-Market: Roofing</span>
+          <span style={{fontSize:10,padding:"3px 8px",borderRadius:4,background:"rgba(80,156,255,0.08)",color:"#509CFF",fontWeight:700}}>📍 {city} DMA</span>
+          <span style={{fontSize:10,padding:"3px 8px",borderRadius:4,background:"rgba(255,255,255,0.04)",color:"#6B7FA0",fontWeight:700}}>Channel: Google Display Network + Discovery</span>
+        </div>
+
+        <div style={{display:"flex",flexDirection:"column",gap:20,alignItems:"center"}}>
+          {/* 300×250 */}
+          <div><div style={{fontSize:10,color:"#3D4A6B",fontWeight:700,marginBottom:6,textTransform:"uppercase",letterSpacing:"0.1em"}}>300×250 — Medium Rectangle</div>
+          <div style={{width:300,height:250,borderRadius:10,overflow:"hidden",background:"linear-gradient(150deg,#0D0805,#1A0E05 50%,#0A0A14)",position:"relative",boxShadow:"0 4px 24px rgba(0,0,0,0.3)"}}>
+            <div style={{position:"absolute",top:-30,right:-30,width:140,height:140,borderRadius:"50%",background:"radial-gradient(circle,rgba(255,85,0,0.12),transparent 70%)"}}/>
+            <div style={{position:"relative",zIndex:1,padding:"20px 20px 16px",height:"100%",display:"flex",flexDirection:"column",justifyContent:"space-between",boxSizing:"border-box"}}>
+              <div><div style={{display:"flex",alignItems:"center",gap:7,marginBottom:12}}><div style={{width:26,height:26,borderRadius:6,background:"linear-gradient(135deg,#FF5500,#E04A00)",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M2 20L12 4l10 16"/></svg></div><span style={{fontSize:12,fontWeight:800,color:"white"}}>{co.name}</span></div>
+                <div style={{fontFamily:"Georgia,serif",fontSize:22,color:"white",lineHeight:1.2,marginBottom:6}}>Built in the <span style={{color:"#FF6B1A"}}>90s?</span><br/>Your roof needs you.</div>
+                <div style={{fontSize:10,color:"rgba(255,255,255,0.4)",lineHeight:1.5}}>{hood} homes are {age}+ years old{noPermit?" with no roofing permits on record":""}.</div>
+              </div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}><div><div style={{fontSize:11,color:"rgba(255,255,255,0.3)"}}>Starting at</div><div style={{fontSize:20,fontWeight:900,color:"#FF6B1A"}}>{$k(bidGood)}</div></div><div style={{padding:"9px 18px",borderRadius:7,background:"linear-gradient(135deg,#FF5500,#E04A00)",color:"white",fontSize:11,fontWeight:800,boxShadow:"0 4px 16px rgba(255,85,0,0.25)"}}>Free Inspection →</div></div>
+            </div>
+          </div></div>
+
+          {/* 728×90 */}
+          <div><div style={{fontSize:10,color:"#3D4A6B",fontWeight:700,marginBottom:6,textTransform:"uppercase",letterSpacing:"0.1em"}}>728×90 — Leaderboard</div>
+          <div style={{width:728,height:90,borderRadius:8,overflow:"hidden",background:"linear-gradient(135deg,#0D0805,#1A0E05 60%,#0A0A14)",position:"relative",display:"flex",alignItems:"center",padding:"0 22px",gap:18,boxSizing:"border-box",boxShadow:"0 4px 24px rgba(0,0,0,0.3)"}}>
+            <div style={{display:"flex",alignItems:"center",gap:9,flexShrink:0}}><div style={{width:30,height:30,borderRadius:7,background:"linear-gradient(135deg,#FF5500,#E04A00)",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M2 20L12 4l10 16"/></svg></div><div><div style={{fontSize:11,fontWeight:800,color:"white"}}>{co.name}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.4)"}}>⭐ {co.rating} ({co.reviews})</div></div></div>
+            <div style={{height:36,width:1,background:"rgba(255,255,255,0.08)",flexShrink:0}}/>
+            <div style={{flex:1}}><div style={{fontFamily:"Georgia,serif",fontSize:18,color:"white",lineHeight:1.15}}>{hood} roofs are <span style={{color:"#FF6B1A"}}>{age}+ years old.</span> Is yours next?</div></div>
+            <div style={{display:"flex",alignItems:"center",gap:14,flexShrink:0}}><div style={{textAlign:"right"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>From</div><div style={{fontSize:18,fontWeight:900,color:"#FF6B1A"}}>{$k(bidGood)}</div></div><div style={{padding:"9px 16px",borderRadius:7,background:"linear-gradient(135deg,#FF5500,#E04A00)",color:"white",fontSize:11,fontWeight:800,whiteSpace:"nowrap"}}>Get Free Quote</div></div>
+          </div></div>
+
+          {/* 160×600 */}
+          <div><div style={{fontSize:10,color:"#3D4A6B",fontWeight:700,marginBottom:6,textTransform:"uppercase",letterSpacing:"0.1em"}}>160×600 — Skyscraper</div>
+          <div style={{width:160,height:600,borderRadius:8,overflow:"hidden",background:"linear-gradient(180deg,#0D0805,#1A0E05 40%,#0A0A14)",position:"relative",display:"flex",flexDirection:"column",boxSizing:"border-box",boxShadow:"0 4px 24px rgba(0,0,0,0.3)"}}>
+            <div style={{padding:"18px 13px",flex:1,display:"flex",flexDirection:"column",position:"relative",zIndex:1}}>
+              <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:18}}><div style={{width:22,height:22,borderRadius:5,background:"linear-gradient(135deg,#FF5500,#E04A00)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M2 20L12 4l10 16"/></svg></div><span style={{fontSize:10,fontWeight:800,color:"white"}}>{co.name.split(" ").slice(0,2).join(" ")}</span></div>
+              <div style={{background:"rgba(255,85,0,0.06)",border:"1px solid rgba(255,85,0,0.15)",borderRadius:8,padding:"12px 10px",textAlign:"center",marginBottom:16}}><div style={{fontSize:38,fontWeight:900,color:"#FF6B1A",lineHeight:1}}>{age}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.4)",fontWeight:700,textTransform:"uppercase",marginTop:3}}>years old</div></div>
+              <div style={{fontFamily:"Georgia,serif",fontSize:16,color:"white",lineHeight:1.25,marginBottom:10}}>Your <span style={{color:"#FF6B1A"}}>{hood}</span> roof is overdue.</div>
+              <div style={{fontSize:10,color:"rgba(255,255,255,0.4)",lineHeight:1.5,marginBottom:14}}>No roofing permits in {permYrs}+ years. Don't wait for water damage.</div>
+              <div style={{background:"rgba(255,255,255,0.04)",borderRadius:7,padding:"10px 8px",marginBottom:14}}>
+                {[{t:"Good",p:bidGood},{t:"Better",p:bid.total},{t:"Best",p:bidBest}].map((x,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",fontSize:10,borderBottom:i<2?`1px solid ${w}0.04)`:"none"}}><span style={{color:i===1?"#FF6B1A":"rgba(255,255,255,0.4)",fontWeight:i===1?800:400}}>{x.t}</span><span style={{color:"white",fontWeight:700}}>{$k(x.p)}</span></div>)}
+              </div>
+              <div style={{fontSize:9,color:"rgba(255,255,255,0.3)",textAlign:"center",marginBottom:10}}>{co.fin}</div>
+              <div style={{marginTop:"auto"}}><div style={{padding:"10px 0",borderRadius:7,textAlign:"center",background:"linear-gradient(135deg,#FF5500,#E04A00)",color:"white",fontSize:11,fontWeight:800}}>Free Inspection</div><div style={{fontSize:8,color:"rgba(255,255,255,0.3)",textAlign:"center",marginTop:5}}>⭐ {co.rating} · {co.reviews} reviews</div></div>
+            </div>
+          </div></div>
+        </div>
+
+        <div style={{marginTop:16,padding:12,borderRadius:9,background:"rgba(255,255,255,0.02)",border:`1px solid ${w}0.05)`,fontSize:11,color:"#4A5568",lineHeight:1.7}}>
+          <strong style={{color:"#6B7FA0"}}>Campaign:</strong> Network: GDN + Discovery · Audiences: Retargeting (30-day site visitors), In-Market (Roofing Services, Home Improvement), Custom Intent ("roof replacement {city}", "roofer near me", "{hood} roofing") · Geo: {city} DMA · Budget: $30-75/day · Bid: tCPA $45 · Auto-rotate creatives for conversion optimization
+        </div>
+      </div>}
+    </div>;})()}
+
+    </div></div>);
+}
+
+// Storage polyfill for non-Claude environments
+if (!window.storage) {
+  const _store = {};
+  window.storage = {
+    get: async (k) => { const v = localStorage.getItem(k); return v ? { key: k, value: v } : (() => { throw new Error('not found'); })(); },
+    set: async (k, v) => { localStorage.setItem(k, v); return { key: k, value: v }; },
+    delete: async (k) => { localStorage.removeItem(k); return { key: k, deleted: true }; },
+    list: async (prefix) => { const keys = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (!prefix || k.startsWith(prefix)) keys.push(k); } return { keys }; },
+  };
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(RoofIQApp));
+</script>
+</body>
+</html>
