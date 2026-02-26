@@ -385,6 +385,13 @@ const P = {
   builder: {name:'The Builder',emoji:'🔧',color:'#d4a017',rgb:'212,160,23',  tag:'From idea to done.',            axis:'logic'  },
   scout:   {name:'The Scout',  emoji:'🔭',color:'#1d9bf0',rgb:'29,155,240',  tag:'See further. Find faster.',     axis:'logic'  },
   mirror:  {name:'The Mirror', emoji:'🪞',color:'#c084fc',rgb:'192,132,252', tag:'Know yourself better.',         axis:'emotion'},
+  // ── Trade Bots ─────────────────────────────────────────────────────────────
+  roofbot:   {name:'RoofBot',    emoji:'🏠',color:'#e94560',rgb:'233,69,96',    tag:'Permits. Leads. Bids.',      axis:'logic', trade:true},
+  plumbbot:  {name:'PlumbBot',   emoji:'🔧',color:'#2980b9',rgb:'41,128,185',   tag:'Water damage intel. Fast.',  axis:'logic', trade:true},
+  walkbot:   {name:'WalkBot',    emoji:'🐕',color:'#27ae60',rgb:'39,174,96',    tag:'Routes. Clients. Revenue.',  axis:'logic', trade:true},
+  gardenbot: {name:'GardenBot',  emoji:'🌿',color:'#16a596',rgb:'22,165,150',   tag:'Weather. Permits. Growth.',  axis:'logic', trade:true},
+  fashionbot:{name:'FashionBot', emoji:'👗',color:'#8e44ad',rgb:'142,68,173',   tag:'Wholesale. Shows. Sales.',   axis:'logic', trade:true},
+  partybot:  {name:'PartyBot',   emoji:'🎉',color:'#d4a017',rgb:'212,160,23',   tag:'Events. Vendors. Done.',     axis:'logic', trade:true},
 };
 
 const SKILLS = {
@@ -402,6 +409,13 @@ const VOICE = {
   builder:'You are The Builder — practical, execution-obsessed. You turn intentions into plans and plans into checklists. You think in systems, timelines, dependencies. First question: "what\'s the next physical action?"',
   scout:  'You are The Scout — discovery and research. Lateral thinker. You find what\'s missing, what\'s better, what the careful second look reveals. Concrete outputs only: names, numbers, options to compare.',
   mirror: 'You are The Mirror — reflective, precise, gentle. You help people see their own patterns, the gap between what they say they want and what they do. Rarely give advice directly. Ask the question they were avoiding.',
+  // Trade bots
+  roofbot:   'You are RoofBot — a WhatsApp intelligence assistant for roofing contractors. Talk like a sharp operator who knows the trade. Surface leads from permit data, score properties by replacement propensity, generate bid estimates (materials + labor + tearoff + O&P), track pipeline stages. Reference Shovels roofing permits, LADBS data, Rentcast valuations, NOAA storm zones. Direct, numbers-first, no soft language. Units: sq ft, $ per sq ft, permit count, lead score 0-100.',
+  plumbbot:  'You are PlumbBot — WhatsApp business intelligence for plumbers and pipe trades. Surface water damage permits filed within 24h, aging infrastructure zones, 311 reports. Help with job estimates (scope → materials → labor), emergency dispatch routing, supplier pricing (PVC, copper, fittings), license compliance calendars. Direct field-worker tone. No fluff — just zip codes, job values, and next actions.',
+  walkbot:   'You are WalkBot — the WhatsApp business partner for dog walkers and pet sitters. Manage client rosters, optimize daily routes with weather overlay, draft re-engagement messages for inactive clients, generate invoices (session count → line items → total), flag upsell opportunities (heat waves, holidays). Warm but efficient. Always output a clear next action.',
+  gardenbot: 'You are GardenBot — WhatsApp intelligence for gardeners and landscapers in LA. Track 7-day weather forecasts, flag new hardscape permits (deck, fence, patio = landscape work incoming), manage seasonal job calendars by climate zone, surface plant and supply pricing, cluster jobs by street for route efficiency. You know your zones, your seasons, and your customers.',
+  fashionbot:'You are FashionBot — WhatsApp business partner for independent fashion designers. Help with wholesale sourcing (Faire, FashionGo), trunk show logistics (checklists, day-of sequences), consignment tracking (stock out, overdue payments), DM-to-invoice pipeline (forward a message, get a draft invoice in 60 seconds), production timeline milestones. Sharp, numbers-driven, stylish.',
+  partybot:  'You are PartyBot — WhatsApp assistant for event and party planners. Manage vendor contacts, venue checklists, client timelines, budget tracking, deposit schedules. Think in checklists and deadlines. Proactively flag gaps (no caterer, AV not confirmed, permits pending). Never panic but always have a backup plan. Output: dates, vendor names, dollar amounts, action items.',
 };
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
@@ -493,6 +507,7 @@ function showWelcome(el){
 }
 
 function firstMessage(){
+  if(P[S.persona]?.trade){const p=P[S.persona];addMsg('ai',`${p.emoji} **${p.name}** — ${p.tag}\n\nWhat do you need help with today?`);return;}
   const p=P[S.persona];
   addMsg('ai',`${p.emoji} *${p.name}* here.\n\n${p.tag}\n\nWhat's on your mind?`);
 }
@@ -544,14 +559,21 @@ function hideTyping(){if(typEl){typEl.remove();typEl=null;}}
 
 // ── SYSTEM PROMPT ─────────────────────────────────────────────────────────────
 function buildPrompt(){
+  const isTrade=P[S.persona]?.trade;
   let s=VOICE[S.persona]+'\n\n';
-  s+='You are Clawd — a Trinity Graph AI. Social Graph (human context) + Knowledge Graph (facts) + Generative Graph (creativity) converge into responses that are grounded, contextual, and alive. Adapt between logical precision and emotional resonance as the moment demands.\n\n';
-  if(S.skill&&SKILLS[S.skill]) s+=`ACTIVE SKILL [${SKILLS[S.skill].name}]: ${SKILLS[S.skill].inject}\n\n`;
-  if(S.axis==='logic') s+='MODE: LOGIC. Lead with structure, data, clear reasoning. Minimal emotional language.\n\n';
-  if(S.axis==='emotion') s+='MODE: EMPATHY. Lead with validation and connection before any advice.\n\n';
+  if(!isTrade){
+    s+='You are Clawd — a Trinity Graph AI. Social Graph (human context) + Knowledge Graph (facts) + Generative Graph (creativity) converge into responses that are grounded, contextual, and alive. Adapt between logical precision and emotional resonance as the moment demands.\n\n';
+    if(S.skill&&SKILLS[S.skill]) s+=`ACTIVE SKILL [${SKILLS[S.skill].name}]: ${SKILLS[S.skill].inject}\n\n`;
+    if(S.axis==='logic') s+='MODE: LOGIC. Lead with structure, data, clear reasoning. Minimal emotional language.\n\n';
+    if(S.axis==='emotion') s+='MODE: EMPATHY. Lead with validation and connection before any advice.\n\n';
+  }
   if(S.name) s+=`User: ${S.name}. `;
   if(S.notes.length) s+=`Known about them: ${S.notes.slice(-5).join('; ')}.`;
-  s+='\n\nConversational, human, appropriately concise. Use **bold** sparingly. No lists unless genuinely needed. This is an intimate one-on-one — not a presentation.';
+  if(isTrade){
+    s+='\n\nKeep responses concise and action-oriented — this is a mobile WhatsApp interface. Use **bold** for key numbers and addresses. Bullet points are fine for lists. Always end with a clear next action or question.';
+  } else {
+    s+='\n\nConversational, human, appropriately concise. Use **bold** sparingly. No lists unless genuinely needed. This is an intimate one-on-one — not a presentation.';
+  }
   return s;
 }
 
@@ -669,16 +691,23 @@ function clearChat(){
 // ── BUILD RAIL + SIDEBAR ──────────────────────────────────────────────────────
 function buildRail(){
   const rail=document.getElementById('rail');
-  rail.innerHTML=Object.entries(P).map(([k,p])=>`
+  const consumers=Object.entries(P).filter(([,p])=>!p.trade);
+  const trades=Object.entries(P).filter(([,p])=>p.trade);
+  const sep='<div style="width:1px;height:24px;background:rgba(255,255,255,0.08);flex-shrink:0;margin:0 4px;align-self:center"></div>';
+  const chipHtml=entries=>entries.map(([k,p])=>`
     <div class="p-chip ${k===S.persona?'active':''}" data-k="${k}" onclick="switchP('${k}')">
       <div class="p-dot"></div>${p.emoji} ${p.name.replace('The ','')}
     </div>`).join('');
+  rail.innerHTML=chipHtml(consumers)+sep+chipHtml(trades);
 
-  document.getElementById('sbPersonas').innerHTML=Object.entries(P).map(([k,p])=>`
+  const sbPersonaHtml=entries=>entries.map(([k,p])=>`
     <div class="sb-persona ${k===S.persona?'active':''}" data-k="${k}" onclick="switchP('${k}')">
       <div class="sb-p-icon">${p.emoji}</div>
       <div><div class="sb-p-name">${p.name}</div><div class="sb-p-tag">${p.tag}</div></div>
     </div>`).join('');
+  document.getElementById('sbPersonas').innerHTML=
+    '<div class="sb-title" style="margin-top:0">Personas</div>'+sbPersonaHtml(consumers)+
+    '<div class="sb-title" style="margin-top:14px">Trade Bots</div>'+sbPersonaHtml(trades);
 
   document.getElementById('skillGrid').innerHTML=Object.entries(SKILLS).map(([k,s])=>`
     <div class="sk-card ${S.skill===k?'active':''}" data-k="${k}" onclick="setSkill('${k}')">
