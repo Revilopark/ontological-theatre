@@ -220,6 +220,57 @@ body{background:var(--bg);color:var(--t1);font-family:var(--sans);display:flex;f
 .toast.err{border-color:rgba(233,69,96,.3);color:var(--fire)}
 .toast.hide{opacity:0}
 
+
+/* ── OT AUTO-BUILD MODAL ── */
+.ot-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:500;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  backdrop-filter:blur(10px);overflow-y:auto}
+.ot-modal{background:linear-gradient(160deg,#0e0e18,#080810);
+  border:1px solid rgba(168,85,247,.25);border-radius:16px;
+  max-width:780px;width:100%;padding:28px;max-height:90vh;overflow-y:auto}
+.ot-modal-title{font-family:'Bangers',cursive;font-size:1.6rem;letter-spacing:1px;
+  background:linear-gradient(135deg,#a855f7,#c9a84c);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:3px}
+.ot-modal-sub{font-size:.72rem;color:var(--t3);margin-bottom:22px}
+.ot-section-label{font-size:.6rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.14em;color:var(--t3);margin-bottom:7px}
+.era-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:18px}
+.era-btn{padding:.5rem .4rem;border-radius:6px;border:1px solid var(--b1);
+  background:var(--s2);font-size:.68rem;font-weight:600;color:var(--t2);
+  cursor:pointer;text-align:center;transition:all .2s}
+.era-btn:hover{border-color:var(--b2)}
+.era-btn.active{border-color:var(--accent);background:var(--accentg);color:var(--accent2)}
+.era-btn .eb-year{font-size:.55rem;color:var(--t3);display:block;margin-top:1px;font-family:var(--mono)}
+.char-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:18px}
+.ot-char-card{padding:9px;border-radius:7px;border:1px solid var(--b1);background:var(--s2);
+  cursor:pointer;transition:all .2s;text-align:center}
+.ot-char-card:hover{border-color:var(--b2)}
+.ot-char-card.selected{border-color:var(--gold);background:rgba(201,168,76,.12)}
+.ot-char-card .occ-sym{font-size:1.1rem;display:block;margin-bottom:3px}
+.ot-char-card .occ-name{font-size:.62rem;font-weight:600;color:var(--t1);line-height:1.3}
+.ot-char-card .occ-role{font-size:.55rem;color:var(--t3);margin-top:2px;line-height:1.3}
+.ot-char-card .occ-type{font-size:.5rem;margin-top:3px;padding:.1rem .35rem;
+  border-radius:3px;background:var(--b1);color:var(--t3);display:inline-block}
+.dir-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:18px}
+.dir-btn{padding:.4rem;border-radius:6px;border:1px solid var(--b1);background:var(--s2);
+  font-size:.62rem;color:var(--t2);cursor:pointer;text-align:center;transition:all .2s}
+.dir-btn:hover{border-color:var(--b2)}
+.dir-btn.active{border-color:var(--accent2);background:rgba(168,85,247,.12);color:var(--accent2)}
+.pc-grid{display:flex;gap:6px;margin-bottom:18px}
+.pc-btn{padding:.3rem .7rem;border-radius:5px;border:1px solid var(--b1);background:var(--s2);
+  font-size:.72rem;color:var(--t2);cursor:pointer;transition:all .2s;font-family:var(--mono)}
+.pc-btn:hover{border-color:var(--b2)}
+.pc-btn.active{border-color:var(--accent);background:var(--accentg);color:var(--accent2)}
+.ot-gen-btn{width:100%;padding:.75rem;border-radius:8px;border:none;
+  background:linear-gradient(135deg,var(--accent),#c9a84c);
+  color:#fff;font-size:.9rem;font-weight:700;cursor:pointer;
+  font-family:'Bangers',cursive;letter-spacing:1px;transition:all .2s;margin-top:6px}
+.ot-gen-btn:hover{opacity:.9}
+.ot-gen-btn:disabled{opacity:.4;cursor:default}
+.script-preview{background:var(--s2);border:1px solid var(--b1);border-radius:8px;
+  padding:12px;max-height:200px;overflow-y:auto;margin-top:12px;font-size:.7rem;
+  color:var(--t2);line-height:1.6;white-space:pre-wrap;font-family:var(--mono)}
+
 /* ── BUBBLE PICKER ── */
 .bubble-picker{position:fixed;background:var(--s2);border:1px solid var(--b2);
   border-radius:10px;padding:10px;display:flex;gap:6px;flex-wrap:wrap;z-index:300;
@@ -269,6 +320,7 @@ body{background:var(--bg);color:var(--t1);font-family:var(--sans);display:flex;f
   <div class="style-badge" id="styleBadge">comic_book</div>
   <div class="topbar-tools">
     <button class="tbtn" onclick="openSetup()">⚙ Story Setup</button>
+    <button class="tbtn active" onclick="openOtModal()" style="border-color:var(--gold);color:var(--gold)">⊕ Build from OT</button>
     <button class="tbtn" onclick="exportStrip()">⬇ Export Strip</button>
     <button class="tbtn active" onclick="togglePreviewSize()">📱 Preview</button>
   </div>
@@ -822,9 +874,286 @@ function toast(msg,type=''){
   toastTimer=setTimeout(()=>el.classList.add('hide'),2800);
 }
 
+
+// ═══ ONTOLOGICAL THEATRE INTEGRATION ═══════════════════════════════════════
+
+const OT_ERAS = [
+  {id:'mound',   name:'Mound Era',    year:'800–1600 CE', color:'#c9a84c'},
+  {id:'nations', name:'Nations Era',  year:'1700–1830',   color:'#16a596'},
+  {id:'removal', name:'Removal Era',  year:'1830–1900',   color:'#e94560'},
+  {id:'delta',   name:'Delta Era',    year:'1900–1960',   color:'#a855f7'},
+];
+
+const OT_CHARS = [
+  // Weaver lineage ◈
+  {id:'weaver-mound',   era:'mound',   lin:'Weaver',      sym:'◈', name:'Spider Grandmother',  role:'Pattern Keeper',        type:'chant',    medium:'fired clay tablets with spider web incisions', flavor:'Every web holds the memory of every web that came before it.',artifacts:['Clay tablet with web pattern','Seed storage vessel','Woven carrying basket']},
+  {id:'weaver-nations', era:'nations', lin:'Weaver',      sym:'◈', name:'Bone Picker Woman',   role:'Between Keeper',        type:'prayer',   medium:'deerskin membrane with charcoal marks',        flavor:'The dead speak through me only after they have finished speaking.',artifacts:['Deerskin ceremonial wrap','Bone stylus','Mourning bundle']},
+  {id:'weaver-removal', era:'removal', lin:'Weaver',      sym:'◈', name:'Aunt Hattie Root',    role:'Root Woman',            type:'monologue',medium:'cloth flour sack, pencil nub, phonetic spelling',flavor:'This root fixes what white medicine will not see.',artifacts:['Root medicine bundle','Flour sack recipe notes','Dried herbs']},
+  {id:'weaver-delta',   era:'delta',   lin:'Weaver',      sym:'◈', name:'Miss Roxie Baines',   role:'Conjure Woman',         type:'monologue',medium:'brown paper bag, pencil, folded in apron pocket', flavor:'I do not work magic. I work knowledge older than this county.',artifacts:['Conjure bottle','Paper charm','Hex signs']},
+  // RiverVoice lineage ≋
+  {id:'river-mound',   era:'mound',   lin:'RiverVoice',  sym:'≋', name:'The River Speaker',   role:'Water Liturgist',       type:'chant',    medium:'log drum surface with carved symbols',          flavor:'The river does not ask permission. Neither do I.',artifacts:['Ceremonial log drum','River stone altar piece','Copper rattle']},
+  {id:'river-nations', era:'nations', lin:'RiverVoice',  sym:'≋', name:'Treaty Singer',        role:'Voice Between',         type:'monologue',medium:'trade paper with bilingual text',               flavor:'I translate everything except what cannot be translated.',artifacts:['Treaty document copy','Bilingual prayer card','Ink horn']},
+  {id:'river-removal', era:'removal', lin:'RiverVoice',  sym:'≋', name:'Brother Elias',        role:'Praise House Elder',    type:'sermon',   medium:'hidden Bible with pencil marks in margins',     flavor:'God hears us even when they say we are not speaking to God.',artifacts:['Marked Bible','Hidden prayer notes','Carved wooden cross']},
+  {id:'river-delta',   era:'delta',   lin:'RiverVoice',  sym:'≋', name:'Rev. C.L. Moses',     role:'The Preacher',          type:'sermon',   medium:'church ledger, copperplate entries, sermon notes',flavor:'The flood is coming. I have been saying so.',artifacts:['Church ledger','Sermon manuscript','Letter to bishop']},
+  // FireKeeper lineage △
+  {id:'fire-mound',   era:'mound',   lin:'FireKeeper',   sym:'△', name:'Fire Keeper',          role:'Sacred Flame Guardian', type:'chant',    medium:'copper authority plate, stamped symbols',       flavor:"The fire I keep tonight was lit before my grandfather's birth.",artifacts:['Copper fire plate','Cedar fire-starting bundle','Ember carrier']},
+  {id:'fire-nations', era:'nations', lin:'FireKeeper',   sym:'△', name:'Drum Hider',           role:'Memory Carrier',        type:'monologue',medium:'deerskin pouch with hidden symbols burned with coal',flavor:'They burned our drums. They did not know we were the drums.',artifacts:['Hidden drum wrapped in deerskin','Burned symbol map','False-bottom basket']},
+  {id:'fire-removal', era:'removal', lin:'FireKeeper',   sym:'△', name:'Solomon Field',        role:'Field Holler',          type:'worksong', medium:'voice only — sound carved into air',             flavor:'They think the holler is nothing. The holler is everything.',artifacts:['Sound only — nothing written','Whistling pattern','Rhythm']},
+  {id:'fire-delta',   era:'delta',   lin:'FireKeeper',   sym:'△', name:'Robert Lee Simms',    role:'The Bluesman',          type:'song',     medium:'brown paper bag with pencil stub, whiskey stain', flavor:'I wrote this song on a Tuesday. By Wednesday it was already mine.',artifacts:['Brown paper bag lyrics','Battered guitar','Pawn ticket']},
+  // EarthShaper lineage ▣
+  {id:'earth-mound',   era:'mound',   lin:'EarthShaper', sym:'▣', name:'The Mound Builder',   role:'Earth Architect',       type:'chant',    medium:'carved post with structural notches',            flavor:'We do not build on the earth. We build the earth.',artifacts:['Alignment post','Basket of earth','Copper measuring cord']},
+  {id:'earth-nations', era:'nations', lin:'EarthShaper', sym:'▣', name:'Fort Builder',         role:'Colonial Engineer',     type:'map',      medium:'vellum survey with compass marks',               flavor:'I build their fort and they call it their idea.',artifacts:['Vellum site survey','Trade compass','Gunpowder cartridge box']},
+  {id:'earth-removal', era:'removal', lin:'EarthShaper', sym:'▣', name:'Overseer James',       role:'Plantation Architect',  type:'ledger',   medium:'leather-bound ledger, copperplate, architectural drawings',flavor:'Every building I design is a mechanism of control.',artifacts:['Plantation ledger','Architectural drawings','Property deed']},
+  {id:'earth-delta',   era:'delta',   lin:'EarthShaper', sym:'▣', name:'Luther Tate',          role:'Levee Worker',          type:'worksong', medium:"work gang manifest, foreman's tally on lumber scrap",flavor:'My back built the levee. The levee will break my back.',artifacts:['Work tally scrap','Shovel mark on levee face','Dog tags']},
+  // CornMother lineage ❋
+  {id:'corn-mound',   era:'mound',   lin:'CornMother',   sym:'❋', name:'Corn Mother',          role:'Sacred Agriculture',    type:'chant',    medium:'pottery vessel with pressed corn pattern',       flavor:'The corn remembers everything the people have forgotten.',artifacts:['Seed corn vessel','Grinding stone','First green corn bundle']},
+  {id:'corn-nations', era:'nations', lin:'CornMother',   sym:'❋', name:'Hidden Farmer',        role:'Preserving Woman',      type:'prayer',   medium:'cloth bundle with seed list in Choctaw',         flavor:'They took the land. They did not take the seed.',artifacts:['Seed bundle','Hidden corn cache','Choctaw seed names cloth']},
+  {id:'corn-removal', era:'removal', lin:'CornMother',   sym:'❋', name:'Big Mama Ruth',        role:'Enslaved Field Hand',   type:'tally',    medium:'cabin beam scratched tally marks, coal stylus',  flavor:'I am counting my children on the cabin beam.',artifacts:['Scratched beam tallies','Hidden seed pouch','Tallow candle stub']},
+  {id:'corn-delta',   era:'delta',   lin:'CornMother',   sym:'❋', name:'Ida Mae Stubbs',      role:'The Sharecropper',      type:'worksong', medium:'flour sack with pencil, cotton yield notes',      flavor:'I grow cotton for a man who keeps the books I cannot see.',artifacts:['Sharecrop contract copy','Flour sack accounts','Cotton bale tally']},
+  // StarWatcher lineage ✧
+  {id:'star-mound',   era:'mound',   lin:'StarWatcher',  sym:'✧', name:'Star Watcher',         role:'Celestial Navigator',   type:'chant',    medium:'flat limestone with astronomical marks',         flavor:'The stars are writing. I am only reading.',artifacts:['Star alignment stone','Solstice marker post','Copper sun symbol']},
+  {id:'star-nations', era:'nations', lin:'StarWatcher',  sym:'✧', name:'Path Reader',           role:'Direction Keeper',      type:'map',      medium:'deerskin map with charcoal constellation lines', flavor:'The path is in the stars. The stars do not care about the treaty.',artifacts:['Deerskin star map','Carved compass stone','River ford marker']},
+  {id:'star-removal', era:'removal', lin:'StarWatcher',  sym:'✧', name:"Harriet's Network",    role:'Underground Conductor', type:'map',      medium:'quilt pattern with coded escape route',          flavor:'North is north is north. The sky does not lie.',artifacts:['Escape route quilt','North Star marker rock','Safe house token']},
+  {id:'star-delta',   era:'delta',   lin:'StarWatcher',  sym:'✧', name:'Lila Mae Vaughn',      role:'The Wanderer',          type:'monologue',medium:'train ticket stub, pencil address on back',       flavor:'I follow the rails north because nothing is here for me anymore.',artifacts:['Train ticket stub','Torn letter from Chicago','Cardboard suitcase']},
+  // BirthKeeper lineage ◎
+  {id:'birth-mound',  era:'mound',   lin:'BirthKeeper',  sym:'◎', name:'The Threshold Woman',  role:'Sacred Midwife',        type:'chant',    medium:'knotted cord with birth tallies',                flavor:'I have held every life in this village at its first and last breath.',artifacts:['Knotted birth cord','Medicine bundle','Ceremonial birth basin']},
+  {id:'birth-nations',era:'nations', lin:'BirthKeeper',  sym:'◎', name:'Between Woman',         role:'Two-World Keeper',      type:'prayer',   medium:'mission record with birth dates in Spanish',     flavor:'I deliver children into a world that has no name for what they are.',artifacts:['Mission birth record','Hidden name cloth','Medicine pouch']},
+  {id:'birth-removal',era:'removal', lin:'BirthKeeper',  sym:'◎', name:'Catch-Hand Delia',     role:'The Catch Woman',       type:'tally',    medium:'scrap cloth with birth tallies in blood-stain dots',flavor:'I catch what the master will sell. I do not say this. I do my work.',artifacts:['Cloth birth record','Midwife kit','Hidden freedom paper']},
+  {id:'birth-delta',  era:'delta',   lin:'BirthKeeper',  sym:'◎', name:'Granny Lou Harper',    role:'The Midwife',           type:'monologue',medium:'composition book with pencil birth records',     flavor:'I have delivered three hundred lives in this county. The county does not know my name.',artifacts:['Composition book records','Medicine chest','Letter requesting certification']},
+  // PowerHolder lineage ♛
+  {id:'power-mound',  era:'mound',   lin:'PowerHolder',  sym:'♛', name:'The Sun Chief',        role:'Paramount Authority',   type:'chant',    medium:'copper authority plate with stamped office marks',flavor:'My authority flows from the harvest. When the corn fails, so do I.',artifacts:['Copper authority plate','Eagle feather regalia','Mound apex throne stone']},
+  {id:'power-nations',era:'nations', lin:'PowerHolder',  sym:'♛', name:'Treaty Chief',          role:'Political Negotiator',  type:'ledger',   medium:'treaty parchment with formal signature',         flavor:'I sign this paper. I do not agree with this paper. These are different things.',artifacts:['Treaty copy','Wampum belt','Letter to President Jefferson']},
+  {id:'power-removal',era:'removal', lin:'PowerHolder',  sym:'♛', name:'Col. Edmund Stott',    role:'Plantation Owner',      type:'ledger',   medium:'leather-bound ledger listing human beings as property',flavor:'I am building the future of this republic, one row at a time.',artifacts:['Property ledger','Cotton merchant contract','Land grant deed']},
+  {id:'power-delta',  era:'delta',   lin:'PowerHolder',  sym:'♛', name:'Mr. Hiram Shelby',    role:'The Planter',           type:'ledger',   medium:'plantation ledger, sharecrop accounts, debt records',flavor:"My grandfather owned four hundred people. I own their children's debt.",artifacts:['Sharecrop ledger','Cotton gin receipt','Bank loan document']},
+];
+
+const OT_DIRECTORS = [
+  {id:'archivist', name:'Archivist', sub:'Lomax documentary', tone:'clinical observation, field notes, ethnographic precision'},
+  {id:'poet',      name:'Poet',      sub:'Malick drift',       tone:'lyrical, light-drunk, interior monologue, sensation over plot'},
+  {id:'witness',   name:'Witness',   sub:'Parks documentary',  tone:'dignified, unflinching, Black life with full humanity and weight'},
+  {id:'oracle',    name:'Oracle',    sub:'Haynes fractured',   tone:'fragmented, myth-adjacent, time as landscape not sequence'},
+  {id:'griot',     name:'Griot',     sub:'Elder's fire',      tone:'call-and-response, ancestral memory, communal witness'},
+  {id:'dreamer',   name:'Dreamer',   sub:'Morrison / Jenkins', tone:'interior emotional truth, tenderness, oblique and luminous'},
+];
+
+let otState = {
+  era: 'delta',
+  selectedChars: [],
+  director: 'witness',
+  panelCount: 6,
+  script: null, // [{type, desc, caption}]
+};
+
+function openOtModal(){
+  otState.selectedChars = [];
+  otState.script = null;
+  document.getElementById('otModal').style.display='flex';
+  document.getElementById('otScriptPreview').style.display='none';
+  renderOtModal();
+}
+function closeOtModal(){ document.getElementById('otModal').style.display='none'; }
+
+function renderOtModal(){
+  // Era grid
+  document.getElementById('otEraGrid').innerHTML = OT_ERAS.map(e=>`
+    <div class="era-btn ${e.id===otState.era?'active':''}" onclick="otSetEra('${e.id}')">
+      <span style="font-size:.82rem;font-weight:700">${e.name}</span>
+      <span class="eb-year">${e.year}</span>
+    </div>`).join('');
+
+  // Char grid (filtered by era)
+  const era = otState.era;
+  document.getElementById('otCharGrid').innerHTML = OT_CHARS.filter(c=>c.era===era).map(c=>`
+    <div class="ot-char-card ${otState.selectedChars.find(x=>x.id===c.id)?'selected':''}"
+      onclick="otToggleChar('${c.id}')">
+      <span class="occ-sym">${c.sym}</span>
+      <div class="occ-name">${c.name}</div>
+      <div class="occ-role">${c.role}</div>
+      <div class="occ-type">${c.type}</div>
+    </div>`).join('');
+
+  // Director grid
+  document.getElementById('otDirGrid').innerHTML = OT_DIRECTORS.map(d=>`
+    <div class="dir-btn ${d.id===otState.director?'active':''}" onclick="otSetDir('${d.id}')">
+      <div style="font-weight:600;margin-bottom:2px">${d.name}</div>
+      <div style="font-size:.55rem;color:var(--t3)">${d.sub}</div>
+    </div>`).join('');
+
+  // Panel count
+  document.getElementById('otPcGrid').innerHTML = [4,6,8,10].map(n=>`
+    <div class="pc-btn ${n===otState.panelCount?'active':''}" onclick="otSetPc(${n})">${n}</div>`).join('');
+}
+
+function otSetEra(era){ otState.era=era; otState.selectedChars=[]; renderOtModal(); }
+function otSetDir(id){ otState.director=id; renderOtModal(); }
+function otSetPc(n){ otState.panelCount=n; renderOtModal(); }
+function otToggleChar(id){
+  const c = OT_CHARS.find(x=>x.id===id);
+  if(!c) return;
+  const idx = otState.selectedChars.findIndex(x=>x.id===id);
+  if(idx>=0){ otState.selectedChars.splice(idx,1); }
+  else if(otState.selectedChars.length<3){ otState.selectedChars.push(c); }
+  else { toast('Max 3 characters','err'); return; }
+  renderOtModal();
+}
+
+async function otGenerateScript(){
+  const btn = document.getElementById('otGenScriptBtn');
+  if(!otState.selectedChars.length){ toast('Pick at least one character','err'); return; }
+  btn.disabled=true; btn.textContent='✦ Writing story script…';
+  const era = OT_ERAS.find(e=>e.id===otState.era);
+  const dir = OT_DIRECTORS.find(d=>d.id===otState.director);
+  const spark = document.getElementById('otSpark').value.trim();
+  const chars = otState.selectedChars;
+  const n = otState.panelCount;
+
+  const charBlock = chars.map(c=>`
+- ${c.sym} ${c.name} (${c.role}, ${c.lin} lineage)
+  Medium: ${c.medium}
+  Voice: ${c.type}
+  Key artifact: ${c.artifacts[0]}
+  Flavor: "${c.flavor}"`).join('\n');
+
+  const prompt = `You are the director of an Ontological Theatre infinity comic strip.
+
+ERA: ${era.name} (${era.year}) — Mississippi Delta, American South
+DIRECTOR STYLE: ${dir.name} — ${dir.tone}
+CHARACTERS:
+${charBlock}
+${spark?'CENTRAL SPARK/TENSION: '+spark:'TENSION: You decide the central tension between these characters and this moment in history.'}
+
+Generate a comic strip script with exactly ${n} panels in this era.
+Each panel must: be specific to this historical moment, use the characters' actual materials and literacy levels, avoid generic poetic language, center the humanity and power of Black and Indigenous subjects, follow the director style.
+
+Return ONLY valid JSON: an array of ${n} objects, each with:
+  "type": one of standard|portrait|cinematic|tall|splash
+  "desc": scene description for the image generator (vivid, specific, no text/words/speech bubbles in image) — mention character's artifacts and body language
+  "caption": 1-2 sentence narration in the director's voice, or null
+
+JSON only. No markdown. No explanation.`;
+
+  try{
+    const r = await fetch(GEM,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        system_instruction:{parts:[{text:'You generate comic strip scripts as JSON. Return ONLY valid JSON arrays, no markdown, no explanation.'}]},
+        contents:[{parts:[{text:prompt}]}]
+      })
+    });
+    const data = await r.json();
+    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    const cleaned = raw.replace(/```json\n?|```/g,'').trim();
+    otState.script = JSON.parse(cleaned);
+    document.getElementById('otScriptPreview').style.display='block';
+    document.getElementById('otScriptPreview').textContent = otState.script.map((p,i)=>
+      `[${i+1}] ${p.type.toUpperCase()}\n${p.desc}\n${p.caption?'Caption: '+p.caption:''}\n`
+    ).join('\n');
+    toast(`${otState.script.length} panels scripted ✓`,'ok');
+  } catch(e){
+    toast('Script generation failed: '+e.message,'err');
+    console.error(e);
+  }
+  btn.disabled=false; btn.textContent='✦ Generate Story Script';
+}
+
+function otLoadAndClose(){
+  if(!otState.script){ toast('Generate the script first','err'); return; }
+  const era = OT_ERAS.find(e=>e.id===otState.era);
+  const chars = otState.selectedChars;
+  // Set up state
+  state.title = chars.map(c=>c.name).join(' & ') + ' — ' + era.name;
+  state.style = 'noir'; // Default for OT — dark ink graphic novel
+  state.premise = 'Ontological Theatre: '+era.name+' ('+era.year+'). Characters: '+chars.map(c=>c.name+' ('+c.role+')').join(', ');
+  state.characters = chars.map(c=>({name:c.name, desc:c.role+'. Carries: '+c.artifacts[0]+'. '+c.flavor}));
+  state.panels = otState.script.map(p=>({
+    id: state.nextId++,
+    type: p.type||'standard',
+    prompt: p.desc,
+    imageUrl: null,
+    generating: false,
+    overlays: p.caption ? [{id:Date.now()+Math.random(),type:'narration',text:p.caption,x:5,y:72,w:90,h:20}] : [],
+  }));
+  state.selectedId = state.panels[0]?.id||null;
+  document.getElementById('seriesTitle').textContent = state.title;
+  document.getElementById('styleBadge').textContent = 'OT · ' + otState.era;
+  closeOtModal();
+  renderAll();
+  toast('OT story loaded — hit ✦ Generate Episode to build','ok');
+}
+
+// ── URL PARAM DEEP LINK ── 
+function checkUrlParams(){
+  const p = new URLSearchParams(location.search);
+  const charId  = p.get('char');
+  const charIds = p.get('chars');  // comma-separated for multi
+  const era     = p.get('era');
+  const autoGen = p.get('auto');   // ?auto=1 skips modal, goes straight to script gen
+
+  // multi-char
+  if(charIds){
+    const ids = charIds.split(',');
+    const found = ids.map(id=>OT_CHARS.find(x=>x.id===id)).filter(Boolean);
+    if(found.length){
+      otState.era = found[0].era;
+      otState.selectedChars = found.slice(0,3);
+      setTimeout(()=>{ openOtModal(); },400);
+      return;
+    }
+  }
+  // single char
+  if(charId){
+    const c = OT_CHARS.find(x=>x.id===charId);
+    if(c){
+      otState.era = c.era;
+      otState.selectedChars = [c];
+      setTimeout(()=>{ openOtModal(); },400);
+      return;
+    }
+  }
+  // era only
+  if(era){
+    otState.era = era;
+    setTimeout(()=>{ openOtModal(); },400);
+  }
+}
+
 // ── INIT ────────────────────────────────────────────────────────────────────
 buildStyleGrid();
 renderAll();
+checkUrlParams();
 </script>
+
+<!-- OT AUTO-BUILD MODAL -->
+<div class="ot-modal-bg" id="otModal" style="display:none">
+  <div class="ot-modal">
+    <div class="ot-modal-title">⊕ Build from Ontological Theatre</div>
+    <div class="ot-modal-sub">Select characters from the OT universe — Gemini writes the full comic script, Fal generates every panel</div>
+
+    <div class="ot-section-label">Era</div>
+    <div class="era-grid" id="otEraGrid"></div>
+
+    <div class="ot-section-label">Characters — pick 1 to 3</div>
+    <div class="char-grid" id="otCharGrid"></div>
+
+    <div class="ot-section-label">Spark / Central Tension (optional — leave blank to let Gemini decide)</div>
+    <textarea class="pe-textarea" id="otSpark" rows="2"
+      placeholder="e.g. The River Speaker challenges the Sun Chief's authority during the flood. Or: Two women from different eras share one artifact…"
+      style="margin-bottom:14px"></textarea>
+
+    <div class="ot-section-label">Director Style</div>
+    <div class="dir-grid" id="otDirGrid"></div>
+
+    <div class="ot-section-label">Panel Count</div>
+    <div class="pc-grid" id="otPcGrid"></div>
+
+    <button class="ot-gen-btn" id="otGenScriptBtn" onclick="otGenerateScript()">✦ Generate Story Script</button>
+    <div class="script-preview" id="otScriptPreview" style="display:none"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="tbtn" style="flex:1" onclick="otLoadAndClose()">→ Load into Builder</button>
+      <button class="tbtn" style="flex:1;color:var(--fire)" onclick="closeOtModal()">× Cancel</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

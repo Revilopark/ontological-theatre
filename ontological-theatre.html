@@ -500,6 +500,14 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
         <button class="btn btn-ghost" onclick="doExportText()">⎘ Copy Script</button>
         <button class="btn btn-gold" onclick="doArchive()">✦ Archive</button>
         <button class="mm-btn-primary" id="mm-gen-btn" onclick="generateMultimedia()">🎬 Generate Multimedia</button>
+        <a href="comic-strip-builder.html" target="_blank"
+          id="comicLaunchBtn"
+          style="display:inline-flex;align-items:center;gap:5px;padding:.55rem .9rem;
+            border-radius:6px;border:1px solid rgba(200,151,58,.3);
+            background:rgba(200,151,58,.07);color:#C8973A;text-decoration:none;
+            font-size:.72rem;font-weight:600;font-family:inherit;cursor:pointer"
+          onclick="event.stopPropagation();injectOTToComic()">
+          📖 Build Comic from Cast</a>
         <button class="btn btn-ghost" onclick="doNew()">← New Performance</button>
       </div>
     </div>
@@ -879,6 +887,12 @@ function selectEra(eraId) {
       <div class="cc-name">${c.name}</div>
       <div class="cc-flavor">${c.flavor}</div>
       <div class="cc-medium">${c.medium.split(' — ')[0]}</div>
+      <a href="comic-strip-builder.html?char=${c.id}&era=${c.era}" target="_blank"
+        onclick="event.stopPropagation()"
+        style="display:inline-block;margin-top:6px;font-size:.55rem;padding:.15rem .45rem;
+          border-radius:3px;border:1px solid rgba(200,151,58,.35);color:#C8973A;
+          background:rgba(200,151,58,.08);text-decoration:none;transition:all .15s">
+        📖 Infinity Comic</a>
     </div>`).join('');
 
   // Locations & phases
@@ -2251,6 +2265,20 @@ async function generateSinglePortrait(charId, slotId) {
 
 renderEras();
 renderDirectors();
+
+// ── OT → Comic Strip integration ──────────────────────────────────────────
+function injectOTToComic(){
+  // Build URL with selected chars and era
+  const sel = CHARACTERS.filter(c=>document.getElementById('cc-'+c.id)?.classList.contains('selected'));
+  if(!sel.length){ return; } // just open the builder normally
+  const params = new URLSearchParams();
+  params.set('era', selectedEra.id);
+  if(sel.length===1) params.set('char', sel[0].id);
+  else params.set('chars', sel.map(c=>c.id).join(','));
+  const url = 'comic-strip-builder.html?'+params.toString();
+  window.open(url,'_blank');
+}
+
 </script>
 </body>
 </html>
