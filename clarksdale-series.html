@@ -629,6 +629,20 @@ document.addEventListener('error', function(e) {
 .ot-btn:hover{border-color:var(--gb);color:var(--t);background:var(--gch)}
 .ot-btn-gold{border-color:var(--gb);background:var(--gd);color:var(--g)}
 .ot-btn-gold:hover{background:rgba(207,184,124,.2);box-shadow:0 2px 16px var(--gd)}
+/* ── DIRECTOR STYLES ── */
+.ot-dir-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.55rem;margin-bottom:0}
+@media(max-width:700px){.ot-dir-grid{grid-template-columns:repeat(2,1fr)}}
+.ot-dir-card{padding:.75rem .9rem;border-radius:var(--r2);cursor:pointer;border:1px solid var(--bc);background:var(--gc);transition:all .3s;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:.25rem}
+.ot-dir-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .3s}
+.ot-dir-card:hover::before,.ot-dir-card.on::before{opacity:1}
+.ot-dir-card:hover,.ot-dir-card.on{border-color:rgba(255,255,255,.2)}
+.ot-dir-card.on{box-shadow:0 0 20px rgba(0,0,0,.3)}
+.ot-dir-sym{font-size:1.3rem;line-height:1}
+.ot-dir-name{font-family:'Playfair Display',serif;font-size:.8rem;font-weight:600;line-height:1.2}
+.ot-dir-title{font-size:.6rem;color:var(--t3);line-height:1.4;font-style:italic}
+.ot-dir-desc{font-size:.6rem;color:var(--t2);line-height:1.45;margin-top:.1rem}
+.ot-dir-chk{position:absolute;top:.45rem;right:.55rem;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:#fff;opacity:0;transition:opacity .2s}
+.ot-dir-card.on .ot-dir-chk{opacity:1}
 
 /* Characters tab */
 .ot-char-card{padding:1.1rem;border:1px solid var(--bc);border-radius:var(--r2);background:var(--gc);transition:border-color .2s}
@@ -1255,6 +1269,12 @@ document.addEventListener('error', function(e) {
         <div class="ot-sect-hdr" style="font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--t2);font-weight:500;margin-bottom:1rem;display:flex;align-items:center;gap:8px">Select an Era <span style="flex:1;height:1px;background:var(--bc);display:block"></span></div>
         <div class="ot-eras" id="ot-era-grid"></div>
 
+        <!-- DIRECTOR STYLES -->
+        <div style="margin-bottom:1.75rem">
+          <div class="ot-sect-hdr" style="font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--t2);font-weight:500;margin-bottom:.85rem;display:flex;align-items:center;gap:8px">Director Style <span style="color:var(--g);font-size:.6rem;font-weight:300;text-transform:none;letter-spacing:0"> — fixed visual and tonal direction</span><span style="flex:1;height:1px;background:var(--bc);display:block"></span></div>
+          <div class="ot-dir-grid" id="ot-dir-grid"></div>
+        </div>
+
         <!-- CAST GRID -->
         <div class="ot-cast-wrap ot-glass2 ot-hidden" id="ot-cast-wrap">
           <div class="ot-sect-hdr" style="font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--t2);font-weight:500;margin-bottom:1rem;display:flex;align-items:center;gap:8px" id="ot-cast-sect-hdr">Cast — Select 2–4 Characters <span style="flex:1;height:1px;background:var(--bc);display:block"></span></div>
@@ -1311,6 +1331,7 @@ document.addEventListener('error', function(e) {
           <div class="ot-perf-era" id="ot-perf-era">Era</div>
           <div class="ot-perf-t" id="ot-perf-title">The Living Musical</div>
           <div class="ot-chips" id="ot-perf-chips"></div>
+          <div style="font-size:.6rem;color:var(--t3);margin-top:.3rem;font-style:italic" id="ot-dir-chip"></div>
         </div>
         <div class="ot-overture ot-glass2">
           <div class="ot-overture-lbl">Overture — The Narrator</div>
@@ -1426,6 +1447,64 @@ const OT_CREW = [
   {role:'Maestro',fn:(era,chars,bridge,pathy,phase,loc,ent)=>`Entropy ${ent.toFixed(1)}/6.0 — ${ent<2?'largo, each word weighted':ent<4?'andante, building beneath calm':'allegro agitato, barely contained'}. The silence after ${chars[0]?.name} speaks is where the act breathes.`}
 ];
 
+const OT_DIRECTOR_STYLES = {
+  archivist: {
+    id:'archivist', sym:'📁', name:'The Archivist', color:'#6b9080',
+    title:'Alan Lomax / FSA Documentary',
+    desc:'Natural light. Observational. Let subjects lead. The camera is a witness.',
+    photoStyle:'Alan Lomax Library of Congress documentation, FSA Farm Security Administration archive quality, natural ambient light, subjects centered in their environment, observational respectful distance, gelatin silver print aesthetic, 1930s witness lens, no theatrical staging',
+    toneStyle:'Spare, observational. Third person. What is present, not what it means.',
+    soloStyle:'Write in the natural register of this person's actual voice. No dramatic heightening. What they would actually say in this moment.',
+    storyboardStyle:'documentary wide shot, natural ambient light, subjects in their actual environment, FSA archive quality, no theatrical staging, witness lens',
+  },
+  poet: {
+    id:'poet', sym:'🌿', name:'The Poet', color:'#8fba80',
+    title:'Terrence Malick Impressionist',
+    desc:'Oblique light. Nature close. Sensory over narrative. The world breathes.',
+    photoStyle:'Terrence Malick cinematography, oblique golden light through trees, extreme foreground grass or corn, figures half in shadow, impressionist sensory poetry, nature as protagonist, 35mm with Lubezki lens flare, whispered quality',
+    toneStyle:'Poetic. Fragmented. Questions rather than declarations. The light on the thing.',
+    soloStyle:'Write in a lyrical, fragmented register. Nature bleeds into the human. The season is inside the body.',
+    storyboardStyle:'Malick-style oblique golden light, extreme foreground nature close-up, figure half-shadow half-light, sensory impressionism, 35mm cinematic grain',
+  },
+  witness: {
+    id:'witness', sym:'👁', name:'The Witness', color:'#c46a4e',
+    title:'Gordon Parks Social Realist',
+    desc:'Direct gaze. The subject looks back. Truth as radical act.',
+    photoStyle:'Gordon Parks LIFE magazine photography, direct flash or hard rim light, subjects gazing directly into camera lens, social realism, high contrast, Black American dignity documented without apology, 1950s press photography grain, confrontational intimacy',
+    toneStyle:'Direct. Declarative. The subject speaks for themselves. No commentary from outside.',
+    soloStyle:'Write with complete directness. This character addresses the audience or the situation head-on. No metaphors that soften the truth.',
+    storyboardStyle:'Gordon Parks direct flash or hard rim light, subject gazing directly into lens, high contrast social realism, Black American dignity, 1950s press photography grain',
+  },
+  oracle: {
+    id:'oracle', sym:'🔮', name:'The Oracle', color:'#9b72cf',
+    title:'Symbolic Formalist',
+    desc:'Ceremony as composition. Symbols over narrative. The frame is an argument.',
+    photoStyle:'Todd Haynes symbolic formalism, sacred object prominently placed and lit, centered figure, deep shadow with single directed light source, architectural framing, the prop carries the meaning, ritual space, color used as symbolic argument',
+    toneStyle:'Mythic. Symbolic. The object contains the meaning. What the body knows that language cannot hold.',
+    soloStyle:'Write with ritual weight. Every word is a ceremony. The object the character holds is more important than what they say.',
+    storyboardStyle:'symbolic centered composition, sacred object prominent in frame, single directed light, deep shadow, ritual space, color as meaning not decoration, Todd Haynes visual formalism',
+  },
+  griot: {
+    id:'griot', sym:'🪘', name:'The Griot', color:'#c8973a',
+    title:'African Oral Tradition',
+    desc:'Circle. Community. Memory as architecture. The story is the people listening.',
+    photoStyle:'West African community documentary tradition, circle of figures, warm firelight or open shade, elders and young in same frame, oral tradition visual language, memory culture photography, warmth and closeness, time is circular not linear',
+    toneStyle:'Communal. Call-and-response. The ancestors are present. Time is circular.',
+    soloStyle:'Write in call-and-response structure. The community responds inside the individual voice. The ancestors speak through the living.',
+    storyboardStyle:'community circle composition, warm firelight or golden shade, elders and youth together, oral tradition visual language, memory culture, West African documentary warmth',
+  },
+  dreamer: {
+    id:'dreamer', sym:'🌙', name:'The Dreamer', color:'#4a6fa5',
+    title:'Toni Morrison Magical Realist',
+    desc:'Time collapse. Deep color. The past and present in the same frame.',
+    photoStyle:'Toni Morrison literary adaptation, Barry Jenkins Moonlight cinematography, deep shadow with saturated color, time collapse — past and present visible simultaneously, mythic quality, water and mirror motifs, ancestors visible as light or shadow, hallucinatory beauty, 35mm pushed grain',
+    toneStyle:'Mythic. Time non-linear. The ancestors speak through the living. What was not destroyed lives here still.',
+    soloStyle:'Write with mythic depth. Time collapses. The character speaks from multiple moments at once. What they say has happened before and will happen again.',
+    storyboardStyle:'Barry Jenkins Moonlight cinematography, deep shadow saturated color, time collapse between eras, mythic quality, water reflection, ancestors as light or shadow, hallucinatory beauty, 35mm pushed grain',
+  },
+};
+let OT_selectedDirector = OT_DIRECTOR_STYLES.witness; // default: Gordon Parks
+
 const OT_ACTS = [
   {n:1,name:'Materiality',ity:'materiality',pw:.3,desc:'The world as it is — ground truth'},
   {n:2,name:'Vitality',ity:'vitality',pw:.5,desc:'What moves — what is alive here'},
@@ -1451,6 +1530,7 @@ function otTab(id) {
 
 // ── ERA GRID ──
 function otRenderEras() {
+  otRenderDirectors();
   document.getElementById('ot-era-grid').innerHTML = Object.values(OT_ERAS).map(e=>`
     <div class="ot-era ${e.cls}" id="ot-era-${e.id}" onclick="otSelectEra('${e.id}')">
       <div class="ot-era-sym">${e.symbol}</div>
@@ -1533,6 +1613,7 @@ async function otGenerate() {
   }
 
   document.getElementById('ot-perf-era').textContent=`${era.symbol} ${era.name} · ${era.dates}`;
+  const dirChip=document.getElementById('ot-dir-chip');if(dirChip)dirChip.textContent=`${OT_selectedDirector.sym} ${OT_selectedDirector.name} — ${OT_selectedDirector.title}`;
   document.getElementById('ot-perf-chips').innerHTML=
     chars.map(c=>`<span class="ot-chip-cast">${c.sym} ${c.name}</span>`).join('')+
     `<span class="ot-chip-era">${bridge}</span><span class="ot-chip-era">${pathy}</span>`;
@@ -1618,14 +1699,64 @@ async function otGenerate() {
 }
 
 // ── PROMPTS ──
-function otOverturePrompt(era,chars,bridge,pathy,loc,phase){return`You are the Mississippi River. You speak in 4-6 spare, present-tense, poetic sentences. No metaphors explained, no sentiment.\n\nERA: ${era.name} (${era.dates}) · ${loc} · ${phase}\nCHARACTERS: ${chars.map(c=>`${c.name} (${c.role})`).join(', ')}\nBRIDGE: ${bridge} · PATHY: ${pathy}\n\nBegin immediately with narration. No title on a separate line.`;}
-function otStageDirPrompt(era,chars,bridge,pathy,phase,loc,act,ent,crew){return`Write a stage direction for Act ${act.n} (${act.name}).\n\nSETTING: ${loc}, ${era.name}, during ${phase}\nCOORDINATES: bridge=${bridge}, pathy=${pathy}, ity=${act.ity}, entropy=${ent.toFixed(1)}/6.0\nCAST: ${chars.map(c=>`${c.name} — ${c.role} — carries ${c.artifacts[0]}`).join('; ')}\nLIGHTING: ${crew[2].note}\nSOUND: ${crew[5].note}\n\nWhat the audience sees: location, bodies, light, objects, atmosphere. 2-4 sentences. Present tense. Specific.`;}
+function otOverturePrompt(era,chars,bridge,pathy,loc,phase){return`You are the Mississippi River. You speak in 4-6 spare, present-tense, poetic sentences. No metaphors explained, no sentiment.\n\nERA: ${era.name} (${era.dates}) · ${loc} · ${phase}\nCHARACTERS: ${chars.map(c=>`${c.name} (${c.role})`).join(', ')}\nBRIDGE: ${bridge} · PATHY: ${pathy}\n\nDIRECTOR APPROACH — ${OT_selectedDirector.name} (${OT_selectedDirector.title}): ${OT_selectedDirector.toneStyle}\n\nBegin immediately with narration. No title on a separate line.`;}
+function otStageDirPrompt(era,chars,bridge,pathy,phase,loc,act,ent,crew){return`Write a stage direction for Act ${act.n} (${act.name}).\n\nSETTING: ${loc}, ${era.name}, during ${phase}\nCOORDINATES: bridge=${bridge}, pathy=${pathy}, ity=${act.ity}, entropy=${ent.toFixed(1)}/6.0\nCAST: ${chars.map(c=>`${c.name} — ${c.role} — carries ${c.artifacts[0]}`).join('; ')}\nLIGHTING: ${crew[2].note}\nSOUND: ${crew[5].note}\n\nVISUAL APPROACH — ${OT_selectedDirector.name}: ${OT_selectedDirector.toneStyle}\n\nWhat the audience sees: location, bodies, light, objects, atmosphere. 2-4 sentences. Present tense. Specific. Inflect through this director's lens.`;}
 function otSoloPrompt(era,ch,bridge,pathy,phase,loc,act,ent){
   const types={song:`Write SONG LYRICS as ${ch.name} would write them — on ${ch.medium.split(' — ')[0]}, in ${ch.literacy} style. Blues structure if Delta era. Phonetic spelling if semi-literate.`,chant:`Write a CEREMONIAL CHANT as ${ch.name} would perform it. Repetition is structure. Sound before meaning. 3-4 invocations. No European syntax.`,prayer:`Write a PRAYER as ${ch.name} would pray it — in their exact voice (${ch.literacy}). Not formal religion. What this person says when they need help right now.`,ledger:`Write a LEDGER ENTRY as ${ch.name} — formal record. List what power lists. Let the violence be in the accounting.`,monologue:`Write a DIRECT MONOLOGUE as ${ch.name} speaking to the audience or themselves. Their exact voice (${ch.literacy}).`,tally:`Write TALLY MARKS and their meaning — as ${ch.name} forbidden to write fully. Marks only. Describe what each mark costs to make.`,map:`Write a MAP DESCRIPTION as ${ch.name} — in their medium (${ch.medium.split(' — ')[0]}). What they mark, what they leave unmarked.`,worksong:`Write a WORK SONG as ${ch.name} — rhythm first. The work is in the rhythm. What the song does that the work cannot.`,sermon:`Write a SERMON EXCERPT as ${ch.name} — in their oratorical register. The subtext is the text.`};
-  return`You are writing AS ${ch.name}, not about them.\n\nCHARACTER: ${ch.name} — ${ch.role} (${era.name}, ${ch.lineage} lineage)\nCREATION: ${ch.creationType} · MEDIUM: ${ch.medium} · LITERACY: ${ch.literacy}\nFLAVOR: "${ch.flavor}"\n\nSCENE: Act ${act.n} (${act.name}) · ${loc} · ${phase} · ${bridge} as structural force · ${pathy} as felt condition · Entropy: ${ent.toFixed(1)}/6.0\n\n${types[ch.creationType]||types.monologue}\n\nCRITICAL: Write AS this character IN their voice WITH their literacy constraints. If semi-literate, spell phonetically. If pre-literate, use oral structures — repetition, invocation, call-and-response. Material constraints of their era ARE the form.\n\nLength: 6-14 lines. Begin immediately.`;}
-function otCurtainPrompt(era,chars,bridge,pathy){return`The performance has ended. You are the Mississippi River again.\n\nWhat remains after ${chars.map(c=>c.name).join(', ')} have spoken?\nERA: ${era.name} · BRIDGE: ${bridge} · PATHY: ${pathy}\n\n3-4 sentences. What the earth holds now. No closure — rivers don't close.`;}
+  return`You are writing AS ${ch.name}, not about them.\n\nCHARACTER: ${ch.name} — ${ch.role} (${era.name}, ${ch.lineage} lineage)\nCREATION: ${ch.creationType} · MEDIUM: ${ch.medium} · LITERACY: ${ch.literacy}\nFLAVOR: "${ch.flavor}"\n\nSCENE: Act ${act.n} (${act.name}) · ${loc} · ${phase} · ${bridge} as structural force · ${pathy} as felt condition · Entropy: ${ent.toFixed(1)}/6.0\n\n${types[ch.creationType]||types.monologue}\n\nDIRECTOR APPROACH — ${OT_selectedDirector.name} (${OT_selectedDirector.title}): ${OT_selectedDirector.soloStyle}\n\nCRITICAL: Write AS this character IN their voice WITH their literacy constraints. If semi-literate, spell phonetically. If pre-literate, use oral structures — repetition, invocation, call-and-response. Material constraints of their era ARE the form.\n\nLength: 6-14 lines. Begin immediately.`;}
+function otCurtainPrompt(era,chars,bridge,pathy){return`The performance has ended. You are the Mississippi River again.\n\nWhat remains after ${chars.map(c=>c.name).join(', ')} have spoken?\nERA: ${era.name} · BRIDGE: ${bridge} · PATHY: ${pathy}\n\nDIRECTOR APPROACH — ${OT_selectedDirector.name}: ${OT_selectedDirector.toneStyle}\n\n3-4 sentences. What the earth holds now. No closure — rivers don't close.`;}
 
 // ── LLM ──
+function otRenderDirectors(){
+  const grid=document.getElementById('ot-dir-grid');
+  if(!grid)return;
+  grid.innerHTML=Object.values(OT_DIRECTOR_STYLES).map(d=>`
+    <div class="ot-dir-card" id="ot-dir-${d.id}" onclick="otSelectDirector('${d.id}')"
+      style="--dc:${d.color}">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,${d.color}18,transparent);opacity:${OT_selectedDirector.id===d.id?1:0};transition:opacity .3s" id="ot-dir-bg-${d.id}"></div>
+      <div class="ot-dir-chk" style="background:${d.color}" id="ot-dir-chk-${d.id}">✓</div>
+      <div class="ot-dir-sym">${d.sym}</div>
+      <div class="ot-dir-name">${d.name}</div>
+      <div class="ot-dir-title">${d.title}</div>
+      <div class="ot-dir-desc">${d.desc}</div>
+    </div>`).join('');
+  // Mark initial selection
+  const initEl=document.getElementById('ot-dir-'+OT_selectedDirector.id);
+  if(initEl){
+    initEl.classList.add('on');
+    initEl.style.borderColor=OT_selectedDirector.color+'80';
+    const bg=document.getElementById('ot-dir-bg-'+OT_selectedDirector.id);
+    if(bg)bg.style.opacity='1';
+    const chk=document.getElementById('ot-dir-chk-'+OT_selectedDirector.id);
+    if(chk)chk.style.opacity='1';
+  }
+}
+
+function otSelectDirector(id){
+  OT_selectedDirector=OT_DIRECTOR_STYLES[id];
+  document.querySelectorAll('.ot-dir-card').forEach(el=>{
+    el.classList.remove('on');
+    el.style.borderColor='';
+    const did=el.id.replace('ot-dir-','');
+    const bg=document.getElementById('ot-dir-bg-'+did);
+    if(bg)bg.style.opacity='0';
+    const chk=document.getElementById('ot-dir-chk-'+did);
+    if(chk)chk.style.opacity='0';
+  });
+  const el=document.getElementById('ot-dir-'+id);
+  if(el){
+    el.classList.add('on');
+    el.style.borderColor=OT_selectedDirector.color+'80';
+    const bg=document.getElementById('ot-dir-bg-'+id);
+    if(bg)bg.style.opacity='1';
+    const chk=document.getElementById('ot-dir-chk-'+id);
+    if(chk)chk.style.opacity='1';
+  }
+  // Visual feedback in perf header if visible
+  const chip=document.getElementById('ot-dir-chip');
+  if(chip)chip.textContent=OT_selectedDirector.sym+' '+OT_selectedDirector.name;
+}
+
 async function otLLM(prompt){
   try{
     const r=await fetch(OT_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
