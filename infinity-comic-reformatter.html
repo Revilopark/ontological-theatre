@@ -144,6 +144,17 @@ label{font-size:12px;color:var(--fg2);font-weight:500;text-transform:uppercase;l
 .format-preview-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
 .format-preview-toolbar{display:flex;gap:8px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--bg4);align-items:center;flex-shrink:0}
 .preview-scroll{flex:1;overflow-y:auto;display:flex;justify-content:center;background:repeating-conic-gradient(var(--bg3) 0% 25%,var(--bg) 0% 50%) 0 0/20px 20px}
+.phone-shell{background:#0a0a0a;border-radius:40px;border:3px solid #2a2a2a;
+  box-shadow:0 0 0 1px #111,0 16px 48px rgba(0,0,0,.7);overflow:hidden;
+  position:relative;flex-shrink:0;transition:all .3s;display:none}
+.phone-shell.active{display:flex;flex-direction:column}
+.phone-shell-notch{height:28px;background:#0a0a0a;border-radius:0 0 18px 18px;
+  position:absolute;top:0;left:50%;transform:translateX(-50%);width:110px;z-index:2}
+.phone-shell-screen{flex:1;overflow-y:scroll;overflow-x:hidden;padding-top:28px;
+  background:#000;width:100%;height:100%}
+.phone-shell-screen::-webkit-scrollbar{display:none}
+#previewContainer.phone-mode{margin:0;width:100%!important}
+#previewCanvas.phone-mode{max-width:100%!important;width:100%!important}
 #previewContainer{position:relative;margin:20px auto}
 #previewCanvas{display:block;max-width:100%}
 
@@ -414,11 +425,19 @@ label{font-size:12px;color:var(--fg2);font-weight:500;text-transform:uppercase;l
       <div class="format-preview-area">
         <div class="format-preview-toolbar">
           <span style="font-size:12px;color:var(--fg3)">Preview</span>
+          <button class="btn btn-sm" id="phoneModeBtn" onclick="togglePhoneMode()" style="margin-left:8px">📱 Phone Mode</button>
           <span style="flex:1"></span>
           <span style="font-size:12px;color:var(--fg3)" id="previewDims">—</span>
         </div>
         <div class="preview-scroll" id="previewScroll">
           <div id="previewContainer">
+            <!-- PHONE SHELL (toggled) -->
+            <div class="phone-shell" id="phoneShell" style="width:390px;height:780px">
+              <div class="phone-shell-notch"></div>
+              <div class="phone-shell-screen" id="phoneShellScreen">
+                <canvas id="previewCanvasPhone" style="width:100%;display:block"></canvas>
+              </div>
+            </div>
             <canvas id="previewCanvas"></canvas>
             <div class="empty-state" id="formatEmptyState">
               <div class="icon">📐</div>
@@ -1517,10 +1536,47 @@ async function renderPreview() {
   state.lastRenderedData = { layout, outputWidth, totalHeight, imageCache };
 
   document.getElementById('previewDims').textContent = `${outputWidth} × ${Math.round(totalHeight)}px`;
+  if(phoneModeActive) syncPhoneCanvas();
   document.getElementById('previewContainer').style.width = outputWidth + 'px';
 }
 
 // ─── Export Functions ────────────────────────────────────────────────
+let phoneModeActive = false;
+function togglePhoneMode(){
+  phoneModeActive = !phoneModeActive;
+  const btn = document.getElementById('phoneModeBtn');
+  const shell = document.getElementById('phoneShell');
+  const canvas = document.getElementById('previewCanvas');
+  const container = document.getElementById('previewContainer');
+  if(phoneModeActive){
+    btn.textContent = '🖥 Desktop Mode';
+    btn.classList.add('btn-primary');
+    shell.classList.add('active');
+    canvas.style.display = 'none';
+    container.classList.add('phone-mode');
+    // Copy canvas content to phone canvas
+    syncPhoneCanvas();
+  } else {
+    btn.textContent = '📱 Phone Mode';
+    btn.classList.remove('btn-primary');
+    shell.classList.remove('active');
+    canvas.style.display = 'block';
+    container.classList.remove('phone-mode');
+  }
+}
+
+function syncPhoneCanvas(){
+  const src = document.getElementById('previewCanvas');
+  const dst = document.getElementById('previewCanvasPhone');
+  dst.width = src.width;
+  dst.height = src.height;
+  const ctx = dst.getContext('2d');
+  ctx.drawImage(src, 0, 0);
+}
+
+// Patch renderPreview to also sync phone canvas
+const _origRenderPreview = typeof renderPreview !== 'undefined' ? renderPreview : null;
+
 async function exportSingleImage() {
   await renderPreview();
   if (!state.lastRenderedData) return toast('Nothing to export', 'error');
