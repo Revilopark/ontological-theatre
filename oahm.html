@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OAHM — Yoby Étienne | Exercise Scientist</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#080808;--s1:#111111;--s2:#161616;--cyan:#00D4FF;--gold:#C9A84C;--white:#FFFFFF;--gray:#888888;--border:#444444;--font-h:'Playfair Display',serif;--font-b:'Space Grotesk',sans-serif}
+html{scroll-behavior:smooth;font-size:16px}
+body{background:var(--bg);color:var(--white);font-family:var(--font-b);line-height:1.6;overflow-x:hidden}
+a{color:var(--cyan);text-decoration:none}
+button{cursor:pointer;font-family:var(--font-b)}
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .6s ease,transform .6s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;width:100%;z-index:1000;background:rgba(8,8,8,.92);backdrop-filter:blur(8px);border-bottom:1px solid #222;padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between}
+nav .logo{font-family:var(--font-h);font-size:1.1rem;letter-spacing:2px;color:var(--gold)}
+nav ul{display:flex;list-style:none;gap:1.5rem}
+nav ul li a{font-size:.75rem;letter-spacing:2px;text-transform:uppercase;color:var(--gray);transition:color .3s}
+nav ul li a.active,nav ul li a:hover{color:var(--cyan)}
+.nav-toggle{display:none;background:none;border:none;color:var(--white);font-size:1.5rem}
+@media(max-width:768px){
+nav ul{position:fixed;top:56px;left:0;width:100%;background:rgba(8,8,8,.97);flex-direction:column;align-items:center;gap:0;max-height:0;overflow:hidden;transition:max-height .3s}
+nav ul.open{max-height:400px}
+nav ul li a{display:block;padding:.8rem}
+.nav-toggle{display:block}
+}
+
+/* HERO */
+#hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:6rem 1.5rem 2rem;position:relative}
+#hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(0,212,255,.04) 0%,transparent 70%);pointer-events:none}
+.hero-label{font-size:.75rem;letter-spacing:6px;text-transform:uppercase;color:var(--cyan);margin-bottom:1rem;font-weight:500}
+.hero-name{font-family:var(--font-h);font-size:clamp(3rem,8vw,6rem);font-weight:900;line-height:1.05;margin-bottom:1.2rem}
+.hero-tagline{font-family:var(--font-h);font-size:clamp(1.1rem,2.5vw,1.6rem);font-style:italic;color:var(--gray);margin-bottom:.8rem}
+.hero-sub{font-size:.95rem;color:var(--gray);margin-bottom:2rem;max-width:500px}
+.cta-row{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
+.btn{padding:.85rem 2rem;font-size:.8rem;letter-spacing:2px;text-transform:uppercase;border:none;font-weight:600;transition:all .3s}
+.btn-primary{background:var(--cyan);color:#000}
+.btn-primary:hover{background:#00b8e0}
+.btn-secondary{background:transparent;color:var(--gold);border:1px solid var(--gold)}
+.btn-secondary:hover{background:var(--gold);color:#000}
+
+.stats-bar{display:flex;justify-content:center;gap:3rem;padding:2.5rem 1rem;background:var(--s1);border-top:1px solid #222;border-bottom:1px solid #222;margin-top:3rem;flex-wrap:wrap}
+.stat{text-align:center}
+.stat-num{font-family:var(--font-h);font-size:1.6rem;font-weight:700;color:var(--cyan)}
+.stat-label{font-size:.7rem;letter-spacing:2px;color:var(--gray);margin-top:.25rem;text-transform:uppercase}
+
+.marquee-wrap{overflow:hidden;padding:1rem 0;border-bottom:1px solid #222;background:var(--s2)}
+.marquee{display:flex;animation:scroll 20s linear infinite;white-space:nowrap}
+.marquee span{font-size:.75rem;letter-spacing:3px;color:var(--border);text-transform:uppercase;padding:0 2rem}
+@keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* FRAMEWORK */
+.section{padding:6rem 1.5rem;max-width:1100px;margin:0 auto}
+.section-label{font-size:.7rem;letter-spacing:5px;color:var(--cyan);text-transform:uppercase;margin-bottom:.5rem}
+.section-title{font-family:var(--font-h);font-size:clamp(2rem,4vw,3rem);margin-bottom:2rem}
+
+.framework-grid{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:start}
+@media(max-width:768px){.framework-grid{grid-template-columns:1fr;gap:2rem}}
+.pullquote{font-family:var(--font-h);font-size:clamp(1.4rem,2.5vw,2rem);font-style:italic;line-height:1.4;color:var(--white);border-left:3px solid var(--gold);padding-left:1.5rem}
+.framework-text p{color:var(--gray);margin-bottom:1.2rem;font-size:.95rem;line-height:1.7}
+
+.cycle{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:.5rem;margin-top:3rem;padding:2rem 0}
+.cycle-node{background:var(--s1);border:1px solid var(--cyan);padding:.8rem 1.2rem;text-align:center;font-size:.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);cursor:pointer;transition:all .3s;position:relative;min-width:110px}
+.cycle-node:hover,.cycle-node.expanded{background:rgba(0,212,255,.1);border-color:var(--gold)}
+.cycle-arrow{color:var(--gold);font-size:1.2rem}
+.cycle-detail{display:none;font-size:.8rem;color:var(--gray);text-transform:none;letter-spacing:0;margin-top:.5rem;line-height:1.5}
+.cycle-node.expanded .cycle-detail{display:block}
+@media(max-width:600px){.cycle{flex-direction:column}.cycle-arrow{transform:rotate(90deg)}}
+
+/* QUIZ */
+.quiz-intro{text-align:center;margin-bottom:3rem}
+.quiz-intro p{color:var(--gray);max-width:500px;margin:0 auto}
+.quiz-container{max-width:700px;margin:0 auto}
+.quiz-q{margin-bottom:2.5rem}
+.quiz-q h3{font-family:var(--font-h);font-size:1.1rem;margin-bottom:1rem}
+.quiz-q .q-num{color:var(--cyan);font-size:.7rem;letter-spacing:3px;margin-bottom:.3rem;display:block}
+.quiz-options{display:grid;gap:.6rem}
+.quiz-opt{background:var(--s1);border:1px solid #222;padding:1rem 1.2rem;font-size:.85rem;color:var(--gray);cursor:pointer;transition:all .25s;text-align:left}
+.quiz-opt:hover{border-color:var(--cyan);color:var(--white)}
+.quiz-opt.selected{border-color:var(--cyan);background:rgba(0,212,255,.08);color:var(--white)}
+#quiz-result{display:none;text-align:center;padding:3rem 2rem;background:var(--s1);border:1px solid var(--gold);margin-top:2rem}
+#quiz-result .score{font-family:var(--font-h);font-size:3.5rem;color:var(--cyan);font-weight:900}
+#quiz-result .score-label{font-size:.7rem;letter-spacing:3px;color:var(--gray);text-transform:uppercase;margin-bottom:1rem}
+#quiz-result .outcome{font-family:var(--font-h);font-size:1.3rem;margin:1rem 0}
+#quiz-result .btn{margin-top:1rem}
+
+/* STUDIO */
+.tabs{display:flex;gap:0;margin-bottom:2rem;border-bottom:1px solid #222}
+.tab{padding:.8rem 1.5rem;font-size:.75rem;letter-spacing:2px;text-transform:uppercase;color:var(--gray);background:none;border:none;border-bottom:2px solid transparent;transition:all .3s}
+.tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+select,input[type=text],input[type=email],textarea{width:100%;padding:.8rem 1rem;background:var(--s1);border:1px solid #222;color:var(--white);font-family:var(--font-b);font-size:.9rem;margin-bottom:1rem;outline:none;transition:border-color .3s}
+select:focus,input:focus,textarea:focus{border-color:var(--cyan)}
+textarea{min-height:100px;resize:vertical}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:600px){.form-row{grid-template-columns:1fr}}
+
+.gen-btn{background:var(--cyan);color:#000;padding:.8rem 2rem;border:none;font-size:.8rem;letter-spacing:2px;text-transform:uppercase;font-weight:600;transition:opacity .3s}
+.gen-btn:hover{opacity:.85}
+.gen-btn:disabled{opacity:.5;cursor:not-allowed}
+
+.preview-card{background:var(--s2);border:1px solid #222;padding:2rem;margin-top:1.5rem;display:none}
+.preview-card.show{display:block}
+.preview-card .card-author{font-size:.7rem;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:.8rem}
+.preview-card .card-text{font-size:.95rem;color:var(--gray);line-height:1.7;white-space:pre-wrap}
+.copy-btn{background:none;border:1px solid var(--border);color:var(--gray);padding:.5rem 1.2rem;font-size:.7rem;letter-spacing:2px;text-transform:uppercase;margin-top:1rem;transition:all .3s}
+.copy-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+
+/* PRINCIPLE CARD */
+#principle-preview{display:none;background:var(--s1);border:1px solid var(--gold);padding:3rem 2rem;text-align:center;margin-top:1.5rem}
+#principle-preview .p-text{font-family:var(--font-h);font-style:italic;color:var(--white);line-height:1.4;margin-bottom:1.5rem}
+#principle-preview .p-author{font-size:.75rem;letter-spacing:3px;color:var(--gold);text-transform:uppercase}
+#principle-preview .p-brand{font-size:.6rem;letter-spacing:4px;color:var(--border);margin-top:.5rem;text-transform:uppercase}
+.font-sizes{display:flex;gap:.5rem;margin-bottom:1rem}
+.font-sizes button{background:var(--s1);border:1px solid #222;color:var(--gray);width:36px;height:36px;font-size:.8rem;transition:all .3s}
+.font-sizes button.active{border-color:var(--cyan);color:var(--cyan)}
+
+/* BOOK */
+#book{background:var(--s2);padding:6rem 1.5rem}
+.book-inner{max-width:900px;margin:0 auto;text-align:center}
+.book-title{font-family:var(--font-h);font-size:clamp(2.5rem,6vw,4.5rem);letter-spacing:4px;margin-bottom:.8rem}
+.book-sub{font-family:var(--font-h);font-style:italic;color:var(--gray);font-size:1.1rem;max-width:600px;margin:0 auto 1rem}
+.book-author{font-size:.75rem;letter-spacing:4px;color:var(--gold);text-transform:uppercase;margin-bottom:3rem}
+
+.accordion{text-align:left;max-width:700px;margin:0 auto 3rem}
+.acc-item{border-bottom:1px solid #222}
+.acc-header{padding:1.2rem 0;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:var(--font-h);font-size:1rem;color:var(--white);transition:color .3s}
+.acc-header:hover{color:var(--cyan)}
+.acc-header .acc-toggle{color:var(--cyan);font-size:1.2rem;transition:transform .3s}
+.acc-item.open .acc-toggle{transform:rotate(45deg)}
+.acc-body{max-height:0;overflow:hidden;transition:max-height .4s ease;color:var(--gray);font-size:.9rem;line-height:1.7}
+.acc-body-inner{padding:0 0 1.2rem}
+
+.book-form{max-width:500px;margin:0 auto;text-align:left}
+.book-form .success-msg{display:none;text-align:center;padding:1.5rem;background:rgba(0,212,255,.05);border:1px solid var(--cyan);color:var(--cyan);font-size:.9rem;margin-top:1rem}
+.progress-bar{text-align:center;margin-top:2rem;font-size:.7rem;letter-spacing:3px;color:var(--gray);text-transform:uppercase}
+.progress-bar .bar{width:200px;height:3px;background:#222;margin:8px auto 0;position:relative}
+.progress-bar .bar::after{content:'';position:absolute;left:0;top:0;width:45%;height:100%;background:var(--gold)}
+
+/* OAHM STUDIO */
+.services-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-bottom:3rem}
+@media(max-width:768px){.services-grid{grid-template-columns:1fr}}
+.service-card{background:var(--s1);border:1px solid #222;padding:2rem;transition:border-color .3s}
+.service-card:hover{border-color:var(--cyan)}
+.service-card h3{font-family:var(--font-h);font-size:1.1rem;margin-bottom:.5rem}
+.service-card .service-tag{font-size:.65rem;letter-spacing:3px;color:var(--cyan);text-transform:uppercase;margin-bottom:1rem;display:block}
+.service-card p{color:var(--gray);font-size:.85rem;line-height:1.6}
+
+.studio-info{display:flex;justify-content:center;gap:3rem;flex-wrap:wrap;padding:2rem 0;border-top:1px solid #222;border-bottom:1px solid #222;margin-bottom:3rem;text-align:center}
+.studio-info div{font-size:.85rem;color:var(--gray)}
+.studio-info div strong{display:block;font-size:.65rem;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:.3rem}
+
+.contact-form{max-width:500px;margin:0 auto}
+.contact-form .success-msg{display:none;text-align:center;padding:1.5rem;background:rgba(201,168,76,.05);border:1px solid var(--gold);color:var(--gold);font-size:.9rem;margin-top:1rem}
+
+footer{text-align:center;padding:3rem 1rem;border-top:1px solid #222;font-size:.7rem;color:var(--border);letter-spacing:2px;text-transform:uppercase}
+
+.loading{display:inline-block;width:16px;height:16px;border:2px solid var(--cyan);border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;margin-left:.5rem;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+<div class="logo">OAHM</div>
+<button class="nav-toggle" onclick="document.querySelector('nav ul').classList.toggle('open')">☰</button>
+<ul>
+<li><a href="#hero">Home</a></li>
+<li><a href="#framework">Framework</a></li>
+<li><a href="#quiz">Fit</a></li>
+<li><a href="#studio">Studio</a></li>
+<li><a href="#book">Book</a></li>
+<li><a href="#oahm">Contact</a></li>
+</ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+<div class="hero-label">Exercise Scientist</div>
+<h1 class="hero-name">Yoby Étienne</h1>
+<p class="hero-tagline">I don't train your body. I read it.</p>
+<p class="hero-sub">Precision biomechanical coaching for high-performing men.</p>
+<div class="cta-row">
+<a href="#oahm" class="btn btn-primary">Book Assessment</a>
+<a href="#book" class="btn btn-secondary">Learn About Allostasis</a>
+</div>
+<div class="stats-bar">
+<div class="stat"><div class="stat-num">20+</div><div class="stat-label">Years — Biomechanical Practice</div></div>
+<div class="stat"><div class="stat-num">40+</div><div class="stat-label">Average Client Age</div></div>
+<div class="stat"><div class="stat-num">WeHo</div><div class="stat-label">N. La Brea Studio</div></div>
+</div>
+</section>
+
+<div class="marquee-wrap">
+<div class="marquee"><span>FORCE MANAGEMENT · MOTOR CONTROL · BIO-MOTOR CONFIGURATION · MUSCULAR COORDINATION · ALLOSTASIS · STABILITY THROUGH CHANGE · </span><span>FORCE MANAGEMENT · MOTOR CONTROL · BIO-MOTOR CONFIGURATION · MUSCULAR COORDINATION · ALLOSTASIS · STABILITY THROUGH CHANGE · </span></div>
+</div>
+
+<!-- FRAMEWORK -->
+<section id="framework" class="section">
+<div class="reveal">
+<div class="section-label">The Framework</div>
+<div class="section-title">Understanding the Body's Language</div>
+<div class="framework-grid">
+<div class="pullquote">"The body doesn't break down. It adapts — until the adaptation becomes the problem."</div>
+<div class="framework-text">
+<p>Most practitioners look at where it hurts. I look at what the body learned to do — and when that learning stopped serving you. Compensation patterns are not injuries. They're strategies your nervous system adopted, often brilliantly, often decades ago.</p>
+<p>By forty, a man has accumulated twenty years of movement debt. Not from doing something wrong — from doing something repeatedly without precision. The knees that ache, the shoulder that catches, the lower back that never fully releases — these are invoices, not breakdowns.</p>
+<p>OAHM doesn't guess. We measure. Bilateral weight distribution. Postural grid analysis. Range of motion mapping. Motor control sequencing. Every session begins with data and ends with a body that moves more efficiently than it did an hour ago.</p>
+</div>
+</div>
+</div>
+<div class="reveal">
+<div style="text-align:center;margin-top:3rem">
+<div class="section-label">The Allostasis Cycle</div>
+</div>
+<div class="cycle" id="allostasis-cycle">
+<div class="cycle-node" data-detail="An external demand — physical, environmental, or cognitive — that challenges the body's current operating state.">STRESSOR<div class="cycle-detail"></div></div>
+<div class="cycle-arrow">→</div>
+<div class="cycle-node" data-detail="The body's immediate physiological reaction. Resources are mobilized, systems recalibrate, energy is redirected.">RESPONSE<div class="cycle-detail"></div></div>
+<div class="cycle-arrow">→</div>
+<div class="cycle-node" data-detail="The nervous system encodes the response as a pattern. This is learning — but not all learning serves you long-term.">ADAPTATION<div class="cycle-detail"></div></div>
+<div class="cycle-arrow">→</div>
+<div class="cycle-node" data-detail="The adapted state becomes the new normal. Your body now operates from this position — for better or worse.">NEW BASELINE<div class="cycle-detail"></div></div>
+<div class="cycle-arrow">→</div>
+<div class="cycle-node" data-detail="Life doesn't stop. The next demand arrives, and the cycle begins again — from wherever the last one left you.">NEXT STRESSOR<div class="cycle-detail"></div></div>
+</div>
+</div>
+</section>
+
+<!-- QUIZ -->
+<section id="quiz" class="section">
+<div class="reveal quiz-intro">
+<div class="section-label">Find Your Fit</div>
+<div class="section-title">The Assessment Begins Here</div>
+<p>OAHM is not for everyone. Answer honestly.</p>
+</div>
+<div class="quiz-container reveal" id="quiz-form">
+</div>
+<div id="quiz-result" class="reveal">
+<div class="score" id="fit-score"></div>
+<div class="score-label">Fit Score</div>
+<div class="outcome" id="fit-outcome"></div>
+<p id="fit-desc" style="color:var(--gray);font-size:.9rem;margin-bottom:1rem"></p>
+<a href="#oahm" class="btn btn-primary" id="fit-cta"></a>
+</div>
+</section>
+
+<!-- CONTENT STUDIO -->
+<section id="studio" class="section">
+<div class="reveal">
+<div class="section-label">Content Studio</div>
+<div class="section-title">Create in Yoby's Voice</div>
+<p style="color:var(--gray);margin-bottom:2rem;max-width:600px">Generate training philosophy content in Yoby's voice. For trainers, coaches, and movement professionals studying this methodology.</p>
+</div>
+<div class="reveal">
+<div class="tabs">
+<button class="tab active" data-tab="ig">Instagram Post</button>
+<button class="tab" data-tab="principle">Principle Card</button>
+<button class="tab" data-tab="email">Client Email</button>
+</div>
+<!-- IG TAB -->
+<div class="tab-content active" id="tab-ig">
+<div class="form-row">
+<select id="ig-theme">
+<option value="">Select Theme</option>
+<option>Allostasis</option><option>Force Management</option><option>Motor Control</option><option>Bilateral Symmetry</option><option>Movement Debt</option><option>Pain vs. Compensation</option><option>The 40+ Body</option>
+</select>
+<select id="ig-tone">
+<option value="">Select Tone</option>
+<option>Clinical</option><option>Motivational</option><option>Educational</option><option>Direct</option>
+</select>
+</div>
+<button class="gen-btn" id="ig-gen" onclick="generateIG()">Generate Post</button>
+<div class="preview-card" id="ig-preview">
+<div class="card-author">Yoby Étienne, MS, MATcs — @yoby.etienne</div>
+<div class="card-text" id="ig-text"></div>
+<button class="copy-btn" onclick="copyText('ig-text')">Copy Caption</button>
+</div>
+</div>
+<!-- PRINCIPLE TAB -->
+<div class="tab-content" id="tab-principle">
+<input type="text" id="principle-input" placeholder="The body doesn't break down. It adapts.">
+<div class="font-sizes">
+<button class="active" data-size="1.8rem" onclick="setPrincipleSize(this)">A</button>
+<button data-size="2.4rem" onclick="setPrincipleSize(this)">A+</button>
+<button data-size="3rem" onclick="setPrincipleSize(this)">A++</button>
+</div>
+<button class="gen-btn" onclick="generatePrinciple()">Generate Card</button>
+<div id="principle-preview">
+<div class="p-text" id="p-text" style="font-size:1.8rem"></div>
+<div class="p-author">Yoby Étienne, MS, MATcs</div>
+<div class="p-brand">OAHM — West Hollywood</div>
+</div>
+<button class="copy-btn" style="display:none;margin-top:1rem" id="p-copy" onclick="copyPrincipleCard()">Copy Card Text</button>
+</div>
+<!-- EMAIL TAB -->
+<div class="tab-content" id="tab-email">
+<select id="email-type">
+<option value="">Select Email Type</option>
+<option>Initial Inquiry Response</option><option>Post-Assessment Follow-up</option><option>Check-in After 30 Days</option><option>Book Launch Announcement</option>
+</select>
+<button class="gen-btn" id="email-gen" onclick="generateEmail()">Generate Email</button>
+<div class="preview-card" id="email-preview">
+<div class="card-author">From: Yoby Étienne — info@oahm.io</div>
+<div class="card-text" id="email-text"></div>
+<button class="copy-btn" onclick="copyText('email-text')">Copy Email</button>
+</div>
+</div>
+</div>
+</section>
+
+<!-- BOOK -->
+<section id="book">
+<div class="book-inner reveal">
+<div class="section-label" style="margin-bottom:1rem">The Book</div>
+<div class="book-title">ALLOSTASIS</div>
+<div class="book-sub">A book about what happens when the body's story gets in the way of your life.</div>
+<div class="book-author">Yoby Étienne, MS, MATcs</div>
+
+<div class="accordion" id="chapters">
+<div class="acc-item">
+<div class="acc-header">Prologue: "The Invoice" <span class="acc-toggle">+</span></div>
+<div class="acc-body"><div class="acc-body-inner">Why men at 40 suddenly feel the debt their bodies accumulated. The things you didn't notice in your twenties — the imbalances, the compensations, the one-sided patterns — arrive all at once, like a bill you forgot you owed.</div></div>
+</div>
+<div class="acc-item">
+<div class="acc-header">Chapter 1: "What Is Allostasis" <span class="acc-toggle">+</span></div>
+<div class="acc-body"><div class="acc-body-inner">The difference between stability and sameness. Your body doesn't seek balance — it seeks adaptation. Understanding allostasis means understanding why your body chose the patterns it did, and why those patterns may no longer serve you.</div></div>
+</div>
+<div class="acc-item">
+<div class="acc-header">Chapter 2: "Your Body's Dictionary" <span class="acc-toggle">+</span></div>
+<div class="acc-body"><div class="acc-body-inner">How compensation patterns become vocabulary. Every movement your body performs is a sentence written in a language it taught itself. Some of that language is elegant. Some of it is a workaround that became permanent.</div></div>
+</div>
+<div class="acc-item">
+<div class="acc-header">Chapter 3: "Reading the Text" <span class="acc-toggle">+</span></div>
+<div class="acc-body"><div class="acc-body-inner">What a biomechanical assessment actually reveals. This isn't a flexibility test. It's a diagnostic reading of your body's operating system — where force is managed well, and where it's being rerouted at a cost.</div></div>
+</div>
+<div class="acc-item">
+<div class="acc-header">Chapter 4: "Rewriting" <span class="acc-toggle">+</span></div>
+<div class="acc-body"><div class="acc-body-inner">The precision work of pattern correction. Rewriting isn't about strength — it's about sequencing. Teaching the nervous system a new sentence, one that distributes force efficiently and without debt.</div></div>
+</div>
+</div>
+
+<div class="book-form" id="book-form">
+<h3 style="font-family:var(--font-h);margin-bottom:1rem;text-align:center">Get Early Access</h3>
+<input type="text" id="book-name" placeholder="Name">
+<input type="email" id="book-email" placeholder="Email">
+<textarea id="book-change" placeholder="What's the one physical thing you'd change right now?"></textarea>
+<button class="gen-btn" style="width:100%" onclick="submitBookForm()">Join the List</button>
+<div class="success-msg" id="book-success">You're on the list. The body's conversation is about to get a lot more interesting.</div>
+</div>
+
+<div class="progress-bar">
+MANUSCRIPT IN PROGRESS — Targeting Fall 2026
+<div class="bar"></div>
+</div>
+</div>
+</section>
+
+<!-- OAHM STUDIO -->
+<section id="oahm" class="section">
+<div class="reveal">
+<div class="section-label">OAHM Studio</div>
+<div class="section-title">Services</div>
+</div>
+<div class="services-grid reveal">
+<div class="service-card">
+<span class="service-tag">Start Here</span>
+<h3>Initial Assessment</h3>
+<p>Where we start. Where most practitioners should have started. Bilateral weight distribution, posture grid analysis, full range of motion mapping, and motor control protocol. Every pattern your body runs — measured, documented, understood.</p>
+</div>
+<div class="service-card">
+<span class="service-tag">One-on-One</span>
+<h3>Private Sessions</h3>
+<p>Real-time assessment and refinement. Your plan adapts as you do. Each session begins with measurement and ends with a body that moves more efficiently than it did an hour ago.</p>
+</div>
+<div class="service-card">
+<span class="service-tag">Small Group</span>
+<h3>Semi-Private</h3>
+<p>Groups of 2–4. Precision attention in a performance environment. The rigor of private coaching with the energy of shared pursuit. Every participant receives individualized programming.</p>
+</div>
+</div>
+<div class="studio-info reveal">
+<div><strong>Address</strong>1234 N. La Brea Suite B<br>West Hollywood, CA 90038</div>
+<div><strong>Email</strong>info@oahm.io</div>
+<div><strong>Instagram</strong><a href="https://instagram.com/yoby.etienne" target="_blank">@yoby.etienne</a></div>
+</div>
+<div class="contact-form reveal">
+<h3 style="font-family:var(--font-h);margin-bottom:1rem;text-align:center">Get in Touch</h3>
+<div class="form-row">
+<input type="text" id="c-name" placeholder="Name">
+<input type="email" id="c-email" placeholder="Email">
+</div>
+<textarea id="c-msg" placeholder="What brings you to OAHM?"></textarea>
+<button class="gen-btn" style="width:100%" onclick="submitContact()">Submit</button>
+<div class="success-msg" id="contact-success">Message received. We'll be in touch soon.</div>
+</div>
+</section>
+
+<footer>© 2026 OAHM — Yoby Étienne, MS, MATcs — West Hollywood, CA</footer>
+
+<script>
+// NAV HIGHLIGHTING
+const navLinks=document.querySelectorAll('nav ul li a');
+const sections=document.querySelectorAll('section');
+const observer=new IntersectionObserver(entries=>{
+entries.forEach(e=>{if(e.isIntersecting){navLinks.forEach(l=>l.classList.remove('active'));const a=document.querySelector(`nav a[href="#${e.target.id}"]`);if(a)a.classList.add('active')}})
+},{threshold:.3});
+sections.forEach(s=>observer.observe(s));
+
+// REVEAL ON SCROLL
+const revealObs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')})},{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>revealObs.observe(el));
+
+// NAV MOBILE CLOSE
+document.querySelectorAll('nav ul li a').forEach(a=>a.addEventListener('click',()=>document.querySelector('nav ul').classList.remove('open')));
+
+// ALLOSTASIS CYCLE
+document.querySelectorAll('.cycle-node').forEach(n=>{
+n.querySelector('.cycle-detail').textContent=n.dataset.detail;
+n.addEventListener('click',()=>n.classList.toggle('expanded'));
+});
+
+// QUIZ
+const quizData=[
+{q:"How would you describe your current physical experience?",opts:["I'm in pain most days — dull, chronic, familiar","I perform at a high level but something is always slightly off","I had an injury I recovered from, but I'm not the same","I feel fine but I know I'm leaving performance on the table"],scores:[14,16,15,10]},
+{q:"How old are you?",opts:["Under 35","35–44","45–54","55+"],scores:[4,12,16,14]},
+{q:"What have you tried before?",opts:["Personal trainers (didn't solve the root issue)","Physical therapy (helped short-term, didn't hold)","On my own — research, videos, self-directed","Nothing systematic yet"],scores:[15,14,10,8]},
+{q:"What describes your professional life?",opts:["Founder / Executive — high cognitive + physical demand","Creative professional — body is my instrument","Athlete or former athlete","Building toward a specific physical goal"],scores:[14,13,14,10]},
+{q:"What's your primary frustration right now?",opts:["I can't do what I used to do","My body is asymmetrical and I can see it","I have recurring pain in the same spots","I'm plateaued — nothing moves the needle"],scores:[13,15,14,12]},
+{q:"How do you prefer to receive information?",opts:["Give me data and measurements","Explain the WHY behind every intervention","Show me the framework, I'll apply it","Trust the process, just guide me"],scores:[14,13,12,10]},
+{q:"What does success look like in 6 months?",opts:["Zero pain, full range of motion","PR in a specific athletic domain","Body that matches my ambition","Understanding my body deeply enough to self-correct"],scores:[12,11,13,15]}
+];
+const answers={};
+const qf=document.getElementById('quiz-form');
+quizData.forEach((q,qi)=>{
+let h=`<div class="quiz-q"><span class="q-num">QUESTION ${qi+1} OF 7</span><h3>${q.q}</h3><div class="quiz-options">`;
+q.opts.forEach((o,oi)=>{h+=`<div class="quiz-opt" data-q="${qi}" data-o="${oi}" onclick="selectOpt(this)">${o}</div>`});
+h+=`</div></div>`;qf.innerHTML+=h;
+});
+
+function selectOpt(el){
+const qi=+el.dataset.q,oi=+el.dataset.o;
+answers[qi]=quizData[qi].scores[oi];
+el.parentElement.querySelectorAll('.quiz-opt').forEach(o=>o.classList.remove('selected'));
+el.classList.add('selected');
+if(Object.keys(answers).length===7)showResult();
+}
+function showResult(){
+const total=Object.values(answers).reduce((a,b)=>a+b,0);
+const max=16*7;const pct=Math.round(total/max*100);
+const r=document.getElementById('quiz-result');r.style.display='block';
+document.getElementById('fit-score').textContent=pct+'/100';
+const cta=document.getElementById('fit-cta');
+if(pct>=70){document.getElementById('fit-outcome').textContent='You are exactly who OAHM exists for.';document.getElementById('fit-desc').textContent='Your profile aligns with the clients who see the most transformative results at OAHM.';cta.textContent='Book Your Assessment';cta.href='#oahm'}
+else if(pct>=40){document.getElementById('fit-outcome').textContent='OAHM can help. Let\'s talk first.';document.getElementById('fit-desc').textContent='There\'s alignment here. A conversation will clarify what the right starting point looks like.';cta.textContent='Schedule a Consultation';cta.href='#oahm'}
+else{document.getElementById('fit-outcome').textContent='You\'re earlier in your journey. Here\'s where to start.';document.getElementById('fit-desc').textContent='OAHM works best when the body has accumulated enough history to read. Keep building — and come back when the invoice arrives.';cta.textContent='Follow @yoby.etienne';cta.href='https://instagram.com/yoby.etienne';cta.target='_blank'}
+r.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+// TABS
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));
+t.classList.add('active');
+document.getElementById('tab-'+t.dataset.tab).classList.add('active');
+}));
+
+// GEMINI PROXY
+const PROXY='https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+const SYS='You are Yoby Étienne, an Exercise Scientist and founder of OAHM in West Hollywood. You write about biomechanics, allostasis, force management, and movement precision for high-performing men 40+. Your voice is clinical but warm, precise but not cold. You use simple powerful sentences. No emojis except maybe one at the end. No hashtag spam — maximum 3 relevant hashtags. Write as if speaking to an intelligent adult who\'s tried everything else.';
+
+async function callGemini(prompt){
+const res=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],system_instruction:{parts:[{text:SYS}]}})});
+const data=await res.json();
+return data.candidates?.[0]?.content?.parts?.[0]?.text||'Generation failed. Please try again.';
+}
+
+async function generateIG(){
+const theme=document.getElementById('ig-theme').value,tone=document.getElementById('ig-tone').value;
+if(!theme||!tone)return alert('Select both theme and tone.');
+const btn=document.getElementById('ig-gen');btn.disabled=true;btn.innerHTML='Generating<span class="loading"></span>';
+const text=await callGemini(`Generate an Instagram post about ${theme} with a ${tone} tone. Keep it around 200 words.`);
+document.getElementById('ig-text').textContent=text;
+document.getElementById('ig-preview').classList.add('show');
+btn.disabled=false;btn.textContent='Generate Post';
+}
+
+async function generateEmail(){
+const type=document.getElementById('email-type').value;
+if(!type)return alert('Select an email type.');
+const btn=document.getElementById('email-gen');btn.disabled=true;btn.innerHTML='Generating<span class="loading"></span>';
+const text=await callGemini(`Write a professional ${type} email. Include subject line. Keep it concise but warm. Sign as Yoby Étienne, OAHM.`);
+document.getElementById('email-text').textContent=text;
+document.getElementById('email-preview').classList.add('show');
+btn.disabled=false;btn.textContent='Generate Email';
+}
+
+function copyText(id){navigator.clipboard.writeText(document.getElementById(id).textContent);const b=event.target;b.textContent='Copied!';setTimeout(()=>b.textContent='Copy',1500)}
+
+// PRINCIPLE CARD
+let pSize='1.8rem';
+function setPrincipleSize(btn){
+document.querySelectorAll('.font-sizes button').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');pSize=btn.dataset.size;
+const pt=document.getElementById('p-text');if(pt.textContent)pt.style.fontSize=pSize;
+}
+function generatePrinciple(){
+const v=document.getElementById('principle-input').value.trim();
+if(!v)return alert('Enter a principle.');
+const pt=document.getElementById('p-text');pt.textContent='"'+v+'"';pt.style.fontSize=pSize;
+document.getElementById('principle-preview').style.display='block';
+document.getElementById('p-copy').style.display='inline-block';
+}
+function copyPrincipleCard(){
+const t=document.getElementById('p-text').textContent+'\n— Yoby Étienne, MS, MATcs\nOAHM — West Hollywood';
+navigator.clipboard.writeText(t);const b=document.getElementById('p-copy');b.textContent='Copied!';setTimeout(()=>b.textContent='Copy Card Text',1500);
+}
+
+// ACCORDION
+document.querySelectorAll('.acc-header').forEach(h=>h.addEventListener('click',()=>{
+const item=h.parentElement;const body=item.querySelector('.acc-body');
+const isOpen=item.classList.contains('open');
+document.querySelectorAll('.acc-item').forEach(i=>{i.classList.remove('open');i.querySelector('.acc-body').style.maxHeight=null});
+if(!isOpen){item.classList.add('open');body.style.maxHeight=body.scrollHeight+'px'}
+}));
+
+// BOOK FORM
+function submitBookForm(){
+const n=document.getElementById('book-name').value,e=document.getElementById('book-email').value;
+if(!n||!e)return alert('Please fill in name and email.');
+const data=JSON.parse(localStorage.getItem('oahm-book')||'[]');
+data.push({name:n,email:e,change:document.getElementById('book-change').value,date:new Date().toISOString()});
+localStorage.setItem('oahm-book',JSON.stringify(data));
+document.getElementById('book-success').style.display='block';
+}
+
+// CONTACT FORM
+function submitContact(){
+const n=document.getElementById('c-name').value,e=document.getElementById('c-email').value;
+if(!n||!e)return alert('Please fill in name and email.');
+const data=JSON.parse(localStorage.getItem('oahm-contact')||'[]');
+data.push({name:n,email:e,msg:document.getElementById('c-msg').value,date:new Date().toISOString()});
+localStorage.setItem('oahm-contact',JSON.stringify(data));
+document.getElementById('contact-success').style.display='block';
+}
+</script>
+</body>
+</html>
