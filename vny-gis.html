@@ -558,10 +558,15 @@ ASSUMED: Site-specific interpretations`;
   try{
     const resp=await fetch('https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({prompt})
+      body:JSON.stringify({
+        contents:[{parts:[{text:prompt}]}],
+        system_instruction:{parts:[{text:'You are Enginuity, an AI-powered scenario planning tool for airports and real estate. You analyze regulatory, environmental, and operational constraints for site development. Be precise, cite specific regulations, and give actionable due diligence recommendations. Use the provenance tags CONFIRMED, CITED, INFERRED, and ASSUMED on all factual claims.'}]}
+      })
     });
     const data=await resp.json();
-    content.textContent=data.text||data.response||data.content||JSON.stringify(data,null,2);
+    const text=data?.candidates?.[0]?.content?.parts?.[0]?.text
+      || data.text || data.response || data.content || JSON.stringify(data,null,2);
+    content.textContent=text;
   }catch(e){
     content.textContent='Analysis request failed: '+e.message+'\n\nFallback analysis:\n\nTOP 3 RISK FACTORS [CONFIRMED]:\n1. FAA Grant Assurance (49 USC §47107) — Part 13/16 complaint risk from any party\n2. Southwest Aviation lease — 35-year term creates litigation exposure on early termination\n3. Specific Plan ambiguity — LAWA interpretation of boundaries is contested\n\nOPTIMAL CONFIG [INFERRED]:\nConcept B (Hybrid Aviation) balances aeronautical use mandate with revenue diversification.\n\nDUE DILIGENCE SEQUENCE [ASSUMED]:\n1. FAA Form 7460-1 + Grant Assurance determination\n2. Phase I/II ESA for fuel farm site\n3. Legal analysis of SP applicability\n4. Community engagement with Encino NC\n5. CEQA Initial Study';
   }
