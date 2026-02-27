@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enginuity — VNY 16425 Hart Street Scenario Planning</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e1a;--panel:rgba(15,25,50,0.7);--border:rgba(0,200,255,0.15);--cyan:#00d4ff;--cyan2:#0090ff;--accent:#00e5ff;--text:#e0e8f0;--muted:#7a8ba0;--glass:rgba(255,255,255,0.04);--danger:#ff4d6a;--success:#00e676;--warn:#ffab00}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 20% 0%,rgba(0,120,255,0.08) 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(0,200,255,0.05) 0%,transparent 50%);pointer-events:none;z-index:0}
+.wrap{max-width:1200px;margin:0 auto;padding:20px;position:relative;z-index:1}
+header{text-align:center;padding:30px 0 20px}
+.badge{display:inline-block;background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(0,144,255,0.1));border:1px solid var(--border);border-radius:20px;padding:6px 18px;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--cyan);margin-bottom:12px}
+h1{font-size:28px;font-weight:700;background:linear-gradient(135deg,#fff,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.subtitle{color:var(--muted);font-size:13px;font-weight:400}
+.stats{display:flex;justify-content:center;gap:24px;margin-top:16px;flex-wrap:wrap}
+.stat{text-align:center}
+.stat-val{font-size:20px;font-weight:700;color:var(--cyan);font-family:'JetBrains Mono',monospace}
+.stat-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-top:2px}
+.module{margin-top:20px;border:1px solid var(--border);border-radius:16px;background:var(--panel);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);overflow:hidden;transition:border-color .3s}
+.module:hover{border-color:rgba(0,200,255,0.3)}
+.mod-head{padding:18px 24px;cursor:pointer;display:flex;align-items:center;gap:14px;user-select:none}
+.mod-head:hover{background:rgba(0,200,255,0.03)}
+.mod-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.mod-title{font-size:15px;font-weight:600;letter-spacing:.5px}
+.mod-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.chevron{margin-left:auto;color:var(--muted);transition:transform .3s;font-size:14px}
+.module.open .chevron{transform:rotate(180deg)}
+.mod-body{display:none;padding:0 24px 24px;animation:fadeIn .3s}
+.module.open .mod-body{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media(max-width:700px){.grid2,.grid3{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:500}
+select,input[type=text],input[type=number],textarea{background:rgba(0,20,40,0.6);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:border-color .2s}
+select:focus,input:focus,textarea:focus{border-color:var(--cyan)}
+textarea{resize:vertical;min-height:60px}
+input[type=range]{-webkit-appearance:none;background:rgba(0,200,255,0.1);height:4px;border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--cyan);cursor:pointer}
+.range-row{display:flex;align-items:center;gap:10px}
+.range-val{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--cyan);min-width:36px;text-align:right}
+.btn{background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(0,144,255,0.15));border:1px solid rgba(0,200,255,0.3);color:var(--cyan);padding:10px 24px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:.5px;transition:all .2s;margin-top:14px}
+.btn:hover{background:linear-gradient(135deg,rgba(0,212,255,0.35),rgba(0,144,255,0.25));transform:translateY(-1px)}
+.btn:disabled{opacity:.5;cursor:wait}
+.output{margin-top:16px;padding:18px;background:rgba(0,20,40,0.5);border:1px solid var(--border);border-radius:12px;font-size:13px;line-height:1.7;white-space:pre-wrap;display:none;color:var(--text)}
+.output.visible{display:block}
+.loading{color:var(--cyan);font-style:italic}
+.data-card{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:14px}
+.data-card h4{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--cyan);margin-bottom:8px}
+.data-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+.data-row:last-child{border:none}
+.data-row span:last-child{font-family:'JetBrains Mono',monospace;color:var(--cyan)}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.5px}
+.tag-high{background:rgba(255,77,106,0.15);color:var(--danger)}
+.tag-med{background:rgba(255,171,0,0.15);color:var(--warn)}
+.tag-low{background:rgba(0,230,118,0.15);color:var(--success)}
+.score-bar{height:6px;border-radius:3px;background:rgba(255,255,255,0.05);margin-top:4px;overflow:hidden}
+.score-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--cyan2),var(--cyan))}
+.timeline{position:relative;padding-left:20px;margin:12px 0}
+.timeline::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:2px;background:var(--border)}
+.tl-item{position:relative;padding:8px 0 8px 16px;font-size:12px}
+.tl-item::before{content:'';position:absolute;left:-17px;top:12px;width:10px;height:10px;border-radius:50%;border:2px solid var(--cyan);background:var(--bg)}
+.tl-phase{font-weight:600;color:var(--cyan);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.tl-desc{color:var(--muted);margin-top:2px}
+footer{text-align:center;padding:30px 0;color:var(--muted);font-size:11px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<div class="badge">ACTIVE RFP · Los Angeles World Airports · VNY 16425 Hart Street</div>
+<h1>Enginuity</h1>
+<div class="subtitle">Scenario Planning Intelligence — Van Nuys Airport Lease Redevelopment</div>
+<div class="stats">
+<div class="stat"><div class="stat-val">10</div><div class="stat-lbl">Acres</div></div>
+<div class="stat"><div class="stat-val">Non-FBO</div><div class="stat-lbl">Operation Type</div></div>
+<div class="stat"><div class="stat-val">6</div><div class="stat-lbl">RFPs at VNY</div></div>
+<div class="stat"><div class="stat-val">35</div><div class="stat-lbl">Acres LAWA Release</div></div>
+<div class="stat"><div class="stat-val">30yr</div><div class="stat-lbl">Tenant Displacing</div></div>
+</div>
+</header>
+
+<!-- MODULE 1: DEMAND ORACLE -->
+<div class="module" id="m1">
+<div class="mod-head" onclick="toggle('m1')">
+<div class="mod-icon" style="background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(0,100,255,0.1))">📊</div>
+<div><div class="mod-title">DEMAND ORACLE</div><div class="mod-sub">Bidder scenarios, revenue per acre, trigger thresholds</div></div>
+<div class="chevron">▼</div>
+</div>
+<div class="mod-body">
+<div class="grid3" style="margin-bottom:14px">
+<div class="data-card">
+<h4>Signature Aviation</h4>
+<div class="data-row"><span>Est. Rent/Acre/Yr</span><span>$185K</span></div>
+<div class="data-row"><span>Capital Investment</span><span>$45M</span></div>
+<div class="data-row"><span>Hangar Capacity</span><span>40+ jets</span></div>
+<div class="data-row"><span>Operational Model</span><span>Full-service jet</span></div>
+<div class="data-row"><span>FAA Risk</span><span class="tag tag-high">HIGH</span></div>
+</div>
+<div class="data-card">
+<h4>Atlantic Aviation</h4>
+<div class="data-row"><span>Est. Rent/Acre/Yr</span><span>$165K</span></div>
+<div class="data-row"><span>Capital Investment</span><span>$35M</span></div>
+<div class="data-row"><span>Hangar Capacity</span><span>30 jets</span></div>
+<div class="data-row"><span>Operational Model</span><span>Mixed GA/jet</span></div>
+<div class="data-row"><span>FAA Risk</span><span class="tag tag-med">MEDIUM</span></div>
+</div>
+<div class="data-card">
+<h4>Aeroplex / Centerline</h4>
+<div class="data-row"><span>Est. Rent/Acre/Yr</span><span>$120K</span></div>
+<div class="data-row"><span>Capital Investment</span><span>$18M</span></div>
+<div class="data-row"><span>Hangar Capacity</span><span>20 mixed</span></div>
+<div class="data-row"><span>Operational Model</span><span>Hybrid prop+jet</span></div>
+<div class="data-row"><span>FAA Risk</span><span class="tag tag-low">LOW</span></div>
+</div>
+</div>
+<div class="grid2">
+<div class="field">
+<label>Select Primary Bidder Scenario</label>
+<select id="d-bidder">
+<option value="signature">Signature Aviation — Full Jet Conversion</option>
+<option value="atlantic">Atlantic Aviation — Mixed GA/Jet</option>
+<option value="aeroplex">Aeroplex/Centerline — Hybrid Operator</option>
+</select>
+</div>
+<div class="field">
+<label>Projected Annual Rent ($/acre)</label>
+<div class="range-row">
+<input type="range" id="d-rent" min="80000" max="250000" value="150000" step="5000" style="flex:1" oninput="document.getElementById('d-rent-v').textContent='$'+Math.round(this.value/1000)+'K'">
+<span class="range-val" id="d-rent-v">$150K</span>
+</div>
+</div>
+<div class="field">
+<label>Current SW Aviation Rent ($/acre/yr)</label>
+<input type="text" id="d-current" value="$65,000" readonly style="opacity:.6">
+</div>
+<div class="field">
+<label>Jet Operations/Day Target</label>
+<div class="range-row">
+<input type="range" id="d-ops" min="10" max="120" value="50" step="5" style="flex:1" oninput="document.getElementById('d-ops-v').textContent=this.value">
+<span class="range-val" id="d-ops-v">50</span>
+</div>
+</div>
+</div>
+<div class="field" style="margin-top:12px">
+<label>Additional Context</label>
+<textarea id="d-ctx" placeholder="e.g., Factor in VNY curfew hours, noise budget constraints, or specific bidder intel..."></textarea>
+</div>
+<button class="btn" onclick="runDemand()">Run Demand Analysis</button>
+<div class="output" id="d-out"></div>
+</div>
+</div>
+
+<!-- MODULE 2: MERIDIAN -->
+<div class="module" id="m2">
+<div class="mod-head" onclick="toggle('m2')">
+<div class="mod-icon" style="background:linear-gradient(135deg,rgba(0,230,118,0.2),rgba(0,180,80,0.1))">⏱</div>
+<div><div class="mod-title">MERIDIAN</div><div class="mod-sub">Phased development timeline — transition, construction, operations</div></div>
+<div class="chevron">▼</div>
+</div>
+<div class="mod-body">
+<div class="timeline">
+<div class="tl-item"><div class="tl-phase">Phase 0 — Tenant Transition (Months 0–12)</div><div class="tl-desc">Southwest Aviation lease termination, existing tenant relocation, environmental baseline assessment, CEQA initial study filing</div></div>
+<div class="tl-item"><div class="tl-phase">Phase 1 — Entitlements & Design (Months 6–18)</div><div class="tl-desc">VNY Specific Plan amendment review, FAA Part 13/16 compliance filing, CEQA EIR process, community engagement (VNY CAC, neighborhood councils)</div></div>
+<div class="tl-item"><div class="tl-phase">Phase 2 — Demolition & Site Prep (Months 18–24)</div><div class="tl-desc">Existing structure demolition, Hayvenhurst lot integration, utility infrastructure upgrades, taxiway reconfiguration</div></div>
+<div class="tl-item"><div class="tl-phase">Phase 3 — Construction (Months 24–42)</div><div class="tl-desc">Hangar construction (12,500+ lb aircraft rated), terminal/FBO building, ramp and apron paving, fuel farm installation</div></div>
+<div class="tl-item"><div class="tl-phase">Phase 4 — Operations Launch (Months 42–48)</div><div class="tl-desc">FAA certification, tenant move-in, phased ramp-up of jet operations, community monitoring program activation</div></div>
+</div>
+<div class="grid2">
+<div class="field">
+<label>Development Concept</label>
+<select id="t-concept">
+<option value="full-jet">Full Jet FBO Conversion</option>
+<option value="hybrid">Hybrid Prop + Jet</option>
+<option value="boutique">Boutique Private Terminal</option>
+</select>
+</div>
+<div class="field">
+<label>SW Aviation Transition Scenario</label>
+<select id="t-transition">
+<option value="cooperative">Cooperative — Negotiated exit with relocation</option>
+<option value="contested">Contested — Litigation-driven, 12–24 month delay</option>
+<option value="holdover">Holdover — Month-to-month during construction</option>
+</select>
+</div>
+<div class="field">
+<label>CEQA Timeline Assumption</label>
+<select id="t-ceqa">
+<option value="mnd">Mitigated Negative Declaration (6–9 months)</option>
+<option value="eir">Full EIR Required (18–24 months)</option>
+<option value="challenged">EIR + Legal Challenge (24–36 months)</option>
+</select>
+</div>
+<div class="field">
+<label>Construction Budget ($M)</label>
+<div class="range-row">
+<input type="range" id="t-budget" min="10" max="60" value="35" step="1" style="flex:1" oninput="document.getElementById('t-budget-v').textContent='$'+this.value+'M'">
+<span class="range-val" id="t-budget-v">$35M</span>
+</div>
+</div>
+</div>
+<button class="btn" onclick="runTimeline()">Run Timeline Analysis</button>
+<div class="output" id="t-out"></div>
+</div>
+</div>
+
+<!-- MODULE 3: CHORUS -->
+<div class="module" id="m3">
+<div class="mod-head" onclick="toggle('m3')">
+<div class="mod-icon" style="background:linear-gradient(135deg,rgba(255,171,0,0.2),rgba(255,120,0,0.1))">🎭</div>
+<div><div class="mod-title">CHORUS</div><div class="mod-sub">Stakeholder simulation — interests, positions, influence mapping</div></div>
+<div class="chevron">▼</div>
+</div>
+<div class="mod-body">
+<div class="grid2" style="margin-bottom:14px">
+<div class="data-card">
+<h4>Pro-Development</h4>
+<div class="data-row"><span>LAWA Executive Staff</span><span class="tag tag-high">POWER</span></div>
+<div class="data-row"><span>Signature Aviation</span><span class="tag tag-med">BIDDER</span></div>
+<div class="data-row"><span>Atlantic Aviation</span><span class="tag tag-med">BIDDER</span></div>
+<div class="data-row"><span>LA City Council (Dist. 6)</span><span class="tag tag-high">POLITICAL</span></div>
+</div>
+<div class="data-card">
+<h4>Opposition / Concerned</h4>
+<div class="data-row"><span>Southwest Aviation</span><span class="tag tag-high">LITIGANT</span></div>
+<div class="data-row"><span>VNY CAC</span><span class="tag tag-med">COMMUNITY</span></div>
+<div class="data-row"><span>Encino NC</span><span class="tag tag-med">COMMUNITY</span></div>
+<div class="data-row"><span>FAA Grants Division</span><span class="tag tag-high">REGULATOR</span></div>
+</div>
+</div>
+<div class="grid2">
+<div class="field">
+<label>Focus Stakeholder</label>
+<select id="c-stake">
+<option value="lawa">LAWA — Airport Operator</option>
+<option value="southwest">Southwest Aviation — Existing Tenant</option>
+<option value="signature">Signature Aviation — Potential Bidder</option>
+<option value="atlantic">Atlantic Aviation — Potential Bidder</option>
+<option value="faa">FAA — Federal Regulator</option>
+<option value="cac">VNY Citizens Advisory Council</option>
+<option value="encino">Encino Neighborhood Council</option>
+<option value="vannuys">Van Nuys Neighborhood Council</option>
+<option value="council">LA City Council — District 6</option>
+</select>
+</div>
+<div class="field">
+<label>Scenario to Simulate</label>
+<select id="c-scenario">
+<option value="jet-convert">Full jet conversion announced</option>
+<option value="hybrid-proposal">Hybrid prop/jet proposal presented</option>
+<option value="rent-double">Rent more than doubles for all tenants</option>
+<option value="faa-complaint">FAA Part 16 complaint filed</option>
+<option value="ceqa-challenge">CEQA legal challenge initiated</option>
+<option value="sw-lawsuit">Southwest Aviation class action filed</option>
+</select>
+</div>
+</div>
+<div class="field" style="margin-top:12px">
+<label>Additional Stakeholder Context</label>
+<textarea id="c-ctx" placeholder="e.g., Recent VNY CAC meeting sentiments, council member statements, FAA correspondence..."></textarea>
+</div>
+<button class="btn" onclick="runChorus()">Run Stakeholder Simulation</button>
+<div class="output" id="c-out"></div>
+</div>
+</div>
+
+<!-- MODULE 4: ATLAS -->
+<div class="module" id="m4">
+<div class="mod-head" onclick="toggle('m4')">
+<div class="mod-icon" style="background:linear-gradient(135deg,rgba(140,80,255,0.2),rgba(100,40,200,0.1))">🗺</div>
+<div><div class="mod-title">ATLAS</div><div class="mod-sub">Development concepts — scored on revenue, community, regulatory risk, FAA compliance</div></div>
+<div class="chevron">▼</div>
+</div>
+<div class="mod-body">
+<div class="grid3" style="margin-bottom:14px">
+<div class="data-card">
+<h4>Concept A: Full Jet FBO</h4>
+<div style="font-size:11px;margin-bottom:8px">
+<div class="data-row"><span>Revenue Potential</span><span>9/10</span></div>
+<div class="score-bar"><div class="score-fill" style="width:90%"></div></div>
+<div class="data-row"><span>Community Impact</span><span>2/10</span></div>
+<div class="score-bar"><div class="score-fill" style="width:20%;background:linear-gradient(90deg,var(--danger),#ff6b6b)"></div></div>
+<div class="data-row"><span>Regulatory Risk</span><span>8/10</span></div>
+<div class="score-bar"><div class="score-fill" style="width:80%;background:linear-gradient(90deg,var(--warn),#ffd54f)"></div></div>
+<div class="data-row"><span>FAA Compliance</span><span>3/10</span></div>
+<div class="score-bar"><div class="score-fill" style="width:30%;background:linear-gradient(90deg,var(--danger),#ff6b6b)"></div></div>
+</div>
+</div>
+<div class="data-card">
+<h4>Concept B: Hybrid Prop+Jet</h4>
+<div style="font-size:11px;margin-bottom:8px">
+<div class="data-row"><span>Revenue Potential</span><span>6/10</span></div>
+<div class="score-bar"><div class="score-fill" style="width:60%"></div></div>
+<div class="data-row"><span>Community Impact</span><span>6/10</span></div>
+<div class="score-bar"><div class="score-fill" style="width:60%"></div></div>
+<div class="data-row"><span>Regulatory Risk</span><span>4/10</span></div>
+<div class="score-bar"><div class="score-fill" style="width:40%"></div></div>
+<div class="data-row"><span>FAA Compliance</span><span>8/10</span></div>
+<div class="score-bar"><div class="score-fill" style="width:80%"></div></div>
+</div>
+</div>
+<div class="data-card">
+<h4>Concept C: Boutique Terminal</h4>
+<div style="font-size:11px;margin-bottom:8px">
+<div class="data-row"><span>Revenue Potential</span><span>7/10</span></div>
+<div class="score-bar"><div class="score-fill" style="width:70%"></div></div>
+<div class="data-row"><span>Community Impact</span><span>5/10</span></div>
+<div class="score-bar"><div class="score-fill" style="width:50%"></div></div>
+<div class="data-row"><span>Regulatory Risk</span><span>5/10</span></div>
+<div class="score-bar"><div class="score-fill" style="width:50%;background:linear-gradient(90deg,var(--warn),#ffd54f)"></div></div>
+<div class="data-row"><span>FAA Compliance</span><span>6/10</span></div>
+<div class="score-bar"><div class="score-fill" style="width:60%"></div></div>
+</div>
+</div>
+</div>
+<div class="grid2">
+<div class="field">
+<label>Primary Concept to Analyze</label>
+<select id="a-concept">
+<option value="full-jet">Concept A: Full Jet FBO</option>
+<option value="hybrid">Concept B: Hybrid Prop+Jet</option>
+<option value="boutique">Concept C: Boutique Private Terminal</option>
+<option value="compare">Compare All Three Concepts</option>
+</select>
+</div>
+<div class="field">
+<label>Weighting Priority</label>
+<select id="a-weight">
+<option value="revenue">Maximize Revenue</option>
+<option value="balanced">Balanced Approach</option>
+<option value="compliance">Minimize Regulatory Risk</option>
+<option value="community">Community Acceptance Priority</option>
+</select>
+</div>
+<div class="field">
+<label>Hayvenhurst Lot Integration</label>
+<select id="a-hayven">
+<option value="combined">Combined with Hart St (full 10+ acres)</option>
+<option value="separate">Separate development phasing</option>
+<option value="excluded">Excluded — too legally contested</option>
+</select>
+</div>
+<div class="field">
+<label>Lease Term Assumption</label>
+<select id="a-lease">
+<option value="30">30-year ground lease</option>
+<option value="40">40-year ground lease</option>
+<option value="50">50-year ground lease</option>
+</select>
+</div>
+</div>
+<button class="btn" onclick="runAtlas()">Run Concept Analysis</button>
+<div class="output" id="a-out"></div>
+</div>
+</div>
+
+<!-- MODULE 5: ORACLE -->
+<div class="module" id="m5">
+<div class="mod-head" onclick="toggle('m5')">
+<div class="mod-icon" style="background:linear-gradient(135deg,rgba(255,77,106,0.2),rgba(200,40,80,0.1))">🔮</div>
+<div><div class="mod-title">ORACLE</div><div class="mod-sub">Robustness analysis — Specific Plan, FAA ruling, litigation outcomes</div></div>
+<div class="chevron">▼</div>
+</div>
+<div class="mod-body">
+<div class="grid3" style="margin-bottom:14px">
+<div class="data-card">
+<h4>Uncertainty 1: Specific Plan</h4>
+<div style="font-size:11px;color:var(--muted)">2006 VNY Specific Plan under revision. New leases before update = legal gray zone. Amendment could restrict or enable jet operations.</div>
+</div>
+<div class="data-card">
+<h4>Uncertainty 2: FAA Part 13/16</h4>
+<div style="font-size:11px;color:var(--muted)">Grant assurances require equal access for all aeronautical uses. Excluding props for jets may trigger FAA enforcement and loss of AIP funding.</div>
+</div>
+<div class="data-card">
+<h4>Uncertainty 3: Litigation</h4>
+<div style="font-size:11px;color:var(--muted)">Southwest Aviation threatened class action. CEQA challenges from community groups. Hayvenhurst lot zoning authority legally contested.</div>
+</div>
+</div>
+<div class="grid3">
+<div class="field">
+<label>Specific Plan Outcome</label>
+<select id="o-plan">
+<option value="favorable">Favorable — Allows jet conversion</option>
+<option value="restrictive">Restrictive — Limits jet operations</option>
+<option value="delayed">Delayed — No update for 3+ years</option>
+<option value="hybrid">Hybrid — Allows mixed use only</option>
+</select>
+</div>
+<div class="field">
+<label>FAA Ruling Outcome</label>
+<select id="o-faa">
+<option value="compliant">Compliant — No grant issues</option>
+<option value="conditional">Conditional — Must maintain prop access</option>
+<option value="violation">Violation — Grant funding at risk</option>
+</select>
+</div>
+<div class="field">
+<label>Litigation Outcome</label>
+<select id="o-lit">
+<option value="dismissed">All suits dismissed</option>
+<option value="settled">Settlement — tenant relocation costs</option>
+<option value="injunction">Injunction — 18+ month delay</option>
+<option value="class-action">Class action certified — major liability</option>
+</select>
+</div>
+</div>
+<div class="field" style="margin-top:12px">
+<label>Risk Tolerance</label>
+<div class="range-row">
+<input type="range" id="o-risk" min="1" max="10" value="5" style="flex:1" oninput="document.getElementById('o-risk-v').textContent=['Conservative','','','','Moderate','','','','','Aggressive'][this.value-1]||this.value">
+<span class="range-val" id="o-risk-v">Moderate</span>
+</div>
+</div>
+<button class="btn" onclick="runOracle()">Run Robustness Analysis</button>
+<div class="output" id="o-out"></div>
+</div>
+</div>
+
+<footer>Enginuity Intelligence · VNY 16425 Hart Street · Scenario Planning Tool<br>Data for planning purposes only — not legal or financial advice</footer>
+</div>
+
+<script>
+const PROXY='https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+const SYS='You are Enginuity, an AI scenario planning intelligence for aviation infrastructure at Van Nuys Airport (VNY). You are analyzing the 16425 Hart Street 10-acre lease redevelopment RFP issued by LAWA (Los Angeles World Airports). Key context: current tenant Southwest Aviation has operated propeller/small aircraft for 30+ years; RFP targets GA aircraft over 12,500 lbs (jets) as Non-FBO; adjacent Hayvenhurst lot is legally contested; FAA Part 13/16 grant assurances require equal aeronautical access; 2006 VNY Specific Plan is under revision; community opposition from VNY CAC and neighborhood councils is strong; CEQA review required. Produce precise, data-grounded analysis with specific numbers and actionable recommendations. Format with section labels like "ANALYSIS —" in flowing professional paragraphs. No markdown bullets.';
+
+async function gemini(prompt){
+const r=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],system_instruction:{parts:[{text:SYS}]}})});
+const d=await r.json();return d?.candidates?.[0]?.content?.parts?.[0]?.text||'Analysis unavailable.';
+}
+
+function toggle(id){document.getElementById(id).classList.toggle('open')}
+
+async function run(btn,outId,prompt){
+const b=btn.closest('.mod-body').querySelector('.btn');
+const out=document.getElementById(outId);
+b.disabled=true;b.textContent='Analyzing...';
+out.className='output visible';out.innerHTML='<span class="loading">⟳ Enginuity processing scenario...</span>';
+try{const r=await gemini(prompt);out.textContent=r;}catch(e){out.textContent='Error: '+e.message;}
+b.disabled=false;b.textContent='Run Analysis';
+}
+
+function runDemand(){
+const bidder=document.getElementById('d-bidder').value;
+const rent=document.getElementById('d-rent').value;
+const ops=document.getElementById('d-ops').value;
+const ctx=document.getElementById('d-ctx').value;
+const p=`DEMAND ORACLE ANALYSIS for VNY 16425 Hart Street (10 acres).
+Bidder scenario: ${bidder}. Target rent: $${rent}/acre/year (current Southwest Aviation rate: $65,000/acre/year — more than doubling). Target jet operations: ${ops}/day.
+Competing bidders: Signature Aviation ($185K/acre, $45M capex), Atlantic Aviation ($165K/acre, $35M capex), Aeroplex/Centerline ($120K/acre, $18M capex).
+Analyze: (1) Revenue per acre comparison across bidders, (2) Market demand feasibility at target rent, (3) Trigger thresholds — at what occupancy/operations level does each bidder scenario break even, (4) Risk of FAA Part 13/16 challenge if prop operators excluded, (5) Impact of rent doubling on existing aviation ecosystem at VNY.
+${ctx?'Additional context: '+ctx:''}
+Provide specific dollar figures, occupancy rates, and competitive positioning analysis.`;
+run(document.querySelector('#m1 .btn'),  'd-out',p);
+}
+
+function runTimeline(){
+const concept=document.getElementById('t-concept').value;
+const trans=document.getElementById('t-transition').value;
+const ceqa=document.getElementById('t-ceqa').value;
+const budget=document.getElementById('t-budget').value;
+const p=`MERIDIAN TIMELINE ANALYSIS for VNY 16425 Hart Street redevelopment.
+Development concept: ${concept}. Tenant transition: ${trans}. CEQA path: ${ceqa}. Budget: $${budget}M.
+Current state: Southwest Aviation occupies 10 acres with propeller aircraft, flight schools, tie-downs — 30+ year tenant. Adjacent Hayvenhurst empty lot is legally contested for aviation use.
+Analyze phased timeline: (1) Tenant transition — Southwest Aviation exit timeline, litigation risk, holdover scenarios, (2) Entitlements — VNY Specific Plan amendment timing (2006 plan under revision), FAA compliance filings, CEQA process duration, (3) Construction — demolition, hangar construction for 12,500+ lb aircraft, taxiway work, Hayvenhurst integration, (4) Operations — FAA certification, tenant ramp-up, community monitoring.
+Identify critical path items, parallel workstreams, and schedule risks. Quantify delay scenarios in months and dollars.`;
+run(document.querySelector('#m2 .btn'),'t-out',p);
+}
+
+function runChorus(){
+const stake=document.getElementById('c-stake').value;
+const scenario=document.getElementById('c-scenario').value;
+const ctx=document.getElementById('c-ctx').value;
+const names={lawa:'LAWA (Los Angeles World Airports)',southwest:'Southwest Aviation (existing 30-year tenant)',signature:'Signature Aviation (potential bidder)',atlantic:'Atlantic Aviation (potential bidder)',faa:'FAA (federal regulator — Part 13/16 grant assurances)',cac:'VNY Citizens Advisory Council',encino:'Encino Neighborhood Council',vannuys:'Van Nuys Neighborhood Council',council:'LA City Council — District 6'};
+const p=`CHORUS STAKEHOLDER SIMULATION for VNY 16425 Hart Street.
+Focus stakeholder: ${names[stake]||stake}. Scenario trigger: ${scenario}.
+Full stakeholder map: LAWA (operator, revenue-motivated), Southwest Aviation (threatened class action, 35-year tenant being displaced), Signature Aviation & Atlantic Aviation (competing bidders), FAA (Part 13/16 grant compliance — equal access for all aeronautical uses), VNY CAC (community opposition to jet noise), Encino & Van Nuys Neighborhood Councils (residential noise/pollution concerns), LA City Council District 6 (political — balances revenue vs community).
+Simulate: (1) How this stakeholder responds to the scenario, (2) Their likely actions and timeline, (3) Coalition dynamics — who allies with whom, (4) Leverage points and vulnerabilities, (5) Negotiation strategies that could shift their position.
+${ctx?'Additional context: '+ctx:''}
+Be specific about legal mechanisms, political dynamics, and strategic moves each party would make.`;
+run(document.querySelector('#m3 .btn'),'c-out',p);
+}
+
+function runAtlas(){
+const concept=document.getElementById('a-concept').value;
+const weight=document.getElementById('a-weight').value;
+const hayven=document.getElementById('a-hayven').value;
+const lease=document.getElementById('a-lease').value;
+const p=`ATLAS DEVELOPMENT CONCEPT ANALYSIS for VNY 16425 Hart Street (10 acres).
+Analyzing: ${concept}. Priority weighting: ${weight}. Hayvenhurst lot: ${hayven}. Lease term: ${lease} years.
+Three concepts to evaluate:
+Concept A — Full Jet FBO: Revenue 9/10, Community 2/10, Regulatory Risk 8/10, FAA Compliance 3/10. Targets aircraft >12,500 lbs exclusively. Highest revenue but maximum community/FAA opposition.
+Concept B — Hybrid Prop+Jet: Revenue 6/10, Community 6/10, Regulatory Risk 4/10, FAA Compliance 8/10. Maintains prop aircraft access alongside jet facilities. Better FAA compliance but lower revenue ceiling.
+Concept C — Boutique Private Terminal: Revenue 7/10, Community 5/10, Regulatory Risk 5/10, FAA Compliance 6/10. Premium low-volume jet service. Mid-range on all dimensions.
+Analyze: (1) NPV over lease term for each concept, (2) Community mitigation costs and strategies, (3) FAA Part 13/16 compliance pathway for each, (4) CEQA review complexity by concept, (5) Hayvenhurst lot best-use integration, (6) Recommendation based on weighting priority.
+Provide specific financial projections, risk scores, and implementation recommendations.`;
+run(document.querySelector('#m4 .btn'),'a-out',p);
+}
+
+function runOracle(){
+const plan=document.getElementById('o-plan').value;
+const faa=document.getElementById('o-faa').value;
+const lit=document.getElementById('o-lit').value;
+const risk=document.getElementById('o-risk').value;
+const p=`ORACLE ROBUSTNESS ANALYSIS for VNY 16425 Hart Street lease redevelopment.
+Scenario combination: Specific Plan outcome = ${plan}, FAA Part 13/16 ruling = ${faa}, Litigation outcome = ${lit}. Risk tolerance: ${risk}/10.
+Three critical uncertainties:
+(1) VNY Specific Plan (2006, under revision): outcome affects what uses are permitted, whether jet conversion needs plan amendment, and timeline for entitlements.
+(2) FAA Part 13/16: grant assurances require equal access for ALL aeronautical uses. Favoring jets over props could jeopardize millions in AIP grant funding. FAA could issue cease-and-desist.
+(3) Litigation: Southwest Aviation class action threat (35-year tenant displaced, rent doubling), CEQA challenges from VNY CAC and neighborhood councils, Hayvenhurst lot zoning authority challenge.
+Analyze: (1) Combined impact of this scenario combination on project viability, (2) Financial exposure — quantify worst-case costs, (3) Timeline impact — delays in months, (4) Mitigation strategies for each uncertainty, (5) Decision framework — at what threshold should LAWA/bidder walk away or restructure.
+Grade overall project robustness under this scenario. Identify the single highest-risk factor and recommended hedge strategy.`;
+run(document.querySelector('#m5 .btn'),'o-out',p);
+}
+</script>
+</body>
+</html>
