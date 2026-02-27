@@ -27,6 +27,9 @@ h1,h2,h3{font-family:'Playfair Display',serif}
 .camera-wrap video{object-fit:cover}
 #overlay{z-index:2}
 .countdown-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;font-size:6rem;font-weight:700;color:var(--cyan);text-shadow:0 0 40px rgba(0,212,255,0.5);pointer-events:none;font-family:'Playfair Display',serif}
+.flip-btn{position:absolute;top:12px;right:12px;z-index:15;background:rgba(0,0,0,0.6);border:1px solid rgba(0,212,255,0.4);color:var(--cyan);border-radius:8px;padding:8px 12px;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;cursor:pointer;backdrop-filter:blur(8px);display:flex;align-items:center;gap:6px;transition:background 0.2s,border-color 0.2s}
+.flip-btn:hover{background:rgba(0,212,255,0.15);border-color:var(--cyan)}
+.flip-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .instruction-overlay{position:absolute;top:0;left:0;right:0;bottom:0;z-index:8;background:rgba(8,8,8,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
 .instruction-overlay h2{color:var(--gold);font-size:1.4rem;margin-bottom:12px}
 .instruction-overlay p{color:var(--text);font-size:1rem;max-width:400px;line-height:1.5;margin-bottom:16px}
@@ -107,6 +110,10 @@ Then refresh this page.</p>
 <div class="camera-wrap">
 <video id="video" playsinline></video>
 <canvas id="overlay"></canvas>
+<button class="flip-btn" onclick="flipCamera()" title="Switch camera">
+  <svg viewBox="0 0 24 24"><path d="M20 7h-4l-2-3H10L8 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="13" r="3"/></svg>
+  FLIP
+</button>
 <div id="countdown-el" class="countdown-overlay hidden"></div>
 <div id="instruction-el" class="instruction-overlay hidden">
 <h2 id="inst-title"></h2>
@@ -165,15 +172,60 @@ const pose = new Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/po
 pose.setOptions({modelComplexity:1,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
 pose.onResults(onResults);
 
-function startCamera(){
-  const cam = new Camera(videoEl,{
-    onFrame:async()=>{await pose.send({image:videoEl})},
-    width:640,height:480
-  });
-  cam.start().catch(()=>{
-    document.getElementById('camera-error').classList.remove('hidden');
-    document.getElementById('camera-section').classList.add('hidden');
-  });
+let currentFacingMode = 'environment'; // default: back camera
+let currentStream = null;
+let poseLoopRunning = false;
+
+async function startCamera(facingMode){
+  facingMode = facingMode || currentFacingMode;
+  currentFacingMode = facingMode;
+
+  // Stop any existing stream
+  if(currentStream){
+    currentStream.getTracks().forEach(t=>t.stop());
+    currentStream = null;
+  }
+
+  const constraints = {
+    video: {
+      facingMode: {ideal: facingMode},
+      width: {ideal: 640},
+      height: {ideal: 480}
+    }
+  };
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    currentStream = stream;
+    videoEl.srcObject = stream;
+    await new Promise(res => { videoEl.onloadedmetadata = res; });
+    videoEl.play();
+    canvasEl.width = videoEl.videoWidth || 640;
+    canvasEl.height = videoEl.videoHeight || 480;
+
+    // Start pose loop if not already running
+    if(!poseLoopRunning){
+      poseLoopRunning = true;
+      (async function loop(){
+        if(!currentStream){ poseLoopRunning = false; return; }
+        await pose.send({image: videoEl});
+        requestAnimationFrame(loop);
+      })();
+    }
+  } catch(err){
+    // If back camera fails, try front
+    if(facingMode === 'environment'){
+      startCamera('user');
+    } else {
+      document.getElementById('camera-error').classList.remove('hidden');
+      document.getElementById('camera-section').classList.add('hidden');
+    }
+  }
+}
+
+async function flipCamera(){
+  const next = currentFacingMode === 'environment' ? 'user' : 'environment';
+  await startCamera(next);
 }
 
 function onResults(results){
