@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OAHM — Exercise Prescription System</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#080808;--s1:#111;--s2:#161616;--cyan:#00D4FF;--gold:#C9A84C;--white:#fff;--gray:#888;--burgundy:#8B3A52;--green:#2D8B4E;--blue:#2D5A8B;--red:#ff4444}
+body{background:var(--bg);color:var(--white);font-family:'Space Grotesk',sans-serif;line-height:1.6;min-height:100vh}
+h1,h2,h3,h4{font-family:'Playfair Display',serif;font-weight:600}
+.container{max-width:1200px;margin:0 auto;padding:20px}
+/* Header */
+.header{text-align:center;padding:40px 20px 30px;border-bottom:1px solid #222}
+.header h1{font-size:2rem;letter-spacing:6px;color:var(--cyan)}
+.header .sub{color:var(--gray);font-size:.85rem;letter-spacing:3px;margin-top:6px}
+.header .logo-mark{color:var(--gold);font-size:.75rem;letter-spacing:4px;margin-top:4px}
+/* Badges */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+.badge-cyan{background:rgba(0,212,255,.15);color:var(--cyan);border:1px solid rgba(0,212,255,.3)}
+.badge-gold{background:rgba(201,168,76,.15);color:var(--gold);border:1px solid rgba(201,168,76,.3)}
+.badge-burgundy{background:rgba(139,58,82,.15);color:var(--burgundy);border:1px solid rgba(139,58,82,.3)}
+.badge-green{background:rgba(45,139,78,.15);color:var(--green);border:1px solid rgba(45,139,78,.3)}
+.badge-blue{background:rgba(45,90,139,.15);color:var(--blue);border:1px solid rgba(45,90,139,.3)}
+/* Buttons */
+.btn{padding:10px 20px;border:none;border-radius:6px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:.85rem;font-weight:600;letter-spacing:1px;transition:all .2s}
+.btn-primary{background:var(--cyan);color:#000}
+.btn-primary:hover{background:#33ddff;transform:translateY(-1px)}
+.btn-outline{background:transparent;border:1px solid var(--cyan);color:var(--cyan)}
+.btn-outline:hover{background:rgba(0,212,255,.1)}
+.btn-gold{background:var(--gold);color:#000}
+.btn-gold:hover{background:#d4b35a}
+.btn-danger{background:transparent;border:1px solid var(--red);color:var(--red)}
+.btn-danger:hover{background:rgba(255,68,68,.1)}
+.btn-sm{padding:6px 12px;font-size:.75rem}
+/* Filter Tabs */
+.filter-tabs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:24px 0}
+.filter-tab{padding:8px 16px;border:1px solid #333;border-radius:20px;background:transparent;color:var(--gray);cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:.78rem;letter-spacing:1px;transition:all .2s}
+.filter-tab.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,212,255,.08)}
+.filter-tab:hover{border-color:#555;color:var(--white)}
+/* Exercise Grid */
+.exercise-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:20px}
+.exercise-card{background:var(--s1);border:1px solid #222;border-radius:10px;padding:18px;transition:all .2s;position:relative}
+.exercise-card:hover{border-color:#444;transform:translateY(-2px)}
+.exercise-card .name{font-weight:600;font-size:1rem;margin-bottom:6px}
+.exercise-card .desc{color:var(--gray);font-size:.8rem;margin:6px 0}
+.exercise-card .purpose{font-style:italic;color:#aaa;font-size:.78rem;margin:8px 0}
+.difficulty{display:flex;gap:3px;margin:6px 0}
+.difficulty .dot{width:8px;height:8px;border-radius:50%;border:1px solid var(--cyan)}
+.difficulty .dot.filled{background:var(--cyan)}
+.exercise-card .card-footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.exercise-card .add-btn{background:rgba(0,212,255,.1);border:1px solid var(--cyan);color:var(--cyan);padding:5px 12px;border-radius:4px;cursor:pointer;font-size:.75rem;font-weight:600;transition:all .2s}
+.exercise-card .add-btn:hover{background:rgba(0,212,255,.2)}
+.exercise-card .add-btn.added{background:rgba(0,212,255,.3);pointer-events:none}
+/* Program Builder */
+.program-section{margin-top:40px;padding-top:30px;border-top:1px solid #222}
+.program-section h2{text-align:center;letter-spacing:4px;color:var(--gold);margin-bottom:24px}
+.program-header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px}
+.program-header input[type="text"]{flex:1;min-width:200px;padding:10px 14px;background:var(--s2);border:1px solid #333;border-radius:6px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:.9rem}
+.program-header input::placeholder{color:#555}
+.program-list{min-height:60px}
+.program-item{background:var(--s2);border:1px solid #222;border-radius:8px;padding:14px;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;cursor:grab}
+.program-item .pi-name{font-weight:600;font-size:.9rem;min-width:180px;flex:1}
+.program-item input[type="number"]{width:55px;padding:6px;background:var(--s1);border:1px solid #333;border-radius:4px;color:var(--white);text-align:center;font-family:'Space Grotesk',sans-serif}
+.program-item input[type="text"]{flex:2;min-width:120px;padding:6px 10px;background:var(--s1);border:1px solid #333;border-radius:4px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:.8rem}
+.program-item .remove-btn{background:none;border:none;color:var(--red);cursor:pointer;font-size:1.1rem;padding:4px 8px}
+.program-item .remove-btn:hover{color:#ff6666}
+.program-options{display:flex;flex-wrap:wrap;gap:16px;margin:20px 0}
+.program-options label{color:var(--gray);font-size:.8rem;letter-spacing:1px;text-transform:uppercase}
+.program-options select,.program-options textarea{width:100%;padding:8px 12px;background:var(--s2);border:1px solid #333;border-radius:6px;color:var(--white);font-family:'Space Grotesk',sans-serif;margin-top:4px}
+.program-options .opt-group{flex:1;min-width:150px}
+.notes-area{width:100%;margin-top:16px}
+.notes-area textarea{width:100%;padding:12px;background:var(--s2);border:1px solid #333;border-radius:6px;color:var(--white);font-family:'Space Grotesk',sans-serif;min-height:80px;resize:vertical}
+.generate-section{text-align:center;margin-top:24px;padding:20px;background:var(--s1);border-radius:10px;border:1px solid #222}
+.link-output{margin-top:16px;padding:12px;background:var(--s2);border-radius:6px;word-break:break-all;font-size:.8rem;color:var(--cyan);display:none}
+.link-actions{margin-top:12px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+/* Client View */
+.client-view{max-width:600px;margin:0 auto;padding:16px}
+.client-header{text-align:center;padding:30px 16px;border-bottom:1px solid #222;margin-bottom:24px}
+.client-header h1{font-size:1.6rem;letter-spacing:4px;color:var(--cyan)}
+.client-header .client-name{font-size:1.2rem;color:var(--gold);margin-top:8px;font-family:'Playfair Display',serif}
+.client-header .meta-badges{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.client-header .coach-note{background:var(--s1);border-left:3px solid var(--gold);padding:12px 16px;margin-top:16px;text-align:left;font-size:.85rem;color:#ccc;border-radius:0 6px 6px 0}
+.week-indicator{color:var(--gray);font-size:.85rem;margin-top:10px}
+.today-status{margin-top:8px;font-size:.9rem}
+.today-status.completed{color:var(--green)}
+.today-status.pending{color:var(--cyan)}
+/* Client Exercise Cards */
+.client-exercise{background:var(--s1);border:1px solid #222;border-radius:10px;margin-bottom:14px;overflow:hidden;transition:all .3s}
+.client-exercise.complete{border-color:var(--green)}
+.ce-main{padding:16px;cursor:pointer}
+.ce-main .ce-top{display:flex;justify-content:space-between;align-items:center}
+.ce-main .ce-name{font-weight:600;font-size:.95rem}
+.ce-main .ce-rx{color:var(--gray);font-size:.8rem}
+.ce-main .ce-note{color:#aaa;font-size:.8rem;margin-top:6px;font-style:italic}
+.ce-expand{display:none;padding:0 16px 16px;border-top:1px solid #222}
+.ce-expand.open{display:block}
+.ce-expand .ce-desc{color:var(--gray);font-size:.82rem;margin-top:10px}
+.ce-expand .ce-purpose{color:var(--cyan);font-size:.82rem;margin-top:6px;font-style:italic}
+.set-buttons{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.set-btn{width:44px;height:44px;border-radius:50%;border:2px solid var(--cyan);background:transparent;color:var(--cyan);cursor:pointer;font-weight:700;font-size:.8rem;transition:all .2s;font-family:'Space Grotesk',sans-serif}
+.set-btn.done{background:var(--cyan);color:#000}
+.set-btn.all-done{background:var(--green);border-color:var(--green);color:#fff}
+.feel-input{width:100%;margin-top:12px;padding:8px 10px;background:var(--s2);border:1px solid #333;border-radius:6px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:.8rem}
+.feel-input::placeholder{color:#555}
+/* Streak */
+.streak-section{background:var(--s1);border:1px solid #222;border-radius:10px;padding:20px;margin:24px 0;text-align:center}
+.streak-section h3{color:var(--gold);letter-spacing:2px;margin-bottom:14px;font-size:1rem}
+.streak-dots{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.streak-dot{width:28px;height:28px;border-radius:50%;border:2px solid #333;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--gray)}
+.streak-dot.full{background:var(--cyan);border-color:var(--cyan);color:#000}
+.streak-dot.partial{background:rgba(0,212,255,.3);border-color:var(--cyan)}
+.streak-dot.empty{background:transparent}
+.streak-stats{display:flex;justify-content:center;gap:24px;margin-top:10px}
+.streak-stat{text-align:center}
+.streak-stat .num{font-size:1.4rem;font-weight:700;color:var(--cyan)}
+.streak-stat .label{font-size:.7rem;color:var(--gray);text-transform:uppercase;letter-spacing:1px}
+/* Progress Log */
+.progress-section{margin:24px 0}
+.progress-section h3{color:var(--gold);letter-spacing:2px;margin-bottom:14px;font-size:1rem;text-align:center}
+.progress-entry{background:var(--s2);border-radius:6px;padding:10px 14px;margin-bottom:8px}
+.progress-entry .pe-date{color:var(--cyan);font-size:.75rem;font-weight:600}
+.progress-entry .pe-exercise{color:var(--white);font-size:.82rem;margin-top:2px}
+.progress-entry .pe-note{color:var(--gray);font-size:.8rem;margin-top:2px;font-style:italic}
+.share-btn-section{text-align:center;margin:24px 0}
+.share-output{margin-top:12px;background:var(--s2);padding:14px;border-radius:6px;font-size:.8rem;color:#ccc;white-space:pre-wrap;text-align:left;display:none}
+.home-link{text-align:center;padding:30px 0;border-top:1px solid #222;margin-top:30px}
+.home-link a{color:var(--gold);text-decoration:none;font-size:.85rem;letter-spacing:2px}
+.home-link a:hover{text-decoration:underline}
+.empty-state{text-align:center;color:var(--gray);padding:40px;font-size:.9rem}
+/* Drag */
+.program-item.dragging{opacity:.4}
+.program-item.drag-over{border-color:var(--cyan)}
+@media(max-width:600px){
+.exercise-grid{grid-template-columns:1fr}
+.program-item{flex-direction:column;align-items:stretch}
+.program-item .pi-name{min-width:auto}
+.program-header{flex-direction:column}
+.container{padding:12px}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const EXERCISES=[
+{id:1,name:"Calf Raise (Bilateral)",cat:"STABILITY",desc:"Seated or standing gastrocnemius + soleus activation",diff:1,purpose:"Establishes foundational ankle-to-knee force transfer"},
+{id:2,name:"Calf Raise (Single-Leg)",cat:"STABILITY",desc:"Unilateral challenge to ankle stability",diff:2,purpose:"Isolates compensation patterns in the posterior chain"},
+{id:3,name:"Hip Bridge (Bilateral)",cat:"STABILITY",desc:"Supine glute + posterior chain activation",diff:1,purpose:"Resets the hip-to-lumbar relationship after prolonged sitting"},
+{id:4,name:"Hip Bridge (Single-Leg)",cat:"STABILITY",desc:"Unilateral hip bridge with contralateral leg extended",diff:2,purpose:"Exposes pelvis instability and hip asymmetry"},
+{id:5,name:"Dead Bug",cat:"STABILITY",desc:"Contralateral arm-leg extension with lumbar imprint",diff:1,purpose:"Trains motor control of the lumbar-pelvic junction"},
+{id:6,name:"Bird Dog",cat:"STABILITY",desc:"Quadruped contralateral extension",diff:1,purpose:"Integrates hip extension with lumbar neutrality"},
+{id:7,name:"Pallof Press (Isometric)",cat:"STABILITY",desc:"Anti-rotation core challenge",diff:2,purpose:"Trains the body to resist rotational force — essential for asymmetric movers"},
+{id:8,name:"Wall Sit",cat:"STABILITY",desc:"Isometric quad + hip hold",diff:1,purpose:"Reveals bilateral weight distribution patterns"},
+{id:9,name:"Heel-to-Toe Walk",cat:"MOTOR CONTROL",desc:"Tandem walking with deliberate foot placement",diff:1,purpose:"Recalibrates the vestibular-motor control feedback loop"},
+{id:10,name:"Lateral Band Walk",cat:"MOTOR CONTROL",desc:"Hip abductor activation under controlled resistance",diff:2,purpose:"Re-educates gluteus medius — the primary lateral stabilizer"},
+{id:11,name:"Hip CAR (Controlled Articular Rotation)",cat:"MOTOR CONTROL",desc:"Slow 360° hip rotation in standing",diff:2,purpose:"Maps and expands accessible range at the hip joint"},
+{id:12,name:"Shoulder CAR",cat:"MOTOR CONTROL",desc:"Full circumduction of the glenohumeral joint",diff:2,purpose:"Identifies where the shoulder loses control — not just where it stops"},
+{id:13,name:"Thoracic Rotation (Seated)",cat:"MOTOR CONTROL",desc:"Seated rotation isolating the thoracic spine",diff:1,purpose:"Breaks the thoracic rigidity that drives cervical and lumbar compensation"},
+{id:14,name:"Cervical Retraction",cat:"MOTOR CONTROL",desc:"Chin tuck + head retraction",diff:1,purpose:"Restores deep cervical flexor function lost from forward head posture"},
+{id:15,name:"Ankle CAR",cat:"MOTOR CONTROL",desc:"Full circumduction of the talocrural joint",diff:1,purpose:"Mobility assessment and intervention for the most undertrained joint"},
+{id:16,name:"Terminal Knee Extension",cat:"MOTOR CONTROL",desc:"VMO activation at terminal knee range",diff:1,purpose:"Targets the last 30° of knee extension — where most patterns break down"},
+{id:17,name:"Glute Bridge Hold",cat:"ACTIVATION",desc:"Isometric hold at bridge peak",diff:1,purpose:"Teaches the glutes to maintain tension — not just produce it"},
+{id:18,name:"Clamshell",cat:"ACTIVATION",desc:"Side-lying hip external rotation",diff:1,purpose:"Activates the posterior hip rotators that control femoral tracking"},
+{id:19,name:"Banded Hip Abduction (Standing)",cat:"ACTIVATION",desc:"Standing hip abduction against band resistance",diff:2,purpose:"Directly targets the lateral hip stabilizers in a functional position"},
+{id:20,name:"Copenhagen Plank",cat:"ACTIVATION",desc:"Adductor chain isometric",diff:3,purpose:"The most undertested stability chain — medial hip force management"},
+{id:21,name:"Serratus Wall Slide",cat:"ACTIVATION",desc:"Protraction and upward rotation of the scapula",diff:1,purpose:"Corrects the scapular depression patterns that compromise shoulder mechanics"},
+{id:22,name:"Split Squat (Isometric Hold)",cat:"ACTIVATION",desc:"Static lunge position hold",diff:2,purpose:"Exposes hip flexor/quad asymmetries in a loaded unilateral position"},
+{id:23,name:"Hip Flexor Stretch (90/90)",cat:"ROM",desc:"90/90 position targeting anterior hip",diff:2,purpose:"Addresses the most common source of lumbar-pelvic dysfunction in desk workers"},
+{id:24,name:"Pigeon Stretch",cat:"ROM",desc:"Deep hip external rotation stretch",diff:2,purpose:"Reclaims posterior hip ROM lost through chronic sitting and forward loading"},
+{id:25,name:"Thoracic Extension Over Foam Roller",cat:"ROM",desc:"Passive thoracic extension mobilization",diff:1,purpose:"Counteracts kyphotic loading and restores thoracic extension mobility"},
+{id:26,name:"World's Greatest Stretch",cat:"ROM",desc:"Multi-planar hip and thoracic mobility",diff:2,purpose:"The single most efficient total movement preparation sequence"},
+{id:27,name:"Doorframe Chest Stretch",cat:"ROM",desc:"Pectoral and anterior shoulder lengthening",diff:1,purpose:"Reverses the shortening pattern that drives forward head and shoulder rounding"},
+{id:28,name:"Ankle Dorsiflexion Mobilization",cat:"ROM",desc:"Half-kneeling ankle drive against wall",diff:1,purpose:"Limited ankle dorsiflexion is a root cause of knee and hip compensation"},
+{id:29,name:"Single-Leg Stance (Eyes Open)",cat:"PERTURBATION",desc:"30-second unilateral balance",diff:1,purpose:"Baseline perturbation assessment in each session"},
+{id:30,name:"Single-Leg Stance (Eyes Closed)",cat:"PERTURBATION",desc:"Removes visual stabilization input",diff:2,purpose:"Isolates proprioceptive and vestibular contributions to balance"},
+{id:31,name:"Single-Leg Stance (Unstable Surface)",cat:"PERTURBATION",desc:"Foam pad or BOSU unilateral",diff:3,purpose:"Challenges the reactive stabilization system under perturbation"},
+{id:32,name:"Perturbation Step",cat:"PERTURBATION",desc:"Reactive lateral step to unexpected balance disruption",diff:3,purpose:"Trains the neuromuscular response to unexpected postural challenge"}
+];
+
+const CAT_BADGE={STABILITY:'badge-cyan','MOTOR CONTROL':'badge-gold',ACTIVATION:'badge-burgundy',ROM:'badge-green',PERTURBATION:'badge-blue'};
+const CATS=['ALL','STABILITY','MOTOR CONTROL','ACTIVATION','ROM','PERTURBATION'];
+const DIFF_LABELS={1:'Easy',2:'Intermediate',3:'Advanced'};
+
+function diffDots(d){return Array.from({length:3},(_,i)=>`<span class="dot ${i<d?'filled':''}"></span>`).join('')}
+
+// Detect view
+const clientParam=new URLSearchParams(window.location.search).get('client');
+if(clientParam){renderClientView(clientParam)}else{renderPractitionerView()}
+
+// ====== PRACTITIONER VIEW ======
+function renderPractitionerView(){
+let program=[];let filter='ALL';
+const app=document.getElementById('app');
+app.innerHTML=`
+<div class="header">
+<div class="logo-mark">OPTIMIZED ATHLETIK HUMAN MECHANICS</div>
+<h1>EXERCISE PRESCRIPTION</h1>
+<div class="sub">MOVEMENT ARCHITECTURE SYSTEM</div>
+</div>
+<div class="container">
+<h2 style="text-align:center;letter-spacing:4px;margin:30px 0 0;color:var(--cyan)">EXERCISE REPERTOIRE</h2>
+<div class="filter-tabs" id="filterTabs"></div>
+<div class="exercise-grid" id="exGrid"></div>
+<div class="program-section">
+<h2>CURRENT PROGRAM</h2>
+<div class="program-header">
+<input type="text" id="clientName" placeholder="Client name...">
+<button class="btn btn-danger btn-sm" onclick="clearProgram()">Clear Program</button>
+</div>
+<div class="program-list" id="programList"></div>
+<div class="program-options">
+<div class="opt-group"><label>Frequency</label><select id="freq"><option>Daily</option><option selected>3x/week</option><option>2x/week</option><option>Custom</option></select></div>
+<div class="opt-group"><label>Duration</label><select id="dur"><option>2 weeks</option><option selected>4 weeks</option><option>6 weeks</option><option>8 weeks</option></select></div>
+</div>
+<div class="notes-area"><label style="color:var(--gray);font-size:.8rem;letter-spacing:1px;text-transform:uppercase">Personal Instructions</label><textarea id="progNotes" placeholder="Add coaching notes for your client..."></textarea></div>
+<div class="generate-section">
+<button class="btn btn-gold" onclick="generateLink()">GENERATE CLIENT LINK</button>
+<div class="link-output" id="linkOutput"></div>
+<div class="link-actions" id="linkActions" style="display:none">
+<button class="btn btn-primary btn-sm" onclick="copyLink()">Copy Link</button>
+<button class="btn btn-outline btn-sm" onclick="previewClient()">Preview as Client</button>
+</div>
+</div>
+</div>
+</div>`;
+
+function renderTabs(){
+const t=document.getElementById('filterTabs');
+t.innerHTML=CATS.map(c=>`<button class="filter-tab ${filter===c?'active':''}" onclick="setFilter('${c}')">${c}</button>`).join('');
+}
+function renderGrid(){
+const g=document.getElementById('exGrid');
+const filtered=filter==='ALL'?EXERCISES:EXERCISES.filter(e=>e.cat===filter);
+const inProgram=new Set(program.map(p=>p.id));
+g.innerHTML=filtered.map(e=>`
+<div class="exercise-card">
+<div style="display:flex;justify-content:space-between;align-items:start">
+<div class="name">${e.name}</div>
+<span class="badge ${CAT_BADGE[e.cat]}">${e.cat}</span>
+</div>
+<div class="desc">${e.desc}</div>
+<div style="display:flex;align-items:center;gap:8px">
+<div class="difficulty">${diffDots(e.diff)}</div>
+<span style="color:var(--gray);font-size:.7rem">${DIFF_LABELS[e.diff]}</span>
+</div>
+<div class="purpose">"${e.purpose}"</div>
+<div class="card-footer">
+<div></div>
+<button class="add-btn ${inProgram.has(e.id)?'added':''}" onclick="addToProgram(${e.id})">${inProgram.has(e.id)?'✓ Added':'+ Add to Program'}</button>
+</div>
+</div>`).join('');
+}
+function renderProgram(){
+const pl=document.getElementById('programList');
+if(!program.length){pl.innerHTML='<div class="empty-state">Add exercises from the library above</div>';return}
+pl.innerHTML=program.map((p,i)=>`
+<div class="program-item" draggable="true" data-idx="${i}" ondragstart="dStart(event)" ondragover="dOver(event)" ondrop="dDrop(event)" ondragend="dEnd(event)">
+<span style="color:var(--gray);cursor:grab;margin-right:4px">☰</span>
+<span class="pi-name">${p.name}</span>
+<label style="color:var(--gray);font-size:.7rem">Sets</label>
+<input type="number" value="${p.sets}" min="1" max="10" onchange="updateProg(${i},'sets',this.value)">
+<label style="color:var(--gray);font-size:.7rem">×</label>
+<label style="color:var(--gray);font-size:.7rem">Reps</label>
+<input type="number" value="${p.reps}" min="1" max="50" onchange="updateProg(${i},'reps',this.value)">
+<input type="text" placeholder="Exercise notes..." value="${p.notes||''}" onchange="updateProg(${i},'notes',this.value)">
+<button class="remove-btn" onclick="removeProg(${i})">✕</button>
+</div>`).join('');
+}
+
+window.setFilter=c=>{filter=c;renderTabs();renderGrid()};
+window.addToProgram=id=>{
+if(program.find(p=>p.id===id))return;
+const ex=EXERCISES.find(e=>e.id===id);
+program.push({id:ex.id,name:ex.name,cat:ex.cat,desc:ex.desc,purpose:ex.purpose,diff:ex.diff,sets:3,reps:12,notes:''});
+renderGrid();renderProgram();
+};
+window.removeProg=i=>{program.splice(i,1);renderGrid();renderProgram()};
+window.updateProg=(i,k,v)=>{program[i][k]=k==='sets'||k==='reps'?parseInt(v)||1:v};
+window.clearProgram=()=>{program=[];renderGrid();renderProgram();document.getElementById('linkOutput').style.display='none';document.getElementById('linkActions').style.display='none'};
+
+let dragIdx=null;
+window.dStart=e=>{dragIdx=+e.currentTarget.dataset.idx;e.currentTarget.classList.add('dragging')};
+window.dOver=e=>{e.preventDefault();e.currentTarget.classList.add('drag-over')};
+window.dDrop=e=>{e.preventDefault();e.currentTarget.classList.remove('drag-over');const to=+e.currentTarget.dataset.idx;if(dragIdx!==null&&dragIdx!==to){const item=program.splice(dragIdx,1)[0];program.splice(to,0,item);renderProgram()}};
+window.dEnd=e=>{e.currentTarget.classList.remove('dragging');document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'))};
+
+window.generateLink=()=>{
+const cn=document.getElementById('clientName').value.trim();
+if(!cn){alert('Please enter a client name');return}
+if(!program.length){alert('Add at least one exercise');return}
+const data={clientName:cn,exercises:program,frequency:document.getElementById('freq').value,duration:document.getElementById('dur').value,notes:document.getElementById('progNotes').value};
+const encoded=encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(data)))));
+const url=window.location.origin+window.location.pathname+'?client='+encoded;
+window._generatedUrl=url;
+document.getElementById('linkOutput').textContent=url;
+document.getElementById('linkOutput').style.display='block';
+document.getElementById('linkActions').style.display='flex';
+};
+window.copyLink=()=>{navigator.clipboard.writeText(window._generatedUrl).then(()=>{const b=event.target;b.textContent='Copied!';setTimeout(()=>b.textContent='Copy Link',2000)})};
+window.previewClient=()=>{window.open(window._generatedUrl,'_blank')};
+
+renderTabs();renderGrid();renderProgram();
+}
+
+// ====== CLIENT VIEW ======
+function renderClientView(encoded){
+let data;
+try{data=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(encoded)))))}catch(e){document.getElementById('app').innerHTML='<div class="container" style="text-align:center;padding:60px"><h2 style="color:var(--red)">Invalid Program Link</h2><p style="color:var(--gray);margin-top:12px">This link appears to be invalid or corrupted. Please request a new link from your practitioner.</p></div>';return}
+
+const storageKey='oahm_program_'+data.clientName.replace(/\s/g,'_');
+let stored=JSON.parse(localStorage.getItem(storageKey)||'null');
+if(!stored){stored={clientName:data.clientName,program:data.exercises,startDate:new Date().toISOString(),sessions:{}};localStorage.setItem(storageKey,JSON.stringify(stored))}
+// Update program if link has new exercises
+stored.program=data.exercises;stored.clientName=data.clientName;
+
+const today=new Date().toISOString().slice(0,10);
+if(!stored.sessions[today])stored.sessions[today]={};
+const save=()=>localStorage.setItem(storageKey,JSON.stringify(stored));
+
+const durWeeks=parseInt(data.duration)||4;
+const startDate=new Date(stored.startDate);
+const now=new Date();
+const weekNum=Math.min(Math.ceil((now-startDate)/(7*86400000))||1,durWeeks);
+const totalExercises=data.exercises.length;
+
+function countCompleted(dateStr){
+const s=stored.sessions[dateStr];if(!s)return 0;
+let done=0;
+data.exercises.forEach(ex=>{if(s[ex.id]&&s[ex.id].setsCompleted>=ex.sets)done++});
+return done;
+}
+
+function isFullyDone(dateStr){return countCompleted(dateStr)===totalExercises&&totalExercises>0}
+function isPartial(dateStr){const c=countCompleted(dateStr);return c>0&&c<totalExercises}
+
+const todayDone=isFullyDone(today);
+
+const app=document.getElementById('app');
+app.innerHTML=`
+<div class="client-view">
+<div class="client-header">
+<div class="logo-mark" style="color:var(--gold);font-size:.7rem;letter-spacing:3px">OPTIMIZED ATHLETIK HUMAN MECHANICS</div>
+<h1>YOUR OAHM PROGRAM</h1>
+<div class="client-name">${data.clientName}</div>
+<div class="meta-badges">
+<span class="badge badge-cyan">${data.frequency}</span>
+<span class="badge badge-gold">${data.duration}</span>
+</div>
+${data.notes?`<div class="coach-note"><strong style="color:var(--gold)">From Yoby:</strong> ${data.notes}</div>`:''}
+<div class="week-indicator">Week ${weekNum} of ${durWeeks}</div>
+<div class="today-status ${todayDone?'completed':'pending'}">${todayDone?'✓ Today\'s session complete':'Today\'s session: pending'}</div>
+</div>
+<div id="exerciseList"></div>
+<div class="streak-section">
+<h3>YOUR STREAK</h3>
+<div class="streak-dots" id="streakDots"></div>
+<div class="streak-stats" id="streakStats"></div>
+</div>
+<div class="progress-section">
+<h3>PROGRESS NOTES</h3>
+<div id="progressLog"></div>
+</div>
+<div class="share-btn-section">
+<button class="btn btn-outline" onclick="shareProgress()">Share Progress Report</button>
+<div class="share-output" id="shareOutput"></div>
+</div>
+<div class="home-link"><a href="https://oahm.io" target="_blank">BOOK A SESSION AT OAHM →</a></div>
+</div>`;
+
+function renderExercises(){
+const el=document.getElementById('exerciseList');
+el.innerHTML=data.exercises.map(ex=>{
+const session=stored.sessions[today][ex.id]||{setsCompleted:0,note:''};
+const allDone=session.setsCompleted>=ex.sets;
+return `
+<div class="client-exercise ${allDone?'complete':''}">
+<div class="ce-main" onclick="toggleExpand(${ex.id})">
+<div class="ce-top">
+<div>
+<div class="ce-name">${ex.name}</div>
+<span class="badge ${CAT_BADGE[ex.cat]} " style="margin-top:4px">${ex.cat}</span>
+</div>
+<div class="ce-rx">${ex.sets} × ${ex.reps}</div>
+</div>
+${ex.notes?`<div class="ce-note">${ex.notes}</div>`:''}
+</div>
+<div class="ce-expand" id="expand-${ex.id}">
+<div class="ce-desc">${ex.desc}</div>
+<div class="ce-purpose">"${ex.purpose}"</div>
+<div style="margin-top:12px;color:var(--gray);font-size:.75rem;text-transform:uppercase;letter-spacing:1px">Log Sets</div>
+<div class="set-buttons">
+${Array.from({length:ex.sets},(_,i)=>{
+const done=i<session.setsCompleted;
+const allD=session.setsCompleted>=ex.sets;
+return `<button class="set-btn ${done?(allD?'all-done':'done'):''}" onclick="logSet(${ex.id},${i+1},${ex.sets})">${i+1}</button>`;
+}).join('')}
+</div>
+<input class="feel-input" type="text" placeholder="How did this feel today?" value="${session.note||''}" onchange="saveNote(${ex.id},this.value)" onclick="event.stopPropagation()">
+</div>
+</div>`;
+}).join('');
+}
+
+function renderStreak(){
+const dots=document.getElementById('streakDots');
+const stats=document.getElementById('streakStats');
+const days=[];
+for(let i=13;i>=0;i--){
+const d=new Date();d.setDate(d.getDate()-i);
+const ds=d.toISOString().slice(0,10);
+const full=isFullyDone(ds);const partial=isPartial(ds);
+const label=d.getDate();
+days.push({ds,full,partial,label});
+}
+dots.innerHTML=days.map(d=>`<div class="streak-dot ${d.full?'full':d.partial?'partial':'empty'}" title="${d.ds}">${d.label}</div>`).join('');
+
+let streak=0;
+for(let i=0;i<14;i++){
+const d=new Date();d.setDate(d.getDate()-i);
+const ds=d.toISOString().slice(0,10);
+if(isFullyDone(ds)||isPartial(ds))streak++;else if(i>0)break;
+}
+let totalSessions=0;
+Object.keys(stored.sessions).forEach(ds=>{if(isFullyDone(ds))totalSessions++});
+stats.innerHTML=`<div class="streak-stat"><div class="num">${streak}</div><div class="label">Day Streak</div></div><div class="streak-stat"><div class="num">${totalSessions}</div><div class="label">Sessions Done</div></div>`;
+}
+
+function renderProgressLog(){
+const log=document.getElementById('progressLog');
+const entries=[];
+Object.keys(stored.sessions).sort().reverse().forEach(ds=>{
+const session=stored.sessions[ds];
+Object.keys(session).forEach(eid=>{
+const s=session[eid];
+if(s.note){
+const ex=data.exercises.find(e=>e.id==eid);
+entries.push({date:ds,name:ex?ex.name:'Exercise',note:s.note});
+}
+});
+});
+if(!entries.length){log.innerHTML='<div class="empty-state" style="padding:20px">No notes yet. Complete exercises and add how they felt!</div>';return}
+log.innerHTML=entries.slice(0,20).map(e=>`<div class="progress-entry"><div class="pe-date">${e.date}</div><div class="pe-exercise">${e.name}</div><div class="pe-note">"${e.note}"</div></div>`).join('');
+}
+
+window.toggleExpand=id=>{const el=document.getElementById('expand-'+id);el.classList.toggle('open')};
+window.logSet=(id,setNum,totalSets)=>{
+if(!stored.sessions[today][id])stored.sessions[today][id]={setsCompleted:0,note:''};
+const s=stored.sessions[today][id];
+if(setNum<=s.setsCompleted){s.setsCompleted=setNum-1}else{s.setsCompleted=setNum}
+save();renderExercises();renderStreak();
+// Update today status
+const todayNowDone=isFullyDone(today);
+const ts=document.querySelector('.today-status');
+ts.className='today-status '+(todayNowDone?'completed':'pending');
+ts.textContent=todayNowDone?'✓ Today\'s session complete':'Today\'s session: pending';
+};
+window.saveNote=(id,val)=>{
+if(!stored.sessions[today][id])stored.sessions[today][id]={setsCompleted:0,note:''};
+stored.sessions[today][id].note=val;
+save();renderProgressLog();
+};
+window.shareProgress=()=>{
+const so=document.getElementById('shareOutput');
+let totalDone=0;const freqMap={'Daily':7,'3x/week':3,'2x/week':2,'Custom':3};
+const expected=freqMap[data.frequency]||3;
+for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()-i);if(isFullyDone(d.toISOString().slice(0,10)))totalDone++}
+const recentNotes=[];
+for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);const s=stored.sessions[ds];if(s)Object.keys(s).forEach(eid=>{if(s[eid].note){const ex=data.exercises.find(e=>e.id==eid);recentNotes.push(`${ex?ex.name:'Exercise'}: "${s[eid].note}"`)}})}
+const report=`OAHM Progress Report — ${data.clientName} — Week ${weekNum}\nSessions completed: ${totalDone}/${expected}\n${recentNotes.length?'Notes:\n'+recentNotes.join('\n'):'No notes this week.'}`;
+so.textContent=report;so.style.display='block';
+navigator.clipboard.writeText(report).catch(()=>{});
+};
+
+renderExercises();renderStreak();renderProgressLog();
+}
+</script>
+</body>
+</html>
