@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VENUE INTELLIGENCE — Block BMOS</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e17;--bg2:#111827;--bg3:#1a2332;--green:#00e676;--green2:#00c853;--blue:#448aff;--cyan:#00e5ff;--gold:#ffd740;--white:#e0e0e0;--dim:#607080;--red:#ff5252}
+body{background:var(--bg);color:var(--white);font-family:'SF Mono','Fira Code','Cascadia Code',monospace;font-size:13px;line-height:1.4}
+a{color:var(--green)}
+::selection{background:var(--green);color:var(--bg)}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--dim);border-radius:3px}
+.container{max-width:1600px;margin:0 auto;padding:16px}
+header{border-bottom:1px solid #1e2d3d;padding-bottom:16px;margin-bottom:16px}
+h1{font-size:28px;color:var(--green);letter-spacing:4px;font-weight:700}
+h1 span{color:var(--dim);font-size:14px;letter-spacing:1px;display:block;margin-top:4px}
+.stats-bar{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap}
+.stat{background:var(--bg2);border:1px solid #1e2d3d;padding:8px 16px;border-radius:4px;font-size:12px}
+.stat b{color:var(--green)}
+.filters{background:var(--bg2);border:1px solid #1e2d3d;padding:12px;border-radius:4px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.filters input[type=text]{background:var(--bg);border:1px solid #1e2d3d;color:var(--white);padding:8px 12px;border-radius:4px;font-family:inherit;font-size:13px;width:260px}
+.filters input:focus{outline:none;border-color:var(--green)}
+.filter-group{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.filter-group label{color:var(--dim);font-size:11px;margin-right:4px}
+.fbtn{background:var(--bg);border:1px solid #1e2d3d;color:var(--dim);padding:5px 10px;border-radius:3px;cursor:pointer;font-family:inherit;font-size:11px;transition:.2s}
+.fbtn:hover,.fbtn.active{color:var(--green);border-color:var(--green)}
+select{background:var(--bg);border:1px solid #1e2d3d;color:var(--white);padding:6px 8px;border-radius:4px;font-family:inherit;font-size:12px}
+select:focus{outline:none;border-color:var(--green)}
+.showing{color:var(--dim);font-size:12px;margin-bottom:8px}
+.showing b{color:var(--green)}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--bg2);color:var(--green);padding:8px 10px;text-align:left;font-size:11px;letter-spacing:1px;cursor:pointer;user-select:none;border-bottom:1px solid #1e2d3d;white-space:nowrap;position:sticky;top:0;z-index:2}
+thead th:hover{color:#fff}
+thead th .arrow{margin-left:4px;font-size:9px}
+tbody tr{border-bottom:1px solid #0f1520;cursor:pointer;transition:.15s}
+tbody tr:hover{background:var(--bg3)}
+tbody td{padding:7px 10px;font-size:12px;white-space:nowrap}
+.op-LN{color:var(--green)}
+.op-AEG{color:var(--blue)}
+.op-OVG{color:var(--cyan)}
+.op-MSG{color:var(--gold)}
+.op-IND{color:var(--white)}
+.tier-badge{padding:2px 6px;border-radius:2px;font-size:10px;font-weight:700;letter-spacing:.5px}
+.tier-CLUB{background:#1b5e20;color:#a5d6a7}
+.tier-THEATER{background:#0d47a1;color:#90caf9}
+.tier-MID{background:#4a148c;color:#ce93d8}
+.tier-ARENA{background:#b71c1c;color:#ef9a9a}
+.tier-STADIUM{background:#e65100;color:#ffcc80}
+.detail-row td{padding:0!important}
+.detail-content{padding:12px 20px;background:var(--bg3);border-left:3px solid var(--green);font-size:12px;line-height:1.6}
+.detail-content .dl{display:grid;grid-template-columns:120px 1fr;gap:4px 12px}
+.detail-content .dl dt{color:var(--dim)}
+.detail-content .dl dd{color:var(--white)}
+.table-wrap{max-height:600px;overflow:auto;border:1px solid #1e2d3d;border-radius:4px;margin-bottom:24px}
+.section-title{color:var(--green);font-size:16px;letter-spacing:2px;margin:24px 0 12px;border-bottom:1px solid #1e2d3d;padding-bottom:8px}
+.market-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:16px}
+.market-card{background:var(--bg2);border:1px solid #1e2d3d;padding:10px;border-radius:4px}
+.market-card h4{color:var(--green);font-size:13px;margin-bottom:4px}
+.market-card .mc-stat{color:var(--dim);font-size:11px}
+.bar-chart{margin-bottom:16px}
+.bar-row{display:flex;align-items:center;margin-bottom:4px}
+.bar-label{width:140px;font-size:11px;color:var(--dim);text-align:right;padding-right:8px;white-space:nowrap;overflow:hidden}
+.bar-fill{height:18px;border-radius:2px;display:flex;align-items:center;padding-left:6px;font-size:10px;color:var(--bg);font-weight:700;min-width:20px;transition:.3s}
+.tour-section{background:var(--bg2);border:1px solid #1e2d3d;padding:16px;border-radius:4px}
+.tour-section input,.tour-section select{margin-right:8px;margin-bottom:8px}
+.tour-section input[type=text],.tour-section input[type=number]{background:var(--bg);border:1px solid #1e2d3d;color:var(--white);padding:8px;border-radius:4px;font-family:inherit;font-size:13px}
+.gen-btn{background:var(--green);color:var(--bg);border:none;padding:8px 20px;border-radius:4px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:1px}
+.gen-btn:hover{background:var(--green2)}
+.gen-btn:disabled{opacity:.5;cursor:wait}
+#tourResult{margin-top:12px;padding:12px;background:var(--bg);border:1px solid #1e2d3d;border-radius:4px;white-space:pre-wrap;font-size:12px;line-height:1.6;display:none;max-height:500px;overflow:auto}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}.filters{flex-direction:column}.table-wrap{max-height:none}}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>VENUE INTELLIGENCE<span>US Live Performance Database · Block BMOS</span></h1>
+<div class="stats-bar">
+<div class="stat">Total Venues: <b id="sTot">0</b></div>
+<div class="stat">Markets: <b id="sMkt">0</b></div>
+<div class="stat">States: <b id="sSt">0</b></div>
+<div class="stat">Operators: <b>5</b></div>
+<div class="stat">Last Updated: <b>Feb 2026</b></div>
+</div>
+</header>
+
+<div class="filters">
+<input type="text" id="search" placeholder="Search venue, city, state...">
+<div class="filter-group"><label>OPERATOR:</label>
+<button class="fbtn active" data-f="op" data-v="">ALL</button>
+<button class="fbtn" data-f="op" data-v="LIVE_NATION">LIVE NATION</button>
+<button class="fbtn" data-f="op" data-v="AEG">AEG</button>
+<button class="fbtn" data-f="op" data-v="OVG">OVG</button>
+<button class="fbtn" data-f="op" data-v="MSG">MSG</button>
+<button class="fbtn" data-f="op" data-v="INDEPENDENT">INDEPENDENT</button>
+</div>
+<div class="filter-group"><label>TYPE:</label>
+<button class="fbtn active" data-f="tp" data-v="">ALL</button>
+<button class="fbtn" data-f="tp" data-v="Arena">ARENA</button>
+<button class="fbtn" data-f="tp" data-v="Amphitheater">AMPHITHEATER</button>
+<button class="fbtn" data-f="tp" data-v="Theater">THEATER</button>
+<button class="fbtn" data-f="tp" data-v="Club">CLUB</button>
+<button class="fbtn" data-f="tp" data-v="Stadium">STADIUM</button>
+</div>
+<div class="filter-group"><label>TIER:</label>
+<button class="fbtn active" data-f="tr" data-v="">ALL</button>
+<button class="fbtn" data-f="tr" data-v="CLUB">CLUB &lt;2K</button>
+<button class="fbtn" data-f="tr" data-v="THEATER">THEATER 2-5K</button>
+<button class="fbtn" data-f="tr" data-v="MID">MID 5-15K</button>
+<button class="fbtn" data-f="tr" data-v="ARENA">ARENA 15-25K</button>
+<button class="fbtn" data-f="tr" data-v="STADIUM">STADIUM 25K+</button>
+</div>
+<div class="filter-group"><label>STATE:</label><select id="stateF"><option value="">All States</option></select></div>
+</div>
+
+<div class="showing" id="showCount"></div>
+<div class="table-wrap">
+<table id="venueTable">
+<thead><tr>
+<th data-col="name">VENUE <span class="arrow"></span></th>
+<th data-col="city">CITY <span class="arrow"></span></th>
+<th data-col="state">STATE <span class="arrow"></span></th>
+<th data-col="capacity">CAPACITY <span class="arrow"></span></th>
+<th data-col="tier">TIER <span class="arrow"></span></th>
+<th data-col="operator">OPERATOR <span class="arrow"></span></th>
+<th data-col="type">TYPE <span class="arrow"></span></th>
+</tr></thead>
+<tbody id="tbody"></tbody>
+</table>
+</div>
+
+<div class="section-title">MARKET ANALYSIS</div>
+<div class="two-col">
+<div>
+<h4 style="color:var(--dim);margin-bottom:8px;font-size:12px">TOP MARKETS BY VENUE COUNT</h4>
+<div class="bar-chart" id="marketBars"></div>
+</div>
+<div>
+<h4 style="color:var(--dim);margin-bottom:8px;font-size:12px">OPERATOR MARKET SHARE</h4>
+<div class="bar-chart" id="opBars"></div>
+</div>
+</div>
+<div class="section-title">STATE COVERAGE</div>
+<div class="market-grid" id="stateGrid"></div>
+
+<div class="section-title">TOUR ROUTING INTELLIGENCE</div>
+<div class="tour-section">
+<div style="margin-bottom:8px">
+<input type="text" id="tArtist" placeholder="Artist name" style="width:200px">
+<input type="number" id="tShows" placeholder="# shows" style="width:80px" min="1" max="100">
+<select id="tTier"><option value="">Any Tier</option><option>CLUB</option><option>THEATER</option><option>MID</option><option>ARENA</option><option>STADIUM</option></select>
+<select id="tRegion"><option value="">National</option><option>Northeast</option><option>Southeast</option><option>Midwest</option><option>Southwest</option><option>West</option></select>
+<button class="gen-btn" id="genRoute">GENERATE ROUTE</button>
+</div>
+<div id="tourResult"></div>
+</div>
+</div>
+
+<script>
+const VENUES=[
+// ===== MSG ENTERTAINMENT =====
+{id:1,name:"Madison Square Garden",city:"New York",state:"NY",capacity:20789,tier:"ARENA",type:"Arena",operator:"MSG",market:"Northeast",notes:"Premier world venue. Full production capability. 365 days/year operation. Iconic NYC landmark."},
+{id:2,name:"Radio City Music Hall",city:"New York",state:"NY",capacity:5960,tier:"MID",type:"Theater",operator:"MSG",market:"Northeast",notes:"Art Deco landmark. Home of the Rockettes. Premium theatrical productions."},
+{id:3,name:"Beacon Theatre",city:"New York",state:"NY",capacity:2894,tier:"THEATER",type:"Theater",operator:"MSG",market:"Northeast",notes:"Historic Upper West Side theater. Excellent acoustics. Premium mid-size NYC venue."},
+{id:4,name:"The Chicago Theatre",city:"Chicago",state:"IL",capacity:3600,tier:"THEATER",type:"Theater",operator:"MSG",market:"Midwest",notes:"Iconic marquee. Historic landmark theater. Premium Chicago booking."},
+{id:5,name:"Hulu Theater at MSG",city:"New York",state:"NY",capacity:5600,tier:"MID",type:"Theater",operator:"MSG",market:"Northeast",notes:"Flexible theater space within MSG complex. Ideal for mid-size NYC shows."},
+{id:6,name:"Sphere",city:"Las Vegas",state:"NV",capacity:17600,tier:"ARENA",type:"Arena",operator:"MSG",market:"West",notes:"Revolutionary immersive venue. 160,000 sq ft LED display. Next-gen concert experience."},
+// ===== OAK VIEW GROUP =====
+{id:7,name:"Climate Pledge Arena",city:"Seattle",state:"WA",capacity:17100,tier:"ARENA",type:"Arena",operator:"OVG",market:"West",notes:"Carbon-neutral arena. Home of Seattle Kraken. Premium PNW market anchor."},
+{id:8,name:"UBS Arena",city:"Elmont",state:"NY",capacity:17500,tier:"ARENA",type:"Arena",operator:"OVG",market:"Northeast",notes:"Adjacent to Belmont Park. Home of NY Islanders. State-of-art production."},
+{id:9,name:"Moody Center",city:"Austin",state:"TX",capacity:15000,tier:"ARENA",type:"Arena",operator:"OVG",market:"Southwest",notes:"UT Austin campus. Premier Austin arena. Top-tier production capabilities."},
+{id:10,name:"CFG Bank Arena",city:"Baltimore",state:"MD",capacity:14000,tier:"MID",type:"Arena",operator:"OVG",market:"Northeast",notes:"Renovated Baltimore arena. Versatile configuration."},
+{id:11,name:"Acrisure Arena",city:"Thousand Palms",state:"CA",capacity:11000,tier:"MID",type:"Arena",operator:"OVG",market:"West",notes:"Coachella Valley arena. Desert market anchor."},
+{id:12,name:"Mullett Arena",city:"Tempe",state:"AZ",capacity:5000,tier:"MID",type:"Arena",operator:"OVG",market:"Southwest",notes:"ASU campus multi-use arena. Intimate configuration."},
+// ===== LIVE NATION — HOUSE OF BLUES =====
+{id:13,name:"House of Blues Anaheim",city:"Anaheim",state:"CA",capacity:2200,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"West",notes:"Adjacent to Disneyland. Major OC market venue."},
+{id:14,name:"House of Blues Boston",city:"Boston",state:"MA",capacity:2500,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Northeast",notes:"Fenway area. Premier Boston mid-size."},
+{id:15,name:"House of Blues Chicago",city:"Chicago",state:"IL",capacity:1800,tier:"CLUB",type:"Club",operator:"LIVE_NATION",market:"Midwest",notes:"River North location. Multi-level club."},
+{id:16,name:"House of Blues Cleveland",city:"Cleveland",state:"OH",capacity:2100,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Midwest",notes:"Downtown Cleveland entertainment district."},
+{id:17,name:"House of Blues Dallas",city:"Dallas",state:"TX",capacity:2200,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Southwest",notes:"White Swan Building in downtown Dallas."},
+{id:18,name:"House of Blues Houston",city:"Houston",state:"TX",capacity:2400,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Southwest",notes:"GreenStreet complex downtown Houston."},
+{id:19,name:"House of Blues Las Vegas",city:"Las Vegas",state:"NV",capacity:2500,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"West",notes:"Mandalay Bay location. Vegas strip venue."},
+{id:20,name:"House of Blues Los Angeles",city:"West Hollywood",state:"CA",capacity:1100,tier:"CLUB",type:"Club",operator:"LIVE_NATION",market:"West",notes:"Sunset Strip location. Intimate LA room."},
+{id:21,name:"House of Blues Myrtle Beach",city:"North Myrtle Beach",state:"SC",capacity:2200,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Southeast",notes:"Barefoot Landing. Coastal SC market."},
+{id:22,name:"House of Blues New Orleans",city:"New Orleans",state:"LA",capacity:2200,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Southeast",notes:"French Quarter location. Historic NOLA venue."},
+{id:23,name:"House of Blues Orlando",city:"Orlando",state:"FL",capacity:2200,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Southeast",notes:"Disney Springs location. Central FL market."},
+{id:24,name:"House of Blues San Diego",city:"San Diego",state:"CA",capacity:1100,tier:"CLUB",type:"Club",operator:"LIVE_NATION",market:"West",notes:"Downtown SD entertainment hub."},
+// ===== LIVE NATION — FILLMORE =====
+{id:25,name:"The Fillmore Charlotte",city:"Charlotte",state:"NC",capacity:2000,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Southeast",notes:"NC Music Factory complex. Premium Charlotte room."},
+{id:26,name:"The Fillmore Denver",city:"Denver",state:"CO",capacity:3900,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"West",notes:"RiNo arts district. Large Denver theater."},
+{id:27,name:"The Fillmore Detroit",city:"Detroit",state:"MI",capacity:2900,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Midwest",notes:"Historic downtown Detroit venue."},
+{id:28,name:"The Fillmore Indianapolis",city:"Indianapolis",state:"IN",capacity:2500,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Midwest",notes:"Fountain Square area. Key Indy room."},
+{id:29,name:"The Fillmore Jacksonville",city:"Jacksonville",state:"FL",capacity:1800,tier:"CLUB",type:"Theater",operator:"LIVE_NATION",market:"Southeast",notes:"Downtown Jacksonville entertainment."},
+{id:30,name:"The Fillmore Memphis",city:"Memphis",state:"TN",capacity:2500,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Southeast",notes:"Crosstown Concourse. Memphis music heritage."},
+{id:31,name:"The Fillmore Miami Beach",city:"Miami Beach",state:"FL",capacity:2700,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Southeast",notes:"Jackie Gleason Theater renovation. South Beach."},
+{id:32,name:"The Fillmore Minneapolis",city:"Minneapolis",state:"MN",capacity:1850,tier:"CLUB",type:"Theater",operator:"LIVE_NATION",market:"Midwest",notes:"Downtown Minneapolis. Complements First Avenue market."},
+{id:33,name:"The Fillmore New Orleans",city:"New Orleans",state:"LA",capacity:2200,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Southeast",notes:"Canal Street location. NOLA live music circuit."},
+{id:34,name:"The Fillmore Philadelphia",city:"Philadelphia",state:"PA",capacity:2500,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Northeast",notes:"Fishtown neighborhood. Premier Philly room."},
+{id:35,name:"The Fillmore Silver Spring",city:"Silver Spring",state:"MD",capacity:2000,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Northeast",notes:"DC metro market. Suburban MD venue."},
+{id:36,name:"The Fillmore San Francisco",city:"San Francisco",state:"CA",capacity:1150,tier:"CLUB",type:"Club",operator:"LIVE_NATION",market:"West",notes:"Historic Fillmore. Legendary SF venue since 1960s. Free poster tradition."},
+// ===== LIVE NATION — AMPHITHEATERS =====
+{id:37,name:"Bank of NH Pavilion",city:"Gilford",state:"NH",capacity:9000,tier:"MID",type:"Amphitheater",operator:"LIVE_NATION",market:"Northeast",notes:"Lake region summer amphitheater. Seasonal operation."},
+{id:38,name:"Pavilion at Toyota Music Factory",city:"Irving",state:"TX",capacity:8000,tier:"MID",type:"Amphitheater",operator:"LIVE_NATION",market:"Southwest",notes:"DFW entertainment complex. Indoor/outdoor hybrid."},
+{id:39,name:"iTHINK Financial Amphitheatre",city:"West Palm Beach",state:"FL",capacity:19000,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"Southeast",notes:"South Florida major amphitheater. Lawn + reserved seating."},
+{id:40,name:"MidFlorida Credit Union Amphitheatre",city:"Tampa",state:"FL",capacity:20000,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"Southeast",notes:"Tampa Bay major outdoor venue. FL summer shed circuit."},
+{id:41,name:"Dos Equis Pavilion",city:"Dallas",state:"TX",capacity:20000,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"Southwest",notes:"Fair Park location. Major DFW amphitheater."},
+{id:42,name:"White River Amphitheatre",city:"Auburn",state:"WA",capacity:20000,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"West",notes:"PNW major outdoor venue. Summer touring circuit staple."},
+{id:43,name:"Shoreline Amphitheatre",city:"Mountain View",state:"CA",capacity:22500,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"West",notes:"Silicon Valley. One of largest US amphitheaters. Tech industry market."},
+{id:44,name:"Xfinity Center",city:"Mansfield",state:"MA",capacity:19900,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"Northeast",notes:"Greater Boston amphitheater. Major NE shed venue."},
+{id:45,name:"PNC Bank Arts Center",city:"Holmdel",state:"NJ",capacity:17500,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"Northeast",notes:"NJ Garden State Parkway access. NYC metro amphitheater."},
+{id:46,name:"Jiffy Lube Live",city:"Bristow",state:"VA",capacity:25000,tier:"STADIUM",type:"Amphitheater",operator:"LIVE_NATION",market:"Southeast",notes:"DC metro major amphitheater. One of the largest sheds on the East Coast."},
+{id:47,name:"Blossom Music Center",city:"Cuyahoga Falls",state:"OH",capacity:19000,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"Midwest",notes:"Cleveland Orchestra summer home. NE Ohio amphitheater."},
+{id:48,name:"Ruoff Music Center",city:"Noblesville",state:"IN",capacity:24000,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"Midwest",notes:"Indianapolis market. Major Midwest shed venue."},
+{id:49,name:"Hollywood Casino Amphitheatre",city:"Maryland Heights",state:"MO",capacity:20000,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"Midwest",notes:"St. Louis area amphitheater. Gateway market."},
+{id:50,name:"Pine Knob Music Theatre",city:"Clarkston",state:"MI",capacity:15274,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"Midwest",notes:"Detroit metro. Legendary Michigan amphitheater."},
+{id:51,name:"Ameris Bank Amphitheatre",city:"Alpharetta",state:"GA",capacity:12000,tier:"MID",type:"Amphitheater",operator:"LIVE_NATION",market:"Southeast",notes:"North Atlanta suburb. Major GA amphitheater."},
+{id:52,name:"PNC Music Pavilion",city:"Charlotte",state:"NC",capacity:19500,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"Southeast",notes:"Charlotte's major outdoor venue. Carolinas anchor."},
+{id:53,name:"Coastal Credit Union Music Park",city:"Raleigh",state:"NC",capacity:20000,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"Southeast",notes:"Triangle market amphitheater."},
+{id:54,name:"Cynthia Woods Mitchell Pavilion",city:"The Woodlands",state:"TX",capacity:16500,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"Southwest",notes:"North Houston amphitheater. Major Texas shed."},
+{id:55,name:"Isleta Amphitheater",city:"Albuquerque",state:"NM",capacity:15000,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"Southwest",notes:"New Mexico's premier amphitheater."},
+{id:56,name:"USANA Amphitheatre",city:"Salt Lake City",state:"UT",capacity:20000,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"West",notes:"Utah market amphitheater. Mountain West anchor."},
+{id:57,name:"Gorge Amphitheatre",city:"George",state:"WA",capacity:27500,tier:"STADIUM",type:"Amphitheater",operator:"LIVE_NATION",market:"West",notes:"Scenic Columbia River Gorge. Iconic festival destination."},
+{id:58,name:"Ak-Chin Pavilion",city:"Phoenix",state:"AZ",capacity:20000,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"Southwest",notes:"Phoenix metro amphitheater. Desert market anchor."},
+{id:59,name:"North Island Credit Union Amphitheatre",city:"Chula Vista",state:"CA",capacity:20500,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"West",notes:"San Diego area amphitheater. SoCal shed circuit."},
+{id:60,name:"Toyota Amphitheatre",city:"Wheatland",state:"CA",capacity:18500,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"West",notes:"Sacramento area amphitheater. NorCal market."},
+{id:61,name:"Sunlight Supply Amphitheater",city:"Ridgefield",state:"WA",capacity:18000,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"West",notes:"Portland metro amphitheater."},
+// ===== LIVE NATION — OTHER CLUBS/THEATERS =====
+{id:62,name:"Irving Plaza",city:"New York",state:"NY",capacity:1025,tier:"CLUB",type:"Club",operator:"LIVE_NATION",market:"Northeast",notes:"Union Square NYC. Intimate standing room. Iconic club venue."},
+{id:63,name:"The Wiltern",city:"Los Angeles",state:"CA",capacity:1850,tier:"CLUB",type:"Theater",operator:"LIVE_NATION",market:"West",notes:"Art Deco Koreatown landmark. Premium LA mid-size."},
+{id:64,name:"The Riviera Theatre",city:"Chicago",state:"IL",capacity:2500,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Midwest",notes:"Uptown Chicago. Historic theater venue."},
+{id:65,name:"The Roxy Theatre",city:"West Hollywood",state:"CA",capacity:500,tier:"CLUB",type:"Club",operator:"LIVE_NATION",market:"West",notes:"Sunset Strip legend. Intimate club. Industry showcase room."},
+{id:66,name:"Bill Graham Civic Auditorium",city:"San Francisco",state:"CA",capacity:8500,tier:"MID",type:"Theater",operator:"LIVE_NATION",market:"West",notes:"Civic Center SF. Large-scale theater productions and concerts."},
+{id:67,name:"Warfield Theatre",city:"San Francisco",state:"CA",capacity:2300,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"West",notes:"Market Street SF. Historic mid-size theater. Standing + balcony."},
+{id:68,name:"The Midland Theatre",city:"Kansas City",state:"MO",capacity:3200,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Midwest",notes:"Downtown KC. Restored 1927 movie palace."},
+{id:69,name:"The Pageant",city:"St. Louis",state:"MO",capacity:2000,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Midwest",notes:"The Loop entertainment district. Premier STL venue."},
+{id:70,name:"The Norva",city:"Norfolk",state:"VA",capacity:1500,tier:"CLUB",type:"Club",operator:"LIVE_NATION",market:"Southeast",notes:"Downtown Norfolk. Hampton Roads market."},
+{id:71,name:"The Tabernacle",city:"Atlanta",state:"GA",capacity:2600,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Southeast",notes:"Former church in downtown ATL. Unique vibe. Premium mid-size."},
+{id:72,name:"Marathon Music Works",city:"Nashville",state:"TN",capacity:1500,tier:"CLUB",type:"Club",operator:"LIVE_NATION",market:"Southeast",notes:"Nashville's premier club venue. Industrial chic."},
+{id:73,name:"Brooklyn Bowl Nashville",city:"Nashville",state:"TN",capacity:1200,tier:"CLUB",type:"Club",operator:"LIVE_NATION",market:"Southeast",notes:"Germantown Nashville. Bowling + live music hybrid."},
+{id:74,name:"Stubbs BBQ",city:"Austin",state:"TX",capacity:2100,tier:"THEATER",type:"Amphitheater",operator:"LIVE_NATION",market:"Southwest",notes:"Outdoor amphitheater. Austin institution. BBQ + music."},
+{id:75,name:"ACL Live at The Moody Theater",city:"Austin",state:"TX",capacity:2750,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Southwest",notes:"Austin City Limits TV taping venue. Premium Austin room."},
+{id:76,name:"713 Music Hall",city:"Houston",state:"TX",capacity:5000,tier:"MID",type:"Theater",operator:"LIVE_NATION",market:"Southwest",notes:"POST Houston complex. New premier Houston venue."},
+{id:77,name:"The Anthem",city:"Washington",state:"DC",capacity:6000,tier:"MID",type:"Theater",operator:"INDEPENDENT",market:"Northeast",notes:"The Wharf DC. IMP-operated. Versatile capacity 2500-6000."},
+{id:78,name:"9:30 Club",city:"Washington",state:"DC",capacity:1200,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Northeast",notes:"Legendary DC club. IMP-operated. Consistently top-grossing US club."},
+// ===== AEG PRESENTS =====
+{id:79,name:"Crypto.com Arena",city:"Los Angeles",state:"CA",capacity:20000,tier:"ARENA",type:"Arena",operator:"AEG",market:"West",notes:"Downtown LA. Home of Lakers/Clippers/Kings. AEG flagship. Premier West Coast arena."},
+{id:80,name:"The Kia Forum",city:"Inglewood",state:"CA",capacity:17500,tier:"ARENA",type:"Arena",operator:"AEG",market:"West",notes:"Adjacent to SoFi. Refurbished classic arena. Major LA concert venue."},
+{id:81,name:"Brooklyn Steel",city:"Brooklyn",state:"NY",capacity:1800,tier:"CLUB",type:"Club",operator:"AEG",market:"Northeast",notes:"Williamsburg industrial venue. AEG's NYC club anchor."},
+{id:82,name:"Terminal 5",city:"New York",state:"NY",capacity:3000,tier:"THEATER",type:"Theater",operator:"AEG",market:"Northeast",notes:"Hell's Kitchen multi-level. Mid-size NYC venue."},
+{id:83,name:"The Fonda Theatre",city:"Los Angeles",state:"CA",capacity:1200,tier:"CLUB",type:"Theater",operator:"AEG",market:"West",notes:"Hollywood Blvd. Historic 1926 theater. Intimate LA shows."},
+{id:84,name:"El Rey Theatre",city:"Los Angeles",state:"CA",capacity:771,tier:"CLUB",type:"Theater",operator:"AEG",market:"West",notes:"Miracle Mile Art Deco gem. Intimate standing room."},
+{id:85,name:"Fiddler's Green Amphitheatre",city:"Greenwood Village",state:"CO",capacity:18000,tier:"ARENA",type:"Amphitheater",operator:"AEG",market:"West",notes:"Denver Tech Center. Colorado's premier amphitheater."},
+{id:86,name:"Forest Hills Stadium",city:"Queens",state:"NY",capacity:14000,tier:"MID",type:"Amphitheater",operator:"AEG",market:"Northeast",notes:"Historic tennis stadium. Outdoor summer concerts. NYC."},
+{id:87,name:"Pacific Amphitheatre",city:"Costa Mesa",state:"CA",capacity:18500,tier:"ARENA",type:"Amphitheater",operator:"AEG",market:"West",notes:"OC Fairgrounds. Seasonal summer operation."},
+{id:88,name:"The Novo",city:"Los Angeles",state:"CA",capacity:2300,tier:"THEATER",type:"Theater",operator:"AEG",market:"West",notes:"L.A. Live complex. Versatile downtown LA venue."},
+{id:89,name:"Bluebird Theater",city:"Denver",state:"CO",capacity:500,tier:"CLUB",type:"Club",operator:"AEG",market:"West",notes:"Colfax Ave Denver. Intimate room in AEG Denver portfolio."},
+{id:90,name:"Ogden Theatre",city:"Denver",state:"CO",capacity:1600,tier:"CLUB",type:"Theater",operator:"AEG",market:"West",notes:"Capitol Hill Denver. Mid-size AEG room."},
+{id:91,name:"Mission Ballroom",city:"Denver",state:"CO",capacity:3950,tier:"THEATER",type:"Theater",operator:"AEG",market:"West",notes:"RiNo district. State-of-art Denver venue. Premium production."},
+{id:92,name:"Showbox SoDo",city:"Seattle",state:"WA",capacity:1800,tier:"CLUB",type:"Club",operator:"AEG",market:"West",notes:"Industrial district Seattle. Larger Showbox room."},
+{id:93,name:"The Showbox",city:"Seattle",state:"WA",capacity:1100,tier:"CLUB",type:"Club",operator:"AEG",market:"West",notes:"Pike Place Market area. Historic Seattle club since 1939."},
+{id:94,name:"The Vogue",city:"Indianapolis",state:"IN",capacity:800,tier:"CLUB",type:"Club",operator:"AEG",market:"Midwest",notes:"Broad Ripple area. Intimate Indy club."},
+{id:95,name:"A&R Music Bar",city:"Columbus",state:"OH",capacity:400,tier:"CLUB",type:"Club",operator:"AEG",market:"Midwest",notes:"Franklinton Columbus. Intimate AEG room."},
+{id:96,name:"The Agora",city:"Cleveland",state:"OH",capacity:2000,tier:"THEATER",type:"Theater",operator:"AEG",market:"Midwest",notes:"Historic Cleveland concert hall. Multi-room complex."},
+{id:97,name:"Texas Trust CU Theatre",city:"Grand Prairie",state:"TX",capacity:6350,tier:"MID",type:"Theater",operator:"AEG",market:"Southwest",notes:"DFW Metroplex. Large AEG-operated theater."},
+{id:98,name:"YouTube Theater",city:"Inglewood",state:"CA",capacity:6000,tier:"MID",type:"Theater",operator:"AEG",market:"West",notes:"SoFi Stadium campus. State-of-art production facility."},
+// ===== INDEPENDENT ARENAS =====
+{id:99,name:"Barclays Center",city:"Brooklyn",state:"NY",capacity:19000,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Northeast",notes:"Downtown Brooklyn. Home of Nets. BSE Global operated."},
+{id:100,name:"TD Garden",city:"Boston",state:"MA",capacity:19580,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Northeast",notes:"Home of Celtics/Bruins. Delaware North operated. Premier NE arena."},
+{id:101,name:"Prudential Center",city:"Newark",state:"NJ",capacity:19500,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Northeast",notes:"Downtown Newark. Home of NJ Devils. Harris Blitzer operated."},
+{id:102,name:"Wells Fargo Center",city:"Philadelphia",state:"PA",capacity:20478,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Northeast",notes:"South Philly sports complex. Home of 76ers/Flyers."},
+{id:103,name:"Capital One Arena",city:"Washington",state:"DC",capacity:20356,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Northeast",notes:"Chinatown DC. Home of Wizards/Capitals. Monumental Sports operated."},
+{id:104,name:"State Farm Arena",city:"Atlanta",state:"GA",capacity:21000,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Southeast",notes:"Downtown Atlanta. Home of Hawks. Fully renovated. Premium SE arena."},
+{id:105,name:"Bridgestone Arena",city:"Nashville",state:"TN",capacity:20000,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Southeast",notes:"Downtown Nashville. Home of Predators. Country music capital anchor."},
+{id:106,name:"Kia Center",city:"Orlando",state:"FL",capacity:20000,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Southeast",notes:"Downtown Orlando. Home of Magic. Central FL arena anchor."},
+{id:107,name:"FLA Live Arena",city:"Sunrise",state:"FL",capacity:19250,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Southeast",notes:"Broward County. Home of Panthers. South FL arena."},
+{id:108,name:"Amalie Arena",city:"Tampa",state:"FL",capacity:20500,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Southeast",notes:"Downtown Tampa waterfront. Home of Lightning. Major FL arena."},
+{id:109,name:"Kaseya Center",city:"Miami",state:"FL",capacity:19600,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Southeast",notes:"Downtown Miami Biscayne Bay. Home of Heat. Premium SE market."},
+{id:110,name:"Spectrum Center",city:"Charlotte",state:"NC",capacity:19077,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Southeast",notes:"Uptown Charlotte. Home of Hornets."},
+{id:111,name:"PNC Arena",city:"Raleigh",state:"NC",capacity:19722,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Southeast",notes:"NC State campus area. Home of Hurricanes. Triangle market."},
+{id:112,name:"United Center",city:"Chicago",state:"IL",capacity:20917,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Midwest",notes:"West Side Chicago. Home of Bulls/Blackhawks. Iconic arena."},
+{id:113,name:"Allstate Arena",city:"Rosemont",state:"IL",capacity:18500,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Midwest",notes:"O'Hare area. Secondary Chicago arena. WWE/special events."},
+{id:114,name:"Fiserv Forum",city:"Milwaukee",state:"WI",capacity:17500,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Midwest",notes:"Downtown Milwaukee. Home of Bucks. Modern arena."},
+{id:115,name:"Rocket Mortgage FieldHouse",city:"Cleveland",state:"OH",capacity:19432,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Midwest",notes:"Downtown Cleveland. Home of Cavs. Renovated 2019."},
+{id:116,name:"Nationwide Arena",city:"Columbus",state:"OH",capacity:18500,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Midwest",notes:"Arena District Columbus. Home of Blue Jackets."},
+{id:117,name:"KeyBank Center",city:"Buffalo",state:"NY",capacity:19070,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Northeast",notes:"Downtown Buffalo waterfront. Home of Sabres."},
+{id:118,name:"Chase Center",city:"San Francisco",state:"CA",capacity:18064,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"West",notes:"Mission Bay SF. Home of Warriors. State-of-art facility."},
+{id:119,name:"SAP Center",city:"San Jose",state:"CA",capacity:17435,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"West",notes:"Downtown San Jose. Home of Sharks. South Bay anchor."},
+{id:120,name:"Golden 1 Center",city:"Sacramento",state:"CA",capacity:17608,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"West",notes:"Downtown Sacramento. Home of Kings. Solar-powered arena."},
+{id:121,name:"Moda Center",city:"Portland",state:"OR",capacity:19393,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"West",notes:"Rose Quarter Portland. Home of Trail Blazers."},
+{id:122,name:"Ball Arena",city:"Denver",state:"CO",capacity:19520,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"West",notes:"Downtown Denver. Home of Nuggets/Avalanche. Kroenke operated."},
+{id:123,name:"T-Mobile Arena",city:"Las Vegas",state:"NV",capacity:20000,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"West",notes:"The Strip. Home of Golden Knights. AEG/MGM JV. Premier Vegas arena."},
+{id:124,name:"PPG Paints Arena",city:"Pittsburgh",state:"PA",capacity:19100,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Northeast",notes:"Uptown Pittsburgh. Home of Penguins."},
+{id:125,name:"American Airlines Center",city:"Dallas",state:"TX",capacity:19200,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Southwest",notes:"Victory Park Dallas. Home of Mavericks/Stars."},
+{id:126,name:"Toyota Center",city:"Houston",state:"TX",capacity:18300,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Southwest",notes:"Downtown Houston. Home of Rockets."},
+{id:127,name:"AT&T Center",city:"San Antonio",state:"TX",capacity:18418,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Southwest",notes:"East San Antonio. Home of Spurs."},
+{id:128,name:"Frost Bank Center",city:"San Antonio",state:"TX",capacity:18418,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Southwest",notes:"Formerly AT&T Center. Spurs arena. Renamed 2023."},
+{id:129,name:"Smoothie King Center",city:"New Orleans",state:"LA",capacity:16867,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Southeast",notes:"CBD New Orleans. Home of Pelicans."},
+{id:130,name:"FedExForum",city:"Memphis",state:"TN",capacity:18119,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Southeast",notes:"Downtown Memphis. Home of Grizzlies."},
+{id:131,name:"Bon Secours Wellness Arena",city:"Greenville",state:"SC",capacity:16000,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Southeast",notes:"Downtown Greenville SC. Regional anchor."},
+{id:132,name:"Raising Cane's River Center",city:"Baton Rouge",state:"LA",capacity:10000,tier:"MID",type:"Arena",operator:"INDEPENDENT",market:"Southeast",notes:"Downtown Baton Rouge. Multi-use complex."},
+// ===== INDEPENDENT STADIUMS =====
+{id:133,name:"SoFi Stadium",city:"Inglewood",state:"CA",capacity:70240,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"West",notes:"Home of Rams/Chargers. Mega stadium + entertainment district."},
+{id:134,name:"Allegiant Stadium",city:"Las Vegas",state:"NV",capacity:65000,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"West",notes:"Home of Raiders. Domed Vegas stadium. Major concert destination."},
+{id:135,name:"MetLife Stadium",city:"East Rutherford",state:"NJ",capacity:82500,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Northeast",notes:"NYC metro. Home of Giants/Jets. Massive outdoor stadium."},
+{id:136,name:"Yankee Stadium",city:"Bronx",state:"NY",capacity:46537,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Northeast",notes:"The Bronx. Concert events on field. Premium NYC outdoor."},
+{id:137,name:"Citi Field",city:"Queens",state:"NY",capacity:41922,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Northeast",notes:"Flushing. Home of Mets. Concert configuration varies."},
+{id:138,name:"Gillette Stadium",city:"Foxborough",state:"MA",capacity:65878,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Northeast",notes:"Home of Patriots. Major NE stadium shows."},
+{id:139,name:"Lincoln Financial Field",city:"Philadelphia",state:"PA",capacity:69176,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Northeast",notes:"South Philly. Home of Eagles."},
+{id:140,name:"Mercedes-Benz Stadium",city:"Atlanta",state:"GA",capacity:71000,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Southeast",notes:"Downtown Atlanta. Home of Falcons. Retractable roof."},
+{id:141,name:"Nissan Stadium",city:"Nashville",state:"TN",capacity:69143,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Southeast",notes:"East Nashville riverfront. Home of Titans."},
+{id:142,name:"Raymond James Stadium",city:"Tampa",state:"FL",capacity:65890,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Southeast",notes:"Home of Buccaneers. Major FL stadium."},
+{id:143,name:"Hard Rock Stadium",city:"Miami Gardens",state:"FL",capacity:65326,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Southeast",notes:"Home of Dolphins. Major concert/festival destination."},
+{id:144,name:"Soldier Field",city:"Chicago",state:"IL",capacity:61500,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Midwest",notes:"Lakefront Chicago. Home of Bears. Historic landmark."},
+{id:145,name:"Empower Field at Mile High",city:"Denver",state:"CO",capacity:76125,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"West",notes:"Home of Broncos. Mountain backdrop."},
+{id:146,name:"Lumen Field",city:"Seattle",state:"WA",capacity:68740,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"West",notes:"Home of Seahawks/Sounders. Pacific NW anchor."},
+{id:147,name:"AT&T Stadium",city:"Arlington",state:"TX",capacity:80000,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Southwest",notes:"Home of Cowboys. Massive retractable roof. Jerry World."},
+{id:148,name:"NRG Stadium",city:"Houston",state:"TX",capacity:72220,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Southwest",notes:"Home of Texans. Retractable roof."},
+// ===== INDEPENDENT THEATERS & CLUBS =====
+{id:149,name:"Red Rocks Amphitheatre",city:"Morrison",state:"CO",capacity:9525,tier:"MID",type:"Amphitheater",operator:"INDEPENDENT",market:"West",notes:"Iconic natural amphitheater. Jefferson County operated. Bucket-list venue."},
+{id:150,name:"Hollywood Bowl",city:"Los Angeles",state:"CA",capacity:17376,tier:"ARENA",type:"Amphitheater",operator:"INDEPENDENT",market:"West",notes:"LA Phil operated. Historic outdoor bandshell. Iconic LA venue since 1922."},
+{id:151,name:"Greek Theatre",city:"Los Angeles",state:"CA",capacity:5900,tier:"MID",type:"Amphitheater",operator:"INDEPENDENT",market:"West",notes:"Griffith Park. LA Rec & Parks. Intimate outdoor setting."},
+{id:152,name:"Greek Theatre Berkeley",city:"Berkeley",state:"CA",capacity:8500,tier:"MID",type:"Amphitheater",operator:"INDEPENDENT",market:"West",notes:"UC Berkeley campus. Bay Area outdoor concert staple."},
+{id:153,name:"Ryman Auditorium",city:"Nashville",state:"TN",capacity:2362,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Southeast",notes:"Mother Church of Country Music. Opry Entertainment. Historic landmark."},
+{id:154,name:"Grand Ole Opry House",city:"Nashville",state:"TN",capacity:4400,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Southeast",notes:"Opryland. Opry Entertainment. Country music's most famous stage."},
+{id:155,name:"First Avenue",city:"Minneapolis",state:"MN",capacity:1550,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Midwest",notes:"Prince's legendary club. Iconic Minneapolis venue. 7th St Entry attached (250 cap)."},
+{id:156,name:"Bowery Ballroom",city:"New York",state:"NY",capacity:575,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Northeast",notes:"Lower East Side. The Bowery Presents. Premier NYC indie club."},
+{id:157,name:"Mercury Lounge",city:"New York",state:"NY",capacity:250,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Northeast",notes:"LES NYC. Bowery Presents. Intimate showcase room."},
+{id:158,name:"Music Hall of Williamsburg",city:"Brooklyn",state:"NY",capacity:600,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Northeast",notes:"Williamsburg Brooklyn. Bowery Presents. Indie music hub."},
+{id:159,name:"Warsaw",city:"Brooklyn",state:"NY",capacity:1500,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Northeast",notes:"Greenpoint Polish National Home. Unique Brooklyn venue."},
+{id:160,name:"Capitol Theatre",city:"Port Chester",state:"NY",capacity:1800,tier:"CLUB",type:"Theater",operator:"INDEPENDENT",market:"Northeast",notes:"Westchester County. Historic Grateful Dead venue. Jam band circuit."},
+{id:161,name:"The Paramount",city:"Huntington",state:"NY",capacity:1555,tier:"CLUB",type:"Theater",operator:"INDEPENDENT",market:"Northeast",notes:"Long Island venue. Suburban NYC market."},
+{id:162,name:"Hammerstein Ballroom",city:"New York",state:"NY",capacity:3500,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Northeast",notes:"Manhattan Center. Midtown NYC. Versatile event space."},
+{id:163,name:"Mohegan Sun Arena",city:"Uncasville",state:"CT",capacity:10000,tier:"MID",type:"Arena",operator:"INDEPENDENT",market:"Northeast",notes:"Casino resort. Connecticut market. Gaming + entertainment."},
+{id:164,name:"CURE Insurance Arena",city:"Trenton",state:"NJ",capacity:8600,tier:"MID",type:"Arena",operator:"INDEPENDENT",market:"Northeast",notes:"Central NJ. Regional mid-size arena."},
+{id:165,name:"Wind Creek Event Center",city:"Bethlehem",state:"PA",capacity:3400,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Northeast",notes:"Lehigh Valley. Casino entertainment complex."},
+{id:166,name:"Tower Theatre",city:"Upper Darby",state:"PA",capacity:3200,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Northeast",notes:"Philly suburbs. Historic 1928 venue. LN-booked."},
+{id:167,name:"Franklin Music Hall",city:"Philadelphia",state:"PA",capacity:3500,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Northeast",notes:"Northern Liberties. Former Electric Factory. Premier Philly room."},
+{id:168,name:"Trocadero Theatre",city:"Philadelphia",state:"PA",capacity:1200,tier:"CLUB",type:"Theater",operator:"INDEPENDENT",market:"Northeast",notes:"Chinatown Philly. Victorian-era theater."},
+{id:169,name:"The Met Philadelphia",city:"Philadelphia",state:"PA",capacity:3500,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Northeast",notes:"North Broad Street. Restored opera house. LN flagship Philly."},
+{id:170,name:"Agganis Arena",city:"Boston",state:"MA",capacity:7200,tier:"MID",type:"Arena",operator:"INDEPENDENT",market:"Northeast",notes:"Boston University campus. Mid-size Boston arena."},
+{id:171,name:"MGM Music Hall at Fenway",city:"Boston",state:"MA",capacity:5000,tier:"MID",type:"Theater",operator:"LIVE_NATION",market:"Northeast",notes:"Adjacent to Fenway Park. New Boston venue."},
+{id:172,name:"Roadrunner",city:"Boston",state:"MA",capacity:3500,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Northeast",notes:"Brighton Boston. Bowery Boston operated. Modern venue."},
+{id:173,name:"Paradise Rock Club",city:"Boston",state:"MA",capacity:933,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Northeast",notes:"Allston Boston. Crossroads Presents. Classic club."},
+{id:174,name:"Orpheum Theatre Boston",city:"Boston",state:"MA",capacity:2700,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Northeast",notes:"Downtown Crossing. Historic Boston theater."},
+// ===== MIDWEST CONTINUED =====
+{id:175,name:"Aragon Entertainment Center",city:"Chicago",state:"IL",capacity:4500,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Midwest",notes:"Uptown Chicago. Moorish Revival ballroom. Large standing room."},
+{id:176,name:"Metro Chicago",city:"Chicago",state:"IL",capacity:1150,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Midwest",notes:"Wrigleyville. Iconic indie venue since 1982."},
+{id:177,name:"Concord Music Hall",city:"Chicago",state:"IL",capacity:1650,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Midwest",notes:"Logan Square. Converted factory. Modern club."},
+{id:178,name:"Thalia Hall",city:"Chicago",state:"IL",capacity:750,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Midwest",notes:"Pilsen Chicago. Restored 1892 hall. Intimate shows."},
+{id:179,name:"Park West",city:"Chicago",state:"IL",capacity:750,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Midwest",notes:"Lincoln Park Chicago. Seated/standing flexible."},
+{id:180,name:"The Vic Theatre",city:"Chicago",state:"IL",capacity:1400,tier:"CLUB",type:"Theater",operator:"INDEPENDENT",market:"Midwest",notes:"Lakeview Chicago. Jam Productions. Classic room."},
+{id:181,name:"Auditorium Theatre",city:"Chicago",state:"IL",capacity:3875,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Midwest",notes:"South Loop. National Historic Landmark. Adler & Sullivan design."},
+{id:182,name:"Radius Chicago",city:"Chicago",state:"IL",capacity:3500,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Midwest",notes:"Pilsen. Converted steel factory. Electronic/live music."},
+{id:183,name:"Chaifetz Arena",city:"St. Louis",state:"MO",capacity:10600,tier:"MID",type:"Arena",operator:"INDEPENDENT",market:"Midwest",notes:"SLU campus. Mid-size St. Louis arena."},
+{id:184,name:"Enterprise Center",city:"St. Louis",state:"MO",capacity:19150,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Midwest",notes:"Downtown STL. Home of Blues. Major Midwest arena."},
+{id:185,name:"Murat Egyptian Room",city:"Indianapolis",state:"IN",capacity:2600,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Midwest",notes:"Old National Centre. Egyptian-themed historic venue."},
+{id:186,name:"TCU Amphitheater at White River",city:"Indianapolis",state:"IN",capacity:6400,tier:"MID",type:"Amphitheater",operator:"LIVE_NATION",market:"Midwest",notes:"White River State Park. Indy outdoor venue."},
+{id:187,name:"American Family Insurance Amphitheater",city:"Milwaukee",state:"WI",capacity:23000,tier:"ARENA",type:"Amphitheater",operator:"INDEPENDENT",market:"Midwest",notes:"Summerfest grounds. Henry Maier Festival Park."},
+{id:188,name:"The Rave / Eagles Club",city:"Milwaukee",state:"WI",capacity:3500,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Midwest",notes:"Multi-room Milwaukee complex. Multiple configurations."},
+{id:189,name:"Palace Theatre",city:"St. Paul",state:"MN",capacity:2600,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Midwest",notes:"Downtown St. Paul. Historic theater."},
+{id:190,name:"Armory",city:"Minneapolis",state:"MN",capacity:8400,tier:"MID",type:"Theater",operator:"INDEPENDENT",market:"Midwest",notes:"Downtown MPLS. Renovated armory building. Large events."},
+{id:191,name:"Target Center",city:"Minneapolis",state:"MN",capacity:18798,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Midwest",notes:"Downtown MPLS. Home of Timberwolves. Major MN arena."},
+{id:192,name:"Little Caesars Arena",city:"Detroit",state:"MI",capacity:20332,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Midwest",notes:"The District Detroit. Home of Red Wings/Pistons."},
+{id:193,name:"The Masonic Temple",city:"Detroit",state:"MI",capacity:4400,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Midwest",notes:"Cass Corridor. Massive Masonic complex. Multiple rooms."},
+{id:194,name:"Royal Oak Music Theatre",city:"Royal Oak",state:"MI",capacity:1800,tier:"CLUB",type:"Theater",operator:"INDEPENDENT",market:"Midwest",notes:"Detroit suburb. Classic mid-size room."},
+{id:195,name:"Brown County Music Center",city:"Nashville",state:"IN",capacity:2000,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Midwest",notes:"Nashville IN. Brown County. Acoustic gem."},
+// ===== SOUTHEAST CONTINUED =====
+{id:196,name:"Variety Playhouse",city:"Atlanta",state:"GA",capacity:1000,tier:"CLUB",type:"Theater",operator:"INDEPENDENT",market:"Southeast",notes:"Little Five Points Atlanta. Intimate seated shows."},
+{id:197,name:"Terminal West",city:"Atlanta",state:"GA",capacity:800,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southeast",notes:"Westside Atlanta. Industrial chic club."},
+{id:198,name:"Center Stage Atlanta",city:"Atlanta",state:"GA",capacity:1050,tier:"CLUB",type:"Club",operator:"LIVE_NATION",market:"Southeast",notes:"Midtown Atlanta. LN-operated club."},
+{id:199,name:"Cadence Bank Amphitheatre",city:"Alpharetta",state:"GA",capacity:12000,tier:"MID",type:"Amphitheater",operator:"LIVE_NATION",market:"Southeast",notes:"North Atlanta. Formerly Verizon Amphitheatre."},
+{id:200,name:"Cellairis Amphitheatre at Lakewood",city:"Atlanta",state:"GA",capacity:19000,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"Southeast",notes:"South Atlanta. Major GA shed venue."},
+{id:201,name:"Hard Rock Live Orlando",city:"Orlando",state:"FL",capacity:3000,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Southeast",notes:"Universal CityWalk. Tourist corridor venue."},
+{id:202,name:"Daily's Place Amphitheatre",city:"Jacksonville",state:"FL",capacity:5500,tier:"MID",type:"Amphitheater",operator:"INDEPENDENT",market:"Southeast",notes:"TIAA Bank Field complex. NE Florida outdoor."},
+{id:203,name:"Jannus Live",city:"St. Petersburg",state:"FL",capacity:2000,tier:"THEATER",type:"Club",operator:"INDEPENDENT",market:"Southeast",notes:"Downtown St. Pete courtyard. Unique outdoor club."},
+{id:204,name:"The Ritz Ybor",city:"Tampa",state:"FL",capacity:1800,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southeast",notes:"Ybor City Tampa. Multi-level club."},
+{id:205,name:"The Ritz Raleigh",city:"Raleigh",state:"NC",capacity:1400,tier:"CLUB",type:"Club",operator:"LIVE_NATION",market:"Southeast",notes:"Downtown Raleigh. LN-operated club venue."},
+{id:206,name:"Cat's Cradle",city:"Carrboro",state:"NC",capacity:750,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southeast",notes:"Chapel Hill area. Legendary indie venue since 1969."},
+{id:207,name:"The Orange Peel",city:"Asheville",state:"NC",capacity:1050,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southeast",notes:"Downtown Asheville. Premier mountain music venue."},
+{id:208,name:"Orpheum Theatre Memphis",city:"Memphis",state:"TN",capacity:2800,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Southeast",notes:"Beale Street. Historic 1928 theater. Memphis institution."},
+{id:209,name:"Tennessee Theatre",city:"Knoxville",state:"TN",capacity:1631,tier:"CLUB",type:"Theater",operator:"INDEPENDENT",market:"Southeast",notes:"Gay Street Knoxville. Official state theater of TN."},
+{id:210,name:"Exit/In",city:"Nashville",state:"TN",capacity:500,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southeast",notes:"Elliston Place. Iconic Nashville club since 1971."},
+{id:211,name:"The Basement East",city:"Nashville",state:"TN",capacity:800,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southeast",notes:"East Nashville. Rebuilt after 2020 tornado."},
+{id:212,name:"The Basement Nashville",city:"Nashville",state:"TN",capacity:200,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southeast",notes:"Grimey's basement. Intimate showcase room."},
+{id:213,name:"The Bluebird Cafe",city:"Nashville",state:"TN",capacity:100,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southeast",notes:"Green Hills. Iconic songwriter venue. Nashville institution."},
+{id:214,name:"Ascend Amphitheater",city:"Nashville",state:"TN",capacity:6800,tier:"MID",type:"Amphitheater",operator:"LIVE_NATION",market:"Southeast",notes:"Riverfront Nashville. Premium outdoor venue."},
+{id:215,name:"Alabama Theatre",city:"Birmingham",state:"AL",capacity:2500,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Southeast",notes:"Downtown Birmingham. 1927 movie palace. Wurlitzer organ."},
+{id:216,name:"Iron City Birmingham",city:"Birmingham",state:"AL",capacity:1200,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southeast",notes:"Converted warehouse. Birmingham live music anchor."},
+{id:217,name:"Avondale Brewing Company",city:"Birmingham",state:"AL",capacity:3000,tier:"THEATER",type:"Amphitheater",operator:"INDEPENDENT",market:"Southeast",notes:"Outdoor stage. Birmingham's favorite summer venue."},
+{id:218,name:"The Wharf Amphitheater",city:"Orange Beach",state:"AL",capacity:10000,tier:"MID",type:"Amphitheater",operator:"INDEPENDENT",market:"Southeast",notes:"Gulf Coast destination. Summer concert series."},
+{id:219,name:"Saenger Theatre",city:"New Orleans",state:"LA",capacity:2600,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Southeast",notes:"Canal Street NOLA. Italian Renaissance revival. Restored 2013."},
+{id:220,name:"Joy Theater",city:"New Orleans",state:"LA",capacity:1200,tier:"CLUB",type:"Theater",operator:"INDEPENDENT",market:"Southeast",notes:"Canal Street. Art Deco gem. Mid-size NOLA."},
+{id:221,name:"Tipitina's",city:"New Orleans",state:"LA",capacity:850,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southeast",notes:"Uptown NOLA. Legendary music club since 1977."},
+{id:222,name:"House of Blues New Orleans Voodoo Garden",city:"New Orleans",state:"LA",capacity:400,tier:"CLUB",type:"Club",operator:"LIVE_NATION",market:"Southeast",notes:"Intimate outdoor space attached to HOB NOLA."},
+// ===== SOUTHWEST CONTINUED =====
+{id:223,name:"Stubb's Bar-B-Q",city:"Austin",state:"TX",capacity:2100,tier:"THEATER",type:"Amphitheater",operator:"INDEPENDENT",market:"Southwest",notes:"Red River Cultural District. Outdoor amphitheater. Austin icon."},
+{id:224,name:"Emo's Austin",city:"Austin",state:"TX",capacity:1800,tier:"CLUB",type:"Club",operator:"LIVE_NATION",market:"Southwest",notes:"East Riverside. Indoor/outdoor. Alternative music anchor."},
+{id:225,name:"Mohawk Austin",city:"Austin",state:"TX",capacity:1500,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southwest",notes:"Red River. Indoor/outdoor configuration. SXSW staple."},
+{id:226,name:"Scoot Inn",city:"Austin",state:"TX",capacity:800,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southwest",notes:"East Austin. Historic bar venue since 1871."},
+{id:227,name:"Bass Concert Hall",city:"Austin",state:"TX",capacity:2900,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Southwest",notes:"UT Austin campus. Texas Performing Arts."},
+{id:228,name:"The Factory in Deep Ellum",city:"Dallas",state:"TX",capacity:4400,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Southwest",notes:"Deep Ellum. New LN flagship Dallas venue."},
+{id:229,name:"South Side Ballroom",city:"Dallas",state:"TX",capacity:4000,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Southwest",notes:"Lamar Street. Large Dallas club."},
+{id:230,name:"Trees",city:"Dallas",state:"TX",capacity:750,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southwest",notes:"Deep Ellum. Classic Dallas club since 1990."},
+{id:231,name:"White Oak Music Hall",city:"Houston",state:"TX",capacity:3000,tier:"THEATER",type:"Club",operator:"INDEPENDENT",market:"Southwest",notes:"Heights. Indoor/outdoor. Three stages. Houston anchor."},
+{id:232,name:"Warehouse Live",city:"Houston",state:"TX",capacity:1500,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southwest",notes:"EaDo Houston. Converted warehouse. Two rooms."},
+{id:233,name:"Aztec Theatre",city:"San Antonio",state:"TX",capacity:1800,tier:"CLUB",type:"Theater",operator:"INDEPENDENT",market:"Southwest",notes:"Downtown SA. 1926 Mesoamerican revival. Restored."},
+{id:234,name:"Majestic Theatre",city:"San Antonio",state:"TX",capacity:2311,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Southwest",notes:"Downtown SA. 1929 atmospheric theater. City landmark."},
+{id:235,name:"Talking Stick Resort Amphitheatre",city:"Phoenix",state:"AZ",capacity:20000,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"Southwest",notes:"West Phoenix. Arizona's largest amphitheater."},
+{id:236,name:"Arizona Financial Theatre",city:"Phoenix",state:"AZ",capacity:5000,tier:"MID",type:"Theater",operator:"LIVE_NATION",market:"Southwest",notes:"Downtown Phoenix. Versatile mid-size."},
+{id:237,name:"The Van Buren",city:"Phoenix",state:"AZ",capacity:1800,tier:"CLUB",type:"Club",operator:"LIVE_NATION",market:"Southwest",notes:"Downtown Phoenix. Modern club venue."},
+{id:238,name:"Marquee Theatre",city:"Tempe",state:"AZ",capacity:1100,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southwest",notes:"Mill Avenue Tempe. ASU area club."},
+{id:239,name:"Footprint Center",city:"Phoenix",state:"AZ",capacity:18055,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Southwest",notes:"Downtown Phoenix. Home of Suns/Mercury."},
+{id:240,name:"Santa Ana Star Center",city:"Rio Rancho",state:"NM",capacity:7000,tier:"MID",type:"Arena",operator:"INDEPENDENT",market:"Southwest",notes:"ABQ metro. Regional NM arena."},
+{id:241,name:"El Paso County Coliseum",city:"El Paso",state:"TX",capacity:5500,tier:"MID",type:"Arena",operator:"INDEPENDENT",market:"Southwest",notes:"Border market. Regional venue."},
+{id:242,name:"Don Haskins Center",city:"El Paso",state:"TX",capacity:12222,tier:"MID",type:"Arena",operator:"INDEPENDENT",market:"Southwest",notes:"UTEP campus. El Paso arena."},
+// ===== WEST CONTINUED =====
+{id:243,name:"Troubadour",city:"West Hollywood",state:"CA",capacity:500,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"West",notes:"Santa Monica Blvd. Legendary since 1957. Artist discovery room."},
+{id:244,name:"The Independent",city:"San Francisco",state:"CA",capacity:500,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"West",notes:"Divisadero SF. Intimate neighborhood club."},
+{id:245,name:"The Regency Ballroom",city:"San Francisco",state:"CA",capacity:1400,tier:"CLUB",type:"Theater",operator:"INDEPENDENT",market:"West",notes:"Van Ness SF. Restored 1909 ballroom."},
+{id:246,name:"Great American Music Hall",city:"San Francisco",state:"CA",capacity:600,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"West",notes:"Tenderloin SF. Ornate 1907 venue. Standing + balcony."},
+{id:247,name:"Fox Theater Oakland",city:"Oakland",state:"CA",capacity:2800,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"West",notes:"Downtown Oakland. Restored Art Deco masterpiece."},
+{id:248,name:"Paramount Theatre Oakland",city:"Oakland",state:"CA",capacity:3476,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"West",notes:"Downtown Oakland. 1931 Art Deco landmark."},
+{id:249,name:"The Masonic SF",city:"San Francisco",state:"CA",capacity:3300,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"West",notes:"Nob Hill. Renovated. Premium SF mid-size."},
+{id:250,name:"The Catalyst",city:"Santa Cruz",state:"CA",capacity:900,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"West",notes:"Downtown Santa Cruz. Iconic Central Coast venue."},
+{id:251,name:"Belly Up Tavern",city:"Solana Beach",state:"CA",capacity:600,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"West",notes:"North County San Diego. Legendary beach club."},
+{id:252,name:"Observatory North Park",city:"San Diego",state:"CA",capacity:1100,tier:"CLUB",type:"Club",operator:"LIVE_NATION",market:"West",notes:"North Park SD. Converted 1929 theater."},
+{id:253,name:"Pechanga Arena San Diego",city:"San Diego",state:"CA",capacity:14500,tier:"MID",type:"Arena",operator:"INDEPENDENT",market:"West",notes:"Midway District. Formerly Valley View Casino Center."},
+{id:254,name:"The Wiltern",city:"Los Angeles",state:"CA",capacity:1850,tier:"CLUB",type:"Theater",operator:"LIVE_NATION",market:"West",notes:"Koreatown LA. Art Deco gem. Standing + balcony seating."},
+{id:255,name:"The Novo by Microsoft",city:"Los Angeles",state:"CA",capacity:2300,tier:"THEATER",type:"Theater",operator:"AEG",market:"West",notes:"L.A. Live campus. AEG operated."},
+{id:256,name:"The Greek Theatre LA",city:"Los Angeles",state:"CA",capacity:5900,tier:"MID",type:"Amphitheater",operator:"INDEPENDENT",market:"West",notes:"Griffith Park. LA Rec & Parks. Iconic outdoor venue."},
+{id:257,name:"Shrine Auditorium",city:"Los Angeles",state:"CA",capacity:6300,tier:"MID",type:"Theater",operator:"INDEPENDENT",market:"West",notes:"University Park LA. Al Malaikah Shriners. Award show venue."},
+{id:258,name:"The Palladium Hollywood",city:"Los Angeles",state:"CA",capacity:3700,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"West",notes:"Sunset Blvd. Art Deco. Major Hollywood concert venue."},
+{id:259,name:"The Belasco",city:"Los Angeles",state:"CA",capacity:1500,tier:"CLUB",type:"Theater",operator:"INDEPENDENT",market:"West",notes:"Downtown LA. Restored 1926 theater."},
+{id:260,name:"The Echo",city:"Los Angeles",state:"CA",capacity:350,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"West",notes:"Echo Park. Indie/alternative anchor. Spaceland legacy."},
+{id:261,name:"The Echoplex",city:"Los Angeles",state:"CA",capacity:750,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"West",notes:"Echo Park basement. Below The Echo. Larger room."},
+{id:262,name:"Teragram Ballroom",city:"Los Angeles",state:"CA",capacity:600,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"West",notes:"DTLA. Goldenvoice operated. Intimate club."},
+{id:263,name:"Santa Barbara Bowl",city:"Santa Barbara",state:"CA",capacity:4562,tier:"THEATER",type:"Amphitheater",operator:"INDEPENDENT",market:"West",notes:"Hillside amphitheater. Central Coast destination. Beautiful setting."},
+{id:264,name:"Paramount Theatre Seattle",city:"Seattle",state:"WA",capacity:2807,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"West",notes:"Downtown Seattle. STG operated. 1928 theater."},
+{id:265,name:"Moore Theatre",city:"Seattle",state:"WA",capacity:1800,tier:"CLUB",type:"Theater",operator:"INDEPENDENT",market:"West",notes:"Downtown Seattle. STG. Oldest operating theater in Seattle (1907)."},
+{id:266,name:"Neptune Theatre",city:"Seattle",state:"WA",capacity:1000,tier:"CLUB",type:"Theater",operator:"INDEPENDENT",market:"West",notes:"University District. STG. Art Deco."},
+{id:267,name:"Crystal Ballroom",city:"Portland",state:"OR",capacity:1500,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"West",notes:"Downtown Portland. McMenamins. Historic floating dance floor."},
+{id:268,name:"Roseland Theater",city:"Portland",state:"OR",capacity:1400,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"West",notes:"Downtown Portland. Major PDX club venue."},
+{id:269,name:"Revolution Hall",city:"Portland",state:"OR",capacity:850,tier:"CLUB",type:"Theater",operator:"INDEPENDENT",market:"West",notes:"Former high school. Southeast Portland. Intimate theater."},
+{id:270,name:"Edgefield",city:"Troutdale",state:"OR",capacity:3000,tier:"THEATER",type:"Amphitheater",operator:"INDEPENDENT",market:"West",notes:"McMenamins estate. Outdoor amphitheater. East Portland suburb."},
+{id:271,name:"MGM Grand Garden Arena",city:"Las Vegas",state:"NV",capacity:17157,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"West",notes:"MGM Grand Strip. Major fight/concert venue. Vegas anchor."},
+{id:272,name:"The Theater at Virgin Hotels",city:"Las Vegas",state:"NV",capacity:4500,tier:"THEATER",type:"Theater",operator:"AEG",market:"West",notes:"Formerly Hard Rock Joint. Off-strip. AEG operated."},
+{id:273,name:"Zappos Theater",city:"Las Vegas",state:"NV",capacity:7000,tier:"MID",type:"Theater",operator:"LIVE_NATION",market:"West",notes:"Planet Hollywood. Residency venue. LN operated."},
+{id:274,name:"Dolby Live at Park MGM",city:"Las Vegas",state:"NV",capacity:5200,tier:"MID",type:"Theater",operator:"INDEPENDENT",market:"West",notes:"Park MGM. Premium residency theater."},
+{id:275,name:"Wynn Las Vegas Encore Theater",city:"Las Vegas",state:"NV",capacity:1500,tier:"CLUB",type:"Theater",operator:"INDEPENDENT",market:"West",notes:"Wynn resort. Ultra-premium intimate residency."},
+{id:276,name:"Red Butte Garden Amphitheatre",city:"Salt Lake City",state:"UT",capacity:4000,tier:"THEATER",type:"Amphitheater",operator:"INDEPENDENT",market:"West",notes:"University of Utah. Summer concert series. Mountain setting."},
+{id:277,name:"The Depot",city:"Salt Lake City",state:"UT",capacity:1200,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"West",notes:"Gateway District. Converted train depot. SLC anchor."},
+{id:278,name:"KettleHouse Amphitheater",city:"Bonner",state:"MT",capacity:4100,tier:"THEATER",type:"Amphitheater",operator:"INDEPENDENT",market:"West",notes:"Near Missoula. Riverside mountain amphitheater."},
+{id:279,name:"Knitting Factory Boise",city:"Boise",state:"ID",capacity:999,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"West",notes:"Downtown Boise. Idaho's premier club."},
+// ===== MORE NORTHEAST =====
+{id:280,name:"The Egg",city:"Albany",state:"NY",capacity:982,tier:"CLUB",type:"Theater",operator:"INDEPENDENT",market:"Northeast",notes:"Empire State Plaza. Unique modernist performing arts center."},
+{id:281,name:"Palace Theatre Albany",city:"Albany",state:"NY",capacity:2800,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Northeast",notes:"Downtown Albany. 1931 Art Deco. Capital District anchor."},
+{id:282,name:"College Street Music Hall",city:"New Haven",state:"CT",capacity:2000,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Northeast",notes:"Downtown New Haven. Premier CT club/theater."},
+{id:283,name:"The Dome at Oakdale",city:"Wallingford",state:"CT",capacity:5000,tier:"MID",type:"Theater",operator:"LIVE_NATION",market:"Northeast",notes:"CT theater-in-the-round. Seasonal programming."},
+{id:284,name:"State Theatre",city:"Portland",state:"ME",capacity:1800,tier:"CLUB",type:"Theater",operator:"INDEPENDENT",market:"Northeast",notes:"Downtown Portland ME. 1929 Art Deco. Maine's premier venue."},
+{id:285,name:"Thompson's Point",city:"Portland",state:"ME",capacity:6000,tier:"MID",type:"Amphitheater",operator:"INDEPENDENT",market:"Northeast",notes:"Outdoor Portland ME venue. Summer concert destination."},
+{id:286,name:"Higher Ground",city:"South Burlington",state:"VT",capacity:750,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Northeast",notes:"Vermont's premier club. Burlington area."},
+{id:287,name:"Santander Arena",city:"Reading",state:"PA",capacity:9000,tier:"MID",type:"Arena",operator:"INDEPENDENT",market:"Northeast",notes:"Downtown Reading PA. Regional mid-size arena."},
+// ===== MORE SOUTHEAST =====
+{id:288,name:"The Anthem",city:"Washington",state:"DC",capacity:6000,tier:"MID",type:"Theater",operator:"INDEPENDENT",market:"Northeast",notes:"The Wharf DC. IMP. Adjustable 2500-6000 capacity."},
+{id:289,name:"DAR Constitution Hall",city:"Washington",state:"DC",capacity:3702,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Northeast",notes:"National Mall area. Historic DC concert hall."},
+{id:290,name:"The Howard Theatre",city:"Washington",state:"DC",capacity:450,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Northeast",notes:"U Street DC. Historic African American venue restored 2012."},
+{id:291,name:"Merriweather Post Pavilion",city:"Columbia",state:"MD",capacity:19319,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"Northeast",notes:"Howard County MD. DC metro amphitheater. LN operated."},
+{id:292,name:"The NorVa",city:"Norfolk",state:"VA",capacity:1500,tier:"CLUB",type:"Club",operator:"LIVE_NATION",market:"Southeast",notes:"Downtown Norfolk VA. Hampton Roads market."},
+{id:293,name:"Sprint Pavilion",city:"Charlottesville",state:"VA",capacity:4000,tier:"THEATER",type:"Amphitheater",operator:"INDEPENDENT",market:"Southeast",notes:"Downtown mall. Free summer concerts. UVA market."},
+{id:294,name:"Red Hat Amphitheater",city:"Raleigh",state:"NC",capacity:6000,tier:"MID",type:"Amphitheater",operator:"LIVE_NATION",market:"Southeast",notes:"Downtown Raleigh. Open-air urban amphitheater."},
+{id:295,name:"Charlotte Metro Credit Union Amphitheatre",city:"Charlotte",state:"NC",capacity:5000,tier:"MID",type:"Amphitheater",operator:"LIVE_NATION",market:"Southeast",notes:"AvidXchange Music Factory. Uptown Charlotte."},
+{id:296,name:"North Charleston Coliseum",city:"North Charleston",state:"SC",capacity:13000,tier:"MID",type:"Arena",operator:"INDEPENDENT",market:"Southeast",notes:"Charleston SC area. Lowcountry market."},
+{id:297,name:"Music Farm",city:"Charleston",state:"SC",capacity:1000,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southeast",notes:"Upper King Street. Charleston's premier live music club."},
+{id:298,name:"Florida Theatre",city:"Jacksonville",state:"FL",capacity:1865,tier:"CLUB",type:"Theater",operator:"INDEPENDENT",market:"Southeast",notes:"Downtown Jacksonville. 1927 atmospheric theater."},
+{id:299,name:"Ruth Eckerd Hall",city:"Clearwater",state:"FL",capacity:2180,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Southeast",notes:"Tampa Bay area. Premier performing arts center."},
+{id:300,name:"Van Wezel Performing Arts Hall",city:"Sarasota",state:"FL",capacity:1736,tier:"CLUB",type:"Theater",operator:"INDEPENDENT",market:"Southeast",notes:"Bayfront Sarasota. Purple seashell architecture."},
+{id:301,name:"St. Augustine Amphitheatre",city:"St. Augustine",state:"FL",capacity:4000,tier:"THEATER",type:"Amphitheater",operator:"INDEPENDENT",market:"Southeast",notes:"Historic city. Outdoor amphitheater. NE Florida."},
+{id:302,name:"Coca-Cola Roxy",city:"Atlanta",state:"GA",capacity:3600,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"Southeast",notes:"The Battery Atlanta. Adjacent to Truist Park."},
+{id:303,name:"Buckhead Theatre",city:"Atlanta",state:"GA",capacity:1100,tier:"CLUB",type:"Theater",operator:"LIVE_NATION",market:"Southeast",notes:"Buckhead Atlanta. LN operated."},
+{id:304,name:"The Eastern",city:"Atlanta",state:"GA",capacity:2500,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Southeast",notes:"East Atlanta. New venue. State-of-art."},
+{id:305,name:"Thomas Wolfe Auditorium",city:"Asheville",state:"NC",capacity:2400,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Southeast",notes:"Downtown Asheville. Harrah's Cherokee Center."},
+{id:306,name:"Greenville Township Auditorium",city:"Greenville",state:"SC",capacity:2100,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Southeast",notes:"Downtown Greenville. Community venue."},
+// ===== MORE MIDWEST =====
+{id:307,name:"Huntington Bank Pavilion",city:"Chicago",state:"IL",capacity:8000,tier:"MID",type:"Amphitheater",operator:"LIVE_NATION",market:"Midwest",notes:"Northerly Island. Chicago lakefront outdoor."},
+{id:308,name:"Salt Shed",city:"Chicago",state:"IL",capacity:3400,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Midwest",notes:"Goose Island. Indoor/outdoor. Newest Chicago venue."},
+{id:309,name:"Byline Bank Aragon Ballroom",city:"Chicago",state:"IL",capacity:4500,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Midwest",notes:"Uptown. Moorish revival. Standing room."},
+{id:310,name:"The Anthem at The Andrew J Brady Music Center",city:"Cincinnati",state:"OH",capacity:4500,tier:"THEATER",type:"Amphitheater",operator:"INDEPENDENT",market:"Midwest",notes:"The Banks Cincinnati. Indoor/outdoor. Ohio River views."},
+{id:311,name:"Bogart's",city:"Cincinnati",state:"OH",capacity:1500,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Midwest",notes:"Corryville Cincinnati. UC area. Classic club."},
+{id:312,name:"Riverbend Music Center",city:"Cincinnati",state:"OH",capacity:20500,tier:"ARENA",type:"Amphitheater",operator:"LIVE_NATION",market:"Midwest",notes:"East Cincinnati. Ohio River amphitheater."},
+{id:313,name:"Jacobs Pavilion",city:"Cleveland",state:"OH",capacity:5700,tier:"MID",type:"Amphitheater",operator:"LIVE_NATION",market:"Midwest",notes:"Nautica Cleveland. Lakefront amphitheater."},
+{id:314,name:"The Agora Theatre",city:"Cleveland",state:"OH",capacity:2000,tier:"THEATER",type:"Theater",operator:"AEG",market:"Midwest",notes:"Euclid Ave Cleveland. Historic rock venue."},
+{id:315,name:"Kemba Live!",city:"Columbus",state:"OH",capacity:2200,tier:"THEATER",type:"Club",operator:"LIVE_NATION",market:"Midwest",notes:"Arena District Columbus. Outdoor venue."},
+{id:316,name:"Newport Music Hall",city:"Columbus",state:"OH",capacity:1700,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Midwest",notes:"OSU campus area. Longest-running rock club in US."},
+{id:317,name:"Stage AE",city:"Pittsburgh",state:"PA",capacity:5500,tier:"MID",type:"Theater",operator:"INDEPENDENT",market:"Northeast",notes:"North Shore Pittsburgh. Indoor/outdoor. PromoWest."},
+{id:318,name:"Mr. Smalls Theatre",city:"Millvale",state:"PA",capacity:600,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Northeast",notes:"Converted church. Pittsburgh area. Unique venue."},
+{id:319,name:"The Crofoot",city:"Pontiac",state:"MI",capacity:1000,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Midwest",notes:"Pontiac MI. Detroit suburb. Multi-room complex."},
+{id:320,name:"Summerfest Grounds",city:"Milwaukee",state:"WI",capacity:40000,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Midwest",notes:"Henry Maier Festival Park. World's largest music festival."},
+// ===== MORE SOUTHWEST =====
+{id:321,name:"Ryman Auditorium",city:"Nashville",state:"TN",capacity:2362,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Southeast",notes:"Mother Church of Country Music. National Historic Landmark."},
+{id:322,name:"Paper Tiger",city:"San Antonio",state:"TX",capacity:650,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southwest",notes:"St. Mary's Strip. SA indie music hub."},
+{id:323,name:"Gruene Hall",city:"New Braunfels",state:"TX",capacity:800,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southwest",notes:"Texas Hill Country. Oldest dance hall in Texas (1878)."},
+{id:324,name:"Billy Bob's Texas",city:"Fort Worth",state:"TX",capacity:6000,tier:"MID",type:"Club",operator:"INDEPENDENT",market:"Southwest",notes:"Stockyards. World's largest honky tonk. Fort Worth icon."},
+{id:325,name:"Granada Theater",city:"Dallas",state:"TX",capacity:700,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southwest",notes:"Lower Greenville. 1946 movie house. Intimate Dallas room."},
+{id:326,name:"Tulsa Theater",city:"Tulsa",state:"OK",capacity:2800,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Southwest",notes:"Brady Arts District. Renovated 1914 venue."},
+{id:327,name:"Cain's Ballroom",city:"Tulsa",state:"OK",capacity:1800,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"Southwest",notes:"Historic Tulsa. Carnegie of country western swing."},
+{id:328,name:"The Criterion",city:"Oklahoma City",state:"OK",capacity:4200,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"Southwest",notes:"Bricktown OKC. Converted theater. Premier OKC venue."},
+{id:329,name:"Tower Amphitheater",city:"Austin",state:"TX",capacity:5000,tier:"MID",type:"Amphitheater",operator:"INDEPENDENT",market:"Southwest",notes:"South Austin. Outdoor venue."},
+{id:330,name:"The Rustic",city:"Dallas",state:"TX",capacity:3000,tier:"THEATER",type:"Club",operator:"INDEPENDENT",market:"Southwest",notes:"Uptown Dallas. Indoor/outdoor restaurant venue."},
+// ===== FILL TO 340+ =====
+{id:331,name:"Brooklyn Mirage",city:"Brooklyn",state:"NY",capacity:6000,tier:"MID",type:"Club",operator:"INDEPENDENT",market:"Northeast",notes:"East Williamsburg. Avant Gardner complex. Outdoor summer venue."},
+{id:332,name:"Avant Gardner",city:"Brooklyn",state:"NY",capacity:5000,tier:"MID",type:"Club",operator:"INDEPENDENT",market:"Northeast",notes:"East Williamsburg. Kings Hall + Great Hall. Electronic music hub."},
+{id:333,name:"Wrigley Field",city:"Chicago",state:"IL",capacity:41649,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Midwest",notes:"Wrigleyville. Concert events on field. Iconic ballpark."},
+{id:334,name:"Fenway Park",city:"Boston",state:"MA",capacity:37755,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Northeast",notes:"Red Sox. Summer concert series. Iconic Boston venue."},
+{id:335,name:"Petco Park",city:"San Diego",state:"CA",capacity:42445,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"West",notes:"East Village SD. Concert events. Padres ballpark."},
+{id:336,name:"Oracle Park",city:"San Francisco",state:"CA",capacity:41265,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"West",notes:"China Basin SF. Concert events. Bay views."},
+{id:337,name:"Dodger Stadium",city:"Los Angeles",state:"CA",capacity:56000,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"West",notes:"Chavez Ravine. Massive capacity stadium shows."},
+{id:338,name:"Globe Life Field",city:"Arlington",state:"TX",capacity:40300,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Southwest",notes:"Rangers ballpark. Retractable roof. DFW market."},
+{id:339,name:"Minute Maid Park",city:"Houston",state:"TX",capacity:41168,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Southwest",notes:"Downtown Houston. Retractable roof. Astros ballpark."},
+{id:340,name:"Truist Park",city:"Atlanta",state:"GA",capacity:41084,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Southeast",notes:"The Battery. Braves ballpark. Entertainment district."},
+{id:341,name:"Nationals Park",city:"Washington",state:"DC",capacity:41339,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Northeast",notes:"Navy Yard DC. Concert events. Nationals ballpark."},
+{id:342,name:"Oriole Park",city:"Baltimore",state:"MD",capacity:45971,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Northeast",notes:"Camden Yards. Concert events. Historic ballpark."},
+{id:343,name:"Citizens Bank Park",city:"Philadelphia",state:"PA",capacity:42792,tier:"STADIUM",type:"Stadium",operator:"INDEPENDENT",market:"Northeast",notes:"South Philly. Phillies. Concert events."},
+{id:344,name:"Intuit Dome",city:"Inglewood",state:"CA",capacity:18000,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"West",notes:"New Clippers arena. Opened 2024. State-of-art technology."},
+{id:345,name:"Paycom Center",city:"Oklahoma City",state:"OK",capacity:18203,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Southwest",notes:"Downtown OKC. Home of Thunder."},
+{id:346,name:"BOK Center",city:"Tulsa",state:"OK",capacity:19199,tier:"ARENA",type:"Arena",operator:"INDEPENDENT",market:"Southwest",notes:"Downtown Tulsa. Major Oklahoma arena."},
+{id:347,name:"Dickies Arena",city:"Fort Worth",state:"TX",capacity:14000,tier:"MID",type:"Arena",operator:"INDEPENDENT",market:"Southwest",notes:"Cultural District. Modern multi-use Fort Worth arena."},
+{id:348,name:"The Chelsea at The Cosmopolitan",city:"Las Vegas",state:"NV",capacity:3200,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"West",notes:"Strip boutique theater. Intimate Vegas shows."},
+{id:349,name:"Bakkt Theater",city:"Las Vegas",state:"NV",capacity:5200,tier:"MID",type:"Theater",operator:"INDEPENDENT",market:"West",notes:"Planet Hollywood. Vegas residency venue."},
+{id:350,name:"Resorts World Theatre",city:"Las Vegas",state:"NV",capacity:5000,tier:"MID",type:"Theater",operator:"AEG",market:"West",notes:"Resorts World. AEG-booked residency theater."},
+{id:351,name:"The Pearl at Palms",city:"Las Vegas",state:"NV",capacity:2500,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"West",notes:"Palms Casino. Off-strip theater."},
+{id:352,name:"Brooklyn Bowl Las Vegas",city:"Las Vegas",state:"NV",capacity:2200,tier:"THEATER",type:"Club",operator:"LIVE_NATION",market:"West",notes:"LINQ Promenade. Bowling + live music."},
+{id:353,name:"House of Blues Las Vegas",city:"Las Vegas",state:"NV",capacity:2500,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"West",notes:"Mandalay Bay. LN Vegas anchor."},
+{id:354,name:"The Smith Center",city:"Las Vegas",state:"NV",capacity:2050,tier:"THEATER",type:"Theater",operator:"INDEPENDENT",market:"West",notes:"Downtown Arts District. Performing arts center. Neo-Art Deco."},
+{id:355,name:"Marquis Theater",city:"Denver",state:"CO",capacity:500,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"West",notes:"Larimer Street. Intimate Denver club."},
+{id:356,name:"Cervantes' Masterpiece Ballroom",city:"Denver",state:"CO",capacity:750,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"West",notes:"Five Points Denver. Jam/electronic music hub."},
+{id:357,name:"Belly Up Aspen",city:"Aspen",state:"CO",capacity:450,tier:"CLUB",type:"Club",operator:"INDEPENDENT",market:"West",notes:"Aspen resort market. Premium mountain club."},
+{id:358,name:"The Warfield",city:"San Francisco",state:"CA",capacity:2300,tier:"THEATER",type:"Theater",operator:"LIVE_NATION",market:"West",notes:"Market Street. Standing floor + balcony seating."},
+{id:359,name:"Ascend Amphitheater",city:"Nashville",state:"TN",capacity:6800,tier:"MID",type:"Amphitheater",operator:"LIVE_NATION",market:"Southeast",notes:"Riverfront Park. Downtown Nashville outdoor."},
+{id:360,name:"Cajundome",city:"Lafayette",state:"LA",capacity:13500,tier:"MID",type:"Arena",operator:"INDEPENDENT",market:"Southeast",notes:"UL Lafayette campus. Cajun Country arena."}
+];
+
+// Deduplicate by name (keep first occurrence)
+const seen=new Set();const V=VENUES.filter(v=>{const k=v.name;if(seen.has(k))return false;seen.add(k);return true;});
+V.forEach((v,i)=>v.id=i+1);
+
+// State & filter state
+let filters={search:'',op:'',tp:'',tr:'',st:''};
+let sortCol='name',sortDir=1;
+let expandedId=null;
+
+const $=s=>document.querySelector(s);
+const $$=s=>document.querySelectorAll(s);
+
+function init(){
+  // Populate state dropdown
+  const states=[...new Set(V.map(v=>v.state))].sort();
+  const sel=$('#stateF');
+  states.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
+  // Stats
+  $('#sTot').textContent=V.length;
+  const markets=[...new Set(V.map(v=>v.market))];
+  $('#sMkt').textContent=markets.length;
+  $('#sSt').textContent=states.length;
+  // Events
+  $('#search').addEventListener('input',e=>{filters.search=e.target.value.toLowerCase();render();});
+  $$('.fbtn').forEach(b=>b.addEventListener('click',e=>{
+    const f=b.dataset.f,v=b.dataset.v;
+    $$(`.fbtn[data-f="${f}"]`).forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    filters[f]=v;render();
+  }));
+  $('#stateF').addEventListener('change',e=>{filters.st=e.target.value;render();});
+  $$('thead th').forEach(th=>th.addEventListener('click',()=>{
+    const c=th.dataset.col;if(!c)return;
+    if(sortCol===c)sortDir*=-1;else{sortCol=c;sortDir=1;}
+    render();
+  }));
+  $('#genRoute').addEventListener('click',generateRoute);
+  render();
+  renderAnalysis();
+}
+
+function getFiltered(){
+  return V.filter(v=>{
+    if(filters.search){
+      const s=filters.search;
+      if(!v.name.toLowerCase().includes(s)&&!v.city.toLowerCase().includes(s)&&!v.state.toLowerCase().includes(s))return false;
+    }
+    if(filters.op&&v.operator!==filters.op)return false;
+    if(filters.tp&&v.type!==filters.tp)return false;
+    if(filters.tr&&v.tier!==filters.tr)return false;
+    if(filters.st&&v.state!==filters.st)return false;
+    return true;
+  });
+}
+
+function render(){
+  const f=getFiltered();
+  f.sort((a,b)=>{
+    let av=a[sortCol],bv=b[sortCol];
+    if(typeof av==='string')av=av.toLowerCase();
+    if(typeof bv==='string')bv=bv.toLowerCase();
+    if(av<bv)return -1*sortDir;if(av>bv)return sortDir;return 0;
+  });
+  $('#showCount').innerHTML=`Showing <b>${f.length}</b> of <b>${V.length}</b> venues`;
+  const tbody=$('#tbody');
+  const opClass=o=>o==='LIVE_NATION'?'op-LN':o==='AEG'?'op-AEG':o==='OVG'?'op-OVG':o==='MSG'?'op-MSG':'op-IND';
+  const opLabel=o=>o==='LIVE_NATION'?'Live Nation':o;
+  let html='';
+  f.forEach(v=>{
+    html+=`<tr data-id="${v.id}" onclick="toggleRow(${v.id})">
+      <td class="${opClass(v.operator)}">${v.name}</td>
+      <td>${v.city}</td><td>${v.state}</td>
+      <td>${v.capacity.toLocaleString()}</td>
+      <td><span class="tier-badge tier-${v.tier}">${v.tier}</span></td>
+      <td class="${opClass(v.operator)}">${opLabel(v.operator)}</td>
+      <td>${v.type}</td></tr>`;
+    if(expandedId===v.id){
+      const route=v.capacity<2000?'D':v.capacity<5000?'C':v.capacity<15000?'B':'A';
+      html+=`<tr class="detail-row"><td colspan="7"><div class="detail-content">
+        <div class="dl">
+          <dt>Market Region</dt><dd>${v.market}</dd>
+          <dt>Capacity</dt><dd>${v.capacity.toLocaleString()}</dd>
+          <dt>Routing Tier</dt><dd>${route} (${route==='A'?'Major/Headliner':route==='B'?'Support/Mid-Level':route==='C'?'Developing/Club':'Emerging/Showcase'})</dd>
+          <dt>Notes</dt><dd>${v.notes}</dd>
+        </div></div></td></tr>`;
+    }
+  });
+  tbody.innerHTML=html;
+}
+
+window.toggleRow=function(id){expandedId=expandedId===id?null:id;render();};
+
+function renderAnalysis(){
+  // Top states
+  const stateCounts={};V.forEach(v=>{stateCounts[v.state]=(stateCounts[v.state]||0)+1;});
+  const top=Object.entries(stateCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const maxC=top[0]?top[0][1]:1;
+  let bh='';
+  top.forEach(([st,c])=>{
+    bh+=`<div class="bar-row"><div class="bar-label">${st}</div><div class="bar-fill" style="width:${c/maxC*100}%;background:var(--green)">${c}</div></div>`;
+  });
+  $('#marketBars').innerHTML=bh;
+
+  // Operator share
+  const opCounts={};V.forEach(v=>{opCounts[v.operator]=(opCounts[v.operator]||0)+1;});
+  const ops=Object.entries(opCounts).sort((a,b)=>b[1]-a[1]);
+  const maxO=ops[0]?ops[0][1]:1;
+  const opColors={LIVE_NATION:'var(--green)',AEG:'var(--blue)',OVG:'var(--cyan)',MSG:'var(--gold)',INDEPENDENT:'var(--white)'};
+  let oh='';
+  ops.forEach(([op,c])=>{
+    const label=op==='LIVE_NATION'?'Live Nation':op;
+    oh+=`<div class="bar-row"><div class="bar-label">${label}</div><div class="bar-fill" style="width:${c/maxO*100}%;background:${opColors[op]||'var(--white)'}">${c}</div></div>`;
+  });
+  $('#opBars').innerHTML=oh;
+
+  // State grid
+  const stateEntries=Object.entries(stateCounts).sort((a,b)=>b[1]-a[1]);
+  let sg='';
+  stateEntries.forEach(([st,c])=>{
+    const totalCap=V.filter(v=>v.state===st).reduce((s,v)=>s+v.capacity,0);
+    sg+=`<div class="market-card"><h4>${st}</h4><div class="mc-stat">${c} venues · ${(totalCap/1000).toFixed(0)}K total capacity</div></div>`;
+  });
+  $('#stateGrid').innerHTML=sg;
+}
+
+async function generateRoute(){
+  const artist=$('#tArtist').value.trim();
+  const shows=$('#tShows').value||'20';
+  const tier=$('#tTier').value;
+  const region=$('#tRegion').value;
+  if(!artist){alert('Enter artist name');return;}
+  const btn=$('#genRoute');const res=$('#tourResult');
+  btn.disabled=true;btn.textContent='GENERATING...';res.style.display='block';res.textContent='Querying touring intelligence...';
+
+  const filtered=getFiltered();
+  const venueList=filtered.slice(0,80).map(v=>`${v.name} (${v.city}, ${v.state}) - ${v.capacity.toLocaleString()} cap - ${v.type}`).join('\n');
+
+  const prompt=`Generate an optimal ${shows}-date tour routing for ${artist}.
+${tier?`Preferred venue tier: ${tier}`:''}
+${region&&region!=='National'?`Focus region: ${region}`:'National tour'}
+
+Available venues from our database:
+${venueList}
+
+Provide a numbered routing with:
+1. City/Market → Recommended Venue → Capacity
+Include routing logic (geographic efficiency, market spacing, day-of-week optimization).
+End with total estimated capacity reach and routing notes.`;
+
+  try{
+    const r=await fetch('https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        contents:[{parts:[{text:prompt}]}],
+        system_instruction:{parts:[{text:"You are a professional touring consultant with expertise in venue routing, ticket scaling, and live music economics. Provide specific, actionable tour routing advice based on capacity tiers, market demographics, and promoter relationships."}]}
+      })
+    });
+    const d=await r.json();
+    const text=d?.candidates?.[0]?.content?.parts?.[0]?.text||'No response generated.';
+    res.textContent=text;
+  }catch(e){res.textContent='Error: '+e.message;}
+  btn.disabled=false;btn.textContent='GENERATE ROUTE';
+}
+
+init();
+</script>
+</body>
+</html>
