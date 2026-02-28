@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Empathic Guest Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#080c12;--card:#0e1623;--border:#1c2a3a;--gold:#c8a84e;--teal:#00e5d4;--red:#ff3d5a;--green:#00e676;--text:#e8e6e1;--muted:#7a8a9e;--card-hover:#131f30}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+h1,h2,h3,.guest-name{font-family:'Playfair Display',serif}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);background:var(--card);flex-shrink:0}
+.header-left{display:flex;align-items:center;gap:16px}
+.header h1{font-size:20px;color:var(--gold);letter-spacing:1px}
+.header .badge{font-size:11px;color:var(--teal);opacity:.8;font-family:'Inter',sans-serif;font-weight:400}
+.header-right{display:flex;align-items:center;gap:16px}
+.hotel-name{font-size:14px;color:var(--muted)}
+.search-box{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;width:220px;outline:none}
+.search-box:focus{border-color:var(--teal)}
+.filter-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;transition:.2s}
+.filter-btn.active,.filter-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* Layout */
+.main{display:flex;flex:1;overflow:hidden}
+.sidebar{width:360px;min-width:360px;border-right:1px solid var(--border);overflow-y:auto;background:var(--bg)}
+.portrait-panel{flex:1;overflow-y:auto;padding:24px 32px}
+
+/* Sidebar sections */
+.section-label{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);padding:16px 16px 8px;font-weight:600}
+
+/* Alerts */
+.alert-card{margin:4px 10px;padding:12px 14px;border-radius:8px;border-left:3px solid var(--red);background:var(--card);cursor:pointer;transition:.2s;position:relative}
+.alert-card.amber{border-left-color:var(--gold)}
+.alert-card:hover{background:var(--card-hover)}
+.alert-card .alert-guest{font-size:13px;font-weight:600;color:var(--text)}
+.alert-card .alert-issue{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4}
+.alert-card .resolve-btn{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:1px solid var(--red);color:var(--red);font-size:10px;padding:4px 10px;border-radius:4px;cursor:pointer;transition:.2s}
+.alert-card.amber .resolve-btn{border-color:var(--gold);color:var(--gold)}
+.alert-card .resolve-btn:hover{background:var(--red);color:#fff}
+.alert-card.amber .resolve-btn:hover{background:var(--gold);color:#000}
+.alert-card.resolved{opacity:.4;border-left-color:var(--green)}
+.alert-card.resolved .resolve-btn{background:var(--green);color:#000;border-color:var(--green)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.alert-card:not(.resolved){animation:pulse 2.5s infinite}
+
+/* Guest list items */
+.guest-item{display:flex;align-items:center;gap:12px;padding:10px 16px;cursor:pointer;transition:.15s;border-left:3px solid transparent}
+.guest-item:hover{background:var(--card)}
+.guest-item.active{background:var(--card);border-left-color:var(--gold)}
+.avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.tier-diamond{background:linear-gradient(135deg,#c8a84e,#f0d878);color:#1a1200}
+.tier-platinum{background:linear-gradient(135deg,#8a9bb0,#c0cfe0);color:#1a2030}
+.tier-gold{background:linear-gradient(135deg,#b8860b,#daa520);color:#1a1200}
+.tier-member{background:var(--border);color:var(--muted)}
+.guest-item-info{flex:1;min-width:0}
+.guest-item-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.guest-item-meta{font-size:11px;color:var(--muted);display:flex;gap:8px;margin-top:2px}
+.sentiment-bar{width:40px;height:4px;background:var(--border);border-radius:2px;flex-shrink:0}
+.sentiment-fill{height:100%;border-radius:2px;transition:width .6s}
+.status-chip{font-size:9px;padding:2px 6px;border-radius:3px;font-weight:600;text-transform:uppercase;flex-shrink:0}
+.chip-arriving{background:rgba(0,229,212,.15);color:var(--teal)}
+.chip-inhouse{background:rgba(200,168,78,.15);color:var(--gold)}
+.chip-tomorrow{background:rgba(122,138,158,.15);color:var(--muted)}
+
+/* Room service monitor */
+.rs-monitor{margin:10px;padding:14px;background:var(--card);border-radius:8px;border:1px solid var(--border)}
+.rs-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;font-weight:600}
+.rs-order{display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-size:12px;border-bottom:1px solid var(--border)}
+.rs-order:last-child{border:none}
+.rs-room{color:var(--text);font-weight:500}
+.rs-time{font-weight:600}
+.rs-ok{color:var(--green)}
+.rs-over{color:var(--red);animation:pulse 1s infinite}
+.rs-recovery-btn{background:var(--red);color:#fff;border:none;font-size:10px;padding:3px 8px;border-radius:3px;cursor:pointer;animation:pulse 1s infinite}
+.rs-recovery-btn.handled{background:var(--green);animation:none}
+
+/* Portrait panel */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--muted);gap:16px}
+.empty-state .icon{font-size:64px;opacity:.3}
+.empty-state p{font-size:14px}
+
+.portrait{animation:slideIn .3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+.portrait-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px}
+.portrait-header-left{display:flex;gap:20px;align-items:center}
+.portrait-avatar{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700}
+.portrait-info .guest-name{font-size:28px;font-weight:600;margin-bottom:4px}
+.portrait-info .tier-label{font-size:12px;padding:3px 10px;border-radius:4px;font-weight:600;display:inline-block;margin-right:8px}
+.portrait-info .meta-row{font-size:13px;color:var(--muted);margin-top:6px;display:flex;gap:20px}
+.portrait-info .meta-row span{display:flex;align-items:center;gap:4px}
+
+.portrait-actions{display:flex;gap:8px}
+.btn{padding:10px 18px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:.2s}
+.btn-primary{background:var(--gold);color:#000}.btn-primary:hover{background:#d4b85c}
+.btn-secondary{background:none;border:1px solid var(--teal);color:var(--teal)}.btn-secondary:hover{background:rgba(0,229,212,.1)}
+
+/* Sentiment gauge */
+.gauge-container{display:flex;align-items:center;gap:24px;margin:20px 0;padding:20px;background:var(--card);border-radius:10px;border:1px solid var(--border)}
+.gauge-svg{width:120px;height:70px;flex-shrink:0}
+.gauge-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.gauge-score{font-size:36px;font-weight:700;font-family:'Playfair Display',serif}
+.gauge-desc{font-size:12px;color:var(--muted);margin-top:4px}
+.sparkline-container{flex:1;padding-left:24px;border-left:1px solid var(--border)}
+.sparkline-label{font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+
+/* Sections */
+.portrait-section{margin-bottom:20px}
+.portrait-section-title{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold);margin-bottom:12px;font-weight:600;display:flex;align-items:center;gap:8px}
+.portrait-section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* Flags */
+.flag{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;font-size:12px;margin:4px;line-height:1.3;max-width:100%}
+.flag-red{background:rgba(255,61,90,.12);color:var(--red);border:1px solid rgba(255,61,90,.2)}
+.flag-amber{background:rgba(200,168,78,.12);color:var(--gold);border:1px solid rgba(200,168,78,.2)}
+.flag-info{background:rgba(0,229,212,.1);color:var(--teal);border:1px solid rgba(0,229,212,.15)}
+@keyframes flagIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.flag{animation:flagIn .3s ease backwards}
+
+/* Action queue */
+.action-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--card);border-radius:6px;margin-bottom:6px;border:1px solid var(--border)}
+.action-item .action-text{flex:1;font-size:13px;line-height:1.4}
+.action-item .mark-done{background:none;border:1px solid var(--green);color:var(--green);font-size:11px;padding:4px 12px;border-radius:4px;cursor:pointer;flex-shrink:0;transition:.2s}
+.action-item .mark-done:hover{background:var(--green);color:#000}
+.action-item.done{opacity:.4}.action-item.done .mark-done{background:var(--green);color:#000}
+
+/* Preference / dietary cards */
+.pref-grid{display:flex;flex-wrap:wrap;gap:8px}
+.pref-tag{padding:6px 12px;background:var(--card);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text)}
+.dietary-tag{background:rgba(255,61,90,.08);border-color:rgba(255,61,90,.2);color:var(--red)}
+
+/* Complaint timeline */
+.timeline-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.timeline-item:last-child{border:none}
+.timeline-dot{width:10px;height:10px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.timeline-dot.resolved{background:var(--green)}
+.timeline-dot.unresolved{background:var(--red)}
+.timeline-date{font-size:11px;color:var(--muted);min-width:70px}
+.timeline-text{font-size:13px;flex:1}
+.timeline-credit{font-size:11px;color:var(--gold)}
+
+/* AI Brief */
+.ai-brief{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;margin-top:12px;position:relative}
+.ai-brief::before{content:'AI';position:absolute;top:-8px;left:16px;background:var(--teal);color:#000;font-size:9px;font-weight:700;padding:2px 8px;border-radius:3px}
+.ai-brief-text{font-size:13px;line-height:1.7;color:var(--text);white-space:pre-wrap}
+.ai-loading{color:var(--muted);font-style:italic}
+
+/* Notes */
+.notes-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;font-size:13px;line-height:1.6;color:var(--muted);font-style:italic}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>EMPATHIC GUEST INTELLIGENCE</h1>
+    <span class="badge">Powered by Inkwell Awareness Model</span>
+  </div>
+  <div class="header-right">
+    <input class="search-box" type="text" placeholder="Search guests, rooms, flags..." id="searchBox">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="arriving">Arriving</button>
+    <button class="filter-btn" data-filter="inhouse">In House</button>
+    <button class="filter-btn" data-filter="priority">Priority</button>
+    <span class="hotel-name">The Meridian 🏨</span>
+  </div>
+</div>
+
+<div class="main">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="portrait-panel" id="portraitPanel">
+    <div class="empty-state">
+      <div class="icon">👤</div>
+      <p>Select a guest to view their living portrait</p>
+      <p style="font-size:12px;opacity:.6">AI-powered insights for proactive hospitality</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const PROXY='https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+async function gemini(prompt,system=''){
+  const body={contents:[{parts:[{text:prompt}]}]};
+  if(system)body.system_instruction={parts:[{text:system}]};
+  const r=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  return d?.candidates?.[0]?.content?.parts?.[0]?.text||'';
+}
+
+const guests=[
+{id:'G001',name:'Margaret Chen',tier:'Diamond',stays:47,ltv:89400,checkIn:'Today, 3:00 PM',checkOut:'Mar 2',nights:3,room:'1204',roomType:'Corner King',origin:'San Francisco',dietary:['shellfish allergy (mentioned Jan 2023, not on official profile)','prefers plant-based breakfasts'],preferences:['high floor','feather-free pillows','room temperature 68°F','late checkout'],complaints:[{date:'2024-08',issue:'HVAC noise - room 1103',resolved:true,credit:50},{date:'2023-11',issue:'Wrong room type assigned',resolved:true,credit:100}],sentiment:88,lastInteraction:'2024-11 — praised restaurant staff by name (Maria)',flags:['BIRTHDAY in 4 days (Mar 4)','SHELLFISH ALLERGY not in system','HVAC complaints - avoid 1100s block'],notes:'Travels for pharma conferences. Always alone. Books spa on day 2.',status:'arriving'},
+{id:'G002',name:'James Okafor',tier:'Gold',stays:12,ltv:18700,checkIn:'Today, 6:30 PM',checkOut:'Mar 1',nights:1,room:'804',roomType:'Standard King',origin:'Atlanta',dietary:['halal'],preferences:['quiet floor','early check-in when possible','extra pillows'],complaints:[],sentiment:72,lastInteraction:'2024-09 — no issues',flags:['HALAL — verify restaurant menu flagged','First stay since 9-month gap'],notes:'Traveling with spouse tonight (unusual — usually solo). Anniversary? Upgrade candidate.',status:'arriving'},
+{id:'G003',name:'Patricia Navarro',tier:'Platinum',stays:31,ltv:54200,checkIn:'Yesterday',checkOut:'Mar 3',nights:4,room:'2201',roomType:'Suite',origin:'Mexico City',dietary:['vegetarian','no alcohol'],preferences:['suite only','flowers on arrival','Times delivery','yoga mat in room'],complaints:[{date:'2024-12',issue:'Flowers not delivered on arrival',resolved:false,credit:0}],sentiment:61,lastInteraction:'2025-02-27 — room service took 52 minutes (threshold: 35 min)',flags:['⚠️ SENTIMENT DROPPING — room service delay last night','⚠️ COMPLAINT UNRESOLVED from Dec 2024','YOGA MAT not confirmed in room'],notes:'Mexican media executive. High-value, vocal on social. Needs immediate attention.',status:'inhouse'},
+{id:'G004',name:'David & Sarah Kim',tier:'Member',stays:2,ltv:3200,checkIn:'Today, 2:00 PM',checkOut:'Mar 2',nights:3,room:'612',roomType:'Deluxe Queen',origin:'Chicago',dietary:['none noted'],preferences:[],complaints:[],sentiment:85,lastInteraction:'2023-06 — honeymoon stay, excellent review',flags:['ANNIVERSARY — 2 years (honeymoon stay was June 2023)','First return stay','Upgrade opportunity to King if available'],notes:'Honeymoon 2 years ago, returning. Highly likely anniversary trip. Champagne + note from GM = high ROI.',status:'arriving'},
+{id:'G005',name:'Robert Ashby',tier:'Diamond',stays:89,ltv:241000,checkIn:'In house (Day 2)',checkOut:'Mar 5',nights:6,room:'1801',roomType:'Presidential Suite',origin:'London',dietary:['single malt scotch (Lagavulin preferred)','no peanuts'],preferences:['suite only','newspaper: FT + WSJ','car service arranged','calls front desk never — expects proactive contact'],complaints:[{date:'2025-01',issue:'Car service late by 12 minutes',resolved:true,credit:500},{date:'2024-08',issue:'Wrong scotch in minibar',resolved:true,credit:200}],sentiment:79,lastInteraction:'2025-02-27 — FT not delivered (flagged by concierge)',flags:['⚠️ FT NOT DELIVERED this morning — must resolve before 7am tomorrow','Car service confirmed for 8:30am Monday','LAGAVULIN confirmed in suite'],notes:'C-suite, board member, refers colleagues. Never complains — simply does not return. FT is a daily non-negotiable.',status:'inhouse'},
+{id:'G006',name:'Amara Osei',tier:'Gold',stays:8,ltv:12400,checkIn:'Tomorrow, 4:00 PM',checkOut:'Mar 4',nights:4,room:'1106',roomType:'Corner Double',origin:'Accra / London',dietary:['vegan','tree nut allergy'],preferences:['quiet room','USB-C charging at desk','blackout curtains confirmed'],complaints:[],sentiment:91,lastInteraction:'2024-10 — left 5-star review, mentioned Kwame at front desk by name',flags:['TREE NUT ALLERGY — kitchen alert needed','Mentioned Kwame by name in review — if Kwame is on shift, note it'],notes:'Journalist / writer. Positive vocal advocate. Quietly influential.',status:'tomorrow'},
+{id:'G007',name:'William Torres',tier:'Member',stays:1,ltv:890,checkIn:'Today, 7:00 PM',checkOut:'Mar 1',nights:1,room:'304',roomType:'Standard Queen',origin:'Dallas',dietary:[],preferences:[],complaints:[],sentiment:50,lastInteraction:null,flags:['FIRST STAY — set the baseline','Booked via OTA at lowest rate — upsell candidate for direct booking next time'],notes:'No history. First impression matters. Make it count.',status:'arriving'},
+{id:'G008',name:'Eleanor Frost',tier:'Platinum',stays:22,ltv:38900,checkIn:'In house (Day 1)',checkOut:'Mar 3',nights:3,room:'1502',roomType:'Junior Suite',origin:'Boston',dietary:['gluten-free (celiac — medical, not preference)'],preferences:['king bed confirmed','bath salts on arrival','calls from same number — save in system','never contact by text'],complaints:[{date:'2023-07',issue:'Gluten cross-contamination in restaurant — medical incident',resolved:true,credit:0}],sentiment:82,lastInteraction:'2025-02-28 — check-in smooth, complimented lobby renovation',flags:['CELIAC — medical, not dietary preference. Full kitchen protocol required','Previous medical incident from cross-contamination 2023'],notes:'Academic. Meticulous. Will notice everything. Celiac is medical — treat accordingly.',status:'inhouse'},
+{id:'G009',name:'Marcus & Diane Webb',tier:'Diamond',stays:34,ltv:71200,checkIn:'Tomorrow, 12:00 PM',checkOut:'Mar 6',nights:5,room:'PENDING UPGRADE',roomType:'Deluxe King → upgrade pending',origin:'Houston',dietary:['Marcus: no shellfish','Diane: diabetic — low sugar options needed'],preferences:['connecting room when granddaughter joins (arriving Mar 1)','Marcus: golf tee time arrangement','Diane: in-room spa preferred'],complaints:[],sentiment:93,lastInteraction:'2024-12 — holiday stay, left glowing review, tipped spa staff $200',flags:['CONNECTING ROOM for granddaughter arriving Mar 1 — confirm now','Golf tee time NOT YET ARRANGED','DIABETIC — low sugar menu options needed at restaurant'],notes:'Retired executives. Highest-value relationship guests. The kind who write letters to the GM. Make every detail right.',status:'tomorrow'},
+{id:'G010',name:'Kai Blackwood',tier:'Member',stays:3,ltv:4100,checkIn:'Today, 9:00 PM',checkOut:'Mar 2',nights:2,room:'710',roomType:'King',origin:'Seattle',dietary:['vegan'],preferences:['late checkout requested','EV charging — confirmed?'],complaints:[{date:'2024-11',issue:'EV charging spot unavailable despite confirmation',resolved:true,credit:75}],sentiment:68,lastInteraction:'2024-11 — previous EV issue',flags:['⚠️ EV CHARGING — MUST CONFIRM before arrival (previous bad experience)','Late checkout requested — approve now or notify'],notes:'Tech professional. Will remember the EV issue. Confirming the spot proactively = full recovery.',status:'arriving'}
+];
+
+const priorityAlerts=[
+{guestId:'G003',level:'red',guest:'Patricia Navarro',issue:'Sentiment dropping — room service delay + unresolved Dec complaint. Immediate attention needed.'},
+{guestId:'G005',level:'red',guest:'Robert Ashby',issue:'FT not delivered this morning. Must resolve before 7am tomorrow. He will not complain — he will leave.'},
+{guestId:'G009',level:'amber',guest:'Marcus & Diane Webb',issue:'Connecting room for granddaughter NOT confirmed. Arriving tomorrow. Golf tee time not arranged.'},
+{guestId:'G010',level:'amber',guest:'Kai Blackwood',issue:'EV charging MUST be confirmed before 9pm arrival. Previous bad experience — this is a recovery moment.'},
+{guestId:'G001',level:'amber',guest:'Margaret Chen',issue:'Shellfish allergy NOT in official system. Check-in at 3pm today. Birthday in 4 days.'}
+];
+
+const roomServiceOrders=[
+{room:'1502',guest:'Eleanor Frost',startTime:Date.now()-28*60000,threshold:35},
+{room:'804',guest:'James Okafor',startTime:Date.now()-18*60000,threshold:35},
+{room:'2201',guest:'Patricia Navarro',startTime:Date.now()-41*60000,threshold:35}
+];
+
+let selectedGuestId=null;
+let resolvedAlerts=new Set();
+let doneActions=new Set();
+let recoveryHandled=new Set();
+let currentFilter='all';
+let searchQuery='';
+
+function tierClass(t){return 'tier-'+t.toLowerCase()}
+function initials(name){return name.split(/[\s&]+/).filter(w=>w.length>1).map(w=>w[0]).slice(0,2).join('')}
+function sentimentColor(s){return s>=80?'var(--green)':s>=65?'var(--gold)':s>=45?'#ff9800':'var(--red)'}
+function formatLTV(v){return v>=1000?'$'+(v/1000).toFixed(v%1000?1:0)+'K':'$'+v}
+
+function getStatus(g){return g.status}
+function isPriority(g){return g.flags.some(f=>f.includes('⚠️'))||g.sentiment<65}
+
+function filterGuests(){
+  let list=guests;
+  if(searchQuery){
+    const q=searchQuery.toLowerCase();
+    list=list.filter(g=>g.name.toLowerCase().includes(q)||g.room.toLowerCase().includes(q)||g.tier.toLowerCase().includes(q)||g.flags.some(f=>f.toLowerCase().includes(q)));
+  }
+  if(currentFilter==='arriving')list=list.filter(g=>g.status==='arriving');
+  else if(currentFilter==='inhouse')list=list.filter(g=>g.status==='inhouse');
+  else if(currentFilter==='priority')list=list.filter(isPriority);
+  return list;
+}
+
+function renderSidebar(){
+  const sb=document.getElementById('sidebar');
+  const filtered=filterGuests();
+  const priority=filtered.filter(isPriority);
+  const arriving=filtered.filter(g=>g.status==='arriving'&&!isPriority(g));
+  const inhouse=filtered.filter(g=>g.status==='inhouse'&&!isPriority(g));
+  const tomorrow=filtered.filter(g=>g.status==='tomorrow'&&!isPriority(g));
+
+  let html='';
+
+  // Priority alerts
+  html+='<div class="section-label">🚨 Priority Alerts ('+priorityAlerts.filter(a=>!resolvedAlerts.has(a.guestId)).length+')</div>';
+  priorityAlerts.forEach(a=>{
+    const resolved=resolvedAlerts.has(a.guestId);
+    html+=`<div class="alert-card ${a.level==='amber'?'amber':''} ${resolved?'resolved':''}" onclick="selectGuest('${a.guestId}')">
+      <div class="alert-guest">${a.guest}</div>
+      <div class="alert-issue">${a.issue}</div>
+      <button class="resolve-btn" onclick="event.stopPropagation();resolveAlert('${a.guestId}')">${resolved?'✓ Resolved':'Resolve'}</button>
+    </div>`;
+  });
+
+  // Room service monitor
+  html+=renderRoomService();
+
+  function renderGroup(label,list,chipClass){
+    if(!list.length)return;
+    html+=`<div class="section-label">${label} (${list.length})</div>`;
+    list.forEach(g=>{
+      html+=`<div class="guest-item ${selectedGuestId===g.id?'active':''}" onclick="selectGuest('${g.id}')">
+        <div class="avatar ${tierClass(g.tier)}">${initials(g.name)}</div>
+        <div class="guest-item-info">
+          <div class="guest-item-name">${g.name}</div>
+          <div class="guest-item-meta"><span>${g.room}</span><span>${g.tier}</span></div>
+        </div>
+        <span class="status-chip ${chipClass}">${g.status==='inhouse'?'In House':g.status==='arriving'?'Arriving':'Tomorrow'}</span>
+        <div class="sentiment-bar"><div class="sentiment-fill" style="width:${g.sentiment}%;background:${sentimentColor(g.sentiment)}"></div></div>
+      </div>`;
+    });
+  }
+
+  if(priority.length){
+    html+='<div class="section-label">⚡ Needs Attention ('+priority.length+')</div>';
+    priority.forEach(g=>{
+      const chipClass=g.status==='inhouse'?'chip-inhouse':g.status==='arriving'?'chip-arriving':'chip-tomorrow';
+      html+=`<div class="guest-item ${selectedGuestId===g.id?'active':''}" onclick="selectGuest('${g.id}')">
+        <div class="avatar ${tierClass(g.tier)}">${initials(g.name)}</div>
+        <div class="guest-item-info">
+          <div class="guest-item-name">${g.name}</div>
+          <div class="guest-item-meta"><span>${g.room}</span><span>${g.tier}</span></div>
+        </div>
+        <span class="status-chip ${chipClass}">${g.status==='inhouse'?'In House':g.status==='arriving'?'Arriving':'Tomorrow'}</span>
+        <div class="sentiment-bar"><div class="sentiment-fill" style="width:${g.sentiment}%;background:${sentimentColor(g.sentiment)}"></div></div>
+      </div>`;
+    });
+  }
+
+  renderGroup('Arriving Today',arriving,'chip-arriving');
+  renderGroup('In House',inhouse,'chip-inhouse');
+  renderGroup('Tomorrow',tomorrow,'chip-tomorrow');
+
+  sb.innerHTML=html;
+}
+
+function renderRoomService(){
+  let html='<div class="rs-monitor"><div class="rs-title">🍽 Room Service Monitor — '+roomServiceOrders.length+' orders</div>';
+  roomServiceOrders.forEach((o,i)=>{
+    const mins=Math.floor((Date.now()-o.startTime)/60000);
+    const over=mins>=o.threshold;
+    const handled=recoveryHandled.has(i);
+    html+=`<div class="rs-order">
+      <span class="rs-room">Room ${o.room}</span>
+      <span class="rs-time ${over&&!handled?'rs-over':''}${!over?'rs-ok':''}">${mins} min</span>
+      ${over&&!handled?`<button class="rs-recovery-btn" onclick="event.stopPropagation();handleRecovery(${i})">⚠ RECOVERY</button>`:''}
+      ${over&&handled?'<span style="color:var(--green);font-size:11px">✓ Human responding</span>':''}
+      ${!over?'<span style="color:var(--green);font-size:11px">OK</span>':''}
+    </div>`;
+  });
+  html+='</div>';
+  return html;
+}
+
+function resolveAlert(gid){resolvedAlerts.add(gid);renderSidebar()}
+function handleRecovery(i){recoveryHandled.add(i);renderSidebar()}
+
+function selectGuest(id){
+  selectedGuestId=id;
+  renderSidebar();
+  renderPortrait(guests.find(g=>g.id===id));
+}
+
+function renderPortrait(g){
+  const panel=document.getElementById('portraitPanel');
+  const flagHtml=g.flags.map((f,i)=>{
+    const cls=f.includes('⚠️')?'flag-red':f.includes('ALLERGY')||f.includes('CELIAC')||f.includes('DIABETIC')?'flag-red':f.includes('NOT')||f.includes('MUST')?'flag-amber':'flag-info';
+    return `<span class="flag ${cls}" style="animation-delay:${i*0.1}s">${f}</span>`;
+  }).join('');
+
+  const actionsHtml=generateActions(g).map((a,i)=>{
+    const done=doneActions.has(g.id+'-'+i);
+    return `<div class="action-item ${done?'done':''}">
+      <div class="action-text">${a}</div>
+      <button class="mark-done" onclick="markDone('${g.id}',${i})">${done?'✓ Done':'Mark Done'}</button>
+    </div>`;
+  }).join('');
+
+  const complaintsHtml=g.complaints.length?g.complaints.map(c=>`<div class="timeline-item">
+    <div class="timeline-dot ${c.resolved?'resolved':'unresolved'}"></div>
+    <div class="timeline-date">${c.date}</div>
+    <div class="timeline-text">${c.issue}</div>
+    ${c.credit?`<div class="timeline-credit">$${c.credit} credit</div>`:''}
+  </div>`).join(''):'<div style="color:var(--muted);font-size:13px;padding:8px 0">No complaints on record ✨</div>';
+
+  const dietaryHtml=g.dietary.length?g.dietary.map(d=>`<span class="pref-tag dietary-tag">🍽 ${d}</span>`).join(''):'<span class="pref-tag">No dietary flags</span>';
+  const prefHtml=g.preferences.length?g.preferences.map(p=>`<span class="pref-tag">${p}</span>`).join(''):'<span class="pref-tag" style="color:var(--muted)">No preferences recorded yet</span>';
+
+  // Sentiment arc SVG
+  const sAngle=Math.PI-((g.sentiment/100)*Math.PI);
+  const sx=60+50*Math.cos(Math.PI);const sy=60+50*Math.sin(Math.PI)*-1;
+  const ex=60+50*Math.cos(sAngle);const ey=60-50*Math.sin(sAngle);
+  const large=g.sentiment>50?1:0;
+
+  const sparkline=g.status==='inhouse'?renderSparkline(g):'';
+
+  panel.innerHTML=`<div class="portrait">
+    <div class="portrait-header">
+      <div class="portrait-header-left">
+        <div class="portrait-avatar ${tierClass(g.tier)}">${initials(g.name)}</div>
+        <div class="portrait-info">
+          <div class="guest-name">${g.name}</div>
+          <span class="tier-label" style="background:${g.tier==='Diamond'?'var(--gold)':g.tier==='Platinum'?'#8a9bb0':g.tier==='Gold'?'#daa520':'var(--border)'};color:${g.tier==='Member'?'var(--muted)':'#000'}">${g.tier}</span>
+          <span style="font-size:12px;color:var(--muted)">${g.id}</span>
+          <div class="meta-row">
+            <span>🏠 ${g.stays} stays</span>
+            <span>💎 ${formatLTV(g.ltv)}</span>
+            <span>📍 ${g.origin}</span>
+            <span>🛏 ${g.room} · ${g.roomType}</span>
+          </div>
+          <div class="meta-row">
+            <span>📅 ${g.checkIn} → ${g.checkOut} (${g.nights}N)</span>
+          </div>
+        </div>
+      </div>
+      <div class="portrait-actions">
+        <button class="btn btn-primary" onclick="generateBrief('${g.id}')">Generate Staff Brief</button>
+        <button class="btn btn-secondary" onclick="generateFullPortrait('${g.id}')">Full AI Portrait</button>
+      </div>
+    </div>
+
+    <div class="gauge-container">
+      <div>
+        <svg class="gauge-svg" viewBox="0 0 120 70">
+          <path d="M 10 60 A 50 50 0 0 1 110 60" fill="none" stroke="var(--border)" stroke-width="8" stroke-linecap="round"/>
+          <path d="M 10 60 A 50 50 0 ${large} 1 ${ex.toFixed(1)} ${ey.toFixed(1)}" fill="none" stroke="${sentimentColor(g.sentiment)}" stroke-width="8" stroke-linecap="round">
+            <animate attributeName="stroke-dasharray" from="0 200" to="200 200" dur="1s"/>
+          </path>
+          <text x="60" y="55" text-anchor="middle" fill="${sentimentColor(g.sentiment)}" font-size="22" font-weight="bold" font-family="Playfair Display">${g.sentiment}</text>
+        </svg>
+        <div class="gauge-label">Sentiment Score</div>
+        <div class="gauge-desc">${g.sentiment>=80?'Positive':g.sentiment>=65?'Neutral':g.sentiment>=45?'At Risk':'Critical'}</div>
+      </div>
+      ${sparkline?`<div class="sparkline-container"><div class="sparkline-label">Sentiment Trend (This Stay)</div>${sparkline}</div>`:`<div class="sparkline-container"><div class="sparkline-label">Last Interaction</div><div style="font-size:13px;color:var(--text);margin-top:8px">${g.lastInteraction||'No previous interactions'}</div></div>`}
+    </div>
+
+    <div class="portrait-section">
+      <div class="portrait-section-title">Active Flags</div>
+      <div>${flagHtml}</div>
+    </div>
+
+    <div class="portrait-section">
+      <div class="portrait-section-title">Action Queue</div>
+      ${actionsHtml}
+    </div>
+
+    <div id="aiBrief-${g.id}"></div>
+
+    <div class="portrait-section">
+      <div class="portrait-section-title">Dietary & Allergies</div>
+      <div class="pref-grid">${dietaryHtml}</div>
+    </div>
+
+    <div class="portrait-section">
+      <div class="portrait-section-title">Preferences</div>
+      <div class="pref-grid">${prefHtml}</div>
+    </div>
+
+    <div class="portrait-section">
+      <div class="portrait-section-title">Complaint & Recovery History</div>
+      ${complaintsHtml}
+    </div>
+
+    <div class="portrait-section">
+      <div class="portrait-section-title">Staff Notes</div>
+      <div class="notes-box">${g.notes}</div>
+    </div>
+  </div>`;
+}
+
+function renderSparkline(g){
+  // Simulated sentiment data points for in-house guests
+  const data={
+    'G003':[78,72,68,61],
+    'G005':[85,83,79,79],
+    'G008':[80,82,82]
+  };
+  const pts=data[g.id];
+  if(!pts)return '';
+  const w=200,h=40,pad=4;
+  const xStep=(w-pad*2)/(pts.length-1);
+  const min=Math.min(...pts)-5,max=Math.max(...pts)+5;
+  const path=pts.map((v,i)=>{
+    const x=pad+i*xStep;
+    const y=h-pad-((v-min)/(max-min))*(h-pad*2);
+    return (i===0?'M':'L')+x.toFixed(1)+','+y.toFixed(1);
+  }).join(' ');
+  const lastY=h-pad-((pts[pts.length-1]-min)/(max-min))*(h-pad*2);
+  const lastX=pad+(pts.length-1)*xStep;
+  return `<svg width="${w}" height="${h}" style="overflow:visible"><path d="${path}" fill="none" stroke="${sentimentColor(g.sentiment)}" stroke-width="2"/><circle cx="${lastX}" cy="${lastY}" r="4" fill="${sentimentColor(g.sentiment)}"/></svg>`;
+}
+
+function generateActions(g){
+  const actions=[];
+  g.flags.forEach(f=>{
+    if(f.includes('ALLERGY')&&f.includes('not in system'))actions.push('⚠️ Update guest profile with shellfish allergy — source: verbal mention Jan 2023');
+    if(f.includes('BIRTHDAY'))actions.push('🎂 Prepare birthday amenity for Mar 4 — coordinate with pastry chef');
+    if(f.includes('HVAC'))actions.push('🔧 Confirm room 1204 HVAC is silent — guest has history of HVAC complaints');
+    if(f.includes('HALAL'))actions.push('🍽 Confirm restaurant has halal menu flagged for tonight');
+    if(f.includes('9-month gap'))actions.push('💌 Welcome back gesture — acknowledge the gap warmly');
+    if(f.includes('SENTIMENT DROPPING'))actions.push('🚨 GM or duty manager to visit Patricia Navarro TODAY — personal apology for room service delay');
+    if(f.includes('UNRESOLVED'))actions.push('📋 Resolve Dec 2024 flower complaint — deliver flowers NOW with handwritten note');
+    if(f.includes('YOGA MAT'))actions.push('🧘 Confirm yoga mat placed in room 2201');
+    if(f.includes('ANNIVERSARY')&&f.includes('2 years'))actions.push('🥂 Prepare champagne + GM note for the Kims — anniversary return guests');
+    if(f.includes('Upgrade opportunity'))actions.push('⬆️ Check King room availability for upgrade');
+    if(f.includes('FT NOT DELIVERED'))actions.push('📰 URGENT: Confirm FT delivery for room 1801 by 6:30am — non-negotiable');
+    if(f.includes('Car service'))actions.push('🚗 Verify car service for 8:30am Monday');
+    if(f.includes('LAGAVULIN'))actions.push('🥃 Confirm Lagavulin 16 in suite minibar');
+    if(f.includes('TREE NUT'))actions.push('⚠️ Kitchen alert: tree nut allergy for room 1106');
+    if(f.includes('Kwame'))actions.push('👋 Check if Kwame is on shift — guest mentioned him by name in 5-star review');
+    if(f.includes('FIRST STAY'))actions.push('🌟 First-time guest welcome — personal greeting, room orientation');
+    if(f.includes('OTA'))actions.push('💳 Prepare direct booking incentive card for checkout');
+    if(f.includes('CELIAC'))actions.push('🏥 MEDICAL: Full celiac protocol — notify kitchen, restaurant, room service. No exceptions.');
+    if(f.includes('cross-contamination'))actions.push('⚠️ Previous medical incident — extra vigilance on gluten protocols');
+    if(f.includes('CONNECTING ROOM'))actions.push('🛏 Confirm connecting room for granddaughter arriving Mar 1');
+    if(f.includes('Golf'))actions.push('⛳ Arrange golf tee time for Marcus Webb — check preferred courses');
+    if(f.includes('DIABETIC'))actions.push('🍽 Flag restaurant: low sugar options for Diane Webb');
+    if(f.includes('EV CHARGING'))actions.push('🔌 CONFIRM EV charging spot for room 710 — previous bad experience, this is recovery');
+    if(f.includes('Late checkout'))actions.push('🕐 Approve late checkout request for Kai Blackwood');
+  });
+  if(!actions.length)actions.push('✅ No outstanding actions — guest is in good standing');
+  return actions;
+}
+
+function markDone(gid,i){doneActions.add(gid+'-'+i);renderPortrait(guests.find(g=>g.id===gid))}
+
+async function generateBrief(gid){
+  const g=guests.find(x=>x.id===gid);
+  const el=document.getElementById('aiBrief-'+gid);
+  el.innerHTML='<div class="ai-brief"><div class="ai-brief-text ai-loading">Generating staff brief via Inkwell Awareness Model...</div></div>';
+  const sys='You are the Empathic Guest Intelligence system for a luxury hotel, powered by the Inkwell Awareness Model. Core principles: empathy, reciprocity, clarity. Write a concise 200-word brief for front desk staff about this guest. Be specific, warm, and actionable. Focus on what staff need to DO before the guest arrives or during their stay, not just what to know. Hard rule: AI suggests, humans deliver. Every recovery action must be delivered by a real person.';
+  const text=await gemini('Guest data: '+JSON.stringify(g),sys);
+  el.innerHTML=`<div class="portrait-section"><div class="portrait-section-title">AI Staff Brief</div><div class="ai-brief"><div class="ai-brief-text">${text.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div></div></div>`;
+}
+
+async function generateFullPortrait(gid){
+  const g=guests.find(x=>x.id===gid);
+  const el=document.getElementById('aiBrief-'+gid);
+  el.innerHTML='<div class="ai-brief"><div class="ai-brief-text ai-loading">Generating full AI portrait via Inkwell Awareness Model...</div></div>';
+  const sys='You are the Empathic Guest Intelligence system for a luxury hotel, powered by the Inkwell Awareness Model. Core principles: empathy, reciprocity, clarity. Generate a comprehensive guest portrait with these sections:\n1. STAFF BRIEFING (what to do before/during this stay)\n2. THREE PROACTIVE GESTURES (ranked by impact)\n3. ONE THING TO AVOID (based on complaint history)\n4. SOCIAL MENTION PROBABILITY (likelihood of social media mention, with reasoning)\nBe specific and actionable. Hard rule: AI suggests, humans deliver.';
+  const text=await gemini('Full guest record for portrait generation: '+JSON.stringify(g),sys);
+  el.innerHTML=`<div class="portrait-section"><div class="portrait-section-title">Full AI Portrait</div><div class="ai-brief"><div class="ai-brief-text">${text.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div></div></div>`;
+}
+
+// Search & filter
+document.getElementById('searchBox').addEventListener('input',e=>{searchQuery=e.target.value;renderSidebar()});
+document.querySelectorAll('.filter-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter=btn.dataset.filter;
+    renderSidebar();
+  });
+});
+
+// Room service timer update
+setInterval(()=>{if(document.querySelector('.rs-monitor'))renderSidebar()},30000);
+
+// Init
+renderSidebar();
+</script>
+</body>
+</html>
