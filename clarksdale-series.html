@@ -86,6 +86,34 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-
 .iam-score-fill{height:100%;background:var(--gold);}
 .iam-score-val{color:var(--gold-dim);font-size:9px;width:26px;text-align:right;}
 
+/* ══ HISTORICAL AGENT PANEL ══ */
+.ha-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:3000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;}
+.ha-overlay.show{opacity:1;pointer-events:all;}
+.ha-panel{width:560px;max-width:92vw;max-height:85vh;background:var(--surface);border:1px solid var(--gold-dim);border-radius:10px;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.8);}
+.ha-panel::-webkit-scrollbar{width:4px;}.ha-panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+.ha-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1;}
+.ha-badge{font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.05em;}
+.ha-close{background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:4px 8px;}.ha-close:hover{color:var(--text);}
+.ha-meta{padding:10px 20px;font-size:10px;color:var(--text-dim);letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--border);}
+.ha-dim{padding:14px 20px;border-bottom:1px solid var(--border);}
+.ha-dim-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.ha-dim-title{font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--text);}
+.ha-status-verified{color:var(--gold);font-size:11px;font-weight:600;}
+.ha-status-note{color:#c89020;font-size:11px;font-weight:600;}
+.ha-status-flag{color:#c04040;font-size:11px;font-weight:600;}
+.ha-dim-body{font-size:11px;color:var(--text-dim);line-height:1.6;}
+.ha-dim-correction{margin-top:6px;padding:8px 10px;background:rgba(192,64,64,.1);border:1px solid rgba(192,64,64,.3);border-radius:4px;font-size:10px;color:#e08080;line-height:1.5;}
+.ha-overall{padding:16px 20px;border-top:2px solid var(--gold-dim);background:var(--bg);}
+.ha-overall-status{font-size:12px;font-weight:700;color:var(--gold);margin-bottom:4px;}
+.ha-overall-summary{font-size:11px;color:var(--text-dim);font-style:italic;}
+.ha-actions{padding:12px 20px;display:flex;gap:8px;flex-wrap:wrap;}
+.ha-btn{padding:8px 16px;border-radius:6px;border:1px solid var(--gold-dim);background:transparent;color:var(--gold);font-size:10px;font-weight:600;letter-spacing:.06em;cursor:pointer;transition:all .2s;font-family:inherit;}
+.ha-btn:hover{background:var(--gold);color:#000;}
+.ha-btn.primary{background:linear-gradient(135deg,var(--gold),var(--gold-dim));color:#000;border-color:var(--gold);}
+.ha-audit-item{padding:10px 20px;border-bottom:1px solid var(--border);}
+.ha-audit-ep{font-size:11px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.ha-audit-sum{font-size:10px;color:var(--text-dim);}
+
 /* Artifact card in sidebar */
 .artifact-card-sb{padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;gap:10px;align-items:center;transition:background .15s;}
 .artifact-card-sb:hover{background:var(--surface2);}
@@ -1001,7 +1029,11 @@ function renderEditor(type, index) {
       ${sparkHtml ? `<div class="ed-divider"></div><div class="ed-group"><div class="ed-label">STORY SPARKS</div>${sparkHtml}</div>` : ''}
       <div class="ed-divider"></div>
       <button class="ed-btn gold" onclick="edGeneratePanel()">✦ AI Generate Panel</button>
-      <button class="ed-btn" onclick="edRegenScene()">↻ Regenerate Scene</button>`;
+      <button class="ed-btn" onclick="edRegenScene()">↻ Regenerate Scene</button>
+      <div class="ed-divider"></div>
+      <div class="ed-label">HISTORICAL ACCURACY AGENT</div>
+      <button class="ed-btn" onclick="edHistoryCheck()" style="border-color:var(--gold-dim);color:var(--gold);">✦ History Check</button>
+      <button class="ed-btn" onclick="edAuditEpisode()" style="border-color:var(--gold-dim);color:var(--gold);">✦ Audit Full Episode</button>`;
 
   } else if (type === 'character') {
     const ch = CHARACTERS[index];
@@ -1471,6 +1503,285 @@ window.edDeepenTheme = async function() {
     selectItem('theme', selectedItem.index);
     csToast('✦ Analysis deepened!');
   } else { csToast('⚠ Analysis failed', '#c04040'); }
+};
+
+// ══════════════════════════════════════════════
+// ── HISTORICAL ACCURACY & CONSISTENCY AGENT ──
+// ══════════════════════════════════════════════
+
+const SERIES_BIBLE = {
+  identity: {
+    title: "The Clarksdale Series",
+    voice: "Literary, authoritative, elegiac. Like a documentary narrator who deeply loves this history. Short declarative sentences. Poetic but never purple. Always honoring Black American humanity.",
+    prohibition: ["romanticize poverty", "exoticize trauma", "use stereotypes", "anachronistic language", "modern slang in historical narration"],
+    mandate: ["explicit Black American identity", "specific historical facts", "named real people", "specific dates and places", "emotional truth grounded in historical truth"]
+  },
+  eras: {
+    "1920s-1930s": {
+      label: "Delta Blues Origin",
+      aesthetics: { palette: "Deep sepia, amber, burnt sienna. Near monochrome. Dust and shadow.", photography: "Like early 20th century documentary photography — harsh shadows, rough grain", clothing: "Work clothes. Overalls, work shirts, suspenders, wide-brim hats. Church clothes: suits with wide lapels. Women: cotton dresses, head wraps.", architecture: "Juke joints: rough wood plank buildings, corrugated tin roofs. Shotgun houses. Cotton fields extending to the horizon. Dirt roads.", lighting: "Kerosene lanterns. Moonlight. Harsh Mississippi sun. Deep shadow.", props: "Acoustic guitars (Gibson, National Steel). Harmonicas (Hohner Marine Band). Tin cups. Whiskey in mason jars." },
+      music: { instruments: ["acoustic guitar (National steel resonator, Gibson)", "harmonica", "piano (in juke joints)", "washboard", "jug", "fiddle"], prohibited: ["electric guitar", "drum kit", "bass guitar", "microphones", "recording equipment except wax cylinder"], sound: "Raw, unpolished. Field recordings. Call-and-response. Pentatonic blues scale. Bent notes. Slide guitar.", production: "No studio production yet. Live acoustic only.", influences: "Work songs, spirituals, field hollers, ragtime" },
+      language: { narration_voice: "Third person omniscient. Past tense. Literary. Sparse.", vernacular: "Mississippi Delta dialect. 'gone' for 'going to'. Specific and grounded.", prohibition: ["y'all (too casual for formal narration)", "modern idioms", "hip-hop vernacular", "corporate language"] },
+      key_figures: ["Robert Johnson", "Charley Patton", "Son House", "Skip James", "Memphis Minnie", "Bessie Smith"]
+    },
+    "1940s-1950s": {
+      label: "Migration & Electric Blues",
+      aesthetics: { palette: "Still warm amber but with more contrast. Chicago introduces greys and blues.", clothing: "Sharp. Zoot suits for performers. Two-tone shoes. Processed hair. Women: fitted dresses, gloves.", architecture: "Chicago South Side: brick apartment buildings, neon club signs, urban streets. Memphis: Beale Street.", lighting: "Neon signs. Stage spotlights. Darker, more urban." },
+      music: { instruments: ["electric guitar (Gibson ES-150, Fender Telecaster from 1950)", "electric bass (Fender Precision Bass from 1951)", "drum kit", "harmonica through amplifier", "piano", "saxophone"], prohibited: ["synthesizer", "drum machine", "electric bass before 1951"], sound: "The Delta goes electric. Chicago blues. Sun Records Memphis sound (echo chamber, slap-back delay).", production: "Early studio recording. Chess Records (Chicago). Sun Records (Memphis). Mono recording.", key_releases: ["Muddy Waters 'Rollin Stone' 1950", "Ike Turner 'Rocket 88' 1951", "Howlin Wolf at Sun Records"] },
+      language: { narration_voice: "The Great Migration is the subtext of everything. Movement. Aspiration. Danger.", period_terms: ["migration", "South Side", "the electric"], prohibition: ["rock and roll (not yet coined until 1951-52)", "modern racial terminology"] }
+    },
+    "1960s": {
+      label: "Soul, Civil Rights & British Invasion",
+      aesthetics: { palette: "Color enters. Warm browns giving way to vibrant mid-century colors. But Black America still often shot in high contrast.", clothing: "Soul performers: sharp suits, matching outfits. Civil rights: church dress. British bands: mod clothing, Chelsea boots.", architecture: "Black churches. Recording studios (Stax, Motown). March routes. Southern storefronts with 'Whites Only' signs." },
+      music: { instruments: ["Fender Stratocaster/Telecaster", "Gibson Les Paul", "Hammond B3 organ", "Fender Rhodes (from 1965)", "Motown-style bass lines", "horns (trumpet, trombone, saxophone)", "gospel choir"], british_instruments: ["Vox AC30 amp", "Rickenbacker guitar", "Ludwig drum kit"], sound: "Sam Cooke: gospel-soul crossover. Motown: 'the sound of young America'. Stax: raw Southern soul.", production: "Stereo recording begins. Multi-track. Phil Spector's Wall of Sound. Stax Records Memphis." },
+      language: { narration_voice: "Civil rights urgency. The cost of being Black in America is explicit.", sam_cooke_specific: "Gospel-trained voice. The tension between spiritual and secular. The horror of being turned away from a whites-only motel that inspired 'A Change Is Gonna Come'." }
+    },
+    "1970s-1980s": {
+      label: "From Blues to Hip-Hop Roots",
+      aesthetics: { palette: "Richer colors. The 70s = earth tones, wide lapels. The 80s = harder edges.", clothing: "Gospel choirs in robes. Hip-hop pioneers: Adidas, Kangol hats, Cazal glasses." },
+      music: { instruments: ["synthesizer (Minimoog, ARP)", "drum machine (Roland TR-808 from 1980)", "turntable (Technics SL-1200)", "bass (deep, funk)", "electric guitar"], hip_hop_specific: "Sampling. The Akai MPC. Sampling blues records was how hip-hop connected to this lineage." }
+    },
+    "1990s": {
+      label: "Grunge & G-Funk",
+      aesthetics: { palette: "Grunge: desaturated, grey-green, Pacific Northwest. G-Funk: warm California sun, low riders.", clothing: "Grunge: flannel, ripped jeans, Doc Martens. G-Funk: Pendletons, Dickies, Chuck Taylors.", nate_dogg_specific: "Long Beach, California. The intersection of gospel and gangsta. Church choir voice over G-Funk production." },
+      music: { instruments: { grunge: ["distorted electric guitar (Marshall JCM800)", "bass", "drums — loud, raw"], g_funk: ["synthesizer (Moog)", "funk samples", "slide whistle", "Dr. Dre's boom-bap production", "Nate Dogg's voice as the primary instrument"] }, kurt_cobain_specific: "Fender Mustang guitar. Mesa Boogie amp. The quiet-loud-quiet dynamic.", nate_dogg_specific: "His voice was trained in gospel choir. He sang the hooks on gangsta rap tracks that softened them into radio hits. The blues tradition runs directly into his delivery." }
+    },
+    "2000s-2010s": {
+      label: "The Final Echo",
+      music: { amy_winehouse_specific: "Her aesthetic was deliberately retro. Beehive hair inspired by 1960s girl groups. Her musical references were Dinah Washington, Billie Holiday, Thelonious Monk. She was 27 years old — she was recreating the sounds of people who died at 27.", rick_ross_specific: "Born William Leonard Roberts II, Clarksdale MS. His father moved to Miami. He chose a name from a real drug kingpin — that choice is a statement about how the mythology of the South traveled. His production: cathedral-size sonics, orchestral samples." }
+    }
+  },
+  consistency_rules: [
+    "Robert Johnson is NEVER shown with an electric guitar — he died in 1938, before they existed",
+    "Juke joints do NOT have microphones or PA systems in the 1920s-30s",
+    "Performers before 1950 do NOT use drum kits in Delta blues settings",
+    "Sam Cooke is always well-dressed — pressed suits, never casual",
+    "The crossroads is always shown at night",
+    "Mississippi Delta is FLAT — no hills, no mountains, ever",
+    "Cotton fields must be accurate to season (white in fall, green in summer)",
+    "Church scenes: always Sunday best, women with hats",
+    "Amy Winehouse's beehive is ALWAYS present — it was her signature",
+    "Kurt Cobain's guitar is a Fender (Mustang or Jaguar) — NOT a Gibson",
+    "Jimi Hendrix is ALWAYS left-handed — guitar flipped",
+    "All Black American characters must have era-appropriate dress and dignity"
+  ]
+};
+
+function getEraBible(era) {
+  // Match era string to the closest SERIES_BIBLE era
+  const eraKeys = Object.keys(SERIES_BIBLE.eras);
+  for (const k of eraKeys) {
+    if (era && (era.includes(k) || k.includes(era) || era.match(/\d{4}/) && k.match(/\d{4}/) && Math.abs(parseInt(era) - parseInt(k)) < 15)) {
+      return SERIES_BIBLE.eras[k];
+    }
+  }
+  // Try year extraction
+  const yearMatch = era && era.match(/(\d{4})/);
+  if (yearMatch) {
+    const y = parseInt(yearMatch[1]);
+    if (y < 1940) return SERIES_BIBLE.eras["1920s-1930s"];
+    if (y < 1960) return SERIES_BIBLE.eras["1940s-1950s"];
+    if (y < 1970) return SERIES_BIBLE.eras["1960s"];
+    if (y < 1990) return SERIES_BIBLE.eras["1970s-1980s"];
+    if (y < 2000) return SERIES_BIBLE.eras["1990s"];
+    return SERIES_BIBLE.eras["2000s-2010s"];
+  }
+  return SERIES_BIBLE.eras["1920s-1930s"]; // fallback
+}
+
+async function runHistoryCheck(episode, panel) {
+  const era = episode.era;
+  const eraBible = getEraBible(era);
+  const systemPrompt = `You are the Historical Accuracy Agent for The Clarksdale Series — an AI guardian of historical, aesthetic, musical, and narrative authenticity.
+
+You have deep expertise in:
+- Black American history, specifically the Mississippi Delta and the lineage from Blues to Rock to Soul to Hip-Hop
+- Period-accurate aesthetics, photography styles, and visual authenticity for each era
+- Musical instrument history (what existed when, what was used where)
+- The specific stories of every artist in this series
+- Mississippi Delta dialect and narration conventions
+
+Your job is to review comic panels for accuracy across 6 dimensions and flag any anachronisms, errors, or inconsistencies.
+
+Series Bible for ${era}:
+${JSON.stringify(eraBible, null, 2)}
+
+Consistency Rules:
+${SERIES_BIBLE.consistency_rules.join('\n')}`;
+
+  const prompt = `Review this panel from The Clarksdale Series:
+
+Episode: "${episode.title}" (${episode.era} · ${episode.location || ''})
+Characters: ${episode.characters.join(', ')}
+Panel ${(panel.index || 0) + 1} Scene Description: "${panel.sceneDescription || panel.caption || ''}"
+Caption/Narration: "${panel.narration || episode.narration || ''}"
+
+Analyze across these 6 dimensions. For each, provide:
+- Status: VERIFIED, NOTE, or FLAG
+- Specific finding (1-3 sentences)
+- If flagged: specific correction needed
+
+Dimensions:
+1. HISTORICAL ACCURACY — dates, events, people, geography
+2. AESTHETICS — clothing, architecture, lighting, props, color palette
+3. MUSICAL DIRECTION — genre-appropriate sounds, production methods
+4. INSTRUMENT ACCURACY — only instruments that existed and were used in this era/region
+5. LYRICAL/NARRATIVE ACCURACY — language, dialect, idioms of the era
+6. TONE & ACCENT CONSISTENCY — does narration match the series voice?
+
+Also provide:
+- OVERALL STATUS: APPROVED / APPROVED WITH NOTES / NEEDS REVISION
+- One-line summary
+- If corrections needed: exact revised text
+
+Return ONLY valid JSON:
+{"dimensions":{"historical":{"status":"VERIFIED|NOTE|FLAG","finding":"...","correction":null},"aesthetics":{"status":"...","finding":"...","correction":null},"musical":{"status":"...","finding":"...","correction":null},"instruments":{"status":"...","finding":"...","correction":null},"lyrical":{"status":"...","finding":"...","correction":null},"tone":{"status":"...","finding":"...","correction":null}},"overall":"APPROVED|APPROVED WITH NOTES|NEEDS REVISION","summary":"one line","revisedSceneDescription":null,"revisedNarration":null}`;
+
+  const result = await gemini(prompt, systemPrompt);
+  try {
+    const json = result.match(/\{[\s\S]*\}/)?.[0];
+    return JSON.parse(json);
+  } catch(e) {
+    return { error: true, raw: result };
+  }
+}
+
+const HA_DIM_META = {
+  historical: { icon: '📚', label: 'HISTORICAL ACCURACY' },
+  aesthetics: { icon: '🎨', label: 'AESTHETICS' },
+  musical: { icon: '🎵', label: 'MUSICAL DIRECTION' },
+  instruments: { icon: '🎸', label: 'INSTRUMENT ACCURACY' },
+  lyrical: { icon: '📝', label: 'LYRICAL/NARRATIVE ACCURACY' },
+  tone: { icon: '🎭', label: 'TONE & ACCENT CONSISTENCY' }
+};
+
+function renderAgentPanel(check, episode, panel) {
+  const p = document.getElementById('haPanel');
+  if (check.error) {
+    p.innerHTML = `<div class="ha-header"><span class="ha-badge">✦ HISTORICAL ACCURACY AGENT</span><button class="ha-close" onclick="closeAgentPanel()">×</button></div><div style="padding:20px;font-size:11px;color:var(--text-dim);">Agent returned raw text:<br><pre style="white-space:pre-wrap;margin-top:8px;font-size:10px;color:var(--text-muted);">${(check.raw||'').slice(0,2000)}</pre></div>`;
+    return;
+  }
+  let dimHtml = '';
+  for (const [key, dim] of Object.entries(check.dimensions || {})) {
+    const meta = HA_DIM_META[key] || { icon: '•', label: key.toUpperCase() };
+    const st = (dim.status || '').toUpperCase();
+    let statusClass = 'ha-status-verified', statusText = '✅ VERIFIED';
+    if (st.includes('NOTE')) { statusClass = 'ha-status-note'; statusText = '⚠️ NOTE'; }
+    if (st.includes('FLAG')) { statusClass = 'ha-status-flag'; statusText = '❌ FLAG'; }
+    dimHtml += `<div class="ha-dim"><div class="ha-dim-hdr"><span class="ha-dim-title">${meta.icon} ${meta.label}</span><span class="${statusClass}">${statusText}</span></div><div class="ha-dim-body">${dim.finding || ''}</div>${dim.correction ? `<div class="ha-dim-correction">Correction: ${dim.correction}</div>` : ''}</div>`;
+  }
+  const overallColor = check.overall === 'NEEDS REVISION' ? '#c04040' : 'var(--gold)';
+  p.innerHTML = `
+    <div class="ha-header"><span class="ha-badge">✦ HISTORICAL ACCURACY AGENT</span><button class="ha-close" onclick="closeAgentPanel()">×</button></div>
+    <div class="ha-meta">ERA: ${episode.era} · ${episode.location || episode.title}<br>CHECKING: "${episode.title}" — Panel ${(panel.index || 0) + 1}</div>
+    ${dimHtml}
+    <div class="ha-overall"><div class="ha-overall-status" style="color:${overallColor}">OVERALL: ${check.overall || 'UNKNOWN'}</div><div class="ha-overall-summary">${check.summary || ''}</div></div>
+    <div class="ha-actions">
+      ${check.revisedSceneDescription ? `<button class="ha-btn primary" onclick="haApplyCorrections()">✦ Apply Corrections to Scene Description</button>` : ''}
+      ${check.revisedNarration ? `<button class="ha-btn" onclick="haApplyNarration()">✦ Rewrite Narration with Agent Voice</button>` : ''}
+      <button class="ha-btn" onclick="closeAgentPanel()">Dismiss</button>
+    </div>`;
+}
+
+window._lastHACheck = null;
+window._lastHAPanel = null;
+
+function showAgentPanel(check, episode, panel) {
+  window._lastHACheck = check;
+  window._lastHAPanel = panel;
+  window._lastHAEpisode = episode;
+  renderAgentPanel(check, episode, panel);
+  document.getElementById('haOverlay').classList.add('show');
+}
+
+window.closeAgentPanel = function() {
+  document.getElementById('haOverlay').classList.remove('show');
+};
+
+window.haApplyCorrections = function() {
+  const check = window._lastHACheck;
+  const ep = window._lastHAEpisode;
+  if (check && check.revisedSceneDescription && ep && ep.panels.length) {
+    const panel = ep.panels[ep.panels.length - 1];
+    panel.caption = check.revisedSceneDescription;
+    panel.sceneDescription = check.revisedSceneDescription;
+    csToast('✦ Scene description updated');
+    closeAgentPanel();
+    if (selectedItem) selectItem(selectedItem.type, selectedItem.index);
+  }
+};
+
+window.haApplyNarration = function() {
+  const check = window._lastHACheck;
+  const ep = window._lastHAEpisode;
+  if (check && check.revisedNarration && ep) {
+    ep.narration = check.revisedNarration;
+    csToast('✦ Narration updated');
+    closeAgentPanel();
+    if (selectedItem) selectItem(selectedItem.type, selectedItem.index);
+  }
+};
+
+// ── HISTORY CHECK BUTTON ──
+window.edHistoryCheck = async function() {
+  if (!selectedItem || selectedItem.type !== 'episode') return;
+  const ep = EPISODES[selectedItem.index];
+  const panel = ep.panels.length ? ep.panels[ep.panels.length - 1] : { caption: ep.narration, narration: ep.narration, index: 0, sceneDescription: ep.narration };
+  panel.index = panel.index || (ep.panels.length ? ep.panels.length - 1 : 0);
+  csToast('✦ Checking historical accuracy…');
+  const check = await runHistoryCheck(ep, panel);
+  showAgentPanel(check, ep, panel);
+};
+
+// ── AUDIT FULL EPISODE ──
+window.edAuditEpisode = async function() {
+  if (!selectedItem || selectedItem.type !== 'episode') return;
+  const ep = EPISODES[selectedItem.index];
+  if (!ep.panels.length) {
+    // Audit narration only
+    const panel = { caption: ep.narration, narration: ep.narration, index: 0, sceneDescription: ep.narration };
+    csToast('✦ Auditing episode…');
+    const check = await runHistoryCheck(ep, panel);
+    showAgentPanel(check, ep, panel);
+    return;
+  }
+  csToast(`✦ Auditing ${ep.panels.length} panels…`);
+  const results = [];
+  for (let i = 0; i < ep.panels.length; i++) {
+    const panel = { ...ep.panels[i], index: i, sceneDescription: ep.panels[i].caption || ep.panels[i].sceneDescription || '', narration: ep.panels[i].narration || ep.narration };
+    const check = await runHistoryCheck(ep, panel);
+    results.push({ panel: i + 1, check });
+  }
+  // Show audit summary
+  const p = document.getElementById('haPanel');
+  let auditHtml = results.map(r => {
+    if (r.check.error) return `<div class="ha-audit-item"><div class="ha-audit-ep">Panel ${r.panel}</div><div class="ha-audit-sum" style="color:#c04040;">Error parsing response</div></div>`;
+    const overallColor = r.check.overall === 'NEEDS REVISION' ? '#c04040' : r.check.overall === 'APPROVED' ? 'var(--gold)' : '#c89020';
+    return `<div class="ha-audit-item"><div class="ha-audit-ep">Panel ${r.panel} — <span style="color:${overallColor}">${r.check.overall}</span></div><div class="ha-audit-sum">${r.check.summary || ''}</div></div>`;
+  }).join('');
+  p.innerHTML = `<div class="ha-header"><span class="ha-badge">✦ EPISODE AUDIT — ${ep.title}</span><button class="ha-close" onclick="closeAgentPanel()">×</button></div><div class="ha-meta">${ep.panels.length} PANELS · ${ep.era}</div>${auditHtml}<div class="ha-actions"><button class="ha-btn" onclick="closeAgentPanel()">Dismiss</button></div>`;
+  document.getElementById('haOverlay').classList.add('show');
+};
+
+// ── OVERRIDE: PRE-GENERATION VALIDATION ──
+const _origEdGeneratePanel = window.edGeneratePanel;
+window.edGeneratePanel = async function() {
+  if (!selectedItem || selectedItem.type !== 'episode') return;
+  const ep = EPISODES[selectedItem.index];
+  const panel = { caption: ep.narration, narration: ep.narration, index: ep.panels.length, sceneDescription: ep.narration };
+  csToast('✦ Checking historical accuracy…');
+  const check = await runHistoryCheck(ep, panel);
+  if (check.overall === 'NEEDS REVISION') {
+    showAgentPanel(check, ep, panel);
+    csToast('❌ Fix flagged issues before generating', '#c04040');
+    return;
+  }
+  // Apply any corrections
+  if (check.revisedSceneDescription) {
+    ep.narration = check.revisedSceneDescription;
+  }
+  // Proceed with original generation
+  await _origEdGeneratePanel();
 };
 
 // ── INIT ──
@@ -1984,6 +2295,11 @@ function prodToast(msg){
 }
 })();
 </script>
+
+<!-- ══ HISTORICAL AGENT OVERLAY ══ -->
+<div class="ha-overlay" id="haOverlay" onclick="if(event.target===this)closeAgentPanel()">
+  <div class="ha-panel" id="haPanel"></div>
+</div>
 
 </body>
 </html>
