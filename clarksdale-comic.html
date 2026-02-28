@@ -820,5 +820,469 @@ function toast(msg,type=''){
 
 init();
 </script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     COMIC VIDEO PLAYER — Mobile video experience overlay
+     Injected via JS, does NOT modify existing editor structure
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
+<style>
+/* ── VIDEO PLAYER STYLES ── */
+.cv-overlay{position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .4s;pointer-events:none}
+.cv-overlay.active{opacity:1;pointer-events:all}
+.cv-close{position:fixed;top:16px;right:16px;z-index:10001;width:40px;height:40px;border-radius:50%;background:rgba(30,30,30,.8);border:1px solid #333;color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s}
+.cv-close:hover{transform:scale(1.15)}
+.cv-phone{width:min(390px,100vw);height:min(844px,100vh);background:#0a0a0a;border-radius:40px;border:3px solid #333;box-shadow:0 0 40px rgba(0,0,0,.8),inset 0 0 20px rgba(255,255,255,.03);overflow:hidden;position:relative}
+.cv-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:28px;background:#0a0a0a;border-radius:0 0 20px 20px;z-index:10}
+.cv-screen{width:100%;height:100%;background:#111;overflow:hidden;position:relative}
+.cv-panel-container{position:absolute;inset:0;display:flex;flex-direction:column}
+.cv-img-wrap{flex:1;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;background:#000}
+.cv-panel-img{width:100%;height:100%;object-fit:cover;will-change:transform}
+.cv-panel-video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;z-index:2}
+.cv-halftone{position:absolute;inset:0;background:radial-gradient(circle,transparent 40%,rgba(0,0,0,.15) 41%);background-size:4px 4px;pointer-events:none;opacity:.3;z-index:3}
+.cv-sfx{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0) rotate(-5deg);font-family:'Bangers',cursive;font-size:64px;color:#FF3D5A;text-shadow:3px 3px 0 #000,-1px -1px 0 #000;z-index:5;pointer-events:none;opacity:0;transition:none;letter-spacing:4px}
+.cv-sfx.show{animation:cvSfxPop .6s ease-out forwards}
+@keyframes cvSfxPop{0%{transform:translate(-50%,-50%) scale(0) rotate(-12deg);opacity:0}30%{transform:translate(-50%,-50%) scale(1.3) rotate(3deg);opacity:1}60%{transform:translate(-50%,-50%) scale(.95) rotate(-1deg);opacity:1}100%{transform:translate(-50%,-50%) scale(1) rotate(0deg);opacity:0}}
+.cv-caption-box{position:absolute;bottom:80px;left:12px;right:12px;background:rgba(10,7,4,.88);border:2px solid rgba(200,151,58,.4);border-radius:6px;padding:14px 16px;z-index:4;min-height:60px}
+.cv-caption-tag{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:700;color:#C8973A;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+.cv-caption-text{font-family:'Playfair Display',serif;font-size:14px;color:#F0E6D0;line-height:1.6;font-style:italic}
+.cv-caption-cursor{display:inline-block;width:2px;height:14px;background:#C8973A;margin-left:2px;animation:cvBlink .6s infinite}
+@keyframes cvBlink{0%,100%{opacity:1}50%{opacity:0}}
+.cv-progress{position:absolute;bottom:20px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:8px;z-index:6}
+.cv-dot{width:8px;height:8px;border-radius:50%;background:rgba(200,151,58,.25);transition:all .3s}
+.cv-dot.active{background:#C8973A;box-shadow:0 0 8px rgba(200,151,58,.6);animation:cvPulse 1.5s infinite}
+.cv-dot.done{background:rgba(200,151,58,.6)}
+@keyframes cvPulse{0%,100%{box-shadow:0 0 8px rgba(200,151,58,.4)}50%{box-shadow:0 0 16px rgba(200,151,58,.8)}}
+.cv-controls{position:absolute;bottom:44px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:20px;z-index:6}
+.cv-ctrl-btn{width:36px;height:36px;border-radius:50%;border:1px solid rgba(200,151,58,.3);background:rgba(10,7,4,.7);color:#C8973A;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
+.cv-ctrl-btn:hover{background:rgba(200,151,58,.15);border-color:#C8973A}
+.cv-panel-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(200,151,58,.6)}
+.cv-audio-toggle{position:absolute;top:36px;right:12px;z-index:10;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.5);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.cv-ep-title{position:absolute;top:36px;left:12px;z-index:10}
+.cv-ep-title .cv-et-era{font-family:'DM Sans',sans-serif;font-size:8px;font-weight:700;color:#C8973A;letter-spacing:2px;text-transform:uppercase}
+.cv-ep-title .cv-et-name{font-family:'Playfair Display',serif;font-size:16px;font-weight:900;color:#F0E6D0;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+.cv-generate-bar{position:absolute;top:80px;right:12px;z-index:10}
+.cv-gen-btn{padding:6px 12px;border-radius:4px;border:1px solid rgba(200,151,58,.3);background:rgba(10,7,4,.8);color:#C8973A;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+.cv-gen-btn:hover{background:rgba(200,151,58,.15);border-color:#C8973A}
+.cv-gen-btn:disabled{opacity:.4;cursor:default}
+.cv-gen-status{position:absolute;top:110px;right:12px;z-index:10;display:flex;flex-direction:column;gap:3px;align-items:flex-end}
+.cv-gs-item{font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(200,151,58,.5)}
+
+/* Ken Burns animations */
+@keyframes cvKB1{from{transform:scale(1) translate(0,0)}to{transform:scale(1.15) translate(-2%,-1%)}}
+@keyframes cvKB2{from{transform:scale(1.1) translate(-3%,0)}to{transform:scale(1) translate(3%,2%)}}
+@keyframes cvKB3{from{transform:scale(1) translate(0,-2%)}to{transform:scale(1.12) translate(1%,2%)}}
+@keyframes cvKB4{from{transform:scale(1.08) translate(2%,-1%)}to{transform:scale(1) translate(-1%,1%)}}
+@keyframes cvKB5{from{transform:scale(1) translate(-1%,1%)}to{transform:scale(1.1) translate(2%,-2%)}}
+
+/* Panel entrance */
+@keyframes cvSlideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.cv-entering{animation:cvSlideUp .5s ease-out forwards}
+
+/* WATCH button */
+.cv-watch-btn{background:linear-gradient(135deg,#FF6B35,#FF3D5A);color:#fff;border:3px solid #000;font-family:'Bangers',cursive;font-size:18px;letter-spacing:2px;padding:12px 24px;border-radius:4px;cursor:pointer;box-shadow:4px 4px 0 #000;transition:transform .1s;margin-top:10px;display:inline-block}
+.cv-watch-btn:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 #000}
+.cv-watch-btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #000}
+
+@media(max-width:500px){
+  .cv-phone{border-radius:0;border:none;width:100vw;height:100vh}
+}
+</style>
+
+<div id="cv-overlay" class="cv-overlay">
+  <div class="cv-close" onclick="cvClose()">✕</div>
+  <div class="cv-phone">
+    <div class="cv-notch"></div>
+    <div class="cv-screen" id="cv-screen-player">
+      <div class="cv-ep-title">
+        <div class="cv-et-era" id="cv-era"></div>
+        <div class="cv-et-name" id="cv-title"></div>
+      </div>
+      <div class="cv-audio-toggle" id="cv-audio-btn" onclick="cvToggleAudio()">🔇</div>
+      <div class="cv-generate-bar"><button class="cv-gen-btn" id="cv-gen-btn" onclick="cvGenerateAll()">✨ ANIMATE</button></div>
+      <div class="cv-gen-status" id="cv-gen-status"></div>
+      <div class="cv-panel-container cv-entering" id="cv-panel-ctr">
+        <div class="cv-img-wrap" id="cv-img-wrap">
+          <img id="cv-panel-img" class="cv-panel-img" alt="">
+          <video id="cv-panel-vid" class="cv-panel-video" style="display:none" muted playsinline></video>
+          <div class="cv-halftone"></div>
+        </div>
+        <div class="cv-sfx" id="cv-sfx"></div>
+        <div class="cv-caption-box">
+          <div class="cv-caption-tag">Narration</div>
+          <div class="cv-caption-text" id="cv-caption"></div>
+        </div>
+      </div>
+      <div class="cv-controls">
+        <div class="cv-ctrl-btn" onclick="cvPrev()">‹</div>
+        <span class="cv-panel-num" id="cv-panel-num"></span>
+        <div class="cv-ctrl-btn" onclick="cvNext()">›</div>
+      </div>
+      <div class="cv-progress" id="cv-progress"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ── SFX MAP ──
+  const CV_SFX = {
+    sonhouse:   ['CRACK!','SNAP!','SOUL!','PREACH!','BLUES!','AMEN!'],
+    samcooke:   ['SING!','SOAR!','CHANGE!','FREEDOM!','YES!','SOUL!'],
+    natedogg:   ['REGULATE!','HOOK!','GOSPEL!','SMOOTH!','WEST!','GLORY!'],
+    rickross:   ['CLARKSDALE!','BOSS!','DEEP!','HEAVY!','RISE!','EMPIRE!'],
+    riverside:  ['HISTORY!','SACRED!','REMEMBER!','BLUES!','SHELTER!','REST!'],
+    crossroads: ['MIDNIGHT!','DEAL!','STRINGS!','SOUL!','HOWL!','GONE!'],
+    saturday:   ['STOMP!','HOLLER!','BLUES!','SHAKE!','DAWN!','PLAY!'],
+    rocket88:   ['DRIVE!','CRASH!','FUZZ!','RECORD!','FIRE!','BORN!'],
+    migration:  ['NORTH!','ELECTRIC!','FREE!','PLUG!','THUNDER!','ROAR!'],
+    lomax:      ['LISTEN!','CAPTURE!','SPIN!','VOICE!','WAX!','POWER!'],
+    empress:    ['QUEEN!','VOICE!','CRACK!','SILK!','ROAR!','DAWN!'],
+    river:      ['FLOW!','DEEP!','TIME!','ANCIENT!','MUD!','ETERNAL!'],
+    spider:     ['WEAVE!','PATTERN!','THREAD!','REMEMBER!','HOLD!','WEB!'],
+    custom:     ['CREATE!','WRITE!','DREAM!','BUILD!','TELL!','BORN!']
+  };
+
+  const KB_ANIMS = ['cvKB1','cvKB2','cvKB3','cvKB4','cvKB5'];
+
+  // ── VIDEO PLAYER STATE ──
+  let cvEp = null;
+  let cvPanels = [];
+  let cvIdx = 0;
+  let cvAudio = null;
+  let cvAudioOn = false;
+  let cvAutoTimer = null;
+  let cvTypeTimer = null;
+  let cvParallaxActive = false;
+  let cvGenVideos = {}; // localStorage cache: {epId: {panelIdx: videoUrl}}
+
+  // Load persisted video generation status
+  try { cvGenVideos = JSON.parse(localStorage.getItem('cv_gen_videos') || '{}'); } catch(e){}
+  function cvSaveGen(){ try { localStorage.setItem('cv_gen_videos', JSON.stringify(cvGenVideos)); } catch(e){} }
+
+  // ── EPISODE DATA RESOLVER ──
+  function cvGetPanels(ep){
+    const urlMap = {spider:SPIDER_URLS, crossroads:CROSSROADS_URLS, saturday:DOCKERY_URLS, rocket88:IKE_URLS, sonhouse:SONHOUSE_URLS, samcooke:SAMCOOKE_URLS};
+    const preUrls = urlMap[ep.id];
+    return ep.panels.map((p,i)=>({
+      imageUrl: p.imageUrl || (preUrls ? preUrls[i] : null),
+      narration: p.caption || '',
+      sfx: (CV_SFX[ep.id]||CV_SFX.custom)[i % (CV_SFX[ep.id]||CV_SFX.custom).length]
+    })).filter(p => p.imageUrl);
+  }
+
+  // ── OPEN / CLOSE ──
+  window.cvOpen = function(ep){
+    cvEp = ep;
+    cvPanels = cvGetPanels(ep);
+    if(!cvPanels.length) return;
+    cvIdx = 0;
+    document.getElementById('cv-era').textContent = ep.era;
+    document.getElementById('cv-title').textContent = ep.title;
+    document.getElementById('cv-overlay').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    cvRenderProgress();
+    cvShowPanel(0);
+    cvStartParallax();
+    cvUpdateGenStatus();
+  };
+
+  window.cvClose = function(){
+    document.getElementById('cv-overlay').classList.remove('active');
+    document.body.style.overflow = '';
+    cvStopAuto();
+    cvStopType();
+    if(cvAudio){ cvAudio.pause(); cvAudio = null; }
+    cvStopParallax();
+  };
+
+  // ── SHOW PANEL ──
+  function cvShowPanel(idx){
+    cvStopAuto();
+    cvStopType();
+    cvIdx = idx;
+    const p = cvPanels[idx];
+    const img = document.getElementById('cv-panel-img');
+    const vid = document.getElementById('cv-panel-vid');
+    const ctr = document.getElementById('cv-panel-ctr');
+    const sfxEl = document.getElementById('cv-sfx');
+
+    // Entrance animation
+    ctr.classList.remove('cv-entering');
+    void ctr.offsetWidth;
+    ctr.classList.add('cv-entering');
+
+    // Check for generated video
+    const genUrl = cvGenVideos[cvEp.id] && cvGenVideos[cvEp.id][idx];
+    if(genUrl){
+      img.style.display = 'none';
+      vid.style.display = 'block';
+      vid.src = genUrl;
+      vid.play().catch(()=>{});
+    } else {
+      vid.style.display = 'none';
+      vid.pause();
+      img.style.display = 'block';
+      img.src = p.imageUrl;
+      // Ken Burns
+      const kb = KB_ANIMS[idx % KB_ANIMS.length];
+      img.style.animation = 'none';
+      void img.offsetWidth;
+      img.style.animation = `${kb} 6s ease-in-out forwards`;
+    }
+
+    // SFX flash
+    sfxEl.classList.remove('show');
+    sfxEl.textContent = p.sfx;
+    void sfxEl.offsetWidth;
+    sfxEl.classList.add('show');
+
+    // Caption typewriter
+    const capEl = document.getElementById('cv-caption');
+    capEl.innerHTML = '';
+    if(p.narration){
+      cvTypeText(capEl, p.narration);
+    }
+
+    // Update progress
+    document.getElementById('cv-panel-num').textContent = `${idx+1} / ${cvPanels.length}`;
+    cvRenderProgress();
+
+    // Auto-advance after 5s
+    cvAutoTimer = setTimeout(()=>{
+      if(cvIdx < cvPanels.length - 1) cvShowPanel(cvIdx + 1);
+    }, 5500);
+  }
+
+  // ── TYPEWRITER ──
+  function cvTypeText(el, text){
+    let i = 0;
+    el.innerHTML = '<span class="cv-caption-cursor"></span>';
+    cvTypeTimer = setInterval(()=>{
+      if(i >= text.length){ clearInterval(cvTypeTimer); cvTypeTimer = null; return; }
+      const cursor = el.querySelector('.cv-caption-cursor');
+      const span = document.createTextNode(text[i]);
+      el.insertBefore(span, cursor);
+      i++;
+    }, 30);
+  }
+  function cvStopType(){ if(cvTypeTimer){ clearInterval(cvTypeTimer); cvTypeTimer = null; } }
+  function cvStopAuto(){ if(cvAutoTimer){ clearTimeout(cvAutoTimer); cvAutoTimer = null; } }
+
+  // ── CONTROLS ──
+  window.cvPrev = function(){ if(cvIdx > 0) cvShowPanel(cvIdx - 1); };
+  window.cvNext = function(){ if(cvIdx < cvPanels.length - 1) cvShowPanel(cvIdx + 1); };
+
+  // ── PROGRESS DOTS ──
+  function cvRenderProgress(){
+    const el = document.getElementById('cv-progress');
+    el.innerHTML = cvPanels.map((_,i)=>{
+      const cls = i === cvIdx ? 'active' : i < cvIdx ? 'done' : '';
+      return `<div class="cv-dot ${cls}"></div>`;
+    }).join('');
+  }
+
+  // ── AUDIO ──
+  window.cvToggleAudio = function(){
+    cvAudioOn = !cvAudioOn;
+    document.getElementById('cv-audio-btn').textContent = cvAudioOn ? '🔊' : '🔇';
+    if(cvAudioOn && !cvAudio){
+      // Placeholder - episodes with audioUrl would play here
+      if(cvEp.audioUrl){
+        cvAudio = new Audio(cvEp.audioUrl);
+        cvAudio.loop = true;
+        cvAudio.volume = 0.4;
+        cvAudio.play().catch(()=>{});
+      }
+    } else if(!cvAudioOn && cvAudio){
+      cvAudio.pause();
+      cvAudio = null;
+    }
+  };
+
+  // ── PARALLAX (mouse + gyroscope) ──
+  function cvParallaxMove(x, y){
+    const img = document.getElementById('cv-panel-img');
+    if(img && img.style.display !== 'none'){
+      img.style.transform = `scale(1.1) translate(${x}px, ${y}px)`;
+    }
+  }
+  function cvMouseHandler(e){
+    const x = (e.clientX / window.innerWidth - 0.5) * 20;
+    const y = (e.clientY / window.innerHeight - 0.5) * 20;
+    cvParallaxMove(x, y);
+  }
+  function cvGyroHandler(e){
+    const x = (e.gamma || 0) * 0.3;
+    const y = (e.beta || 0) * 0.2;
+    cvParallaxMove(x, y);
+  }
+  function cvStartParallax(){
+    if(cvParallaxActive) return;
+    cvParallaxActive = true;
+    window.addEventListener('mousemove', cvMouseHandler);
+    window.addEventListener('deviceorientation', cvGyroHandler);
+  }
+  function cvStopParallax(){
+    cvParallaxActive = false;
+    window.removeEventListener('mousemove', cvMouseHandler);
+    window.removeEventListener('deviceorientation', cvGyroHandler);
+  }
+
+  // ── TOUCH GESTURES ──
+  let cvTouchX = 0;
+  document.getElementById('cv-screen-player').addEventListener('touchstart', e => { cvTouchX = e.touches[0].clientX; }, {passive:true});
+  document.getElementById('cv-screen-player').addEventListener('touchend', e => {
+    const diff = cvTouchX - e.changedTouches[0].clientX;
+    if(Math.abs(diff) > 50){ diff > 0 ? cvNext() : cvPrev(); }
+  }, {passive:true});
+
+  // ── KEYBOARD ──
+  document.addEventListener('keydown', e => {
+    if(!document.getElementById('cv-overlay').classList.contains('active')) return;
+    if(e.key === 'Escape') cvClose();
+    if(e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); cvNext(); }
+    if(e.key === 'ArrowLeft') { e.preventDefault(); cvPrev(); }
+  });
+
+  // ── FAL VIDEO GENERATION ──
+  const CV_FAL_GEN = 'https://awareness-proxy-328246068140.us-central1.run.app/fal/generate';
+  const CV_FAL_STATUS = 'https://awareness-proxy-328246068140.us-central1.run.app/fal/status/';
+  const CV_FAL_RESULT = 'https://awareness-proxy-328246068140.us-central1.run.app/fal/result/';
+  const CV_GEMINI = 'https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+
+  let cvGenerating = false;
+
+  async function cvGetStyleCard(ep, panels){
+    try {
+      const r = await fetch(CV_GEMINI, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          system_instruction:{parts:[{text:'You generate concise visual style guides for video generation.'}]},
+          contents:[{parts:[{text:`Episode: "${ep.title}" about ${ep.sub}. Panels: ${panels.map(p=>p.narration).join(' | ')}\n\nGenerate a 50-word visual consistency guide for image-to-video generation. Include: lighting style, color palette, camera movement style, mood/atmosphere, era-appropriate visual elements. Output only the guide text.`}]}]
+        })
+      });
+      const d = await r.json();
+      return d?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    } catch(e){ return ''; }
+  }
+
+  async function cvGenPanel(imageUrl, narration, styleCard, panelIdx){
+    try {
+      const prompt = `subtle comic book panel animation, parallax camera drift, cinematic breathing motion, blues music era, graphic novel style, ${narration.slice(0,100)}${styleCard ? ', ' + styleCard.slice(0,150) : ''}`;
+      const startRes = await fetch(CV_FAL_GEN, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:'fal-ai/kling-video/v1.6/standard/image-to-video',
+          image_url: imageUrl,
+          prompt, duration:'5', aspect_ratio:'9:16'
+        })
+      });
+      const { request_id } = await startRes.json();
+      if(!request_id) return null;
+
+      // Poll
+      for(let attempt = 0; attempt < 60; attempt++){
+        await new Promise(r=>setTimeout(r,3000));
+        const statusRes = await fetch(CV_FAL_STATUS + request_id + '?model=fal-ai/kling-video/v1.6/standard');
+        const status = await statusRes.json();
+        if(status.status === 'COMPLETED'){
+          const resultRes = await fetch(CV_FAL_RESULT + request_id + '?model=fal-ai/kling-video/v1.6/standard');
+          const result = await resultRes.json();
+          return result?.video?.url || null;
+        }
+        if(status.status === 'FAILED') return null;
+      }
+      return null;
+    } catch(e){ return null; }
+  }
+
+  window.cvGenerateAll = async function(){
+    if(cvGenerating || !cvEp) return;
+    cvGenerating = true;
+    document.getElementById('cv-gen-btn').disabled = true;
+    document.getElementById('cv-gen-btn').textContent = '⏳ Generating...';
+    if(!cvGenVideos[cvEp.id]) cvGenVideos[cvEp.id] = {};
+
+    const styleCard = await cvGetStyleCard(cvEp, cvPanels);
+    cvUpdateGenStatus();
+
+    for(let i = 0; i < cvPanels.length; i++){
+      if(cvGenVideos[cvEp.id][i]) continue; // already done
+      cvGenVideos[cvEp.id][i] = 'generating';
+      cvSaveGen();
+      cvUpdateGenStatus();
+
+      const url = await cvGenPanel(cvPanels[i].imageUrl, cvPanels[i].narration, styleCard, i);
+      if(url){
+        cvGenVideos[cvEp.id][i] = url;
+        // If currently viewing this panel, swap to video
+        if(cvIdx === i){
+          const vid = document.getElementById('cv-panel-vid');
+          const img = document.getElementById('cv-panel-img');
+          img.style.display = 'none';
+          vid.style.display = 'block';
+          vid.src = url;
+          vid.play().catch(()=>{});
+        }
+      } else {
+        delete cvGenVideos[cvEp.id][i];
+      }
+      cvSaveGen();
+      cvUpdateGenStatus();
+    }
+
+    cvGenerating = false;
+    document.getElementById('cv-gen-btn').disabled = false;
+    document.getElementById('cv-gen-btn').textContent = '✨ ANIMATE';
+  };
+
+  function cvUpdateGenStatus(){
+    const el = document.getElementById('cv-gen-status');
+    if(!cvEp || !cvGenVideos[cvEp.id]){ el.innerHTML = ''; return; }
+    const g = cvGenVideos[cvEp.id];
+    el.innerHTML = cvPanels.map((_,i)=>{
+      const v = g[i];
+      const icon = !v ? '⬜' : v === 'generating' ? '🔄' : '✅';
+      return `<div class="cv-gs-item">${icon} Panel ${i+1}</div>`;
+    }).join('');
+  }
+
+  // ── INJECT WATCH BUTTONS ──
+  function cvInjectButtons(){
+    EPISODES.forEach((ep, idx) => {
+      if(ep.id === 'custom') return;
+      const panels = cvGetPanels(ep);
+      if(!panels.length) return;
+
+      // Find the ep-card in sidebar
+      const cards = document.querySelectorAll('.ep-card');
+      if(cards[idx]){
+        const existing = cards[idx].querySelector('.cv-watch-btn');
+        if(existing) return;
+        const btn = document.createElement('button');
+        btn.className = 'cv-watch-btn';
+        btn.innerHTML = `▶ WATCH`;
+        btn.onclick = function(e){
+          e.stopPropagation();
+          cvOpen(ep);
+        };
+        cards[idx].appendChild(btn);
+      }
+    });
+  }
+
+  // Re-inject after renders (MutationObserver on sidebar)
+  const cvObs = new MutationObserver(()=> setTimeout(cvInjectButtons, 50));
+  const sbEl = document.getElementById('epList');
+  if(sbEl) cvObs.observe(sbEl, {childList:true});
+
+  // Initial injection after a tick
+  setTimeout(cvInjectButtons, 200);
+
+})();
+</script>
 </body>
 </html>
