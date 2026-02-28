@@ -3,985 +3,1131 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Clarksdale Series — Infinity Comic</title>
+<title>The Clarksdale Series — A Trinity World Production</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-/* ── RESET ── */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',sans-serif;background:#0d0d0d;color:#e8d5b0;overflow:hidden;height:100vh}
+:root {
+  --bg: #0d0d0d;
+  --surface: #111108;
+  --surface2: #181510;
+  --border: #2a1f00;
+  --gold: #D4AF37;
+  --gold-dim: #8a6f1e;
+  --text: #e8d5b0;
+  --text-dim: #8a7a5a;
+  --text-muted: #4a3f2a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.6;display:flex;flex-direction:column;}
 
-/* ── VARIABLES ── */
-:root{
-  --bg:#0d0d0d;--surface:#1a1200;--surface2:#231800;--border:#2a1f00;
-  --gold:#D4AF37;--gold-dim:#8a6f1e;--text:#e8d5b0;--text-dim:#8a7a5a;
-  --selected:#2a1f00;--selected-border:#D4AF37;--btn-primary:#D4AF37;
-  --phone-bg:#111;--phone-border:#333;
+/* ══ TOP HEADER BAR ══ */
+.top-bar{
+  height:52px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.top-bar-left{display:flex;align-items:center;gap:12px;}
+.top-bar-logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold-dim));display:flex;align-items:center;justify-content:center;font-size:15px;}
+.top-bar-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--text);}
+.top-bar-sub{font-size:9px;color:var(--text-muted);letter-spacing:.15em;text-transform:uppercase;}
+.top-bar-stats{font-size:11px;color:var(--text-dim);display:flex;gap:16px;}
+.top-bar-stats span{color:var(--gold);font-weight:600;}
+.top-bar-right{display:flex;align-items:center;gap:10px;}
+.top-btn{padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-size:10px;font-weight:600;letter-spacing:.06em;cursor:pointer;transition:all .2s;font-family:inherit;}
+.top-btn:hover{border-color:var(--gold);color:var(--gold);}
+.top-btn.gold{background:linear-gradient(135deg,var(--gold),var(--gold-dim));color:#000;border-color:var(--gold);}
+
+/* ══ MAIN 3-PANEL LAYOUT ══ */
+.app-layout{display:flex;flex:1;overflow:hidden;}
+
+/* ── LEFT SIDEBAR ── */
+.sidebar{width:280px;flex-shrink:0;display:flex;flex-direction:column;background:var(--surface);border-right:1px solid var(--border);overflow:hidden;}
+.sidebar-tabs{display:flex;border-bottom:1px solid var(--border);background:#0d0d0d;flex-shrink:0;}
+.sidebar-tab{
+  flex:1;padding:10px 4px;text-align:center;
+  font-size:8px;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;
+  transition:all .2s;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit;
+}
+.sidebar-tab:hover{color:var(--text-dim);}
+.sidebar-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.sidebar-content{flex:1;overflow-y:auto;}
+.sidebar-content::-webkit-scrollbar{width:3px;}
+.sidebar-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+.sidebar-panel{display:none;}
+.sidebar-panel.active{display:block;}
+
+/* Sidebar section header */
+.sb-header{padding:14px 16px 10px;border-bottom:1px solid var(--border);}
+.sb-header-count{font-size:10px;color:var(--text-dim);letter-spacing:.1em;}
+.sb-search{width:100%;padding:6px 10px;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:11px;margin-top:8px;outline:none;font-family:inherit;}
+.sb-search:focus{border-color:var(--gold-dim);}
+
+/* Episode card in sidebar */
+.ep-card{padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.ep-card:hover{background:var(--surface2);}
+.ep-card.selected{background:var(--surface2);border-left:3px solid var(--gold);}
+.ep-num{font-size:9px;letter-spacing:2px;color:var(--gold-dim);text-transform:uppercase;}
+.ep-title{font-family:'Playfair Display',serif;color:var(--text);font-size:13px;margin:2px 0;}
+.ep-meta{font-size:10px;color:var(--text-muted);}
+
+/* Character card in sidebar */
+.char-card-sb{padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;overflow:hidden;}
+.char-card-sb:hover{background:var(--surface2);}
+.char-card-sb.selected{background:var(--surface2);border-left:3px solid var(--gold);}
+.char-portrait{width:44px;height:44px;border-radius:50%;border:1px solid var(--border);object-fit:cover;float:left;margin-right:10px;}
+.char-name-sb{font-family:'Playfair Display',serif;color:var(--text);font-size:13px;}
+.char-archetype{font-size:8px;letter-spacing:2px;color:var(--gold-dim);text-transform:uppercase;}
+.char-era-sb{font-size:10px;color:var(--text-muted);}
+.iam-score-bar{display:flex;align-items:center;gap:6px;margin:3px 0;font-size:10px;clear:both;}
+.iam-score-label{color:var(--text-dim);width:70px;font-size:9px;}
+.iam-score-track{flex:1;height:2px;background:var(--border);position:relative;}
+.iam-score-fill{height:100%;background:var(--gold);}
+.iam-score-val{color:var(--gold-dim);font-size:9px;width:26px;text-align:right;}
+
+/* Artifact card in sidebar */
+.artifact-card-sb{padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;gap:10px;align-items:center;transition:background .15s;}
+.artifact-card-sb:hover{background:var(--surface2);}
+.artifact-card-sb.selected{background:var(--surface2);border-left:3px solid var(--gold);}
+.artifact-icon{font-size:18px;flex-shrink:0;}
+.artifact-name-sb{color:var(--text);font-size:12px;}
+.artifact-owner-sb{font-size:10px;color:var(--text-dim);}
+
+/* Theme card in sidebar */
+.theme-card-sb{padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.theme-card-sb:hover{background:var(--surface2);}
+.theme-card-sb.selected{background:var(--surface2);border-left:3px solid var(--gold);}
+.theme-cat{font-size:8px;letter-spacing:2px;color:var(--gold-dim);text-transform:uppercase;}
+.theme-title-sb{font-family:'Playfair Display',serif;color:var(--text);font-size:13px;margin:2px 0;}
+.theme-preview{font-size:10px;color:var(--text-muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+
+/* Timeline card in sidebar */
+.timeline-item{padding:8px 16px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:baseline;cursor:pointer;transition:background .15s;}
+.timeline-item:hover{background:var(--surface2);}
+.timeline-year{font-family:'Playfair Display',serif;color:var(--gold-dim);font-size:12px;font-weight:700;width:44px;flex-shrink:0;}
+.timeline-label{font-size:11px;color:var(--text);}
+.timeline-type{font-size:8px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;}
+
+/* ── CENTER PANEL ── */
+.center-panel{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);overflow-y:auto;padding:32px 20px;}
+.center-panel::-webkit-scrollbar{width:4px;}
+.center-panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+
+/* Phone frame */
+.phone-frame{
+  width:320px;min-height:560px;max-height:640px;
+  background:#000;border-radius:40px;
+  border:3px solid #222;
+  box-shadow:0 20px 60px rgba(0,0,0,.6),inset 0 0 0 2px #1a1a1a;
+  display:flex;flex-direction:column;overflow:hidden;position:relative;
+}
+.phone-notch{height:28px;background:#000;border-radius:40px 40px 0 0;display:flex;align-items:center;justify-content:center;}
+.phone-notch-inner{width:80px;height:6px;background:#1a1a1a;border-radius:3px;}
+.phone-screen{flex:1;overflow-y:auto;background:var(--bg);}
+.phone-screen::-webkit-scrollbar{width:2px;}
+.phone-screen::-webkit-scrollbar-thumb{background:var(--border);}
+.phone-home{height:18px;background:#000;border-radius:0 0 40px 40px;display:flex;align-items:center;justify-content:center;}
+.phone-home-bar{width:100px;height:4px;background:#2a2a2a;border-radius:2px;}
+
+/* Phone screen content types */
+.phone-comic-panel{width:100%;display:block;}
+.phone-comic-panel img{width:100%;display:block;}
+.phone-caption{padding:14px 18px;font-size:12px;color:var(--text-dim);line-height:1.6;font-style:italic;border-top:1px solid var(--border);}
+
+/* Character in phone */
+.phone-char-portrait{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;}
+.phone-char-info{padding:16px 18px;}
+.phone-char-name{font-family:'Playfair Display',serif;font-size:20px;color:var(--text);margin-bottom:2px;}
+.phone-char-arch{font-size:9px;letter-spacing:2px;color:var(--gold-dim);text-transform:uppercase;}
+.phone-char-era{font-size:11px;color:var(--text-muted);margin:4px 0 12px;}
+.phone-char-desc{font-size:12px;color:var(--text-dim);line-height:1.6;}
+.phone-dots{display:flex;gap:6px;justify-content:center;padding:10px;}
+.phone-dot{width:6px;height:6px;border-radius:50%;background:var(--border);}
+.phone-dot.active{background:var(--gold);}
+
+/* Artifact in phone */
+.phone-artifact-img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;}
+.phone-artifact-info{padding:16px 18px;}
+.phone-artifact-name{font-family:'Playfair Display',serif;font-size:18px;color:var(--text);margin-bottom:4px;}
+.phone-artifact-desc{font-size:12px;color:var(--text-dim);line-height:1.6;}
+
+/* Intelligence card in phone */
+.intel-card{padding:28px 20px;height:100%;background:linear-gradient(180deg,#1a1200 0%,#0d0d00 100%);display:flex;flex-direction:column;gap:16px;}
+.intel-header{display:flex;gap:8px;font-size:10px;letter-spacing:2px;color:var(--gold-dim);}
+.intel-title{font-family:'Playfair Display',serif;color:var(--text);font-size:20px;line-height:1.2;}
+.intel-divider{height:1px;background:var(--border);}
+.intel-body{color:var(--text-dim);font-size:12px;line-height:1.6;flex:1;}
+.intel-insight{color:var(--gold);font-style:italic;font-size:11px;line-height:1.5;}
+.intel-connection{font-size:10px;color:var(--text-muted);padding-top:10px;border-top:1px solid var(--border);}
+
+/* Center info below phone */
+.center-context{margin-top:16px;text-align:center;font-size:10px;color:var(--text-muted);letter-spacing:.08em;}
+
+/* ── RIGHT PANEL (Editor) ── */
+.right-panel{width:320px;flex-shrink:0;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.editor-header{padding:14px 16px;border-bottom:1px solid var(--border);}
+.editor-header-label{font-size:9px;letter-spacing:2px;color:var(--gold-dim);text-transform:uppercase;margin-bottom:4px;}
+.editor-header-title{font-family:'Playfair Display',serif;font-size:16px;color:var(--text);}
+.editor-body{flex:1;overflow-y:auto;padding:16px;}
+.editor-body::-webkit-scrollbar{width:3px;}
+.editor-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+
+/* Editor form elements */
+.ed-group{margin-bottom:16px;}
+.ed-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;}
+.ed-input{width:100%;padding:8px 10px;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;outline:none;font-family:inherit;}
+.ed-input:focus{border-color:var(--gold-dim);}
+.ed-textarea{width:100%;padding:8px 10px;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:11px;outline:none;font-family:inherit;resize:vertical;min-height:60px;line-height:1.6;}
+.ed-textarea:focus{border-color:var(--gold-dim);}
+.ed-select{width:100%;padding:8px 10px;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;outline:none;font-family:inherit;-webkit-appearance:none;}
+.ed-slider-row{display:flex;align-items:center;gap:8px;margin:4px 0;}
+.ed-slider-label{font-size:10px;color:var(--text-dim);width:80px;}
+.ed-slider{flex:1;-webkit-appearance:none;height:2px;background:var(--border);outline:none;border-radius:2px;}
+.ed-slider::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--gold);cursor:pointer;}
+.ed-slider-val{font-size:10px;color:var(--gold-dim);width:32px;text-align:right;}
+.ed-btn{width:100%;padding:10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px;}
+.ed-btn:hover{border-color:var(--gold);color:var(--gold);}
+.ed-btn.gold{background:linear-gradient(135deg,rgba(212,175,55,.15),rgba(212,175,55,.05));border-color:var(--gold-dim);color:var(--gold);}
+.ed-btn.gold:hover{background:linear-gradient(135deg,rgba(212,175,55,.25),rgba(212,175,55,.1));}
+.ed-divider{height:1px;background:var(--border);margin:16px 0;}
+
+/* Editor: IAM score display */
+.ed-ity-row{display:flex;align-items:center;gap:8px;margin:6px 0;}
+.ed-ity-label{font-size:10px;color:var(--text-dim);width:80px;}
+.ed-ity-track{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+.ed-ity-fill{height:100%;background:var(--gold);border-radius:2px;}
+.ed-ity-val{font-size:10px;color:var(--gold-dim);width:32px;text-align:right;}
+
+/* Spark in editor */
+.ed-spark-portraits{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.ed-spark-portrait{width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--border);}
+.ed-spark-bolt{font-size:20px;color:var(--gold);}
+.ed-conv-score{font-family:'Playfair Display',serif;font-size:32px;color:var(--gold);font-weight:700;}
+.ed-conv-label{font-size:9px;color:var(--text-muted);letter-spacing:.1em;}
+
+/* Narrative act in editor */
+.ed-act-rune{font-size:36px;text-align:center;margin:8px 0;}
+
+/* Environment in editor */
+.ed-env-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;}
+.ed-env-tag{padding:3px 8px;border:1px solid var(--border);border-radius:10px;font-size:9px;color:var(--text-muted);}
+
+/* ══ RESPONSIVE ══ */
+@media(max-width:1100px){
+  .right-panel{width:260px;}
+  .sidebar{width:240px;}
+}
+@media(max-width:900px){
+  .app-layout{flex-direction:column;}
+  .sidebar{width:100%;height:auto;max-height:200px;border-right:none;border-bottom:1px solid var(--border);}
+  .right-panel{width:100%;height:auto;max-height:300px;border-left:none;border-top:1px solid var(--border);}
+  .phone-frame{width:280px;min-height:480px;}
 }
 
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar{width:6px}
-::-webkit-scrollbar-track{background:#0d0d0d}
-::-webkit-scrollbar-thumb{background:#2a1f00;border-radius:3px}
-
-/* ── HEADER ── */
-header{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:16px;height:56px;flex-shrink:0}
-.series-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--gold);white-space:nowrap}
-.series-subtitle{font-style:italic;color:var(--text-dim);font-size:14px;white-space:nowrap}
-.header-spacer{flex:1}
-.panel-count{color:var(--text-dim);font-size:13px;white-space:nowrap}
-.header-btn{background:transparent;border:1px solid var(--gold);color:var(--gold);padding:7px 16px;border-radius:4px;font-size:13px;cursor:pointer;white-space:nowrap;font-family:'Inter',sans-serif}
-.header-btn:hover{background:rgba(212,175,55,.1)}
-.header-btn.primary{background:var(--gold);color:#000;font-weight:600}
-.header-btn.primary:hover{background:#c9a430}
-
-/* ── 3-COLUMN LAYOUT ── */
-.app-layout{display:grid;grid-template-columns:330px 1fr 280px;height:calc(100vh - 56px);overflow:hidden}
-
-/* ── LEFT: EPISODES ── */
-.episodes-panel{border-right:1px solid var(--border);overflow-y:auto;background:#0d0d0d}
-.ep-card{padding:16px;border-bottom:1px solid var(--surface);cursor:pointer;transition:background .15s}
-.ep-card:hover{background:rgba(26,18,0,.5)}
-.ep-card.selected{background:var(--surface);border-left:3px solid var(--gold)}
-.ep-era{font-size:10px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase}
-.ep-title{font-family:'Playfair Display',serif;font-size:17px;color:var(--text);margin:4px 0}
-.ep-desc{font-size:12px;color:var(--text-dim);line-height:1.4}
-.ep-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.ep-tag{background:var(--surface);border:1px solid var(--border);color:var(--text-dim);font-size:10px;padding:2px 8px;border-radius:3px}
-.ep-panel-count{font-size:11px;color:var(--text-dim);margin-top:4px}
-.panel-list{margin-top:8px}
-.panel-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--surface);cursor:pointer;font-size:12px;color:var(--text-dim);transition:color .15s}
-.panel-item:hover{color:var(--text)}
-.panel-item.active{color:var(--gold)}
-.panel-num{color:var(--gold);font-weight:600;min-width:16px}
-.panel-thumb{width:40px;height:28px;object-fit:cover;border-radius:2px;background:#111}
-.panel-check{font-size:11px}
-
-/* ── CENTER: PHONE PREVIEW ── */
-.preview-panel{display:flex;flex-direction:column;align-items:center;padding:20px;background:#111;overflow:hidden}
-.ep-title-bar{color:var(--text);font-family:'Playfair Display',serif;font-size:15px;margin-bottom:16px;text-align:center}
-.ep-title-bar .status{color:var(--gold);font-size:12px;margin-left:8px}
-.phone-frame{width:320px;height:580px;background:#0a0a0a;border-radius:36px;border:2px solid #333;box-shadow:0 0 60px rgba(0,0,0,.8),0 0 20px rgba(212,175,55,.08);overflow:hidden;position:relative;flex-shrink:0}
-.phone-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:100px;height:22px;background:#0a0a0a;border-radius:0 0 16px 16px;z-index:10}
-.panel-display{width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden;position:relative}
-.panel-img{width:100%;height:100%;object-fit:cover;transition:opacity .3s}
-.panel-caption-overlay{position:absolute;bottom:0;left:0;right:0;padding:12px 16px;background:linear-gradient(transparent,rgba(0,0,0,.85));font-size:11px;color:#e8d5b0;line-height:1.5;max-height:40%;overflow-y:auto}
-.no-image{display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:var(--text-dim);font-size:13px;font-style:italic}
-.panel-nav-row{display:flex;align-items:center;gap:12px;margin-top:16px}
-.panel-nav-btn{background:transparent;border:none;color:var(--gold);font-size:20px;cursor:pointer;padding:4px 8px}
-.panel-nav-btn:hover{color:#fff}
-.panel-dots{display:flex;gap:8px;padding:4px}
-.panel-dot{width:8px;height:8px;border-radius:50%;background:var(--border);border:1px solid var(--gold);cursor:pointer;transition:background .2s}
-.panel-dot.active{background:var(--gold)}
-
-/* ── RIGHT: PANEL EDITOR ── */
-.editor-panel{border-left:1px solid var(--border);overflow-y:auto;background:#0d0d0d;padding:16px}
-.editor-section{margin-bottom:20px}
-.editor-label{font-size:10px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px}
-.aspect-btns{display:flex;gap:6px;flex-wrap:wrap}
-.aspect-btn{border:1px solid var(--border);color:var(--text-dim);background:transparent;padding:4px 10px;font-size:11px;border-radius:3px;cursor:pointer;font-family:'Inter',sans-serif}
-.aspect-btn.active{border-color:var(--gold);color:var(--gold)}
-.aspect-btn:hover{border-color:var(--gold-dim)}
-.editor-textarea{width:100%;background:#111;border:1px solid var(--border);color:var(--text);padding:10px;font-size:12px;border-radius:4px;resize:vertical;min-height:80px;line-height:1.5;font-family:'Inter',sans-serif}
-.editor-textarea:focus{outline:none;border-color:var(--gold-dim)}
-.char-tags{display:flex;flex-wrap:wrap;gap:4px}
-.char-tag{display:inline-block;background:var(--surface);border:1px solid var(--border);color:var(--gold);font-size:11px;padding:3px 10px;border-radius:3px}
-.ai-btn{width:100%;background:transparent;border:1px solid var(--gold);color:var(--gold);padding:8px;border-radius:4px;cursor:pointer;font-size:12px;margin-bottom:8px;font-family:'Inter',sans-serif}
-.ai-btn:hover{background:rgba(212,175,55,.1)}
-.regen-btn{width:100%;background:var(--gold);border:none;color:#000;padding:12px;border-radius:4px;cursor:pointer;font-size:13px;font-weight:600;margin-bottom:12px;font-family:'Inter',sans-serif}
-.regen-btn:hover{background:#c9a430}
-.action-btns{display:flex;gap:8px}
-.insert-btn{flex:1;background:transparent;border:1px solid var(--border);color:var(--text-dim);padding:7px;border-radius:4px;cursor:pointer;font-size:11px;font-family:'Inter',sans-serif}
-.insert-btn:hover{border-color:var(--gold-dim);color:var(--text)}
-.remove-btn{background:transparent;border:1px solid #8b2020;color:#c04040;padding:7px 14px;border-radius:4px;cursor:pointer;font-size:11px;font-family:'Inter',sans-serif}
-.remove-btn:hover{background:rgba(139,32,32,.15)}
-
-/* ── GENERATE MODAL ── */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;display:none;align-items:center;justify-content:center}
-.modal-overlay.show{display:flex}
-.modal{background:#111;border:1px solid var(--border);border-radius:8px;padding:32px;width:440px;max-width:90vw}
-.modal h2{font-family:'Playfair Display',serif;color:var(--gold);margin-bottom:4px;font-size:22px}
-.modal .subtitle{color:var(--text-dim);font-size:13px;margin-bottom:24px}
-.modal hr{border:none;border-top:1px solid var(--border);margin:0 0 24px}
-.modal label{display:block;font-size:10px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px}
-.modal input,.modal textarea{width:100%;background:#0d0d0d;border:1px solid var(--border);color:var(--text);padding:10px;border-radius:4px;font-size:13px;margin-bottom:16px;font-family:'Inter',sans-serif}
-.modal input:focus,.modal textarea:focus{outline:none;border-color:var(--gold-dim)}
-.panel-count-btns{display:flex;gap:8px;margin-bottom:20px}
-.panel-count-btn{border:1px solid var(--border);background:transparent;color:var(--text-dim);padding:6px 16px;border-radius:4px;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif}
-.panel-count-btn.active{border-color:var(--gold);color:var(--gold)}
-.gen-progress{color:var(--text-dim);font-size:12px;margin-top:12px;min-height:18px}
-.modal .close-btn{position:absolute;top:12px;right:16px;background:none;border:none;color:var(--text-dim);font-size:20px;cursor:pointer}
-
-/* ── EXPORT OVERLAY ── */
-.export-overlay{position:fixed;inset:0;background:#0d0d0d;z-index:999;display:none;overflow-y:auto;padding:40px}
-.export-overlay.show{display:block}
-.export-strip{max-width:800px;margin:0 auto}
-.export-strip h1{font-family:'Playfair Display',serif;color:var(--gold);margin-bottom:8px}
-.export-strip .era{color:var(--text-dim);font-size:13px;margin-bottom:24px}
-.export-strip img{width:100%;border-radius:4px;margin-bottom:8px}
-.export-strip .cap{color:var(--text);font-size:13px;line-height:1.6;margin-bottom:24px;font-style:italic}
-.export-close{position:fixed;top:16px;right:24px;background:var(--gold);color:#000;border:none;padding:8px 20px;border-radius:4px;cursor:pointer;font-weight:600;z-index:1000}
-
-/* ── STATUS BAR ── */
-.status-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:6px;font-size:12px;z-index:2000;display:none;animation:fadeIn .3s}
-@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+/* ══ SCROLLBAR GLOBAL ══ */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
 </style>
 </head>
 <body>
 
-<!-- ════════════════════ HEADER ════════════════════ -->
-<header>
-  <span class="series-title">The Clarksdale Series</span>
-  <span class="series-subtitle">— Infinity Comic</span>
-  <span class="header-spacer"></span>
-  <span class="panel-count" id="panelCount">8/8 panels</span>
-  <button class="header-btn primary" onclick="openGenerateModal()">+ Generate</button>
-  <a class="header-btn" href="https://revilopark.github.io/ontological-theatre/" target="_blank">OT</a>
-  <button class="header-btn" onclick="exportStrip()">Export</button>
-  <button class="header-btn" onclick="toggleKG()">🕸 KG</button>
-  <button class="header-btn" onclick="toggleVideo()">▶ Video</button>
-</header>
+<!-- ══ TOP BAR ══ -->
+<div class="top-bar">
+  <div class="top-bar-left">
+    <div class="top-bar-logo">🎸</div>
+    <div>
+      <div class="top-bar-title">The Clarksdale Series</div>
+      <div class="top-bar-sub">A Trinity World Production</div>
+    </div>
+  </div>
+  <div class="top-bar-stats" id="context-stats">
+    <span id="stat-display">9 episodes · 72 panels total</span>
+  </div>
+  <div class="top-bar-right">
+    <button class="top-btn" onclick="toggleKnowledgeGraph()">🕸 Knowledge Graph</button>
+    <button class="top-btn" onclick="csTogglePanel()">✦ Intelligence</button>
+    <button class="top-btn gold" onclick="window.open('trinity-worlds.html')">⬡ Trinity Worlds</button>
+  </div>
+</div>
 
-<!-- ════════════════════ MAIN LAYOUT ════════════════════ -->
+<!-- ══ 3-PANEL LAYOUT ══ -->
 <div class="app-layout">
 
-  <!-- ── LEFT: EPISODES ── -->
-  <div class="episodes-panel" id="episodesList"></div>
+  <!-- ── LEFT SIDEBAR ── -->
+  <div class="sidebar">
+    <div class="sidebar-tabs">
+      <button class="sidebar-tab active" data-tab="episodes" onclick="switchTab('episodes')">Episodes</button>
+      <button class="sidebar-tab" data-tab="characters" onclick="switchTab('characters')">Characters</button>
+      <button class="sidebar-tab" data-tab="artifacts" onclick="switchTab('artifacts')">Artifacts</button>
+      <button class="sidebar-tab" data-tab="themes" onclick="switchTab('themes')">Themes</button>
+      <button class="sidebar-tab" data-tab="timeline" onclick="switchTab('timeline')">Timeline</button>
+    </div>
+    <div class="sidebar-content">
 
-  <!-- ── CENTER: PHONE PREVIEW ── -->
-  <div class="preview-panel">
-    <div class="ep-title-bar" id="epTitleBar">The Crossroads<span class="status">— Complete ✓</span></div>
+      <!-- EPISODES PANEL -->
+      <div class="sidebar-panel active" id="panel-episodes"></div>
+
+      <!-- CHARACTERS PANEL -->
+      <div class="sidebar-panel" id="panel-characters"></div>
+
+      <!-- ARTIFACTS PANEL -->
+      <div class="sidebar-panel" id="panel-artifacts"></div>
+
+      <!-- THEMES PANEL -->
+      <div class="sidebar-panel" id="panel-themes"></div>
+
+      <!-- TIMELINE PANEL -->
+      <div class="sidebar-panel" id="panel-timeline"></div>
+
+    </div>
+  </div>
+
+  <!-- ── CENTER PANEL ── -->
+  <div class="center-panel" id="center-panel">
     <div class="phone-frame">
-      <div class="phone-notch"></div>
-      <div class="panel-display" id="panelDisplay">
-        <img class="panel-img" id="panelImg" src="" alt="Panel">
-        <div class="panel-caption-overlay" id="panelCaption"></div>
-        <div class="no-image" id="noImage" style="display:none">No image generated</div>
+      <div class="phone-notch"><div class="phone-notch-inner"></div></div>
+      <div class="phone-screen" id="phone-screen"></div>
+      <div class="phone-home"><div class="phone-home-bar"></div></div>
+    </div>
+    <div class="center-context" id="center-context"></div>
+  </div>
+
+  <!-- ── RIGHT PANEL (Editor) ── -->
+  <div class="right-panel">
+    <div class="editor-header">
+      <div class="editor-header-label" id="editor-label">PANEL EDITOR</div>
+      <div class="editor-header-title" id="editor-title">Select an item</div>
+    </div>
+    <div class="editor-body" id="editor-body">
+      <div style="text-align:center;padding:40px 20px;color:var(--text-muted);font-size:12px;">
+        Select an episode, character, artifact, or theme from the sidebar to begin editing.
       </div>
     </div>
-    <div class="panel-nav-row">
-      <button class="panel-nav-btn" onclick="navPanel(-1)">←</button>
-      <div class="panel-dots" id="panelDots"></div>
-      <button class="panel-nav-btn" onclick="navPanel(1)">→</button>
-    </div>
   </div>
 
-  <!-- ── RIGHT: PANEL EDITOR ── -->
-  <div class="editor-panel" id="editorPanel">
-    <div class="editor-section">
-      <div class="editor-label" id="editorTitle">PANEL 1 OF 8 · 3:4</div>
-      <div class="aspect-btns" id="aspectBtns"></div>
-    </div>
-    <div class="editor-section">
-      <div class="editor-label">Scene Description</div>
-      <textarea class="editor-textarea" id="sceneDesc" rows="4" onchange="updatePanel('desc',this.value)"></textarea>
-    </div>
-    <div class="editor-section">
-      <div class="editor-label">Characters</div>
-      <div class="char-tags" id="charTags"></div>
-    </div>
-    <div class="editor-section">
-      <div class="editor-label">Caption / Narration</div>
-      <textarea class="editor-textarea" id="captionText" rows="4" onchange="updatePanel('caption',this.value)"></textarea>
-    </div>
-    <button class="ai-btn" onclick="aiWriteCaption()">✦ AI Write Caption</button>
-    <button class="regen-btn" onclick="regeneratePanel()">↻ Regenerate</button>
-    <div class="action-btns">
-      <button class="insert-btn" onclick="insertPanel('before')">+ Insert Before</button>
-      <button class="insert-btn" onclick="insertPanel('after')">+ Insert After</button>
-      <button class="remove-btn" onclick="removePanel()">× Remove</button>
-    </div>
-  </div>
 </div>
 
-<!-- ════════════════════ GENERATE MODAL ════════════════════ -->
-<div class="modal-overlay" id="genModal">
-  <div class="modal" style="position:relative">
-    <button class="close-btn" onclick="closeGenModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--text-dim);font-size:20px;cursor:pointer">×</button>
-    <h2>New Episode Generator</h2>
-    <div class="subtitle">AI-powered comic episode creation</div>
-    <hr>
-    <label>Location</label>
-    <input id="genLocation" placeholder="e.g. Tunica, MS">
-    <label>Year</label>
-    <input id="genYear" placeholder="e.g. 1948">
-    <label>Subject</label>
-    <input id="genSubject" placeholder="e.g. B.B. King">
-    <label>Theme</label>
-    <input id="genTheme" placeholder="e.g. The day B.B. King got his first guitar">
-    <label>Number of Panels</label>
-    <div class="panel-count-btns">
-      <button class="panel-count-btn" onclick="setGenCount(4)">4</button>
-      <button class="panel-count-btn active" onclick="setGenCount(6)">6</button>
-      <button class="panel-count-btn" onclick="setGenCount(8)">8</button>
-    </div>
-    <button class="regen-btn" onclick="generateEpisode()" id="genBtn">✦ Generate with AI</button>
-    <div class="gen-progress" id="genProgress"></div>
-  </div>
-</div>
+<!-- ══ INTELLIGENCE PANEL (floating) ══ -->
+<style>
+#cs-intel-toggle{position:fixed;bottom:28px;right:28px;z-index:9000;display:flex;align-items:center;gap:9px;padding:12px 20px;border-radius:40px;background:linear-gradient(135deg,#1a1206,#2a1e0a);border:1px solid rgba(200,151,58,.45);box-shadow:0 4px 32px rgba(200,151,58,.2);color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;transition:all .25s;}
+#cs-intel-toggle:hover{transform:translateY(-2px);box-shadow:0 6px 40px rgba(200,151,58,.35);}
+.toggle-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px var(--gold);animation:cs-pulse 2s infinite;}
+@keyframes cs-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+#cs-intel-panel{position:fixed;bottom:90px;right:28px;z-index:8999;width:440px;height:660px;max-height:calc(100vh - 110px);display:flex;flex-direction:column;background:rgba(10,7,4,.97);border:1px solid rgba(200,151,58,.3);border-radius:18px;box-shadow:0 12px 60px rgba(0,0,0,.7);backdrop-filter:blur(24px);transform:translateY(20px) scale(.97);opacity:0;pointer-events:none;transition:all .3s cubic-bezier(.4,0,.2,1);}
+#cs-intel-panel.open{transform:translateY(0) scale(1);opacity:1;pointer-events:all;}
+.cs-toast{position:fixed;bottom:90px;right:28px;z-index:9500;padding:10px 16px;border-radius:10px;background:rgba(13,148,136,.9);color:#fff;font-size:12px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.4);transform:translateY(10px);opacity:0;transition:all .3s;pointer-events:none;}
+.cs-toast.show{transform:translateY(0);opacity:1;}
+</style>
+<div class="cs-toast" id="cs-toast"></div>
+<button id="cs-intel-toggle" onclick="csTogglePanel()" style="display:none;">
+  <span class="toggle-dot"></span>Clarksdale Intelligence
+</button>
+<div id="cs-intel-panel"></div>
 
-<!-- ════════════════════ EXPORT OVERLAY ════════════════════ -->
-<div class="export-overlay" id="exportOverlay">
-  <button class="export-close" onclick="closeExport()">✕ Close</button>
-  <div class="export-strip" id="exportStrip"></div>
+<!-- ══ KNOWLEDGE GRAPH OVERLAY ══ -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+#kg-overlay{position:fixed;inset:0;z-index:9999;background:#0d0d0d;display:none;flex-direction:column;font-family:'Inter',sans-serif;}
+#kg-overlay.active{display:flex;}
+#kg-topbar{display:flex;align-items:center;gap:16px;padding:10px 24px;background:#1a1a1a;border-bottom:1px solid #2a2a2a;flex-shrink:0;}
+#kg-topbar button{padding:6px 14px;border-radius:6px;border:1px solid #2a2a2a;background:transparent;color:#e8d5b0;font-size:12px;font-weight:600;cursor:pointer;}
+#kg-topbar button:hover{border-color:#D4AF37;color:#D4AF37;}
+#kg-topbar h2{font-family:'Playfair Display',serif;font-size:18px;color:#e8d5b0;margin:0;}
+#kg-search{padding:6px 12px;border-radius:6px;border:1px solid #2a2a2a;background:#0d0d0d;color:#e8d5b0;font-size:12px;width:200px;outline:none;}
+#kg-body{display:flex;flex:1;overflow:hidden;position:relative;}
+#kg-canvas{flex:1;}
+#kg-canvas svg{width:100%;height:100%;}
+#kg-info{width:280px;background:#1a1a1a;border-left:1px solid #2a2a2a;padding:24px;overflow-y:auto;}
+#kg-info.empty::before{content:'Hover or click a node to see details';color:#7A6A4A;font-size:13px;font-style:italic;}
+#kg-info h3{font-family:'Playfair Display',serif;font-size:20px;color:#e8d5b0;margin-bottom:8px;}
+#kg-legend{position:absolute;bottom:20px;left:20px;background:rgba(26,26,26,.9);border:1px solid #2a2a2a;border-radius:8px;padding:12px 16px;display:flex;gap:16px;font-size:11px;color:#7A6A4A;}
+#kg-legend span{display:flex;align-items:center;gap:5px;}
+#kg-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;}
+</style>
+<div id="kg-overlay">
+<div id="kg-topbar">
+<button onclick="toggleKnowledgeGraph()">← Back</button>
+<h2>🕸 Clarksdale Knowledge Graph</h2>
+<input id="kg-search" type="text" placeholder="Search nodes..." oninput="kgSearch(this.value)">
+<button onclick="kgEnrich()">✨ AI Enrich</button>
 </div>
-
-<!-- ════════════════════ STATUS TOAST ════════════════════ -->
-<div class="status-toast" id="statusToast"></div>
+<div id="kg-body">
+<div id="kg-canvas"></div>
+<div id="kg-info" class="empty"></div>
+<div id="kg-legend">
+<span><i style="background:#D4AF37"></i> Person</span>
+<span><i style="background:#4ECDC4"></i> Place</span>
+<span><i style="background:#C77DFF"></i> Song</span>
+<span><i style="background:#FF6B6B"></i> Theme</span>
+</div>
+</div>
+</div>
 
 <script>
-/* ═══════════════════════════════════════════════════════════════════════════
-   THE CLARKSDALE SERIES — INFINITY COMIC MAKER
-   All 9 episodes with real Fal CDN panel images
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════
+   CLARKSDALE SERIES — UNIFIED APP DATA & LOGIC
+   ══════════════════════════════════════════════════════════════════ */
 
-const PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app';
-const ASPECTS = ['4:3','3:4','21:9','2:3','9:16','1:1'];
-
-// ── EPISODES DATA ──────────────────────────────────────────────────────────
+// ── ALL DATA ──
 const EPISODES = [
   {
-    id:'crossroads', era:'1936 · COAHOMA COUNTY', title:'The Crossroads',
-    subject:'Robert Johnson', tags:['Blues','Crossroads','Highway 61','Legend'],
-    chars:['Robert Johnson','The Dark Figure'],
+    id:1, title:"The Crossroads", era:"1936", characters:["Robert Johnson"],
     panels:[
-      {desc:'Aerial view of two roads intersecting in flat Mississippi Delta farmland at midnight, crossroads, moonlit cotton fields stretching to horizon, a single figure standing at the junction', caption:'They say the Devil waits where the roads cross. But the Devil is just a word for what you\'re willing to give up.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a900f5d/Amu7C1Z-XexpccN_S7Kw3.jpg'},
-      {desc:'Robert Johnson standing alone at the crossroads at midnight, full figure, guitar case at his feet, looking down at the intersection of two dirt roads, dramatic moonlight casting long shadow', caption:'Robert Leroy Johnson walked south from Robinsonville with nothing but a guitar he could barely play and a hunger that had no name.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a900f5d/9q1hY6Vy7zKvcOT3t0LYX.jpg'},
-      {desc:'Close-up of Robert Johnson\'s hands opening a guitar case on the dusty crossroads ground, moonlight catching the strings, his long fingers trembling', caption:null, aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a900f5d/cgE-0MP9O8gUOOi_jBlLj.jpg'},
-      {desc:'A massive dark figure materializing from the shadows at the crossroads, suggestion of a large Black man in a dark suit, hat obscuring face, enormous hands reaching toward the guitar', caption:'The figure did not arrive. He was already there. Had always been there. Waiting at the junction of every road anyone ever had to choose.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a900f5d/-Df3ywepByhh6iou8d60O.jpg'},
-      {desc:'Robert Johnson\'s face in extreme close-up, eyes wide, sweat on brow, mouth slightly open, the reflection of something supernatural in his pupils', caption:null, aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a900f5d/q9SHcz8e3VirVPq-SUF-3.jpg'},
-      {desc:'The dark figure\'s massive hands tuning Robert Johnson\'s guitar, precise delicate movements from enormous fingers, sparks of supernatural light along the strings', caption:'He tuned each string like he was remembering something. Like the guitar already knew the songs. It just needed permission.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a900f5d/Ycah0T4RnLPFPCWUki8Zi.jpg'},
-      {desc:'Robert Johnson playing guitar at the crossroads with supernatural intensity, body arched back, fingers flying, visible sound waves emanating from the instrument', caption:'When Robert played the first chord, every dog in Coahoma County howled. Every crow went silent. The cotton itself leaned in to listen.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a900f5d/q3knQ9T_eEIWqzeAT3Jrh.jpg'},
-      {desc:'Dawn breaking over the empty crossroads, Robert Johnson walking away down Highway 61 with his guitar, small figure against vast Delta landscape', caption:'He walked away a different man. The kind of different you can hear in every note he ever played after that night. Twenty-nine songs. Then gone.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a900f5d/n0U2n3JI1H7ce6qZgPIS1.jpg'}
-    ]
+      {img:"https://v3b.fal.media/files/b/0a8fad26/DjJDKV3IBk930T5hx1cez.jpg",caption:"The crossroads at midnight. Highway 61 meets Highway 49. A man stands where two worlds collide."},
+      {img:"https://v3b.fal.media/files/b/0a8fad26/47VdUx50_R25XYCRhRt-s.jpg",caption:"The red clay earth. The signpost at midnight. The bargain — real or imagined."}
+    ],
+    narration:"He went down to the crossroads. He came back able to play things no one had taught him.",
+    act:{num:"I",rune:"ᚢ",ity:"Materiality",name:"The Crossroads",desc:"The red clay earth. The signpost at midnight. The bargain — real or imagined. A man at the junction of two roads and two worlds."}
   },
   {
-    id:'saturday', era:'1929 · DOCKERY PLANTATION', title:'Saturday Night at Dockery\'s',
-    subject:'Charley Patton', tags:['Dockery','Charley Patton','Son House','Plantation'],
-    chars:['Charley Patton','Son House'],
+    id:2, title:"Dockery Plantation", era:"1929", characters:["Charley Patton","Son House"],
     panels:[
-      {desc:'Wide establishing shot of Dockery Plantation at dusk, rows of sharecropper cabins, cotton fields beyond, warm orange light spilling from one cabin porch', caption:'Dockery Plantation. Two thousand acres of someone else\'s cotton. But on Saturday night, the music belonged to everyone.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a900f82/I4NPyLW-0HOgBR1W3Yum1.jpg'},
-      {desc:'Charley Patton on a wooden porch, guitar across his body, stomping his foot on the planks, dust rising, people crowded around', caption:'Charley Patton didn\'t play the blues. He WAS the blues — every slap on that guitar body was the sound of the Delta fighting back.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a900f83/KZyIj2qiaHhjhsEUS9l_s.jpg'},
-      {desc:'Son House sitting in the corner of the porch watching Charley Patton play, his face a mixture of rapture and conflict, preacher\'s Bible on one side, whiskey on the other', caption:'Son House watched from the corner. Half his soul still belonged to the church. The other half belonged to whatever was happening on that porch.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a900f83/p7CC27aEaaWy7P2h15aeG.jpg'},
-      {desc:'Close-up of Charley Patton\'s hands on guitar strings, calloused fingers, one hand behind his head playing guitar backwards, crowd cheering', caption:null, aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a900f83/nTaZ3-lSAnEXAeABnYXu5.jpg'},
-      {desc:'The crowd around the porch growing, Black American men and women in 1920s work clothes and Saturday night finest, dancing, children watching from windows', caption:'Every Saturday, the same miracle. A man with a piece of wood and some wire strings turning suffering into something you could dance to.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a900f83/CH7UFaJAS99Uf1BZsaP4E.jpg'},
-      {desc:'Dawn light creeping across the plantation, Charley Patton still playing to two or three remaining listeners, Son House asleep against the porch post', caption:'Come Monday, they\'d all be back in the fields. But for one night, Dockery\'s porch was the center of the universe. And Charley Patton was its sun.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a900f83/o69uRtbcoIGoP8KRVtueU.jpg'}
-    ]
+      {img:"https://v3b.fal.media/files/b/0a8fad26/NRDPYxLWa4THyG0iJR5R2.jpg",caption:"Dockery Farms. Where the blues was born. Charley Patton's stage."}
+    ],
+    narration:"The birthplace of the blues. Charley Patton played here. Son House listened.",
+    act:{num:"II",rune:"ᛒ",ity:"Vitality",name:"The Guitar Awakens",desc:"Johnson's fingers finding sounds no one taught him. The instrument as living thing. Music that shouldn't exist, coming into being."}
   },
   {
-    id:'rocket88', era:'1951 · CLARKSDALE → MEMPHIS', title:'Rocket 88',
-    subject:'Ike Turner', tags:['Rock & Roll','Sam Phillips','Memphis','Sun Studio'],
-    chars:['Ike Turner','Sam Phillips','Jackie Brenston','Willie Kizart'],
+    id:3, title:"Rocket 88", era:"1951", characters:["Ike Turner","Sam Phillips"],
     panels:[
-      {desc:'Young Ike Turner walking along a quiet Delta town main street at dusk, pressed slacks and white shirt, notebook of sheet music under his arm', caption:'Clarksdale, Mississippi. 1950. Ike Turner was born here — and the town was already too small for what was growing inside him.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a901d78/xQhwlZCCoOrCPOvb5UfGj_a1bf9daeeb494559a8562958d7df8323.jpg'},
-      {desc:'Teenage Black boy plays an upright piano in a juke joint corner, completely absorbed, eyes closed, fingers flying across the keys', caption:'He learned piano from the men who invented it in these parts. By fourteen he was playing juke joints. By eighteen he was running them.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a901d78/xVhL2z6gnP4eQAg2rvTEM_72dd4bbcc261457396abfb7f4d3fcffb.jpg'},
-      {desc:'Young Black men loading guitar cases amplifiers and drum kit into a beat-up 1949 Ford at night outside a Clarksdale building', caption:'The Kings of Rhythm loaded their equipment into the night like men who know they\'re not coming back the same.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a901d78/-uJhSlYSHsC38uKSHeaGB_60d5a018aaa34bdd8e2ad2947b935b17.jpg'},
-      {desc:'Mississippi highway shoulder 1951, Ford pulled over, trunk open, guitar amplifier fallen with torn speaker cone, young Black man kneeling examining the damage', caption:'Between Clarksdale and Memphis, the amplifier fell. The speaker cone tore. Willie Kizart stuffed it with newspaper. The accident would outlive them all.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a901d78/Ga4LZhYqws8h2GKEli5FN_f7a63fe7a38843c2bf6184eacb7a8cbf.jpg'},
-      {desc:'Memphis Tennessee exterior 1951, small brick recording studio facade, young Black men unloading equipment from a Ford onto the sidewalk', caption:'Memphis Recording Service. Sam Phillips had recorded Howlin\' Wolf here. Now these boys from Clarksdale came with their battered equipment and their borrowed confidence.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a901d78/1dA9WOSFYoBTICzDNEnO__7fea8c19cbf14f418f858a7247fb983e.jpg'},
-      {desc:'Young Black man at upright piano inside recording booth, eyes closed, sweat on brow, single overhead light illuminating face, fingers pressing keys', caption:'Ike Turner at the piano. Eyes closed. Sweat on his brow. He didn\'t know yet what the torn cone was doing to the sound. He was just playing.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a901d78/DHhh8nYhXSQi-UewKQcuR_cdfdf6c01564489697965fbe94474f92.jpg'},
-      {desc:'White engineer in his thirties leaning forward at recording console, eyes wide, surprised expression, hearing something extraordinary in headphones', caption:'Sam Phillips heard it and knew. Whatever that noise was — electric, raw, distorted, alive — it had never existed before this moment.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a901d78/gB4dq5pNz1cKw51BOTIBo_6ae11d08e3b34b2e80e5f956fd943e8a.jpg'},
-      {desc:'Clarksdale Mississippi 1951 evening, young Black man standing alone on a street corner, same storefronts same streetlamp as the beginning, but he has changed', caption:'He drove back to Clarksdale. The town was exactly the same. He was not. That is the oldest story the Delta knows how to tell.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a901d78/4WYRKbYNsZkN8yg6MRHt7_f8140e5415d643b48c78275893f7a054.jpg'}
-    ]
+      {img:"https://v3b.fal.media/files/b/0a8fad26/58UmVYwjqMIQ7jK4zaFuu.jpg",caption:"The juke joint. Saturday night. Music until the sun came back."}
+    ],
+    narration:"Born in Clarksdale. Drove a broken amp to Memphis. Made the first rock & roll record.",
+    act:{num:"III",rune:"ᛗ",ity:"Interiority",name:"The Bargain",desc:"What really happened those 6 months he disappeared. The cost of genius. What a man gives up to play like God."}
   },
   {
-    id:'migration', era:'1943 · STOVALL → CHICAGO', title:'The Great Migration',
-    subject:'Muddy Waters', tags:['Migration','Chicago','Electric Blues','Illinois Central'],
-    chars:['Muddy Waters','Alan Lomax'],
+    id:4, title:"The Great Migration", era:"1943", characters:["Muddy Waters"],
     panels:[
-      {desc:'The Illinois Central railroad tracks cutting through Mississippi Delta farmland, a steam train in the distance approaching', caption:'The Illinois Central didn\'t just carry people north. It carried an entire culture — compressed into suitcases and guitar cases and the memories of everyone who\'d ever picked cotton.', aspect:'3:4', imageUrl:null},
-      {desc:'Muddy Waters sitting on his cabin porch at Stovall Plantation, acoustic guitar in lap, looking at a creased photograph of Chicago', caption:'McKinley Morganfield — Muddy Waters — had been recorded by Alan Lomax right here on Stovall. Heard himself on a phonograph and knew: if he sounded that good captured, imagine what he\'d sound like free.', aspect:'3:4', imageUrl:null},
-      {desc:'Muddy Waters boarding the Illinois Central train, guitar case in one hand, small bag in other, looking back one last time at the flat Delta landscape', caption:'Three hundred miles of track between the Delta and Chicago. Between cotton and concrete. Between the old blues and whatever the blues was about to become.', aspect:'3:4', imageUrl:null},
-      {desc:'View through the train window as Mississippi Delta farmland gives way to small towns then Memphis', caption:null, aspect:'3:4', imageUrl:null},
-      {desc:'Muddy Waters arriving at Chicago\'s 12th Street Station, overwhelmed by the city, tall buildings visible through station windows', caption:'Chicago hit him like a wall of sound. Car horns and el trains and a million conversations in every accent from every county in Mississippi.', aspect:'3:4', imageUrl:null},
-      {desc:'Muddy Waters on Maxwell Street in Chicago, plugging a pickup into his acoustic guitar connected to a small amplifier for the first time', caption:'He plugged in. And the sound that came out wasn\'t Mississippi anymore. It wasn\'t Chicago either. It was something brand new — something so loud and raw and electrified that the whole world would eventually hear it and call it rock and roll.', aspect:'3:4', imageUrl:null},
-      {desc:'Split composition: left side shows Stovall Plantation cabin in Mississippi, right side shows Chicago South Side club neon signs, Muddy Waters\' silhouette bridging both worlds', caption:'He never stopped being from the Delta. He just taught the Delta how to be from everywhere.', aspect:'3:4', imageUrl:null}
-    ]
+      {img:"https://v3b.fal.media/files/b/0a8fad26/aYtD8MIIgU3ce2Bj4eLG7.jpg",caption:"The Delta goes electric. Maxwell Street, Chicago."}
+    ],
+    narration:"Stovall Plantation to Chicago. He plugged the Delta into an amplifier. Everything after was different.",
+    act:{num:"IV",rune:"ᚦ",ity:"Criticality",name:"The Teacher's Doubt",desc:"Son House watching his student surpass him. The moment he understood what he'd given away. Pride and grief in the same breath."}
   },
   {
-    id:'sonhouse', era:'1902–1964 · RIVERTON → ROCHESTER', title:'The Preacher\'s Fire',
-    subject:'Son House', tags:['Preacher','Slide Guitar','Parchman','Rediscovery'],
-    chars:['Son House','Willie Brown','Robert Johnson','Alan Lomax'],
+    id:5, title:"The Sacred & Profane", era:"1940s", characters:["Son House","Sister Rosetta Tharpe"],
     panels:[
-      {desc:'Black American Baptist preacher standing at pulpit in 1920s rural Mississippi wooden church, dramatic lighting from windows, passionate sermon', caption:'Eddie James House Jr. stood before his congregation with the fire of God in his throat. He was twenty years old and already saving souls.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903a12/_K38WW6h3BoMO9AoEzWdS_9dba08cb01f24f29b30dcdc04466ab8a.jpg'},
-      {desc:'Black American man in worn suit holding a Bible outside a juke joint at night 1920s Mississippi Delta, through the open door warm golden light and a blues guitarist', caption:'He heard Willie Brown play slide guitar through an open door one Saturday night. The Bible was still in his hand. His feet were already moving toward the music.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903a14/1oNLz8Q0Xkua6nVjUklAg_0eac7799f8834452a73e56c182844f6e.jpg'},
-      {desc:'Black American musician playing bottleneck slide guitar with intense emotion, eyes closed, sweat on brow, 1930s Mississippi Delta blues', caption:'When Son House played, you couldn\'t tell if he was praying or confessing. Maybe there was never a difference.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903a15/hTOilvEO7gIbuCwmjCGo9_c5b02bc3d8144140aad060ed84a76593.jpg'},
-      {desc:'Parchman Farm Mississippi prison 1928, Black American man behind chain-link fence looking out at cotton fields, guards in distance', caption:'"I paid for what I did. But the music... the music never left me." Parchman Farm took his freedom. It couldn\'t take the song.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903a16/xUGXvWp9U2XDGTtX70Xvv_ec97d09a877d47ea9706d4af593219c4.jpg'},
-      {desc:'Young Black American man sitting on porch steps trying to play guitar while older Black American blues musician watches with skeptical expression', caption:'"Boy can\'t play a lick." Son House laughed at young Robert Johnson. The irony would outlive them both.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903a17/2QVfyjPdqbKz-dbSphXT3_843291e2253c40ad8287f8b6942f8aea.jpg'},
-      {desc:'Black American elderly blues legend age 62 at vintage 1964 recording studio microphone, weathered face full of life and wisdom, playing acoustic guitar', caption:'1964. Alan Lomax found him in Rochester, New York. Son House didn\'t remember making records. But when he played "Death Letter," the years fell away.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903a18/LSKMyZW3uX4Poo6d6_CPr_f2ac65787f834e84ae3addda78b2ac1a.jpg'}
-    ]
+      {img:"https://v3b.fal.media/files/b/0a8fad26/KPsr9E7mEQ0xn9mSecjx8.jpg",caption:"The church and the juke joint. The same congregation. Saturday night and Sunday morning."}
+    ],
+    narration:"The preacher and the bluesman in the same man. The sacred and the profane were neighbors.",
+    act:{num:"V",rune:"ᛖ",ity:"Connectivity",name:"The Music Spreads",desc:"29 songs. Two recording sessions. A catalogue that would become the DNA of everything that followed. The music finds its listeners."}
   },
   {
-    id:'samcooke', era:'1931–1964 · CLARKSDALE → HARLEM', title:'A Change Is Gonna Come',
-    subject:'Sam Cooke', tags:['Gospel','Soul','Civil Rights','Harlem'],
-    chars:['Sam Cooke','Soul Stirrers'],
+    id:6, title:"A Change Is Gonna Come", era:"1963", characters:["Sam Cooke"],
     panels:[
-      {desc:'Black American family outside white clapboard Baptist church Clarksdale Mississippi 1930s Sunday morning, reverend father with children', caption:'Clarksdale, Mississippi. Sunday morning. Reverend Cook\'s boy Sam sang in the choir before he could read. The voice was a gift. What he did with it would change everything.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903a19/FAKHYXLpHngLB7yBywgSr_9aa75d053e724faf8c87006b040946d8.jpg'},
-      {desc:'Black American gospel quartet performing in 1950s packed church, lead singer in white suit commanding the stage with extraordinary charisma', caption:'At nineteen, Sam joined the Soul Stirrers. Gospel\'s greatest stage. The church mothers wept when he sang.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903a1a/TnjnQi-L5V0_-2o6YgB28_754def04e6e0443e8740bac26dae3872.jpg'},
-      {desc:'Black American singer recording in 1950s music studio standing at microphone eyes closed singing with pure joy', caption:'"You Send Me" went to number one. Gospel became soul. The church called it betrayal. Sam called it evolution.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903a1b/lAVvZjDd7rmafax0KCB9U_199c87f680764e468dde99ac70352839.jpg'},
-      {desc:'Black American couple being turned away from whites-only motel 1963 nighttime parking lot Louisiana', caption:'Shreveport, Louisiana. 1963. A whites-only Holiday Inn turned away the most famous voice in America. Sam didn\'t shout. He went home and wrote a song instead.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903a1c/b4hMVaWc2ec-5FqOdifGP_e5c3d6cd36004038a42269e7eb9571e7.jpg'},
-      {desc:'Black American musician sitting at upright piano writing in notebook by warm lamp light 1963 late night', caption:'"It\'s been a long time coming, but I know a change is gonna come." He wrote it in one night. It would become the anthem of a movement.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903a1d/Tx7hYo2nyu1wRuo1cuyWm_2d25affad03b4f7fb55ee9437b339e23.jpg'},
-      {desc:'Black American soul legend performing at packed theater 1964 Harlem, spotlit on stage in elegant dark suit, reaching hands of crowd below', caption:'Harlem, 1964. The last great concert. Light caught him like a prophet. Three months later, he was gone. Thirty-three years old.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903a1e/MZMN2dAsXvC9ma0R9N-1I_ae76f11a8a634279b4b93108437f968e.jpg'}
-    ]
+      {img:"https://v3b.fal.media/files/b/0a8fad26/RwyC5cdxHRJWG0uMCRaDB.jpg",caption:"Cotton field at dawn. The Delta stretches to the horizon."}
+    ],
+    narration:"The voice of civil rights. Written after being turned away from a whites-only motel.",
+    act:{num:"VI",rune:"ᚲ",ity:"Lucidity",name:"The Legend Forms",desc:"Robert Johnson dies at 27. The legend is born larger than the man. The music outlives everything. The myth outlives the music."}
   },
   {
-    id:'natedogg', era:'1969–2011 · LONG BEACH → GLORY', title:'King of Hooks',
-    subject:'Nate Dogg', tags:['G-Funk','West Coast','Gospel','213'],
-    chars:['Nate Dogg','Warren G','Snoop Dogg'],
-    panels:[
-      {desc:'Young Nate Dogg as a teenager in a Black church in Long Beach, singing in the choir, 1980s', caption:'Long Beach, California. 1980s. Nathaniel Dwayne Hale sang in the Baptist choir before he ever dreamed of a studio.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903dbc/J4lEUlURtddF-VIsHx582_08a8222ea14745648b8123ac61c3ee4c.jpg'},
-      {desc:'Three teenagers on a Long Beach street corner — Nate Dogg, Warren G, and Snoop Dogg. Late 1980s. Harmonizing over a beat box.', caption:'Three kids on a Long Beach corner — Nate, Warren G, and Snoop. They called themselves 213. Nobody knew yet that these three would reshape West Coast hip-hop forever.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903dbe/XbUBYry1aYzw0654zGeLq_cfa76fe21a0249d2bf98616a81cb9665.jpg'},
-      {desc:'The "Regulate" recording session, 1994 — Nate behind the mic, Warren G producing', caption:'"Regulate," 1994. Warren G laid the beat. Nate opened his mouth and out came a hook so perfect it would define an entire era.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903dbf/IxvKW5p3SwSel66bDetJa_215abcef9dfa4dc796e804aef314739e.jpg'},
-      {desc:'Montage-style panel — records stacked, features listed: The Chronic. Doggystyle. Warren G. Ludacris. Eminem. 213.', caption:'The Chronic. Doggystyle. "Area Codes." "The Next Episode." Hundreds of features. Every time Nate Dogg sang a hook, the song became immortal.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903dc0/9zpFToslC3xSK3XhCdxc__d37a17de2d1c449e977512da90b15574.jpg'},
-      {desc:'2007 — a hospital room. A microphone in the corner that cannot be reached. The stroke took his voice.', caption:'2007. Then 2008. Two strokes. Partial paralysis. The microphone stood in the corner of the room like a monument to everything that had been taken.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903dc1/0rZfHeU3PUgH8xZemR7pT_ec21138d8a764b73914908ff8a2532c6.jpg'},
-      {desc:'A Black church choir somewhere in the South, 2011, singing one of his hooks. The melody returned to gospel.', caption:'March 15, 2011. Age 41. Gone. But somewhere in a Southern Baptist church, a choir is singing a melody that started in gospel, became G-Funk, and found its way back home.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903dc2/TVd_LasMWWES3vLJg7PxW_bffd80b9e5f64796ab52f4713c6c9370.jpg'}
-    ]
+    id:7, title:"King of Hooks", era:"1994", characters:["Nate Dogg"],
+    panels:[],
+    narration:"Gospel foundation. The voice hip-hop built around. The unbroken line from Delta call-and-response.",
+    act:{num:"VII",rune:"ᛞ",ity:"Continuity",name:"The Music Never Dies",desc:"Keith Richards. Eric Clapton. Led Zeppelin. Every guitar played since. The Delta lives in everything downstream. The crossroads is everywhere."}
   },
   {
-    id:'rickross', era:'1976–PRESENT · CLARKSDALE → MIAMI', title:'The Clarksdale Weight',
-    subject:'Rick Ross', tags:['Hip-Hop','Miami','Maybach','Delta Roots'],
-    chars:['Rick Ross','Clarksdale'],
-    panels:[
-      {desc:'A newborn in a Clarksdale, Mississippi hospital, 1976. Through the window — the flat Delta landscape, cotton fields.', caption:'Clarksdale, Mississippi. January 28, 1976. William Leonard Roberts II entered the world in the same town that made the blues.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903dc3/koB2hpE4GeXkdu3rPmYRI_359ee0e50ae3490083ec2245848d86d3.jpg'},
-      {desc:'Young William Roberts in Carol City, Miami, 1980s — the streets dangerous, the heat oppressive, watching everything.', caption:'Carol City, Miami Gardens. One of the most dangerous zip codes in America. The kid watched everything with intelligent eyes.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903dc3/75zKhj54lCXFxOhHMWeMm_880ce98537164210a5d48b42754dead3.jpg'},
-      {desc:'The football field — Dillard University, New Orleans. A different possible life.', caption:'Dillard University, New Orleans. A football scholarship. A different possible life. But something heavier than football was pulling him toward the microphone.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903dc4/owmGN5_BQVMuYINOiUAbv_23ea00a53cde416f97449ada5db95d79.jpg'},
-      {desc:'The recording booth, 2005 — "Hustlin\'" coming together. Enormous in the frame, his voice a physical force.', caption:'"Hustlin\'," 2006. The beat was a statement. The voice was a weather system. You could hear Clarksdale in every bar.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903dd4/m0yHRGE3X6UNE5BUv_Zdq_4eaffc7c3c524477b4700c81d6c71157.jpg'},
-      {desc:'The Mississippi Delta flat horizon morphing into Miami skyline. The two worlds that made him.', caption:'Two worlds. The flat Delta where he was born and the Miami skyline where he was made. The thread between them is invisible to everyone except the man who carries it in his voice.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903dd1/zmJnoSd2KiCWQg-dgiH5J_cee1fc73ae09475d9580c620ef083fc6.jpg'},
-      {desc:'Rick Ross today — Maybach Music empire, the bossiest man in hip-hop, but the Delta never left.', caption:'Maybach Music Group. Def Jam. The bossiest man in hip-hop built his empire on a foundation poured in Clarksdale. The Delta never left his voice. It never will.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903dd2/H1juhI5wrjUDReLfOFwVR_a174e5b0029e4a0cbdde5548af8da66d.jpg'}
-    ]
+    id:8, title:"The Delta in Every Bar", era:"1976", characters:["Rick Ross"],
+    panels:[],
+    narration:"Born William Leonard Roberts II in Clarksdale, MS. The Delta in every bar.",
+    act:null
   },
   {
-    id:'riverside', era:'1924–PRESENT · 615 SUNFLOWER AVE', title:'Where the Blues Stayed',
-    subject:'Riverside Hotel', tags:['Riverside Hotel','Bessie Smith','Green Book','Heritage'],
-    chars:['Bessie Smith','Muddy Waters','Sonny Boy Williamson','Frank "Rat" Ratliff'],
-    panels:[
-      {desc:'Riverside Hotel building at 615 Sunflower Avenue Clarksdale Mississippi, weathered brick facade', caption:'615 Sunflower Avenue, Clarksdale, Mississippi. The Riverside Hotel. Every brick holds a story. Every room has a name. This is where the blues stayed when no one else would take them in.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903e52/-1tZkOro3Tb_pzVZI8ZiE.jpg'},
-      {desc:'Interior of 1920s Black American hospital ward in Mississippi Delta, Black American nurse attending to patients', caption:'1924. The G.T. Thomas Afro-American Hospital. The only hospital in the Delta that would treat Black patients. When every other door was closed, this one stayed open.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903e52/7FJB9y_muSGLKO21Xlmk-.jpg'},
-      {desc:'Empty hospital room 1937 Mississippi, early morning light through window, a bed, the weight of loss', caption:'September 26, 1937. Bessie Smith — the Empress of the Blues — crashed on Highway 61 outside Clarksdale. They brought her here. She died in this room at dawn.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903e52/TbDyC-GjTENBtMAErO3SG.jpg'},
-      {desc:'Black American male traveler arriving at Green Book hotel 1940s Mississippi Delta, suitcase in hand, relief on face', caption:'1944. The hospital became a hotel. The Riverside. Listed in the Green Book — that precious guide that told Black travelers where they could sleep without fear.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903e52/XzYN0nZIDGXV84RjLknqc.jpg'},
-      {desc:'Hotel corridor 1950s Mississippi, dramatic lighting, silhouettes of Black American blues musicians at different room doors', caption:'Muddy Waters slept here. Sonny Boy Williamson. Robert Nighthawk. Ike Turner. Every blues musician who passed through Clarksdale walked this corridor.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903e53/3p65wFK6ormQeZnsTOeKn.jpg'},
-      {desc:'Black American elderly man hotel keeper showing a visitor a historic room in old Mississippi hotel', caption:'Frank "Rat" Ratliff. Third generation of the Wright family. He has the keys to every room. The quiet pride of a man who keeps the whole history breathing.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903e53/EXvyhaEdYwqlLV_nHk-_w.jpg'},
-      {desc:'Riverside Hotel Clarksdale Mississippi exterior golden hour, Sunflower Avenue, Delta sky', caption:'Golden hour on Sunflower Avenue. The Riverside Hotel against a Delta sky. Inside those walls: Bessie Smith\'s last breath, a thousand musicians\' prayers, the entire foundation of American popular music.', aspect:'3:4', imageUrl:'https://v3b.fal.media/files/b/0a903e53/LxgDLQFWMKDZOndAAQkJr.jpg'}
-    ]
+    id:9, title:"The Riverside Hotel", era:"1924–present", characters:["Bessie Smith","G.T. Thomas","Frank Ratliff"],
+    panels:[],
+    narration:"G.T. Thomas Hospital → Bessie Smith's death → Green Book sanctuary → still standing.",
+    act:null
   }
 ];
 
-// ── STATE ──────────────────────────────────────────────────────────────────
-let state = { epIdx: 0, panelIdx: 0 };
-let genPanelCount = 6;
+const CHARACTERS = [
+  {id:"robert-johnson",name:"Robert Johnson",archetype:"The Wanderer",era:"1911 – 1938 · King of the Delta Blues",
+   img:"https://v3b.fal.media/files/b/0a8fb329/eR-of3gV7U04G5sfWt0fu.jpg",
+   ity:[{label:"Vitality",value:0.99},{label:"Creativity",value:0.99},{label:"Intensity",value:0.98}],
+   desc:"29 songs. Dead at 27. The DNA of rock and roll. He came back from 6 months away able to play things no one had taught him.",
+   uuid:"c19723aa-7d97-478a-98c0-795eca74e28a"},
+  {id:"bessie-smith",name:"Bessie Smith",archetype:"The Empress",era:"1894 – 1937 · Empress of the Blues",
+   img:"https://v3b.fal.media/files/b/0a8fb329/o5YHK5JXMCBsoNxoY5Md8.jpg",
+   ity:[{label:"Authenticity",value:0.99},{label:"Luminosity",value:0.99},{label:"Sovereignty",value:0.98}],
+   desc:"Her voice was a physical force. She could fill a theater with no microphone. She made more money than almost any Black artist of her era.",
+   uuid:"baa5c4a3-00af-439a-ac9a-cf1b9efb41be"},
+  {id:"muddy-waters",name:"Muddy Waters",archetype:"The Architect",era:"1913 – 1983 · Father of Electric Blues",
+   img:"https://v3b.fal.media/files/b/0a8fb329/e5Zy0v7waWoAeuO7lTLLr.jpg",
+   ity:[{label:"Connectivity",value:0.99},{label:"Tenacity",value:0.98},{label:"Resilience",value:0.97}],
+   desc:"Moved the Delta to Chicago. Plugged his guitar in. Every rock band that followed is downstream of Muddy Waters.",
+   uuid:"437f4584-da67-4b01-b105-e228f5bf7cd6"},
+  {id:"son-house",name:"Son House",archetype:"The Preacher",era:"1902 – 1988 · Preacher & Bluesman",
+   img:"https://v3b.fal.media/files/b/0a8fb32a/DW6d0jLQOChzq2l6MuKqt.jpg",
+   ity:[{label:"Intensity",value:0.99},{label:"Authenticity",value:0.99},{label:"Complexity",value:0.93}],
+   desc:"Taught Robert Johnson. Disappeared for 20 years. His slide guitar work remains unrepeated. He played like he was fighting with God.",
+   uuid:"7c4afa5c-1ec9-4593-911a-09f7d637ad62"},
+  {id:"sister-rosetta",name:"Sister Rosetta Tharpe",archetype:"The Revolutionary",era:"1915 – 1973 · Godmother of Rock",
+   img:"https://v3b.fal.media/files/b/0a8fb32a/8mxzy_AaKPOcBkYVP2OtV.jpg",
+   ity:[{label:"Creativity",value:0.99},{label:"Sovereignty",value:0.97},{label:"Vitality",value:0.97}],
+   desc:"Johnny Cash, Elvis, Jerry Lee Lewis, Little Richard — all cited her. She invented rock and roll guitar. She was largely forgotten. Now remembered.",
+   uuid:"be5db390-8843-4919-9442-7c146696091e"},
+  {id:"clara-mae",name:"Clara Mae Watkins",archetype:"The Healer",era:"c.1875 – ? · Root Doctor · Coahoma County",
+   img:"https://v3b.fal.media/files/b/0a8fb315/0QF84XH8TvMk014MWhl5h.jpg",
+   ity:[{label:"Wisdom",value:0.98},{label:"Spirituality",value:0.97},{label:"Authenticity",value:0.96}],
+   desc:"She knew which roots could cure a fever and which could bind a heart. Half the babies in Coahoma County came through her hands. The church feared her and the juke joint trusted her.",
+   uuid:"local-001 · fictional archetype"},
+  {id:"leroy-dice",name:'Leroy "Dice" Washington',archetype:"The Trickster",era:"c.1905 – ? · Gambler · Clarksdale",
+   img:"https://v3b.fal.media/files/b/0a8fad1c/HtcbHPw_iriVnBgLBJXG3.jpg",
+   ity:[{label:"Vitality",value:0.96},{label:"Cunning",value:0.95},{label:"Freedom",value:0.94}],
+   desc:"He never owned land but always had money. He moved between juke joints like the wind moves between cotton rows — never staying, never leaving, always present at the moment things happened.",
+   uuid:"local-002 · fictional archetype"},
+  {id:"rev-elijah",name:"Rev. Elijah Cross",archetype:"The Divided Soul",era:"c.1870 – ? · Church Deacon · Coahoma County",
+   img:"https://v3b.fal.media/files/b/0a8fad1c/7_HNm35MRb9f65Rxj6w1F.jpg",
+   ity:[{label:"Complexity",value:0.98},{label:"Intensity",value:0.97},{label:"Spirituality",value:0.96}],
+   desc:"He preached against the blues every Sunday and hummed its melodies every Monday. The Delta lived in him whether he liked it or not. The sacred and the profane were the same man.",
+   uuid:"local-003 · fictional archetype"},
+  {id:"charley-patton",name:"Charley Patton",archetype:"The Origin",era:"1891 – 1934 · King of the Delta Blues",
+   img:"",
+   ity:[{label:"Vitality",value:0.99},{label:"Authenticity",value:0.98},{label:"Intensity",value:0.97}],
+   desc:"King of the Delta Blues. Dockery Plantation. The first star. Every bluesman who followed was downstream of Charley Patton.",
+   uuid:"graph-node"},
+  {id:"ike-turner",name:"Ike Turner",archetype:"The Catalyst",era:"1931 – 2007 · Born in Clarksdale",
+   img:"",
+   ity:[{label:"Creativity",value:0.97},{label:"Intensity",value:0.96},{label:"Vitality",value:0.95}],
+   desc:"Born in Clarksdale. Drove a broken amp to Memphis. Made the first rock & roll record — Rocket 88.",
+   uuid:"graph-node"},
+  {id:"sam-cooke",name:"Sam Cooke",archetype:"The Voice",era:"1931 – 1964 · King of Soul",
+   img:"",
+   ity:[{label:"Luminosity",value:0.99},{label:"Connectivity",value:0.98},{label:"Sovereignty",value:0.97}],
+   desc:"The voice of civil rights. A Change Is Gonna Come. Written after being turned away from a whites-only motel.",
+   uuid:"graph-node"},
+  {id:"nate-dogg",name:"Nate Dogg",archetype:"The Hook",era:"1969 – 2011 · King of Hooks",
+   img:"",
+   ity:[{label:"Connectivity",value:0.98},{label:"Spirituality",value:0.96},{label:"Vitality",value:0.95}],
+   desc:"King of Hooks. Gospel foundation. The voice hip-hop built around.",
+   uuid:"graph-node"}
+];
 
-function ep() { return EPISODES[state.epIdx]; }
-function panel() { return ep().panels[state.panelIdx]; }
+const ARTIFACTS = [
+  {owner:"Robert Johnson",ownerImg:"https://v3b.fal.media/files/b/0a8fb329/eR-of3gV7U04G5sfWt0fu.jpg",items:[
+    {name:"His Guitar",icon:"🎸",img:"https://v3b.fal.media/files/b/0a8fade0/m62QP5Cvpg1ewNoCsui0D.jpg",desc:"Battered acoustic, steel strings worn smooth. 29 songs recorded. DNA of rock and roll."},
+    {name:"The Crossroads Marker",icon:"🚦",img:"https://v3b.fal.media/files/b/0a8fade0/Mhf-NAocCEjpPe3W7MmaS.jpg",desc:"Route 61 & 49. The place. The myth. The bargain that may or may not have happened."}
+  ]},
+  {owner:"Bessie Smith",ownerImg:"https://v3b.fal.media/files/b/0a8fb329/o5YHK5JXMCBsoNxoY5Md8.jpg",items:[
+    {name:"The Headpiece",icon:"🪶",img:"https://v3b.fal.media/files/b/0a8fade0/AP8Xc-yyjIo-pPqC39mCX.jpg",desc:"Feathers, pearls, sequins. She walked into a room and the room changed. This is how."},
+    {name:"The Performance Gown",icon:"👗",img:"https://v3b.fal.media/files/b/0a8fade0/iMGJp-3fhDG8vovoo07DG.jpg",desc:"Deep blue silk, beaded fringe. The Empress dressed like one. No microphone needed."}
+  ]},
+  {owner:"Muddy Waters",ownerImg:"https://v3b.fal.media/files/b/0a8fb329/e5Zy0v7waWoAeuO7lTLLr.jpg",items:[
+    {name:"The Electric Guitar",icon:"🎸",img:"https://v3b.fal.media/files/b/0a8fade0/rk0q96k_xpZnGrmbje3vH.jpg",desc:"He plugged the Delta into an amplifier. Everything after was different. Maxwell Street, 1943."},
+    {name:"The Suitcase",icon:"🧳",img:"https://v3b.fal.media/files/b/0a8fade0/ZSRV3_H5hGS-WAdB7octs.jpg",desc:"Illinois Central railroad ticket inside. Stovall Plantation to Chicago. The Delta in a bag."}
+  ]},
+  {owner:"Son House",ownerImg:"https://v3b.fal.media/files/b/0a8fb32a/DW6d0jLQOChzq2l6MuKqt.jpg",items:[
+    {name:"The Bottleneck Slide",icon:"🔧",img:"https://v3b.fal.media/files/b/0a8fade0/eU7ipXybKFkjjDyvH8jaU.jpg",desc:"Worn smooth from years of use. The technique he passed to Johnson. The sound of the wailing Delta."},
+    {name:"The Bible & The Whiskey",icon:"📖",img:"https://v3b.fal.media/files/b/0a8fade0/-9aFuS7cP4u6JMCNDcqYb.jpg",desc:"The preacher and the bluesman in the same man. The only honest object he ever owned."}
+  ]},
+  {owner:"Sister Rosetta Tharpe",ownerImg:"https://v3b.fal.media/files/b/0a8fb32a/8mxzy_AaKPOcBkYVP2OtV.jpg",items:[
+    {name:"The White Electric Guitar",icon:"⚡",img:"https://v3b.fal.media/files/b/0a8fade0/_ZJqVsgUaXgzYANHftJQi.jpg",desc:"Holy and electric at once. She played it better than anyone who came after. Rock and roll's founding instrument."},
+    {name:"The Performance Gown",icon:"✨",img:"https://v3b.fal.media/files/b/0a8fade0/-nfZ8HUBfyWQRevajjR2k.jpg",desc:"White sequins and gold trim. She wore the sacred on the outside. The glory was the point."}
+  ]},
+  {owner:"Clara Mae Watkins",ownerImg:"https://v3b.fal.media/files/b/0a8fb315/0QF84XH8TvMk014MWhl5h.jpg",items:[
+    {name:"The Medicine Bundle",icon:"🌿",img:"https://v3b.fal.media/files/b/0a8fad1c/YYhHDI8ErgsC_LbPegCzn.jpg",desc:"Roots, herbs, hand-written labels. The pharmacy the Delta never had officially."}
+  ]},
+  {owner:'Leroy "Dice" Washington',ownerImg:"https://v3b.fal.media/files/b/0a8fad1c/HtcbHPw_iriVnBgLBJXG3.jpg",items:[
+    {name:"The Dice & Cards",icon:"🎲",img:"https://v3b.fal.media/files/b/0a8fad1c/Ywt8CG8CuNFT6HPivy4Ri.jpg",desc:"He never lost what mattered. The juke joint table where fortunes changed hands."}
+  ]},
+  {owner:"Rev. Elijah Cross",ownerImg:"https://v3b.fal.media/files/b/0a8fad1c/7_HNm35MRb9f65Rxj6w1F.jpg",items:[
+    {name:"The Bible & The Flask",icon:"⛪",img:"https://v3b.fal.media/files/b/0a8fad1c/MGvj7IxcXrvr6KVm35zee.jpg",desc:"He kept them in the same pocket. The contradiction was the man."}
+  ]}
+];
 
-// ── RENDER EPISODES LIST ───────────────────────────────────────────────────
-function renderEpisodes() {
-  const el = document.getElementById('episodesList');
-  el.innerHTML = EPISODES.map((e, i) => {
-    const sel = i === state.epIdx;
-    const imgCount = e.panels.filter(p => p.imageUrl).length;
-    return `<div class="ep-card${sel?' selected':''}" onclick="selectEpisode(${i})">
-      <div class="ep-era">${e.era}</div>
-      <div class="ep-title">${e.title}</div>
-      <div class="ep-desc">${e.subject}</div>
-      <div class="ep-tags">${e.tags.map(t=>`<span class="ep-tag">${t}</span>`).join('')}</div>
-      <div class="ep-panel-count">${e.panels.length} panels · ${imgCount} generated</div>
-      ${sel ? renderPanelList(e) : ''}
-    </div>`;
-  }).join('');
-}
+const THEMES = [
+  {id:"delta-blues",title:"The Root of All American Music",era:"All Eras",category:"AUTHENTICITY",ity:"Authenticity",
+   body:"The Mississippi Delta produced more music per square mile than anywhere in human history. All American music — rock, soul, hip hop, country — descended from this. The blues is not a genre. It is a container. Grief, joy, and memory pass forward through vessels: clay pot → church → juke joint → electric guitar.",
+   insight:"Every guitar riff played since 1936 contains the DNA of something that happened at a crossroads in Clarksdale, Mississippi.",
+   connection:"When a rapper freestyles over a trap beat in Atlanta, the call-and-response pattern is the same one used in Coahoma County cotton fields."},
+  {id:"great-migration",title:"The Sound of Migration",era:"1910–1970",category:"MOVEMENT",ity:"Connectivity",
+   body:"Between 1910 and 1970, approximately 6 million Black Americans left the South. The Illinois Central Railroad ran straight from the Delta to Chicago. Music traveled with them. What was acoustic in Mississippi became electric in Chicago. What was personal became political.",
+   insight:"The Great Migration didn't just move people. It amplified a frequency. The Delta blues, confined to juke joints and plantation porches, became the sound of the twentieth century.",
+   connection:"The same railroad line that carried Muddy Waters north now carries tourists south to the Delta Blues Museum."},
+  {id:"sacred-profane",title:"The Sacred and the Profane",era:"The Delta",category:"SPIRITUALITY",ity:"Complexity",
+   body:"The same congregation that danced in the juke joint Saturday night gathered in the Baptist church Sunday morning. The sacred and the profane were not opposites — they were neighbors. Son House was a preacher who played the blues. Sister Rosetta Tharpe played gospel on an electric guitar. The line was always blurred.",
+   insight:"The tension between sacred and profane is not a contradiction to be resolved — it is the engine that drives all Delta music.",
+   connection:"Contemporary gospel-influenced R&B artists carry this same tension, whether they name it or not."},
+  {id:"gritty-container",title:"The Gritty Container",era:"All Eras",category:"AUTHENTICITY",ity:"Materiality",
+   body:"The Delta is not a polished memory. It is red clay, standing water, cotton dust, and heat. The blues emerged from material conditions — sharecropping, flood, poverty, and a landscape that shaped the body before it shaped the mind. Every song carries the weight of the place it was made.",
+   insight:"Strip the mythology and the blues is labor music. It was made by people whose bodies were instruments of work before they were instruments of art.",
+   connection:"The materiality of place still shapes music — drill in Chicago, bounce in New Orleans, chopped and screwed in Houston."},
+  {id:"blues-as-container",title:"The Blues as Container",era:"All Eras",category:"ONTOLOGY",ity:"Continuity",
+   body:"The central thesis of the Clarksdale Series: the blues is a container, not a genre. It holds grief and passes it forward. The container changes shape — clay pot to wooden church to tin-roofed juke joint to amplified stage to digital stream — but the function persists. Something is held. Something is passed on.",
+   insight:"Every medium the blues has occupied has been destroyed or commodified. The blues survives by moving to the next container before the current one breaks.",
+   connection:"Streaming platforms are the latest container. The question is whether digital formats can hold what vinyl and juke joints held."},
+  {id:"1927-flood",title:"The Water That Changed Everything",era:"1927",category:"CATASTROPHE",ity:"Criticality",
+   body:"April 1927. The Mississippi River broke through at Mound Landing near Greenville. 468,000 cubic feet per second. 27,000 square miles inundated. 700,000 people displaced. The 1927 flood accelerated the Great Migration, destroyed Black-owned farmland, and created the conditions for the next fifty years of American music.",
+   insight:"Bessie Smith recorded 'Back-Water Blues' in February 1927 — two months before the flood. Prophecy or pattern recognition?",
+   connection:"Climate displacement continues to shape cultural production. Hurricane Katrina did to New Orleans what the 1927 flood did to the Delta."}
+];
 
-function renderPanelList(e) {
-  return `<div class="panel-list">${e.panels.map((p, i) => {
-    const active = i === state.panelIdx;
-    const hasImg = !!p.imageUrl;
-    const thumb = hasImg ? `<img class="panel-thumb" src="${p.imageUrl}" alt="">` : '';
-    const label = p.desc ? p.desc.substring(0, 35) + '…' : 'Empty panel';
-    return `<div class="panel-item${active?' active':''}" onclick="event.stopPropagation();selectPanel(${i})">
-      <span class="panel-check">${hasImg?'✓':'○'}</span>
-      <span class="panel-num">${i+1}</span>
-      ${thumb}
-      <span>${label}</span>
-    </div>`;
-  }).join('')}</div>`;
-}
+const SPARKS = [
+  {char1:"Robert Johnson",char2:"Son House",img1:"https://v3b.fal.media/files/b/0a8fb329/eR-of3gV7U04G5sfWt0fu.jpg",img2:"https://v3b.fal.media/files/b/0a8fb32a/DW6d0jLQOChzq2l6MuKqt.jpg",
+   types:["Mentor × Student","Creative Lineage"],title:"The Student Surpasses the Teacher",score:0.89,
+   body:"The Mississippi sun beat down on the dust devils swirling around Son House and a young Robert Johnson, sweat plastering their shirts as House hammered out a blues riff on his steel guitar, patiently guiding Johnson's clumsy fingers over the fretboard. Then Johnson vanished for a spell, only to reappear with the devil in his eyes and a virtuosity that made the floorboards tremble, notes cascading from his guitar like a dark river overflowing its banks."},
+  {char1:"Bessie Smith",char2:"Sister Rosetta Tharpe",img1:"https://v3b.fal.media/files/b/0a8fb329/o5YHK5JXMCBsoNxoY5Md8.jpg",img2:"https://v3b.fal.media/files/b/0a8fb32a/8mxzy_AaKPOcBkYVP2OtV.jpg",
+   types:["Sovereign Collision","Power × Power"],title:"Two Empresses Meet",score:0.94,
+   body:"The backstage air hung thick with stale cigarette smoke and anticipation, clinging to Rosetta's sequined dress like a second skin. Bessie, perched on a beat-up amp, sized her up with eyes that had seen both jubilees and heartbreak, a wry smile playing on lips painted the crimson of a late-evening sin."},
+  {char1:"Muddy Waters",char2:"Robert Johnson",img1:"https://v3b.fal.media/files/b/0a8fb329/e5Zy0v7waWoAeuO7lTLLr.jpg",img2:"https://v3b.fal.media/files/b/0a8fb329/eR-of3gV7U04G5sfWt0fu.jpg",
+   types:["Lineage","Migration","Amplification"],title:"The Delta Reaches Chicago",score:0.91,
+   body:"The Greyhound coughed him onto the curb, his guitar case heavy with Delta dust and the ghost of Robert Johnson. He found a corner on Maxwell Street, plugged into a borrowed amp crackling with nascent electricity, and laid his calloused fingers on the strings."}
+];
 
-// ── RENDER PREVIEW ─────────────────────────────────────────────────────────
-function renderPreview() {
-  const e = ep(), p = panel();
-  const complete = e.panels.filter(x=>x.imageUrl).length;
-  document.getElementById('epTitleBar').innerHTML = `${e.title}<span class="status">— ${complete === e.panels.length ? 'Complete ✓' : complete+'/'+e.panels.length+' panels'}</span>`;
-  document.getElementById('panelCount').textContent = `${state.panelIdx+1}/${e.panels.length} panels`;
+const ENVIRONMENTS = [
+  {name:"The Crossroads — Route 61 & 49",img:"https://v3b.fal.media/files/b/0a8fad26/47VdUx50_R25XYCRhRt-s.jpg",desc:"Clarksdale, Mississippi. The most mythologized intersection in American music. Where decisions are made that cannot be undone.",tags:["Vitality 0.99","Mystery 0.97","Liminality 0.95"]},
+  {name:"The Juke Joint Interior",img:"https://v3b.fal.media/files/b/0a8fad26/ExmJMSY1lbsKqe9zQ26uT.jpg",desc:"Saturday night. The only space that belonged entirely to the people who built the Delta. Music until the sun came back.",tags:["Community 0.98","Joy 0.94","Resistance 0.91"]},
+  {name:"The Baptist Church",img:"https://v3b.fal.media/files/b/0a8fad26/1etFt4VXv4zziq_4iI4rx.jpg",desc:"Where the same congregation gathered Sunday morning who danced in the juke joint Saturday night. The sacred and the profane were neighbors.",tags:["Spirituality 0.99","Transcendence 0.96","Community 0.93"]},
+  {name:"Stovall Plantation",img:"https://v3b.fal.media/files/b/0a8fad26/NRDPYxLWa4THyG0iJR5R2.jpg",desc:"Near Clarksdale. Alan Lomax arrived here in 1941 with recording equipment. What he captured changed the history of music documentation.",tags:["Memory 0.97","Authenticity 0.99","Origin 0.98"]}
+];
 
-  const img = document.getElementById('panelImg');
-  const noImg = document.getElementById('noImage');
-  const cap = document.getElementById('panelCaption');
+const VIDEOS = [
+  {act:"Act I · ᚢ Uruz · Materiality",title:"The Crossroads",src:"https://v3b.fal.media/files/b/0a8f4b0f/Frlubwi4TjCzW_bHKKtzM_tmpsbvpijof.mp4"},
+  {act:"Act II · ᛒ Berkano · Vitality",title:"The Guitar Awakens",src:"https://v3b.fal.media/files/b/0a8f4b19/JAG34ABwPFsPMJDvkivzn_tmp0qzxam19.mp4"},
+  {act:"Act III · ᛗ Mannaz · Interiority",title:"The Bargain",src:"https://v3b.fal.media/files/b/0a8f4b22/srZtPr0VuLWXn6WtPtpC1_tmptuhh_9w9.mp4"},
+  {act:"Act IV · ᚦ Thurisaz · Criticality",title:"The Teacher's Doubt",src:"https://v3b.fal.media/files/b/0a8f4b4b/D-yWQRqeQaMYXck031w6j_tmpmrop643w.mp4"},
+  {act:"Act V · ᛖ Ehwaz · Connectivity",title:"The Music Spreads",src:"https://v3b.fal.media/files/b/0a8f4b34/hGLzY2fCbyRzTAZc8qyb__tmpoilnwht2.mp4"},
+  {act:"Act VI · ᚲ Kenaz · Lucidity",title:"The Legend Forms",src:"https://v3b.fal.media/files/b/0a8f4b2b/QJ1rxfbrKHrkDJh78ncRe_tmptj1e71f_.mp4"},
+  {act:"Act VII · ᛞ Dagaz · Continuity",title:"The Music Never Dies",src:"https://v3b.fal.media/files/b/0a8f4b55/DW5KLwhBEBdhDTeq7MyoN_clarksdale-trailer-v3.mp4"}
+];
 
-  if (p.imageUrl) {
-    img.src = p.imageUrl; img.style.display = 'block'; noImg.style.display = 'none';
-  } else {
-    img.style.display = 'none'; noImg.style.display = 'flex';
-  }
-  cap.textContent = p.caption || '';
-  cap.style.display = p.caption ? 'block' : 'none';
+const TRAILER_SRC = "https://v3b.fal.media/files/b/0a8f4b06/LKaVV8f17JovvE3gXOa_m_tmpx0zp9kpk.mp4";
 
-  // Dots
-  const dots = document.getElementById('panelDots');
-  dots.innerHTML = e.panels.map((_, i) =>
-    `<div class="panel-dot${i===state.panelIdx?' active':''}" onclick="selectPanel(${i})"></div>`
-  ).join('');
-}
+const MUSIC = [
+  {type:"Solo",title:"Last Night at the Crossroads",style:"Delta blues · acoustic slide guitar · open G · raw haunting male vocals · 1930s Mississippi"},
+  {type:"Solo",title:"Empress of the Evening",style:"Classic blues · powerful female vocalist · jazz piano · theatrical · 1920s"},
+  {type:"Solo",title:"Maxwell Street Saturday",style:"Chicago electric blues · amplified slide guitar · rhythm section · 1940s"},
+  {type:"Solo",title:"Preacher Man Blues",style:"Prewar Delta blues · gospel meets devil · intense slide guitar · preacher vocal"},
+  {type:"Solo",title:"Holy Electric",style:"Gospel blues proto-rock · electric guitar virtuosity · joyful female vocals · 1940s"},
+  {type:"Duet",title:"What I Gave You",style:"Delta blues duet · two male voices · call and response · acoustic slide guitar"},
+  {type:"Duet",title:"Two Empresses",style:"Blues duet · two powerful female vocalists · electric guitar · jazz piano · theatrical"},
+  {type:"Duet",title:"Delta to Electric",style:"Blues duet · acoustic voice meets electric · past meets present · Delta meets Chicago"}
+];
 
-// ── RENDER EDITOR ──────────────────────────────────────────────────────────
-function renderEditor() {
-  const e = ep(), p = panel();
-  const aspect = p.aspect || '3:4';
-  document.getElementById('editorTitle').textContent = `PANEL ${state.panelIdx+1} OF ${e.panels.length} · ${aspect}`;
-
-  document.getElementById('aspectBtns').innerHTML = ASPECTS.map(a =>
-    `<button class="aspect-btn${a===aspect?' active':''}" onclick="setAspect('${a}')">${a}</button>`
-  ).join('');
-
-  document.getElementById('sceneDesc').value = p.desc || '';
-  document.getElementById('captionText').value = p.caption || '';
-  document.getElementById('charTags').innerHTML = e.chars.map(c =>
-    `<span class="char-tag">${c}</span>`
-  ).join('');
-}
-
-// ── NAVIGATION ─────────────────────────────────────────────────────────────
-function selectEpisode(i) {
-  state.epIdx = i; state.panelIdx = 0;
-  renderAll();
-}
-function selectPanel(i) {
-  state.panelIdx = Math.max(0, Math.min(i, ep().panels.length - 1));
-  renderAll();
-}
-function navPanel(dir) {
-  selectPanel(state.panelIdx + dir);
-}
-
-// ── EDITOR ACTIONS ─────────────────────────────────────────────────────────
-function updatePanel(field, val) {
-  if (field === 'desc') panel().desc = val;
-  if (field === 'caption') panel().caption = val;
-}
-
-function setAspect(a) {
-  panel().aspect = a;
-  renderEditor();
-}
-
-function insertPanel(where) {
-  const idx = where === 'before' ? state.panelIdx : state.panelIdx + 1;
-  ep().panels.splice(idx, 0, { desc: '', caption: null, aspect: '3:4', imageUrl: null });
-  if (where === 'before') state.panelIdx++;
-  renderAll();
-  toast('Panel inserted');
-}
-
-function removePanel() {
-  if (ep().panels.length <= 1) return toast('Cannot remove last panel');
-  ep().panels.splice(state.panelIdx, 1);
-  if (state.panelIdx >= ep().panels.length) state.panelIdx = ep().panels.length - 1;
-  renderAll();
-  toast('Panel removed');
-}
-
-// ── AI WRITE CAPTION ───────────────────────────────────────────────────────
-async function aiWriteCaption() {
-  const e = ep(), p = panel();
-  toast('Writing caption with AI…');
-  try {
-    const prompt = `Write a 2-3 sentence comic book narration caption for this panel.
-Episode: "${e.title}" about ${e.subject} in ${e.era}.
-Current panel description: "${p.desc}"
-Characters: ${e.chars.join(', ')}
-Style: Literary, evocative, historical. Like a graphic novel for adults. Short declarative sentences.
-Delta Blues Mississippi. Black American history. Powerful. Poetic. True.`;
-    const text = await gemini(prompt);
-    p.caption = text.replace(/^["']|["']$/g, '').trim();
-    renderAll();
-    toast('Caption written ✓');
-  } catch (err) { toast('Error: ' + err.message); }
-}
-
-// ── REGENERATE PANEL ───────────────────────────────────────────────────────
-async function regeneratePanel() {
-  const e = ep(), p = panel();
-  if (!p.desc) return toast('Add a scene description first');
-  toast('Generating image…');
-  try {
-    const prompt = `${p.desc}. ${e.chars.join(' and ')}. Delta Blues Mississippi ${e.era}. Black American history. Cinematic comic book panel. Sepia amber and deep shadow photography style. Film noir graphic novel. High contrast. No text. Explicitly: Black American characters, African American, dark skin.`;
-    const res = await fetch(`${PROXY}/fal/generate`, {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ model:'fal-ai/flux-pro/v1.1-ultra', prompt, aspect_ratio: p.aspect || '3:4', num_images:1, safety_tolerance:'5' })
-    });
-    const data = await res.json();
-    if (data.request_id) {
-      const url = await pollFal(data.request_id);
-      if (url) { p.imageUrl = url; renderAll(); toast('Image generated ✓'); }
-    } else if (data.images?.[0]?.url) {
-      p.imageUrl = data.images[0].url; renderAll(); toast('Image generated ✓');
-    } else { toast('Generation queued — check back shortly'); }
-  } catch (err) { toast('Error: ' + err.message); }
-}
-
-async function pollFal(requestId) {
-  for (let i = 0; i < 60; i++) {
-    await new Promise(r => setTimeout(r, 2000));
-    try {
-      const r = await fetch(`${PROXY}/fal/status?request_id=${requestId}&model=fal-ai/flux-pro/v1.1-ultra`);
-      const d = await r.json();
-      if (d.status === 'COMPLETED' || d.images) {
-        if (d.images?.[0]?.url) return d.images[0].url;
-        const r2 = await fetch(`${PROXY}/fal/result?request_id=${requestId}&model=fal-ai/flux-pro/v1.1-ultra`);
-        const d2 = await r2.json();
-        return d2.images?.[0]?.url || null;
-      }
-      if (d.status === 'FAILED') { toast('Generation failed'); return null; }
-    } catch(e) {}
-  }
-  toast('Generation timed out'); return null;
-}
-
-// ── GEMINI PROXY ───────────────────────────────────────────────────────────
-async function gemini(prompt, system) {
-  const body = { contents: [{ parts: [{ text: prompt }] }] };
-  if (system) body.system_instruction = { parts: [{ text: system }] };
-  const r = await fetch(`${PROXY}/gemini/generate`, {
-    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+// Flatten all artifacts for the sidebar
+const ALL_ARTIFACTS = [];
+ARTIFACTS.forEach(group => {
+  group.items.forEach(item => {
+    ALL_ARTIFACTS.push({...item, owner:group.owner, ownerImg:group.ownerImg});
   });
-  const d = await r.json();
-  return d?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-}
-
-// ── GENERATE EPISODE ───────────────────────────────────────────────────────
-function openGenerateModal() { document.getElementById('genModal').classList.add('show'); }
-function closeGenModal() { document.getElementById('genModal').classList.remove('show'); document.getElementById('genProgress').textContent = ''; }
-
-function setGenCount(n) {
-  genPanelCount = n;
-  document.querySelectorAll('.panel-count-btn').forEach(b => b.classList.toggle('active', parseInt(b.textContent) === n));
-}
-
-async function generateEpisode() {
-  const loc = document.getElementById('genLocation').value.trim();
-  const year = document.getElementById('genYear').value.trim();
-  const subj = document.getElementById('genSubject').value.trim();
-  const theme = document.getElementById('genTheme').value.trim();
-  if (!subj) return toast('Enter a subject');
-  const prog = document.getElementById('genProgress');
-  const btn = document.getElementById('genBtn');
-  btn.disabled = true;
-
-  try {
-    prog.textContent = 'Writing episode with AI…';
-    const outline = await gemini(
-      `Create a ${genPanelCount}-panel comic book episode outline.
-Location: ${loc || 'Mississippi Delta'}
-Year: ${year || 'Unknown'}
-Subject: ${subj}
-Theme: ${theme || subj}
-
-For each panel return JSON array of objects with: desc (scene description, 1-2 sentences), caption (narration, 2-3 sentences, literary style), characters (array of character names).
-Return ONLY valid JSON array, no markdown.`,
-      'You are a graphic novel writer specializing in Black American music history. Write vivid, cinematic panel descriptions.'
-    );
-
-    let panels;
-    try {
-      const cleaned = outline.replace(/```json?\n?/g,'').replace(/```/g,'').trim();
-      panels = JSON.parse(cleaned);
-    } catch(e) { prog.textContent = 'Error parsing AI response'; btn.disabled = false; return; }
-
-    const newEp = {
-      id: 'gen_' + Date.now(),
-      era: (year || '????') + ' · ' + (loc || 'MISSISSIPPI').toUpperCase(),
-      title: theme || subj,
-      subject: subj,
-      tags: [subj, loc || 'Delta'].filter(Boolean),
-      chars: [...new Set(panels.flatMap(p => p.characters || []))],
-      panels: panels.map(p => ({ desc: p.desc, caption: p.caption, aspect: '3:4', imageUrl: null }))
-    };
-    EPISODES.push(newEp);
-    state.epIdx = EPISODES.length - 1;
-    state.panelIdx = 0;
-    renderAll();
-
-    // Generate images
-    for (let i = 0; i < newEp.panels.length; i++) {
-      prog.textContent = `Generating panel ${i+1}/${newEp.panels.length}…`;
-      const p = newEp.panels[i];
-      const prompt = `${p.desc}. ${newEp.chars.join(' and ')}. Delta Blues Mississippi ${newEp.era}. Black American history. Cinematic comic book panel. Sepia amber and deep shadow. Film noir graphic novel. High contrast. No text.`;
-      try {
-        const res = await fetch(`${PROXY}/fal/generate`, {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ model:'fal-ai/flux-pro/v1.1-ultra', prompt, aspect_ratio:'3:4', num_images:1, safety_tolerance:'5' })
-        });
-        const data = await res.json();
-        if (data.images?.[0]?.url) {
-          p.imageUrl = data.images[0].url;
-        } else if (data.request_id) {
-          const url = await pollFal(data.request_id);
-          if (url) p.imageUrl = url;
-        }
-        renderAll();
-      } catch(e) { console.error('Panel gen error:', e); }
-    }
-    prog.textContent = 'Episode complete ✓';
-    btn.disabled = false;
-  } catch(err) { prog.textContent = 'Error: ' + err.message; btn.disabled = false; }
-}
-
-// ── EXPORT STRIP ───────────────────────────────────────────────────────────
-function exportStrip() {
-  const e = ep();
-  const el = document.getElementById('exportStrip');
-  el.innerHTML = `<h1>${e.title}</h1><div class="era">${e.era} · ${e.subject}</div>` +
-    e.panels.map((p, i) => {
-      const img = p.imageUrl ? `<img src="${p.imageUrl}" alt="Panel ${i+1}">` : '';
-      const cap = p.caption ? `<div class="cap">${p.caption}</div>` : '';
-      return img + cap;
-    }).join('');
-  document.getElementById('exportOverlay').classList.add('show');
-}
-function closeExport() { document.getElementById('exportOverlay').classList.remove('show'); }
-
-// ── KNOWLEDGE GRAPH TOGGLE ─────────────────────────────────────────────────
-function toggleKG() {
-  // Check if KG view exists in current page
-  const kgEl = document.getElementById('kg-overlay') || document.getElementById('knowledgeGraph');
-  if (kgEl) { kgEl.style.display = kgEl.style.display === 'none' ? 'block' : 'none'; return; }
-  // Open in new tab
-  window.open('clarksdale-comic.html#kg', '_blank');
-}
-
-// ── VIDEO PLAYER TOGGLE ────────────────────────────────────────────────────
-function toggleVideo() {
-  const vidEl = document.getElementById('video-overlay') || document.getElementById('videoPlayer');
-  if (vidEl) { vidEl.style.display = vidEl.style.display === 'none' ? 'block' : 'none'; return; }
-  window.open('clarksdale-comic.html#video', '_blank');
-}
-
-// ── TOAST ──────────────────────────────────────────────────────────────────
-function toast(msg) {
-  const el = document.getElementById('statusToast');
-  el.textContent = msg; el.style.display = 'block';
-  clearTimeout(el._t);
-  el._t = setTimeout(() => el.style.display = 'none', 3000);
-}
-
-// ── KEYBOARD NAV ───────────────────────────────────────────────────────────
-document.addEventListener('keydown', e => {
-  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
-  if (e.key === 'ArrowLeft') navPanel(-1);
-  if (e.key === 'ArrowRight') navPanel(1);
-  if (e.key === 'ArrowUp') { e.preventDefault(); selectEpisode(Math.max(0, state.epIdx - 1)); }
-  if (e.key === 'ArrowDown') { e.preventDefault(); selectEpisode(Math.min(EPISODES.length - 1, state.epIdx + 1)); }
 });
 
-// ── RENDER ALL ─────────────────────────────────────────────────────────────
-function renderAll() { renderEpisodes(); renderPreview(); renderEditor(); }
+// ── STATE ──
+let currentTab = 'episodes';
+let selectedItem = null; // {type, index, subIndex}
 
-// ── INIT ───────────────────────────────────────────────────────────────────
-renderAll();
-</script>
-<!-- Twitter/X Publisher Drawer -->
-<div class="tw-overlay" id="twOverlay" onclick="closeTwitterPublisher()"></div>
-<div class="twitter-drawer" id="twDrawer">
-  <div class="tw-drawer-header">
-    <div>
-      <div class="tw-drawer-title">PUBLISH TO 𝕏</div>
-      <div class="tw-drawer-account">@EveryForty4</div>
-    </div>
-    <div style="display:flex;gap:6px;align-items:center;">
-      <button class="tw-gear-btn" onclick="twToggleSettings()" title="Credentials">⚙</button>
-      <button class="tw-drawer-close" onclick="closeTwitterPublisher()">✕</button>
-    </div>
-  </div>
+// ── TAB SWITCHING ──
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.sidebar-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + tab));
 
-  <!-- Credentials Settings -->
-  <div class="tw-settings-panel" id="twSettings">
-    <div class="tw-label">TWITTER CREDENTIALS</div>
-    <div class="tw-cred-note">Consumer Key</div>
-    <input class="tw-cred-input" id="twCK" placeholder="Consumer Key">
-    <div class="tw-cred-note">Consumer Secret (required)</div>
-    <input class="tw-cred-input" id="twCS" type="password" placeholder="Consumer Secret">
-    <div class="tw-cred-note">Access Token</div>
-    <input class="tw-cred-input" id="twAT" placeholder="Access Token">
-    <div class="tw-cred-note">Access Token Secret (required)</div>
-    <input class="tw-cred-input" id="twATS" type="password" placeholder="Access Token Secret">
-    <div class="tw-cred-note">Stored in localStorage only. Never sent to server.</div>
-    <button class="tw-cred-save" onclick="twSaveCreds()">Save</button>
-  </div>
-
-  <!-- Episode Selection -->
-  <div class="tw-section">
-    <div class="tw-label">EPISODE</div>
-    <select class="tw-select" id="twEpisodeSelect" onchange="twSelectEpisode()"></select>
-  </div>
-
-  <!-- Format Selection -->
-  <div class="tw-section">
-    <div class="tw-label">THREAD FORMAT</div>
-    <div class="format-options">
-      <div class="format-opt"><input type="radio" name="twFormat" value="full" id="twFmtFull" checked><label for="twFmtFull">Full Thread (6-8 tweets)</label></div>
-      <div class="format-opt"><input type="radio" name="twFormat" value="single" id="twFmtSingle"><label for="twFmtSingle">Single Announcement (1 tweet)</label></div>
-      <div class="format-opt"><input type="radio" name="twFormat" value="quote" id="twFmtQuote"><label for="twFmtQuote">Quote Card (image + caption)</label></div>
-    </div>
-    <button class="generate-thread-btn" id="twGenerateBtn" onclick="twGenerateThread()">✦ Generate Thread with AI</button>
-  </div>
-
-  <!-- Preview -->
-  <div id="twPreview" style="flex:1;overflow-y:auto;"></div>
-
-  <!-- Add Tweet -->
-  <button class="tw-add-tweet" id="twAddBtn" style="display:none;" onclick="twAddTweet()">+ Add Tweet</button>
-
-  <!-- History -->
-  <div class="tw-history" id="twHistory"></div>
-
-  <!-- Action Bar -->
-  <div class="tw-actions-bar" id="twActionsBar" style="display:none;">
-    <button class="tw-copy-btn" onclick="twCopyAll()">📋 Copy All</button>
-    <button class="tw-post-btn" id="twPostBtn" onclick="twPostThread()">𝕏 Post Thread</button>
-  </div>
-</div>
-<div class="tw-notice" id="twNotice"></div>
-
-<script>
-(function(){
-  const PROXY='https://awareness-proxy-328246068140.us-central1.run.app';
-  const GEMINI_URL='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyBnBnpLEqJN50KKIFnEuBxQMIb7gjqstsg';
-
-  // Episode data extracted from the page
-  const TW_EPISODES=[
-    {id:'rocket88',title:'Rocket 88',era:'1951',location:'Clarksdale, Mississippi',subject:'Ike Turner & Jackie Brenston',panels:[
-      {narration:'Ike Turner was born in Clarksdale, and the town was already too small for what he heard in his head.',imageSelector:'#social .social-card:nth-child(1) img'},
-      {narration:'He packed a broken amplifier into a car and drove 48 miles north to Memphis. The amp buzzed and distorted. Sam Phillips said: leave it.',imageSelector:null},
-      {narration:'Jackie Brenston sang the vocal. The record said "Jackie Brenston and his Delta Cats." It was Ike\'s band. Ike\'s song. Ike\'s sound.',imageSelector:null},
-      {narration:'"Rocket 88" hit #1 on the R&B chart. Some call it the first rock and roll record. The fuzz came from a broken speaker stuffed with newspaper.',imageSelector:null}
-    ]},
-    {id:'crossroads',title:'The Crossroads',era:'1936',location:'Clarksdale, Mississippi',subject:'Robert Johnson',panels:[
-      {narration:'He went down to the crossroads. He came back able to play things no one had taught him.',imageSelector:null},
-      {narration:'29 songs. Dead at 27. The DNA of everything that came after.',imageSelector:null},
-      {narration:'Robert Johnson recorded in a hotel room in San Antonio and a warehouse in Dallas. That was all.',imageSelector:null}
-    ]},
-    {id:'muddy',title:'Muddy Waters',era:'1943',location:'Stovall Plantation',subject:'Muddy Waters',panels:[
-      {narration:'McKinley Morganfield played on Stovall Plantation. Alan Lomax came with a recording machine from the Library of Congress.',imageSelector:null},
-      {narration:'Muddy heard his own voice played back and decided that was it. He was going to Chicago.',imageSelector:null},
-      {narration:'He took the blues north on the Illinois Central. Electric guitar. Amplified. The Delta plugged in.',imageSelector:null}
-    ]},
-    {id:'bessie',title:'Empress of the Blues',era:'1923',location:'Clarksdale to New York',subject:'Bessie Smith',panels:[
-      {narration:'Bessie Smith sang in the tent shows of Clarksdale before she became the highest-paid Black performer in America.',imageSelector:null},
-      {narration:'She sold 780,000 copies of "Downhearted Blues" in six months. Columbia Records survived because of her.',imageSelector:null}
-    ]},
-    {id:'rosetta',title:'Sister Rosetta Tharpe',era:'1938',location:'Cotton Plant, Arkansas',subject:'Sister Rosetta Tharpe',panels:[
-      {narration:'Sister Rosetta Tharpe played electric guitar in 1938. Before Chuck Berry. Before Elvis. Before anyone.',imageSelector:null},
-      {narration:'She sang gospel with a Gibson SG and made the sacred sound like Saturday night. She invented rock and roll and they forgot to tell anyone.',imageSelector:null}
-    ]},
-    {id:'samcooke',title:'Sam Cooke',era:'1957',location:'Clarksdale to Chicago',subject:'Sam Cooke',panels:[
-      {narration:'Sam Cooke was born in Clarksdale and raised in Chicago. He had the most beautiful voice in American popular music.',imageSelector:null},
-      {narration:'He wrote "A Change Is Gonna Come" after being turned away from a Holiday Inn in Louisiana. He was already famous.',imageSelector:null}
-    ]},
-    {id:'riverside',title:'The Riverside Hotel',era:'1944',location:'615 Sunflower Ave, Clarksdale',subject:'The Riverside Hotel',panels:[
-      {narration:'The G.T. Thomas Afro-American Hospital became the Riverside Hotel in 1944. Bessie Smith died there in 1937. Ike Turner lived there.',imageSelector:null},
-      {narration:'Every blues musician who came through Clarksdale slept at the Riverside. The walls remember all of it.',imageSelector:null}
-    ]},
-    {id:'jukejoint',title:'The Juke Joint',era:'1920s-1960s',location:'Mississippi Delta',subject:'Juke Joints',panels:[
-      {narration:'Juke joints were where Black people could exist without permission. The music was loud because it had to be heard over the pain.',imageSelector:null},
-      {narration:'No stage. No cover charge. Just a room, a guitar, and people who understood what the blues meant.',imageSelector:null}
-    ]},
-    {id:'train',title:'The Illinois Central',era:'1910-1970',location:'Mississippi to Chicago',subject:'The Great Migration',panels:[
-      {narration:'The Illinois Central railroad carried six million Black Americans from the Mississippi Delta to Chicago, Detroit, Cleveland.',imageSelector:null},
-      {narration:'They took the blues with them. Every city they arrived in, the music changed shape but kept its truth.',imageSelector:null}
-    ]}
-  ];
-
-  let twTweets=[];
-  let twSelectedEpisode=null;
-
-  // Load credentials from localStorage
-  function twLoadCreds(){
-    const c=JSON.parse(localStorage.getItem('tw_creds')||'{}');
-    document.getElementById('twCK').value=c.ck||'';
-    document.getElementById('twCS').value=c.cs||'';
-    document.getElementById('twAT').value=c.at||'';
-    document.getElementById('twATS').value=c.ats||'';
-    twUpdatePostBtn();
-  }
-  window.twSaveCreds=function(){
-    localStorage.setItem('tw_creds',JSON.stringify({
-      ck:document.getElementById('twCK').value,
-      cs:document.getElementById('twCS').value,
-      at:document.getElementById('twAT').value,
-      ats:document.getElementById('twATS').value
-    }));
-    twShowNotice('Credentials saved');
-    twUpdatePostBtn();
+  // Update stats
+  const stats = {
+    episodes: `9 episodes · ${EPISODES.reduce((s,e)=>s+e.panels.length,0)} panels · ${VIDEOS.length} video arcs`,
+    characters: `${CHARACTERS.length} characters across 9 episodes`,
+    artifacts: `${ALL_ARTIFACTS.length} artifacts · ${ARTIFACTS.length} collections`,
+    themes: `${THEMES.length} intelligence themes`,
+    timeline: `${CHARACTERS.length + ALL_ARTIFACTS.length + THEMES.length} entities across all eras`
   };
-  function twHasCreds(){
-    const c=JSON.parse(localStorage.getItem('tw_creds')||'{}');
-    return !!(c.cs&&c.ats);
-  }
-  function twUpdatePostBtn(){
-    const btn=document.getElementById('twPostBtn');
-    if(!twHasCreds()){btn.textContent='⚠️ Add credentials to post';btn.disabled=true;}
-    else{btn.textContent='𝕏 Post Thread';btn.disabled=false;}
+  document.getElementById('stat-display').textContent = stats[tab] || '';
+
+  // Auto-select first item if nothing selected for this tab
+  selectedItem = null;
+  if (tab === 'episodes' && EPISODES.length) selectItem('episode', 0);
+  else if (tab === 'characters' && CHARACTERS.length) selectItem('character', 0);
+  else if (tab === 'artifacts' && ALL_ARTIFACTS.length) selectItem('artifact', 0);
+  else if (tab === 'themes' && THEMES.length) selectItem('theme', 0);
+  else if (tab === 'timeline') { renderTimeline(); showWelcomeCenter(); showWelcomeEditor(); }
+}
+
+// ── SIDEBAR RENDERING ──
+function renderSidebar() {
+  // Episodes
+  let epHtml = '';
+  EPISODES.forEach((ep, i) => {
+    epHtml += `<div class="ep-card${i===0?' selected':''}" data-idx="${i}" onclick="selectItem('episode',${i})">
+      <div class="ep-num">Episode ${ep.id}</div>
+      <div class="ep-title">${ep.title}</div>
+      <div class="ep-meta">${ep.era} · ${ep.characters.join(', ')} · ${ep.panels.length} panels</div>
+    </div>`;
+  });
+  document.getElementById('panel-episodes').innerHTML = epHtml;
+
+  // Characters
+  let charHtml = '';
+  CHARACTERS.forEach((ch, i) => {
+    const ityBars = ch.ity.map(s =>
+      `<div class="iam-score-bar"><span class="iam-score-label">${s.label}</span><div class="iam-score-track"><div class="iam-score-fill" style="width:${Math.round(s.value*100)}%"></div></div><span class="iam-score-val">${s.value}</span></div>`
+    ).join('');
+    const imgTag = ch.img ? `<img class="char-portrait" src="${ch.img}" alt="${ch.name}" loading="lazy">` :
+      `<div class="char-portrait" style="background:linear-gradient(135deg,#1a1206,#120d04);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--gold-dim);">✦</div>`;
+    charHtml += `<div class="char-card-sb${i===0?' selected':''}" data-idx="${i}" onclick="selectItem('character',${i})">
+      ${imgTag}
+      <div class="char-name-sb">${ch.name}</div>
+      <div class="char-archetype">${ch.archetype}</div>
+      <div class="char-era-sb">${ch.era}</div>
+      ${ityBars}
+    </div>`;
+  });
+  document.getElementById('panel-characters').innerHTML = charHtml;
+
+  // Artifacts
+  let artHtml = '';
+  ALL_ARTIFACTS.forEach((a, i) => {
+    artHtml += `<div class="artifact-card-sb${i===0?' selected':''}" data-idx="${i}" onclick="selectItem('artifact',${i})">
+      <div class="artifact-icon">${a.icon}</div>
+      <div>
+        <div class="artifact-name-sb">${a.name}</div>
+        <div class="artifact-owner-sb">${a.owner}</div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('panel-artifacts').innerHTML = artHtml;
+
+  // Themes
+  let themeHtml = '';
+  THEMES.forEach((t, i) => {
+    themeHtml += `<div class="theme-card-sb${i===0?' selected':''}" data-idx="${i}" onclick="selectItem('theme',${i})">
+      <div class="theme-cat">${t.category}</div>
+      <div class="theme-title-sb">${t.title}</div>
+      <div class="theme-preview">${t.body.slice(0,100)}...</div>
+    </div>`;
+  });
+  document.getElementById('panel-themes').innerHTML = themeHtml;
+
+  renderTimeline();
+}
+
+function renderTimeline() {
+  // Collect all items with dates
+  const items = [];
+  CHARACTERS.forEach(c => {
+    const m = c.era.match(/\d{4}/);
+    if (m) items.push({year:+m[0], label:c.name, type:'character', icon:'🎤'});
+  });
+  ALL_ARTIFACTS.forEach(a => items.push({year:0, label:a.name + ' · ' + a.owner, type:'artifact', icon:a.icon}));
+  THEMES.forEach(t => {
+    const m = (t.era||'').match(/\d{4}/);
+    items.push({year:m?+m[0]:0, label:t.title, type:'theme', icon:'💡'});
+  });
+  EPISODES.forEach(e => {
+    const m = (e.era||'').match(/\d{4}/);
+    items.push({year:m?+m[0]:0, label:'Ep ' + e.id + ': ' + e.title, type:'episode', icon:'🎬'});
+  });
+  items.sort((a,b) => a.year - b.year);
+
+  let html = '';
+  items.forEach(item => {
+    html += `<div class="timeline-item">
+      <div class="timeline-year">${item.year || '—'}</div>
+      <div>
+        <div class="timeline-label">${item.icon} ${item.label}</div>
+        <div class="timeline-type">${item.type}</div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('panel-timeline').innerHTML = html;
+}
+
+// ── ITEM SELECTION ──
+function selectItem(type, index) {
+  selectedItem = {type, index};
+
+  // Update sidebar selection
+  const panelId = {episode:'panel-episodes',character:'panel-characters',artifact:'panel-artifacts',theme:'panel-themes'}[type];
+  if (panelId) {
+    const cards = document.getElementById(panelId).children;
+    Array.from(cards).forEach((c,i) => c.classList.toggle('selected', i === index));
   }
 
-  // Populate episodes
-  function twPopulateEpisodes(){
-    const sel=document.getElementById('twEpisodeSelect');
-    sel.innerHTML=TW_EPISODES.map(e=>`<option value="${e.id}">${e.title} — ${e.era}</option>`).join('');
-    twSelectedEpisode=TW_EPISODES[0];
-  }
-  window.twSelectEpisode=function(){
-    const id=document.getElementById('twEpisodeSelect').value;
-    twSelectedEpisode=TW_EPISODES.find(e=>e.id===id);
-  };
+  // Render center and right panels
+  renderCenter(type, index);
+  renderEditor(type, index);
+}
 
-  // Open/Close
-  window.openTwitterPublisher=function(){
-    twPopulateEpisodes();twLoadCreds();twRenderHistory();
-    document.getElementById('twDrawer').classList.add('open');
-    document.getElementById('twOverlay').classList.add('open');
-  };
-  window.closeTwitterPublisher=function(){
-    document.getElementById('twDrawer').classList.remove('open');
-    document.getElementById('twOverlay').classList.remove('open');
-  };
-  window.twToggleSettings=function(){
-    document.getElementById('twSettings').classList.toggle('open');
-  };
+// ── CENTER PANEL RENDERING ──
+function renderCenter(type, index) {
+  const screen = document.getElementById('phone-screen');
+  const ctx = document.getElementById('center-context');
 
-  // Generate thread via Gemini
-  window.twGenerateThread=async function(){
-    const ep=twSelectedEpisode;if(!ep)return;
-    const format=document.querySelector('input[name="twFormat"]:checked').value;
-    const btn=document.getElementById('twGenerateBtn');
-    btn.disabled=true;btn.textContent='✦ Generating...';
-    try{
-      const panels=ep.panels.map(p=>p.narration).join('\n');
-      let prompt;
-      if(format==='full'){
-        prompt=`Write a Twitter/X thread (6-8 tweets) about this Clarksdale Series episode.\n\nEpisode: "${ep.title}"\nEra: ${ep.era} · ${ep.location}\nSubject: ${ep.subject}\nPanel narrations:\n${panels}\n\nRules:\n- Tweet 1: Hook. Dramatic opening with the core historical fact. End with 🧵\n- Tweets 2-6: One panel per tweet. Literary, poetic narration style. Short declarative sentences.\n- Tweet 7: Historical significance. Why this moment matters for American music/culture.\n- NO hashtags. NO emoji spam. ONLY one emoji per tweet maximum.\n- Under 260 characters each.\n- Voice: authoritative, literary, like a documentary narrator who deeply loves this history.\n- Explicitly honor Black American artists and history.\n- Do NOT include any links or URLs.\n\nReturn as JSON array: [{"text": "tweet content", "imageIndex": 0}]\nimageIndex = which panel image to attach (0-based), or null for no image.`;
-      }else if(format==='single'){
-        prompt=`Write ONE tweet announcing this Clarksdale Series episode.\nEpisode: "${ep.title}" · ${ep.era} · ${ep.location}\nSubject: ${ep.subject}\nUnder 260 chars. Literary, evocative. One line of historical truth. No links or URLs.\nReturn as JSON array with one object: [{"text": "...", "imageIndex": 0}]`;
-      }else{
-        prompt=`Write ONE powerful quote-style tweet from this episode.\nEpisode: "${ep.title}"\nPanel narrations: ${panels}\nExtract the single most powerful sentence from the narration.\nUnder 200 chars. Just the quote + attribution.\nReturn as JSON array: [{"text": "...", "imageIndex": 0}]`;
-      }
-      const r=await fetch(GEMINI_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
-      const d=await r.json();
-      const text=(d?.candidates?.[0]?.content?.parts?.[0]?.text||'').trim();
-      const match=text.match(/\[[\s\S]*?\]/);
-      if(match){twTweets=JSON.parse(match[0]);}
-      else{twTweets=[{text:text.slice(0,260),imageIndex:null}];}
-    }catch(e){
-      console.error('Thread gen error:',e);
-      twTweets=[{text:`${ep.subject} — ${ep.location}, ${ep.era}. ${ep.panels[0].narration}`,imageIndex:0}];
-    }
-    btn.disabled=false;btn.textContent='✦ Generate Thread with AI';
-    twRenderTweets();
-  };
-
-  // Render tweets
-  function twRenderTweets(){
-    const container=document.getElementById('twPreview');
-    if(!twTweets.length){container.innerHTML='';document.getElementById('twActionsBar').style.display='none';document.getElementById('twAddBtn').style.display='none';return;}
-    document.getElementById('twActionsBar').style.display='flex';
-    document.getElementById('twAddBtn').style.display='block';
-    twUpdatePostBtn();
-    container.innerHTML=twTweets.map((t,i)=>{
-      const len=t.text.length;
-      const pct=Math.min(100,len/280*100);
-      const cls=len>280?'over':len>240?'near':'';
-      return `<div class="tweet-card">
-        <div class="tweet-card-header">
-          <span class="tweet-num">TWEET ${i+1}/${twTweets.length}</span>
-          <div class="tweet-actions">
-            <button class="tweet-edit-btn" onclick="twEditTweet(${i})">edit</button>
-            <button class="tweet-del-btn" onclick="twDelTweet(${i})">×</button>
-          </div>
-        </div>
-        <div class="tweet-body" id="twBody${i}">${twEsc(t.text)}</div>
-        <div class="tweet-charcount">
-          <div class="tweet-charcount-bar"><div class="tweet-charcount-fill" style="width:${pct}%"></div></div>
-          <span class="tweet-charcount-num ${cls}">${len} chars</span>
-        </div>
+  if (type === 'episode') {
+    const ep = EPISODES[index];
+    let html = '';
+    if (ep.panels.length > 0) {
+      ep.panels.forEach(p => {
+        html += `<div class="phone-comic-panel"><img src="${p.img}" alt="${ep.title}" loading="lazy"></div>`;
+        if (p.caption) html += `<div class="phone-caption">${p.caption}</div>`;
+      });
+    } else {
+      html = `<div style="padding:40px 20px;text-align:center;">
+        <div style="font-size:40px;margin-bottom:16px;opacity:.3">🎬</div>
+        <div style="font-family:'Playfair Display',serif;font-size:18px;color:var(--text);margin-bottom:8px;">${ep.title}</div>
+        <div style="font-size:11px;color:var(--text-muted);line-height:1.6;">${ep.narration}</div>
       </div>`;
-    }).join('');
-  }
-  function twEsc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
-  // Edit tweet
-  window.twEditTweet=function(i){
-    const el=document.getElementById('twBody'+i);
-    if(el.tagName==='TEXTAREA'){
-      twTweets[i].text=el.value;
-      twRenderTweets();
-      return;
     }
-    const ta=document.createElement('textarea');
-    ta.className='tweet-body-edit';ta.id='twBody'+i;
-    ta.value=twTweets[i].text;
-    ta.oninput=function(){
-      twTweets[i].text=ta.value;
-      const cc=ta.parentElement.querySelector('.tweet-charcount-num');
-      const fill=ta.parentElement.querySelector('.tweet-charcount-fill');
-      if(cc){cc.textContent=ta.value.length+' chars';cc.className='tweet-charcount-num'+(ta.value.length>280?' over':ta.value.length>240?' near':'');}
-      if(fill)fill.style.width=Math.min(100,ta.value.length/280*100)+'%';
-    };
-    el.replaceWith(ta);ta.focus();
-  };
-  window.twDelTweet=function(i){twTweets.splice(i,1);twRenderTweets();};
-  window.twAddTweet=function(){twTweets.push({text:'',imageIndex:null});twRenderTweets();twEditTweet(twTweets.length-1);};
+    screen.innerHTML = html;
+    ctx.textContent = `Episode ${ep.id} · ${ep.title} · ${ep.panels.length} panels`;
 
-  // Copy all
-  window.twCopyAll=function(){
-    const text=twTweets.map((t,i)=>`${i+1}/${twTweets.length}\n${t.text}`).join('\n\n---\n\n');
-    navigator.clipboard.writeText(text).then(()=>twShowNotice('Copied to clipboard!')).catch(()=>twShowNotice('Copy failed'));
-  };
+  } else if (type === 'character') {
+    const ch = CHARACTERS[index];
+    const imgHtml = ch.img
+      ? `<img class="phone-char-portrait" src="${ch.img}" alt="${ch.name}" loading="lazy">`
+      : `<div style="width:100%;aspect-ratio:3/4;background:linear-gradient(135deg,#1a1206,#0d0d0d);display:flex;align-items:center;justify-content:center;font-size:64px;color:var(--gold-dim);opacity:.3;">✦</div>`;
+    screen.innerHTML = `
+      ${imgHtml}
+      <div class="phone-char-info">
+        <div class="phone-char-arch">${ch.archetype}</div>
+        <div class="phone-char-name">${ch.name}</div>
+        <div class="phone-char-era">${ch.era}</div>
+        <div class="phone-char-desc">"${ch.desc}"</div>
+      </div>`;
+    ctx.textContent = ch.name + ' · ' + ch.archetype;
 
-  // Post thread
-  window.twPostThread=async function(){
-    if(!twTweets.length)return;
-    const ep=twSelectedEpisode;
-    const btn=document.getElementById('twPostBtn');
-    btn.disabled=true;btn.textContent='Posting...';
-    try{
-      const res=await fetch(PROXY+'/twitter/thread',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tweets:twTweets.map(t=>({text:t.text,imageUrl:t.imageIndex!==null&&ep.panels[t.imageIndex]?null:null}))})});
-      if(res.ok){const data=await res.json();twShowNotice('Thread posted! '+( data.tweetUrl||''));twLogPost(ep,twTweets.length);}
-      else{throw new Error('Not deployed');}
-    }catch(e){
-      await navigator.clipboard.writeText(twTweets.map((t,i)=>`${i+1}/${twTweets.length}\n${t.text}`).join('\n\n---\n\n')).catch(()=>{});
-      twShowNotice('Copied to clipboard — post at @EveryForty4');
-      twLogPost(ep,twTweets.length);
-    }
-    twUpdatePostBtn();
-  };
+  } else if (type === 'artifact') {
+    const a = ALL_ARTIFACTS[index];
+    screen.innerHTML = `
+      <img class="phone-artifact-img" src="${a.img}" alt="${a.name}" loading="lazy">
+      <div class="phone-artifact-info">
+        <div class="phone-artifact-name">${a.name}</div>
+        <div style="font-size:10px;color:var(--gold-dim);margin-bottom:8px;">${a.owner}</div>
+        <div class="phone-artifact-desc">"${a.desc}"</div>
+      </div>`;
+    ctx.textContent = a.name + ' · ' + a.owner;
 
-  // Notices
-  function twShowNotice(msg){
-    const el=document.getElementById('twNotice');el.textContent=msg;el.classList.add('show');
-    setTimeout(()=>el.classList.remove('show'),3000);
+  } else if (type === 'theme') {
+    const t = THEMES[index];
+    screen.innerHTML = `
+      <div class="intel-card">
+        <div class="intel-header">
+          <span>${t.era}</span>
+          <span>· ${t.category}</span>
+        </div>
+        <h2 class="intel-title">${t.title}</h2>
+        <div class="intel-divider"></div>
+        <p class="intel-body">${t.body}</p>
+        <div class="intel-divider"></div>
+        <p class="intel-insight">"${t.insight}"</p>
+        ${t.connection ? `<div class="intel-connection">${t.connection}</div>` : ''}
+      </div>`;
+    ctx.textContent = t.title + ' · ' + t.category;
   }
+}
 
-  // History
-  function twLogPost(ep,count){
-    const hist=JSON.parse(localStorage.getItem('tw_history')||'[]');
-    const d=new Date();
-    hist.unshift({date:d.toLocaleDateString('en-US',{month:'short',day:'numeric'}),title:ep.title,count});
-    if(hist.length>20)hist.length=20;
-    localStorage.setItem('tw_history',JSON.stringify(hist));
-    twRenderHistory();
+function showWelcomeCenter() {
+  const screen = document.getElementById('phone-screen');
+  screen.innerHTML = `<div style="padding:40px 20px;text-align:center;">
+    <div style="font-size:40px;margin-bottom:16px;opacity:.3">🎸</div>
+    <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--text);margin-bottom:8px;">The Clarksdale Series</div>
+    <div style="font-size:11px;color:var(--text-muted);line-height:1.6;">Select an item from the timeline to preview.</div>
+  </div>`;
+  document.getElementById('center-context').textContent = '';
+}
+
+// ── RIGHT PANEL (EDITOR) RENDERING ──
+function renderEditor(type, index) {
+  const label = document.getElementById('editor-label');
+  const title = document.getElementById('editor-title');
+  const body = document.getElementById('editor-body');
+
+  if (type === 'episode') {
+    const ep = EPISODES[index];
+    label.textContent = 'EPISODE EDITOR';
+    title.textContent = `Episode ${ep.id}: ${ep.title}`;
+    let panelCards = '';
+    ep.panels.forEach((p,i) => {
+      panelCards += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:10px;">
+        <img src="${p.img}" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;" loading="lazy">
+        <div style="padding:8px 10px;font-size:10px;color:var(--text-dim);line-height:1.5;">${p.caption}</div>
+      </div>`;
+    });
+    // Video for this episode
+    const video = VIDEOS[index];
+    const videoHtml = video ? `
+      <div class="ed-group">
+        <div class="ed-label">VIDEO ARC</div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+          <video style="width:100%;aspect-ratio:16/9;display:block;background:#000;" controls muted playsinline>
+            <source src="${video.src}" type="video/mp4">
+          </video>
+          <div style="padding:6px 10px;font-size:9px;color:var(--text-muted);">${video.act}</div>
+        </div>
+      </div>` : '';
+
+    // Story arc
+    const actHtml = ep.act ? `
+      <div class="ed-divider"></div>
+      <div class="ed-group">
+        <div class="ed-label">STORY ARC</div>
+        <div class="ed-act-rune">${ep.act.rune}</div>
+        <div style="text-align:center;font-size:9px;letter-spacing:2px;color:var(--gold-dim);margin-bottom:8px;">${ep.act.num} · ${ep.act.ity}</div>
+        <div style="font-family:'Playfair Display',serif;font-size:14px;color:var(--text);text-align:center;margin-bottom:8px;">${ep.act.name}</div>
+        <div style="font-size:11px;color:var(--text-dim);line-height:1.6;">${ep.act.desc}</div>
+      </div>` : '';
+
+    // Sparks related to this episode's characters
+    let sparkHtml = '';
+    const epChars = ep.characters.map(c => c.toLowerCase());
+    SPARKS.forEach(s => {
+      if (epChars.some(c => s.char1.toLowerCase().includes(c) || s.char2.toLowerCase().includes(c))) {
+        sparkHtml += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px;">
+          <div style="font-size:10px;color:var(--gold-dim);margin-bottom:4px;">${s.char1} × ${s.char2} · ${s.score}</div>
+          <div style="font-family:'Playfair Display',serif;font-size:12px;color:var(--text);margin-bottom:4px;">${s.title}</div>
+          <div style="font-size:10px;color:var(--text-muted);line-height:1.5;font-style:italic;">${s.body.slice(0,150)}...</div>
+        </div>`;
+      }
+    });
+
+    body.innerHTML = `
+      <div class="ed-group">
+        <div class="ed-label">EPISODE TITLE</div>
+        <input class="ed-input" value="${ep.title}">
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">ERA</div>
+        <input class="ed-input" value="${ep.era}">
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">CHARACTERS</div>
+        <input class="ed-input" value="${ep.characters.join(', ')}">
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">NARRATION</div>
+        <textarea class="ed-textarea" rows="3">${ep.narration}</textarea>
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">PANELS (${ep.panels.length})</div>
+        ${panelCards || '<div style="font-size:10px;color:var(--text-muted);">No panels yet</div>'}
+      </div>
+      ${videoHtml}
+      ${actHtml}
+      ${sparkHtml ? `<div class="ed-divider"></div><div class="ed-group"><div class="ed-label">STORY SPARKS</div>${sparkHtml}</div>` : ''}
+      <div class="ed-divider"></div>
+      <button class="ed-btn gold">✦ AI Generate Panel</button>
+      <button class="ed-btn">↻ Regenerate Scene</button>`;
+
+  } else if (type === 'character') {
+    const ch = CHARACTERS[index];
+    label.textContent = 'CHARACTER EDITOR';
+    title.textContent = ch.name;
+    const sliders = ch.ity.map(s => `
+      <div class="ed-slider-row">
+        <span class="ed-slider-label">${s.label}</span>
+        <input type="range" class="ed-slider" min="0" max="100" value="${Math.round(s.value*100)}">
+        <span class="ed-slider-val">${s.value}</span>
+      </div>`).join('');
+
+    body.innerHTML = `
+      <div class="ed-group">
+        <div class="ed-label">CHARACTER NAME</div>
+        <input class="ed-input" value="${ch.name}">
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">ARCHETYPE</div>
+        <input class="ed-input" value="${ch.archetype}">
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">ERA</div>
+        <input class="ed-input" value="${ch.era}">
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">BIO</div>
+        <textarea class="ed-textarea" rows="4">${ch.desc}</textarea>
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">IAM SCORES</div>
+        ${sliders}
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">UUID</div>
+        <div style="font-size:9px;color:var(--text-muted);font-family:monospace;">${ch.uuid}</div>
+      </div>
+      <div class="ed-divider"></div>
+      <button class="ed-btn gold">✦ AI Enrich Character</button>
+      <button class="ed-btn">↻ Regenerate Portrait</button>`;
+
+  } else if (type === 'artifact') {
+    const a = ALL_ARTIFACTS[index];
+    label.textContent = 'ARTIFACT EDITOR';
+    title.textContent = a.name;
+    body.innerHTML = `
+      <div class="ed-group">
+        <div class="ed-label">ARTIFACT NAME</div>
+        <input class="ed-input" value="${a.name}">
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">OWNER</div>
+        <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--gold-dim);border-radius:4px;background:rgba(212,175,55,.08);">
+          ${a.ownerImg ? `<img src="${a.ownerImg}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;">` : ''}
+          <span style="font-size:11px;color:var(--gold);">${a.owner}</span>
+        </div>
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">DESCRIPTION</div>
+        <textarea class="ed-textarea" rows="4">${a.desc}</textarea>
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">IMAGE</div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+          <img src="${a.img}" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;" loading="lazy">
+        </div>
+      </div>
+      <div class="ed-divider"></div>
+      <button class="ed-btn">↻ Regenerate Image</button>
+      <button class="ed-btn gold">+ Add Artifact</button>`;
+
+  } else if (type === 'theme') {
+    const t = THEMES[index];
+    label.textContent = 'THEME EDITOR';
+    title.textContent = t.title;
+    body.innerHTML = `
+      <div class="ed-group">
+        <div class="ed-label">THEME TITLE</div>
+        <input class="ed-input" value="${t.title}">
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">ERA</div>
+        <select class="ed-select">
+          <option ${t.era==='All Eras'?'selected':''}>All Eras</option>
+          <option ${t.era==='Mound Time'?'selected':''}>Mound Time</option>
+          <option ${t.era==='The Nations'?'selected':''}>The Nations</option>
+          <option ${t.era==='The Removal'?'selected':''}>The Removal</option>
+          <option ${t.era==='The Delta'?'selected':''}>The Delta</option>
+          <option ${t.era==='1927'?'selected':''}>1927</option>
+          <option ${t.era==='1910–1970'?'selected':''}>1910–1970</option>
+        </select>
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">CATEGORY</div>
+        <select class="ed-select">
+          <option ${t.category==='AUTHENTICITY'?'selected':''}>AUTHENTICITY</option>
+          <option ${t.category==='MOVEMENT'?'selected':''}>MOVEMENT</option>
+          <option ${t.category==='SPIRITUALITY'?'selected':''}>SPIRITUALITY</option>
+          <option ${t.category==='ONTOLOGY'?'selected':''}>ONTOLOGY</option>
+          <option ${t.category==='CATASTROPHE'?'selected':''}>CATASTROPHE</option>
+        </select>
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">BODY TEXT</div>
+        <textarea class="ed-textarea" rows="5">${t.body}</textarea>
+      </div>
+      <div class="ed-group">
+        <div class="ed-label">INSIGHT (italic gold)</div>
+        <textarea class="ed-textarea" rows="3">${t.insight}</textarea>
+      </div>
+      ${t.connection ? `<div class="ed-group">
+        <div class="ed-label">CONNECTION TO TODAY</div>
+        <textarea class="ed-textarea" rows="2">${t.connection}</textarea>
+      </div>` : ''}
+      <div class="ed-divider"></div>
+      <button class="ed-btn gold">✦ AI Deepen Analysis</button>
+      <button class="ed-btn">🕸 Map to Knowledge Graph</button>`;
   }
-  function twRenderHistory(){
-    const hist=JSON.parse(localStorage.getItem('tw_history')||'[]');
-    const el=document.getElementById('twHistory');
-    if(!hist.length){el.innerHTML='';return;}
-    el.innerHTML='<div class="tw-label">RECENT POSTS</div>'+hist.slice(0,5).map(h=>`<div class="tw-history-item">${h.date} · ${h.title} · ${h.count} tweets</div>`).join('');
-  }
-})();
+}
+
+function showWelcomeEditor() {
+  document.getElementById('editor-label').textContent = 'EDITOR';
+  document.getElementById('editor-title').textContent = 'Select an item';
+  document.getElementById('editor-body').innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--text-muted);font-size:12px;">
+    Select an episode, character, artifact, or theme from the sidebar to begin editing.
+  </div>`;
+}
+
+// ── INTELLIGENCE PANEL (simplified toggle) ──
+let _csOpen = false;
+window.csTogglePanel = function() {
+  _csOpen = !_csOpen;
+  document.getElementById('cs-intel-panel').classList.toggle('open', _csOpen);
+};
+
+// ── KNOWLEDGE GRAPH ──
+let kgInited = false;
+window.toggleKnowledgeGraph = function() {
+  const o = document.getElementById('kg-overlay');
+  if (o.classList.contains('active')) { o.classList.remove('active'); return; }
+  o.classList.add('active');
+  if (!kgInited) { initKG(); kgInited = true; }
+};
+
+const GRAPH_DATA = {
+  nodes:[
+    {id:"robert-johnson",label:"Robert Johnson",type:"person",era:"1936",episodes:[1]},
+    {id:"charley-patton",label:"Charley Patton",type:"person",era:"1929",episodes:[2]},
+    {id:"son-house",label:"Son House",type:"person",era:"1929",episodes:[2,5]},
+    {id:"ike-turner",label:"Ike Turner",type:"person",era:"1951",episodes:[3]},
+    {id:"muddy-waters",label:"Muddy Waters",type:"person",era:"1943",episodes:[4]},
+    {id:"sam-cooke",label:"Sam Cooke",type:"person",era:"1963",episodes:[6]},
+    {id:"bessie-smith",label:"Bessie Smith",type:"person",era:"1937",episodes:[9]},
+    {id:"nate-dogg",label:"Nate Dogg",type:"person",era:"1994",episodes:[7]},
+    {id:"rick-ross",label:"Rick Ross",type:"person",era:"1976",episodes:[8]},
+    {id:"clarksdale",label:"Clarksdale, MS",type:"place",episodes:[1,2,3,4,5,6,7,8,9]},
+    {id:"crossroads",label:"The Crossroads",type:"place",era:"mythic",episodes:[1]},
+    {id:"dockery-plantation",label:"Dockery Plantation",type:"place",era:"1929",episodes:[2]},
+    {id:"highway-61",label:"Highway 61",type:"place",episodes:[1,2,3,4]},
+    {id:"chicago",label:"Chicago, IL",type:"place",era:"1943",episodes:[4]},
+    {id:"memphis",label:"Memphis, TN",type:"place",era:"1951",episodes:[3,5]},
+    {id:"delta-blues",label:"Delta Blues",type:"theme",episodes:[1,2,3,4,5,9]},
+    {id:"great-migration",label:"Great Migration",type:"theme",era:"1910-1970",episodes:[4,6]},
+    {id:"rock-and-roll-birth",label:"Birth of Rock & Roll",type:"theme",era:"1951",episodes:[3]}
+  ],
+  edges:[
+    {source:"charley-patton",target:"son-house",label:"taught",strength:3},
+    {source:"son-house",target:"robert-johnson",label:"taught",strength:3},
+    {source:"robert-johnson",target:"muddy-waters",label:"influenced",strength:3},
+    {source:"muddy-waters",target:"chicago",label:"migrated to",strength:3},
+    {source:"robert-johnson",target:"crossroads",label:"made the deal",strength:3},
+    {source:"crossroads",target:"clarksdale",label:"located in",strength:3},
+    {source:"ike-turner",target:"clarksdale",label:"born in",strength:3},
+    {source:"muddy-waters",target:"great-migration",label:"part of",strength:2},
+    {source:"delta-blues",target:"rock-and-roll-birth",label:"birthed",strength:3},
+    {source:"clarksdale",target:"delta-blues",label:"origin of",strength:3}
+  ]
+};
+
+const NC = {person:'#D4AF37',place:'#4ECDC4',song:'#C77DFF',theme:'#FF6B6B'};
+let kgSim;
+
+function initKG() {
+  const canvas = document.getElementById('kg-canvas');
+  const W = canvas.clientWidth, H = canvas.clientHeight;
+  const nodes = GRAPH_DATA.nodes.map(d => ({...d}));
+  const edges = GRAPH_DATA.edges.map(d => ({...d}));
+
+  const svg = d3.select('#kg-canvas').append('svg').attr('width',W).attr('height',H);
+  const g = svg.append('g');
+  svg.call(d3.zoom().scaleExtent([.3,5]).on('zoom', e => g.attr('transform',e.transform)));
+
+  g.append('g').selectAll('line').data(edges).join('line')
+    .attr('stroke','#e8d5b0').attr('stroke-opacity',.15).attr('stroke-width',d=>d.strength);
+
+  const nodeG = g.append('g').selectAll('g').data(nodes).join('g').attr('cursor','pointer');
+  nodeG.append('circle').attr('r',d => Math.max(8,Math.min(28,(d.episodes||[]).length*5)))
+    .attr('fill',d => NC[d.type]).attr('opacity',.85);
+  nodeG.append('text').text(d => d.label)
+    .attr('dy',d => Math.max(8,Math.min(28,(d.episodes||[]).length*5))+14)
+    .attr('text-anchor','middle').attr('fill','#e8d5b0').attr('font-size',10);
+
+  nodeG.on('click', function(ev, d) {
+    document.getElementById('kg-info').className = '';
+    document.getElementById('kg-info').innerHTML = `<h3>${d.label}</h3><div style="font-size:11px;color:#D4AF37;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;">${d.type}${d.era?' · '+d.era:''}</div>`;
+  });
+
+  kgSim = d3.forceSimulation(nodes)
+    .force('link',d3.forceLink(edges).id(d=>d.id).distance(100))
+    .force('charge',d3.forceManyBody().strength(-300))
+    .force('center',d3.forceCenter(W/2,H/2))
+    .on('tick', () => {
+      g.selectAll('line').attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+      nodeG.attr('transform',d=>`translate(${d.x},${d.y})`);
+    });
+}
+
+window.kgSearch = function(q) {};
+window.kgEnrich = function() {};
+
+// ── INIT ──
+renderSidebar();
+selectItem('episode', 0);
 </script>
 
 </body>
