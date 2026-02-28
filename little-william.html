@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Little William — An Ontological Theatre Adventure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --william-orange: #FF6B35;
+  --william-yellow: #FFD23F;
+  --boots-tan: #D4A853;
+  --boots-black: #1a1a1a;
+  --whitney-purple: #7B2FBE;
+  --whitney-white: #FFF5F0;
+  --scott-teal: #00B4D8;
+  --scott-cream: #FFF8E7;
+  --oliver-blue: #4361EE;
+  --oliver-gold: #FFB627;
+  --bg-dark: #0d0d0d;
+  --panel-bg: #1a1a2e;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg-dark);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+}
+
+/* ===== HALFTONE DOTS ===== */
+.halftone {
+  position: relative;
+}
+.halftone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+  background-size: 6px 6px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ===== ACTION LINES ===== */
+.action-lines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(from 0deg at 50% 50%,
+    transparent 0deg, rgba(255,255,255,0.04) 2deg, transparent 4deg,
+    transparent 18deg, rgba(255,255,255,0.04) 20deg, transparent 22deg,
+    transparent 36deg, rgba(255,255,255,0.04) 38deg, transparent 40deg,
+    transparent 54deg, rgba(255,255,255,0.04) 56deg, transparent 58deg,
+    transparent 72deg, rgba(255,255,255,0.04) 74deg, transparent 76deg,
+    transparent 90deg, rgba(255,255,255,0.04) 92deg, transparent 94deg,
+    transparent 108deg, rgba(255,255,255,0.04) 110deg, transparent 112deg,
+    transparent 126deg, rgba(255,255,255,0.04) 128deg, transparent 130deg,
+    transparent 144deg, rgba(255,255,255,0.04) 146deg, transparent 148deg,
+    transparent 162deg, rgba(255,255,255,0.04) 164deg, transparent 166deg,
+    transparent 180deg, rgba(255,255,255,0.04) 182deg, transparent 184deg,
+    transparent 198deg, rgba(255,255,255,0.04) 200deg, transparent 202deg,
+    transparent 216deg, rgba(255,255,255,0.04) 218deg, transparent 220deg,
+    transparent 234deg, rgba(255,255,255,0.04) 236deg, transparent 238deg,
+    transparent 252deg, rgba(255,255,255,0.04) 254deg, transparent 256deg,
+    transparent 270deg, rgba(255,255,255,0.04) 272deg, transparent 274deg,
+    transparent 288deg, rgba(255,255,255,0.04) 290deg, transparent 292deg,
+    transparent 306deg, rgba(255,255,255,0.04) 308deg, transparent 310deg,
+    transparent 324deg, rgba(255,255,255,0.04) 326deg, transparent 328deg,
+    transparent 342deg, rgba(255,255,255,0.04) 344deg, transparent 346deg
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pugSnort {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-8px) rotate(-3deg); }
+  60% { transform: translateY(-3px) rotate(2deg); }
+}
+@keyframes printerGlow {
+  0%, 100% { box-shadow: 0 0 10px var(--william-orange); }
+  50% { box-shadow: 0 0 30px var(--william-orange), 0 0 60px rgba(255,107,53,0.27); }
+}
+@keyframes sfxShake {
+  0%, 100% { transform: rotate(-5deg) scale(1); }
+  50% { transform: rotate(-7deg) scale(1.06); }
+}
+@keyframes bubblePop {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+@keyframes fireflyFloat {
+  0%, 100% { opacity: 0.3; transform: translate(0, 0); }
+  50% { opacity: 1; transform: translate(8px, -20px); }
+}
+@keyframes heroGlow {
+  0%, 100% { text-shadow: 0 0 20px var(--william-orange), 4px 4px 0 #000; }
+  50% { text-shadow: 0 0 40px var(--william-yellow), 0 0 80px var(--william-orange), 4px 4px 0 #000; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* ===== PANELS ===== */
+.panel {
+  border: 4px solid #000;
+  box-shadow: 6px 6px 0 #000;
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--panel-bg);
+  opacity: 0;
+}
+.panel.visible {
+  animation: panelIn 0.5s ease forwards;
+}
+.panel img {
+  width: 100%;
+  display: block;
+  transition: transform 0.3s ease;
+}
+.panel-splash {
+  grid-column: 1 / -1;
+}
+.panel-tilt-left { transform: rotate(-1.5deg); }
+.panel-tilt-right { transform: rotate(1.5deg); }
+.panel-tilt-left.visible { animation: panelIn 0.5s ease forwards; }
+.panel-tilt-right.visible { animation: panelIn 0.5s ease forwards; }
+
+/* ===== SFX ===== */
+.sfx {
+  font-family: 'Bangers', cursive;
+  font-size: clamp(36px, 8vw, 100px);
+  -webkit-text-stroke: 3px black;
+  color: var(--william-yellow);
+  text-shadow: 4px 4px 0 black;
+  position: absolute;
+  z-index: 10;
+  animation: sfxShake 2s infinite;
+  pointer-events: none;
+}
+.sfx-top-right { top: 10%; right: 5%; }
+.sfx-top-left { top: 10%; left: 5%; }
+.sfx-center { top: 40%; left: 50%; transform: translate(-50%, -50%) rotate(-5deg); }
+.sfx-bottom { bottom: 10%; right: 10%; }
+
+/* ===== SPEECH BUBBLES ===== */
+.bubble {
+  background: white;
+  border: 3px solid black;
+  border-radius: 16px;
+  font-family: 'Comic Neue', cursive;
+  font-weight: 700;
+  padding: 10px 16px;
+  position: absolute;
+  z-index: 10;
+  color: #111;
+  font-size: clamp(12px, 2vw, 16px);
+  max-width: 280px;
+  animation: bubblePop 0.4s ease;
+}
+.bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -14px;
+  left: 24px;
+  border: 7px solid transparent;
+  border-top-color: black;
+}
+.bubble-char {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.8em;
+  color: var(--william-orange);
+}
+
+/* ===== NARRATION ===== */
+.narration {
+  background: rgba(0,0,0,0.85);
+  border-left: 4px solid var(--william-orange);
+  padding: 12px 16px;
+  font-family: 'Comic Neue', cursive;
+  font-size: clamp(13px, 2.2vw, 17px);
+  line-height: 1.5;
+  color: #eee;
+  position: relative;
+  z-index: 5;
+}
+
+/* ===== HERO ===== */
+.hero {
+  text-align: center;
+  padding: 60px 20px 40px;
+  position: relative;
+  background: linear-gradient(135deg, #0d0d0d 0%, #1a0a2e 50%, #0d0d0d 100%);
+}
+.hero-title {
+  font-family: 'Bangers', cursive;
+  font-size: clamp(48px, 12vw, 120px);
+  color: var(--william-orange);
+  -webkit-text-stroke: 3px black;
+  text-shadow: 4px 4px 0 #000, 0 0 30px var(--william-orange);
+  letter-spacing: 4px;
+  animation: heroGlow 3s infinite;
+}
+.hero-subtitle {
+  font-family: 'Comic Neue', cursive;
+  font-size: clamp(16px, 3vw, 28px);
+  color: var(--william-yellow);
+  margin-top: 8px;
+  font-weight: 700;
+}
+.hero-tagline {
+  font-family: 'Inter', sans-serif;
+  color: #888;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+/* ===== CHARACTER ROSTER ===== */
+.roster {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  max-width: 900px;
+  margin: 32px auto 0;
+  padding: 0 16px;
+}
+.roster-card {
+  border: 3px solid;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-family: 'Comic Neue', cursive;
+  font-weight: 700;
+  font-size: 13px;
+  background: rgba(0,0,0,0.6);
+  min-width: 140px;
+  text-align: left;
+}
+.roster-card .name {
+  font-family: 'Bangers', cursive;
+  font-size: 18px;
+  letter-spacing: 1px;
+}
+.roster-card .detail {
+  font-size: 11px;
+  opacity: 0.8;
+  margin-top: 2px;
+  font-weight: 400;
+}
+
+/* ===== EPISODE HEADER ===== */
+.episode-header {
+  padding: 32px 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  margin-top: 48px;
+}
+.episode-header .ep-number {
+  font-family: 'Bangers', cursive;
+  font-size: clamp(14px, 3vw, 20px);
+  letter-spacing: 6px;
+  opacity: 0.7;
+}
+.episode-header .ep-title {
+  font-family: 'Bangers', cursive;
+  font-size: clamp(28px, 7vw, 56px);
+  -webkit-text-stroke: 2px rgba(0,0,0,0.5);
+  margin-top: 4px;
+}
+.episode-header .ep-tagline {
+  font-family: 'Comic Neue', cursive;
+  font-size: clamp(13px, 2.5vw, 18px);
+  margin-top: 8px;
+  opacity: 0.85;
+}
+
+/* ===== AUDIO ===== */
+.audio-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0,0,0,0.4);
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 20px;
+  padding: 6px 14px;
+  color: white;
+  font-family: 'Comic Neue', cursive;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: all 0.2s;
+}
+.audio-toggle:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.5);
+}
+.audio-toggle.playing {
+  border-color: var(--william-orange);
+  background: rgba(255,107,53,0.2);
+}
+
+/* ===== PANELS GRID ===== */
+.panels-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  max-width: 1000px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+@media (max-width: 600px) {
+  .panels-grid { grid-template-columns: 1fr; }
+}
+
+/* ===== PARALLAX SPLASH ===== */
+.panel-splash {
+  cursor: crosshair;
+}
+
+/* ===== FIREFLIES ===== */
+.firefly {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #FFD23F;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #FFD23F, 0 0 12px #FFD23F;
+  animation: fireflyFloat 3s ease-in-out infinite;
+  z-index: 15;
+  pointer-events: none;
+}
+
+/* ===== PRINTER GLOW ===== */
+.printer-glow {
+  animation: printerGlow 3s ease-in-out infinite;
+}
+
+/* ===== FOOTER ===== */
+.footer {
+  text-align: center;
+  padding: 48px 20px;
+  font-family: 'Comic Neue', cursive;
+  color: #555;
+  font-size: 14px;
+}
+.footer a { color: var(--william-orange); text-decoration: none; }
+.footer .love { color: var(--william-yellow); font-family: 'Bangers', cursive; font-size: 20px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<!-- ===================== HERO ===================== -->
+<section class="hero halftone">
+  <div class="hero-title">LITTLE WILLIAM</div>
+  <div class="hero-subtitle">An Ontological Theatre Adventure</div>
+  <div class="hero-tagline">Memphis, TN • Spider-Verse Edition • 3 Episodes</div>
+
+  <div class="roster">
+    <div class="roster-card" style="border-color: var(--william-orange); color: var(--william-orange);">
+      <div class="name">🔴 LITTLE WILLIAM</div>
+      <div class="detail" style="color:#ccc">Age 7 · Memphis, TN · BMX + 3D Printing</div>
+    </div>
+    <div class="roster-card" style="border-color: var(--boots-tan); color: var(--boots-tan);">
+      <div class="name">🐾 BOOTS</div>
+      <div class="detail" style="color:#ccc">Pug · Always Snorting · Inexplicably Heroic</div>
+    </div>
+    <div class="roster-card" style="border-color: var(--whitney-purple); color: var(--whitney-purple);">
+      <div class="name">💜 WHITNEY</div>
+      <div class="detail" style="color:#ccc">Mom · Memphis · Has Seen Everything</div>
+    </div>
+    <div class="roster-card" style="border-color: var(--scott-teal); color: var(--scott-teal);">
+      <div class="name">🌊 UNCLE SCOTT</div>
+      <div class="detail" style="color:#ccc">Los Angeles · Chef · Gift Giver</div>
+    </div>
+    <div class="roster-card" style="border-color: var(--oliver-blue); color: var(--oliver-blue);">
+      <div class="name">⚡ UNCLE OLIVER</div>
+      <div class="detail" style="color:#ccc">Los Angeles · Storyteller · Enthusiast</div>
+    </div>
+    <div class="roster-card" style="border-color: #888; color: #aaa;">
+      <div class="name">🖨️ CHOMPER</div>
+      <div class="detail" style="color:#ccc">The 3D Printer · Night Shift · Never Stops</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== EPISODE 1 ===================== -->
+<section class="episode" id="ep1">
+  <div class="episode-header halftone" style="background: linear-gradient(135deg, #FF6B35 0%, #FFD23F 100%); color: #000;">
+    <div class="ep-number">E P I S O D E &nbsp; 1</div>
+    <h2 class="ep-title">"Red Rocket and the Great Sprocket Disaster"</h2>
+    <p class="ep-tagline">In which a sprocket breaks and engineering takes over.</p>
+    <audio id="audio-ep1" preload="none" loop>
+      <source src="https://v3b.fal.media/files/b/0a903ab8/UeIUogjEiLol1KtLxs7X__tmpvvjsw1gg.wav" type="audio/wav">
+    </audio>
+    <button class="audio-toggle" data-ep="ep1" onclick="toggleAudio('ep1')">▶ Memphis Beat</button>
+  </div>
+
+  <div class="panels-grid">
+    <!-- Panel 1: SPLASH -->
+    <div class="panel panel-splash halftone action-lines" data-parallax>
+      <img src="https://v3b.fal.media/files/b/0a903ab1/Eng5AwMvnMPK29sDxnwOy_3571a3f0e3694a9d95b1a317e6b539ad.jpg" alt="William launches off ramp on The Rocket" loading="lazy">
+      <div class="sfx sfx-top-right" style="color:#FF6B35">WHOOOOSH!</div>
+      <div class="narration">MEMPHIS, TENNESSEE. A Tuesday. William "Red Rocket" himself hits the homemade ramp at full speed. The Rocket — his BMX, his best machine — catches air. Boots watches from the lawn. He is concerned. He is always concerned.</div>
+    </div>
+
+    <!-- Panel 2: Broken sprocket -->
+    <div class="panel panel-tilt-left">
+      <div style="background: linear-gradient(135deg, #2a1a0a, #1a1a2e); padding: 30px; text-align: center; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div style="font-family: 'Bangers', cursive; font-size: clamp(24px,5vw,40px); color: var(--william-orange);">THE DIAGNOSIS</div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 16px; color: #ccc; margin-top: 12px; max-width: 300px;">William holds the broken sprocket to the light. His face is VERY serious. Professional. A mechanic assessing damage.</div>
+        <div class="sfx" style="position:relative; font-size: 32px; margin-top: 16px; color: var(--boots-tan);">HNNNF</div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 13px; color: #888; margin-top: 8px;">(Boots snorts in sympathy)</div>
+      </div>
+    </div>
+
+    <!-- Panel 3: Night printing -->
+    <div class="panel panel-tilt-right printer-glow">
+      <img src="https://v3b.fal.media/files/b/0a903ab1/KBGXMEmM27V-1NxpTR51u_f6548dc9bf844e309c3324c0f5207242.jpg" alt="William asleep next to Chomper the 3D printer" loading="lazy">
+      <div class="narration">2:47 AM. Chomper hums through the darkness, building something magnificent. William sleeps beside it, helmet still on. Boots snores at his feet. The room smells like hot PLA filament and ambition.</div>
+    </div>
+
+    <!-- Panel 4: The sprocket -->
+    <div class="panel panel-tilt-left">
+      <div style="background: linear-gradient(135deg, #1a1a2e, #0d2a0d); padding: 30px; text-align: center; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div style="font-family: 'Bangers', cursive; font-size: clamp(24px,5vw,40px); color: var(--william-yellow);">THE NEW SPROCKET</div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 16px; color: #ccc; margin-top: 12px; max-width: 320px;">Morning. William holds up the new sprocket triumphantly. It's beautiful. <em>Too</em> beautiful. Made of bright orange filament. It practically glows.</div>
+        <div class="bubble" style="position: relative; margin-top: 16px; display: inline-block;">
+          <span class="bubble-char" style="color: var(--boots-tan);">BOOTS:</span> "SNRKT?"
+        </div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 12px; color: #666; margin-top: 12px;">(He does not trust it. Boots has good instincts.)</div>
+      </div>
+    </div>
+
+    <!-- Panel 5: The launch -->
+    <div class="panel panel-splash halftone action-lines">
+      <div style="background: linear-gradient(135deg, #FF6B35, #FFD23F); padding: 40px; text-align: center; position: relative; min-height: 180px;">
+        <div class="sfx" style="position: relative; font-size: clamp(48px, 12vw, 100px); color: white; -webkit-text-stroke: 4px black;">WHOOOOSH!</div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 18px; color: #000; font-weight: 700; margin-top: 16px;">THE LAUNCH. William hits the ramp and goes MUCH higher than expected.<br>The new sprocket doesn't just work. It <em>overperforms</em>.</div>
+      </div>
+    </div>
+
+    <!-- Panel 6: Whitney -->
+    <div class="panel panel-tilt-right">
+      <div style="background: linear-gradient(135deg, var(--whitney-purple), #4a1a6e); padding: 30px; min-height: 180px; display: flex; flex-direction: column; justify-content: center;">
+        <div style="font-family: 'Bangers', cursive; font-size: 28px; color: var(--whitney-white);">MEANWHILE, IN THE KITCHEN</div>
+        <div class="bubble" style="position: relative; margin-top: 16px; display: inline-block; max-width: 300px;">
+          <span class="bubble-char" style="color: var(--whitney-purple);">WHITNEY:</span> *sips coffee* *watches son orbit yard at dangerous speed* "Mm."
+        </div>
+        <div style="font-family: 'Comic Neue', cursive; color: #ddd; margin-top: 12px; font-size: 14px;">Her expression: calm. Not her first Tuesday.</div>
+      </div>
+    </div>
+
+    <!-- Panel 7: Boots chasing -->
+    <div class="panel panel-tilt-left">
+      <div style="background: linear-gradient(135deg, var(--boots-tan), #8a6a33); padding: 30px; text-align: center; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div style="font-family: 'Bangers', cursive; font-size: 28px; color: #000;">THE PURSUIT</div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 15px; color: #222; margin-top: 12px; max-width: 320px;">Boots the pug, wearing his little cape, attempts to chase The Rocket. His little legs vs. a 3D-printed supercharged BMX. The math is not in his favor.</div>
+        <div class="sfx" style="position: relative; font-size: 48px; color: #FF6B35; margin-top: 12px;">PFFT!</div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 12px; color: #444; margin-top: 8px;">(He gives up after 11 feet. Sits down. Snorts at the distance.)</div>
+      </div>
+    </div>
+
+    <!-- Panel 8: FaceTime SPLASH -->
+    <div class="panel panel-splash" data-parallax>
+      <img src="https://v3b.fal.media/files/b/0a903ab1/wtvYda4764iP_ZyEGn4RL_e76db619424a44fb9ea1a54809f49e64.jpg" alt="FaceTime with Uncle Scott and Uncle Oliver" loading="lazy">
+      <div class="bubble" style="top: 8%; left: 5%; max-width: 260px;">
+        <span class="bubble-char" style="color: var(--oliver-blue);">UNCLE OLIVER:</span> "WILLIAM! HOW HIGH DID YOU GO?!"
+      </div>
+      <div class="bubble" style="top: 8%; right: 5%; left: auto; max-width: 240px;">
+        <span class="bubble-char" style="color: var(--scott-teal);">UNCLE SCOTT:</span> "Did you use the titanium setting on the slicer?!"
+      </div>
+      <div class="narration">FaceTime. Uncle Scott and Uncle Oliver, both on their feet in their LA apartment, cheering. William waves from his bike, still moving. Whitney is in the corner of the frame. Her expression says "why are you encouraging this."</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== EPISODE 2 ===================== -->
+<section class="episode" id="ep2">
+  <div class="episode-header halftone" style="background: linear-gradient(135deg, var(--boots-tan) 0%, #8B5E3C 100%); color: #000;">
+    <div class="ep-number">E P I S O D E &nbsp; 2</div>
+    <h2 class="ep-title">"Boots vs. PDS"</h2>
+    <p class="ep-tagline">In which a pug attends school. Against all rules.</p>
+    <audio id="audio-ep2" preload="none" loop>
+      <source src="https://v3b.fal.media/files/b/0a903ab8/TYKL7aF05sJ_tVf4w79Cx_tmptdz3bx0o.wav" type="audio/wav">
+    </audio>
+    <button class="audio-toggle" data-ep="ep2" onclick="toggleAudio('ep2')">▶ Sneaky Pug Theme</button>
+  </div>
+
+  <div class="panels-grid">
+    <!-- Panel 1: PDS SPLASH -->
+    <div class="panel panel-splash halftone" data-parallax>
+      <img src="https://v3b.fal.media/files/b/0a903ab1/w_X0rDMJy2AIzdkPuDcnh_939f0d9b46c94c208f84fc8b9d38c918.jpg" alt="William arrives at PDS with suspicious backpack" loading="lazy">
+      <div class="narration">PRESBYTERIAN DAY SCHOOL. Memphis morning. William walks in with his backpack. His expression is too innocent. The backpack moves. Slightly. Whitney specifically said no. Whitney is not here.</div>
+    </div>
+
+    <!-- Panel 2: TED Talk -->
+    <div class="panel panel-tilt-right">
+      <div style="background: linear-gradient(135deg, #1a2a1a, #0a1a2a); padding: 30px; min-height: 200px; display: flex; flex-direction: column; justify-content: center;">
+        <div style="font-family: 'Bangers', cursive; font-size: clamp(20px,4vw,32px); color: var(--william-yellow);">THE PRESENTATION</div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 15px; color: #ccc; margin-top: 12px; max-width: 340px;">William at the front with Chomper (he carried it in somehow). His presentation: <strong>"3D PRINTING AND ITS APPLICATIONS."</strong> His classmates are TRANSFIXED. William has the energy of a TED talk speaker who is also 7.</div>
+      </div>
+    </div>
+
+    <!-- Panel 3: Creations -->
+    <div class="panel panel-tilt-left">
+      <div style="background: linear-gradient(135deg, var(--william-orange), var(--william-yellow)); padding: 30px; text-align: center; min-height: 200px; color: #000;">
+        <div style="font-family: 'Bangers', cursive; font-size: 28px;">EXHIBIT A, B, AND C</div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 15px; font-weight: 700; margin-top: 12px;">
+          🗼 A perfectly 3D-printed replica of the Eiffel Tower<br>
+          📱 A custom phone stand with his name engraved<br>
+          🐾 A TINY PUG HELMET
+        </div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 13px; margin-top: 12px; color: #333;">The class erupts. The tiny pug helmet gets a standing ovation.</div>
+      </div>
+    </div>
+
+    <!-- Panel 4: The backpack -->
+    <div class="panel panel-tilt-right">
+      <div style="background: #111; padding: 30px; text-align: center; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div style="font-family: 'Bangers', cursive; font-size: 20px; color: #666; letter-spacing: 4px;">MEANWHILE</div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 16px; color: #aaa; margin-top: 16px;">The backpack on William's chair.<br>A small orange-tipped snout visible at the zipper.<br>One wrinkled eye watching.</div>
+        <div class="bubble" style="position: relative; margin-top: 16px; display: inline-block; font-size: 14px;">
+          <span class="bubble-char" style="color: var(--boots-tan);">BOOTS:</span> "...snrkt"
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 5: BOOTS ERUPTS - SPLASH -->
+    <div class="panel panel-splash halftone action-lines" data-parallax>
+      <img src="https://v3b.fal.media/files/b/0a903ab1/Wm78Avrtg-RhDgkpNLrif_c526a918b5f24d408fe01ac49e039bb2.jpg" alt="Boots erupts from the backpack" loading="lazy">
+      <div class="sfx sfx-center" style="font-size: clamp(48px, 14vw, 120px); color: #FF6B35;">HNNNF!</div>
+      <div class="narration">THE SNORT HEARD ROUND PDS. Boots erupts from the backpack like a furry, wrinkled cannonball. The class LOSES IT. Twenty-two second graders and one pug in a cape. This was not in the lesson plan.</div>
+    </div>
+
+    <!-- Panel 6: Teacher -->
+    <div class="panel panel-tilt-left">
+      <div style="background: linear-gradient(135deg, #2a1a2a, #1a0a2a); padding: 30px; text-align: center; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div style="font-family: 'Bangers', cursive; font-size: 24px; color: #ddd;">THE TEACHER</div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 15px; color: #aaa; margin-top: 12px; max-width: 300px;">She has been a teacher for 22 years. She has seen everything. She was not ready for this.</div>
+        <div style="font-size: 48px; margin-top: 12px;">😐</div>
+      </div>
+    </div>
+
+    <!-- Panel 7: Co-presenter -->
+    <div class="panel panel-tilt-right">
+      <div style="background: linear-gradient(135deg, var(--boots-tan), #c4984a); padding: 30px; min-height: 200px; color: #000;">
+        <div style="font-family: 'Bangers', cursive; font-size: 24px;">THE CO-PRESENTER</div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 15px; font-weight: 700; margin-top: 12px; max-width: 320px;">Boots, now free, wearing his little cape, sits at the front of the classroom. He has somehow become part of the presentation.</div>
+        <div class="bubble" style="position: relative; margin-top: 16px; display: inline-block; max-width: 300px;">
+          <span class="bubble-char" style="color: var(--william-orange);">WILLIAM:</span> "And this is Boots. He is my research partner."
+        </div>
+        <div class="sfx" style="position: relative; font-size: 28px; color: #000; margin-top: 12px;">PFFT.</div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 12px; color: #333; margin-top: 4px;">(Boots snorts in agreement)</div>
+      </div>
+    </div>
+
+    <!-- Panel 8: Whitney arrives SPLASH -->
+    <div class="panel panel-splash">
+      <div style="background: linear-gradient(135deg, var(--whitney-purple), #5a1f8e); padding: 40px; text-align: center; min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div style="font-family: 'Bangers', cursive; font-size: clamp(24px,5vw,40px); color: white;">MOM HAS ARRIVED</div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 16px; color: #e8d0f8; margin-top: 16px; max-width: 500px;">Whitney arrives to collect Boots. She is holding a sheet of paper that is clearly a permission slip she definitely should have received. She looks at her son. Her son looks at her. Boots snorts.</div>
+        <div class="bubble" style="position: relative; margin-top: 16px; display: inline-block;">
+          <span class="bubble-char" style="color: var(--boots-tan);">BOOTS:</span> "PFFT."
+        </div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 13px; color: #c8a8e8; margin-top: 16px; font-style: italic;">She is not angry. She is impressed. She will never admit this.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== EPISODE 3 ===================== -->
+<section class="episode" id="ep3">
+  <div class="episode-header halftone" style="background: linear-gradient(135deg, var(--oliver-blue) 0%, var(--scott-teal) 100%); color: white;">
+    <div class="ep-number">E P I S O D E &nbsp; 3</div>
+    <h2 class="ep-title">"The Uncles Arrive"</h2>
+    <p class="ep-tagline">(Memphis Is Not Prepared)</p>
+    <audio id="audio-ep3" preload="none" loop>
+      <source src="https://v3b.fal.media/files/b/0a903ac1/jCoM_NVatxW2Ms1wM8TS5_tmpdbqcy3y7.wav" type="audio/wav">
+    </audio>
+    <button class="audio-toggle" data-ep="ep3" onclick="toggleAudio('ep3')">▶ Golden Hour</button>
+  </div>
+
+  <div class="panels-grid">
+    <!-- Panel 1: Airport SPLASH -->
+    <div class="panel panel-splash halftone action-lines" data-parallax>
+      <img src="https://v3b.fal.media/files/b/0a903ab1/cPtv7ntDfFDLpfk3CXTg__cacd17c1e8114544b7eabc942168fbfd.jpg" alt="Uncle Scott and Uncle Oliver arrive at Memphis airport" loading="lazy">
+      <div class="sfx sfx-top-right" style="color: var(--oliver-gold);">UNCLES!</div>
+      <div class="narration">MEMPHIS INTERNATIONAL AIRPORT. The automatic doors open and there they are: Uncle Oliver in his leather jacket, already mid-gesture, telling a story about the flight. Uncle Scott, looking like he just walked off a movie set, already thinking about what he's going to cook. William SPRINTS. Boots waddles at full pug-speed. (Not very fast.)</div>
+    </div>
+
+    <!-- Panel 2: The gifts -->
+    <div class="panel panel-tilt-right">
+      <div style="background: linear-gradient(135deg, #1a2a3a, #0a1a2a); padding: 30px; min-height: 220px;">
+        <div style="font-family: 'Bangers', cursive; font-size: 28px; color: var(--william-yellow);">THE GIFTS</div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 15px; color: #ccc; margin-top: 16px;">
+          Scott hands William the filament pack — <strong>20 colors in a rainbow</strong>. William's face is the face of someone who has seen God.
+        </div>
+        <div style="margin-top: 16px; display: flex; gap: 4px; flex-wrap: wrap;">
+          <span style="display:inline-block;width:20px;height:20px;background:#FF0000;border-radius:3px"></span>
+          <span style="display:inline-block;width:20px;height:20px;background:#FF6B35;border-radius:3px"></span>
+          <span style="display:inline-block;width:20px;height:20px;background:#FFD23F;border-radius:3px"></span>
+          <span style="display:inline-block;width:20px;height:20px;background:#7BFF35;border-radius:3px"></span>
+          <span style="display:inline-block;width:20px;height:20px;background:#35FFB5;border-radius:3px"></span>
+          <span style="display:inline-block;width:20px;height:20px;background:#00B4D8;border-radius:3px"></span>
+          <span style="display:inline-block;width:20px;height:20px;background:#4361EE;border-radius:3px"></span>
+          <span style="display:inline-block;width:20px;height:20px;background:#7B2FBE;border-radius:3px"></span>
+          <span style="display:inline-block;width:20px;height:20px;background:#FF35B5;border-radius:3px"></span>
+          <span style="display:inline-block;width:20px;height:20px;background:#FF3560;border-radius:3px"></span>
+        </div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 13px; color: #888; margin-top: 12px;">
+          🎸 New BMX grips (from Oliver) · 📕 A cookbook (from Scott) · William doesn't care about the cookbook. Boots eats the cookbook.
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 3: Oliver storytelling -->
+    <div class="panel panel-tilt-left">
+      <div style="background: linear-gradient(135deg, var(--oliver-blue), #2a3aee); padding: 30px; min-height: 200px;">
+        <div style="font-family: 'Bangers', cursive; font-size: 24px; color: var(--oliver-gold);">THE STORYTELLER</div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 15px; color: #ddd; margin-top: 12px; max-width: 340px;">Oliver tells a story at the dinner table. His hands are doing something. Everyone is leaning in. Whitney is laughing against her will.</div>
+        <div class="bubble" style="position: relative; margin-top: 16px; display: inline-block; max-width: 300px;">
+          <span class="bubble-char" style="color: var(--oliver-blue);">OLIVER:</span> "—and THEN the director says—"
+        </div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 12px; color: #99a; margin-top: 12px;">(Boots is under the table. Hoping for scraps. He will get scraps.)</div>
+      </div>
+    </div>
+
+    <!-- Panel 4: Scott cooking -->
+    <div class="panel panel-tilt-right">
+      <div style="background: linear-gradient(135deg, var(--scott-teal), #008a9e); padding: 30px; min-height: 200px; color: #000;">
+        <div style="font-family: 'Bangers', cursive; font-size: 24px; color: white;">CHEF MODE: ACTIVATED</div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 15px; font-weight: 700; margin-top: 12px; max-width: 340px; color: #e8f8ff;">Scott in the kitchen — FULL CHEF MODE. Memphis kitchen, cast iron pans, something extraordinary happening on the stove. He's explaining the technique to William who is paying CLOSE attention, because William pays close attention to things he finds interesting.</div>
+        <div class="bubble" style="position: relative; margin-top: 16px; display: inline-block; max-width: 280px;">
+          <span class="bubble-char" style="color: var(--scott-teal);">SCOTT:</span> "The secret is you let the butter get just past brown. Watch."
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 5: BMX test -->
+    <div class="panel panel-splash halftone action-lines">
+      <div style="background: linear-gradient(135deg, #FFD23F, #FF6B35); padding: 40px; text-align: center; min-height: 200px; color: #000;">
+        <div style="font-family: 'Bangers', cursive; font-size: clamp(28px,6vw,48px);">THE BMX TEST</div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 16px; font-weight: 700; margin-top: 12px; max-width: 500px; margin-left: auto; margin-right: auto;">Oliver pushes William down a long Memphis street. The Rocket hits full speed. Oak trees blur past. Boots gives chase, immediately falls behind, sits down in the street, snorts at the distance.</div>
+        <div class="sfx" style="position: relative; font-size: clamp(36px,8vw,72px); color: white; -webkit-text-stroke: 3px black; margin-top: 12px;">HNNNF.</div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 13px; color: #333; margin-top: 8px;">(Boots has accepted his limitations. He has not accepted them gracefully.)</div>
+      </div>
+    </div>
+
+    <!-- Panel 6: Porch night — WITH FIREFLIES -->
+    <div class="panel panel-splash" id="porch-panel" data-parallax style="position: relative;">
+      <img src="https://v3b.fal.media/files/b/0a903ab1/8NtVsHFnXYv7_iSwiukDZ_0b9785d9b9a54b8c903b69d368b8b74d.jpg" alt="Family on the porch at golden hour" loading="lazy">
+      <!-- Fireflies -->
+      <div class="firefly" style="top:15%;left:20%;animation-delay:0s;animation-duration:2.8s"></div>
+      <div class="firefly" style="top:25%;left:70%;animation-delay:0.7s;animation-duration:3.5s"></div>
+      <div class="firefly" style="top:40%;left:45%;animation-delay:1.2s;animation-duration:2.5s"></div>
+      <div class="firefly" style="top:10%;left:85%;animation-delay:0.3s;animation-duration:4s"></div>
+      <div class="firefly" style="top:55%;left:30%;animation-delay:1.8s;animation-duration:3.2s"></div>
+      <div class="firefly" style="top:30%;left:55%;animation-delay:2.1s;animation-duration:2.9s"></div>
+      <div class="firefly" style="top:20%;left:10%;animation-delay:0.9s;animation-duration:3.7s"></div>
+      <div class="firefly" style="top:45%;left:80%;animation-delay:1.5s;animation-duration:3.1s"></div>
+      <div class="narration">Night. The four of them — William, Whitney, Scott, Oliver — sitting on the front porch. Memphis evening. Fireflies everywhere. Boots asleep across William's feet, snoring softly. The adults are talking about nothing important and everything that matters. William is already asleep too, BMX helmet still on his head. This is a family.</div>
+    </div>
+
+    <!-- Panel 7: Chomper printing -->
+    <div class="panel panel-tilt-left printer-glow">
+      <div style="background: linear-gradient(135deg, #0a0a1a, #1a0a2a); padding: 30px; text-align: center; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div style="font-family: 'Bangers', cursive; font-size: 20px; color: var(--william-orange); letter-spacing: 4px;">LATER THAT NIGHT</div>
+        <div style="font-family: 'Comic Neue', cursive; font-size: 15px; color: #aaa; margin-top: 12px; max-width: 300px;">Close-up on Chomper the 3D printer — humming through the night — printing something new. Made with the 20-color filament. We see just enough to know it's going to be amazing.</div>
+        <div style="font-size: 14px; color: #555; margin-top: 12px; font-family: 'Comic Neue', cursive; font-style: italic;">[HUMMMMMMMM]</div>
+      </div>
+    </div>
+
+    <!-- Panel 8: FINALE SPLASH -->
+    <div class="panel panel-splash halftone action-lines" data-parallax>
+      <img src="https://v3b.fal.media/files/b/0a903ab1/9P77-Qi-QoimaV3AB2e0a_aac98b01494e4940aa0c51b0ae833413.jpg" alt="Epic finale — William soars with rainbow filament trail" loading="lazy">
+      <div class="sfx" style="top: 5%; left: 50%; transform: translateX(-50%) rotate(-5deg); font-size: clamp(36px,10vw,90px); color: var(--william-yellow);">WHOOOOOOSH!</div>
+      <div class="narration" style="border-left-color: var(--oliver-gold);">Final panel. Full Spider-Verse splash. William on The Rocket, mid-air, auburn-red hair flying, all 20 colors of filament wrapped around him like a comet tail. Boots in his cape, leaping (slightly). Whitney watching, smiling, phone out — she's recording this. Uncle Scott and Uncle Oliver are IN the background, cheering. Memphis skyline, golden hour. This is a family. This is everything.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== FOOTER ===================== -->
+<div class="footer">
+  <div class="love">Made with ❤️ for Little William</div>
+  <p>An <a href="https://revilopark.github.io/ontological-theatre/">Ontological Theatre</a> production</p>
+  <p style="margin-top: 8px;">Memphis, TN → Los Angeles, CA → Everywhere</p>
+  <p style="margin-top: 16px; font-size: 11px; color: #333;">SNRKT. HNNNF. PFFT. — Boots, 2026</p>
+</div>
+
+<!-- ===================== JAVASCRIPT ===================== -->
+<script>
+// === INTERSECTION OBSERVER: Panel animations ===
+const panelObserver = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      const panel = entry.target;
+      const siblings = Array.from(panel.parentElement.children);
+      const idx = siblings.indexOf(panel);
+      panel.style.animationDelay = (idx * 0.1) + 's';
+      panel.classList.add('visible');
+      panelObserver.unobserve(panel);
+    }
+  });
+}, { threshold: 0.15 });
+
+document.querySelectorAll('.panel').forEach(p => panelObserver.observe(p));
+
+// === INTERSECTION OBSERVER: Audio autoplay ===
+const audioEls = {
+  ep1: document.getElementById('audio-ep1'),
+  ep2: document.getElementById('audio-ep2'),
+  ep3: document.getElementById('audio-ep3')
+};
+
+const audioObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    const epId = entry.target.id;
+    const audio = audioEls[epId];
+    const btn = document.querySelector(`.audio-toggle[data-ep="${epId}"]`);
+    if (!audio || !audio.src || audio.src === window.location.href) return;
+    if (entry.isIntersecting && entry.intersectionRatio >= 0.3) {
+      // Auto-play when scrolling into view
+      audio.play().then(() => {
+        if (btn) { btn.classList.add('playing'); btn.textContent = '⏸ ' + btn.textContent.slice(2); }
+      }).catch(() => {});
+    } else {
+      // Pause when scrolling away
+      audio.pause();
+      if (btn) { btn.classList.remove('playing'); btn.textContent = '▶' + btn.textContent.slice(1); }
+    }
+  });
+}, { threshold: 0.3 });
+
+document.querySelectorAll('.episode').forEach(ep => audioObserver.observe(ep));
+
+// === AUDIO TOGGLE ===
+function toggleAudio(epId) {
+  const audio = audioEls[epId];
+  const btn = document.querySelector(`.audio-toggle[data-ep="${epId}"]`);
+  if (!audio) return;
+  if (audio.paused) {
+    audio.play().then(() => {
+      btn.classList.add('playing');
+      btn.textContent = '⏸' + btn.textContent.slice(1);
+    }).catch(() => {});
+  } else {
+    audio.pause();
+    btn.classList.remove('playing');
+    btn.textContent = '▶' + btn.textContent.slice(1);
+  }
+}
+
+// === PARALLAX on splash panels ===
+document.querySelectorAll('[data-parallax]').forEach(panel => {
+  panel.addEventListener('mousemove', (e) => {
+    const img = panel.querySelector('img');
+    if (!img) return;
+    const rect = panel.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 12;
+    const y = ((e.clientY - rect.top) / rect.height - 0.5) * 12;
+    img.style.transform = `translate(${x}px, ${y}px) scale(1.05)`;
+  });
+  panel.addEventListener('mouseleave', () => {
+    const img = panel.querySelector('img');
+    if (img) img.style.transform = 'translate(0,0) scale(1)';
+  });
+});
+</script>
+</body>
+</html>
