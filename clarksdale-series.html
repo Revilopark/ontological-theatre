@@ -1323,5 +1323,512 @@ renderSidebar();
 selectItem('episode', 0);
 </script>
 
+<!-- ══ PRODUCER OVERLAY ══ -->
+<div class="producer-overlay" id="producerOverlay">
+  <div class="prod-header">
+    <h1>✦ Daily Episode Producer</h1>
+    <span class="sub">The Clarksdale Series — Infinity Comic · Vertical Series Pipeline</span>
+    <button class="prod-back" onclick="closeProducer()">← Back to Editor</button>
+  </div>
+  <div class="prod-body">
+    <!-- Top summary cards -->
+    <div class="prod-top">
+      <div class="prod-card">
+        <div class="lbl">Episode</div>
+        <select id="prodEpSelect" onchange="prodSelectEp()"></select>
+        <div class="det" id="prodEpDet">8 panels · Ike Turner</div>
+      </div>
+      <div class="prod-card">
+        <div class="lbl">Soundtrack</div>
+        <div class="det" id="prodSoundStatus">Not generated</div>
+        <audio id="prodAudio" style="width:100%;margin-top:8px;display:none" controls></audio>
+      </div>
+      <div class="prod-card">
+        <div class="lbl">Status</div>
+        <div class="det" id="prodOverallStatus">Ready to produce</div>
+      </div>
+      <button class="prod-play-btn" onclick="prodPreviewEpisode()" title="Preview Episode">▶</button>
+    </div>
+
+    <!-- STEP 1: SOUNDTRACK -->
+    <div class="prod-section">
+      <div class="prod-sec-title">✦ Production Pipeline</div>
+    </div>
+    <div class="prod-step">
+      <div class="prod-step-hdr">
+        <span class="prod-step-num">Step 1: Soundtrack</span>
+        <div style="display:flex;gap:8px">
+          <button class="prod-btn" id="prodSoundPreviewBtn" onclick="prodPlaySound()" style="display:none">♪ Preview</button>
+          <button class="prod-btn primary" id="prodSoundGenBtn" onclick="prodGenSound()">✦ Generate Soundtrack</button>
+        </div>
+      </div>
+      <div class="prod-meta" id="prodSoundMeta">Genre: Delta Blues · Tempo: Slow · Mood: Longing, Historic</div>
+      <div class="prod-waveform" id="prodWaveform"></div>
+      <div class="prod-progress" id="prodSoundProgress"><div class="fill"></div></div>
+    </div>
+
+    <!-- STEP 2: VIDEO CLIPS -->
+    <div class="prod-step">
+      <div class="prod-step-hdr">
+        <span class="prod-step-num">Step 2: Video Clips</span>
+        <button class="prod-btn primary" onclick="prodGenAllClips()">▶ Generate All Clips</button>
+      </div>
+      <div class="prod-meta">Fal Kling image-to-video · 5 seconds per panel · 9:16 vertical</div>
+      <div class="prod-clips-grid" id="prodClipsGrid"></div>
+    </div>
+
+    <!-- STEP 3: ASSEMBLE -->
+    <div class="prod-step">
+      <div class="prod-step-hdr">
+        <span class="prod-step-num">Step 3: Assemble Episode</span>
+        <button class="prod-btn primary" onclick="prodPreviewEpisode()">▶ Preview Episode</button>
+      </div>
+      <div class="prod-meta">60-second vertical video · 9:16 · <span id="prodPanelCount">8</span> panels · <span id="prodSecPerPanel">7.5</span>sec each</div>
+      <div style="display:flex;gap:16px;align-items:center;margin-top:12px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:10px;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px">CAPTION STYLE</div>
+          <div class="prod-cap-opts">
+            <button class="prod-cap-opt active" onclick="prodSetCapStyle('cinematic',this)">Cinematic</button>
+            <button class="prod-cap-opt" onclick="prodSetCapStyle('documentary',this)">Documentary</button>
+            <button class="prod-cap-opt" onclick="prodSetCapStyle('comic',this)">Comic</button>
+            <button class="prod-cap-opt" onclick="prodSetCapStyle('subtitle',this)">Subtitle</button>
+          </div>
+        </div>
+      </div>
+      <!-- Phone preview -->
+      <div class="prod-phone-wrap" id="prodPlayerWrap" style="display:none">
+        <div class="prod-phone">
+          <div class="notch"></div>
+          <div class="screen" id="prodScreen">
+            <img id="prodScreenImg" src="" style="display:none">
+            <video id="prodScreenVid" muted playsinline style="display:none"></video>
+            <div class="cap" id="prodScreenCap"></div>
+            <div class="title-card" id="prodTitleCard">
+              <div class="g">✦ THE CLARKSDALE SERIES</div>
+              <h2 id="prodTCTitle"></h2>
+              <div class="m" id="prodTCMeta"></div>
+              <div class="ln"></div>
+              <div class="d">A new episode daily.<br>@EveryForty4</div>
+            </div>
+          </div>
+        </div>
+        <div class="prod-pbar"><div class="fill" id="prodPbarFill"></div></div>
+        <div class="prod-pctrl">
+          <button onclick="prodPlayerPrev()">◁</button>
+          <button onclick="prodPlayerToggle()" id="prodPlayerPlayBtn">▶</button>
+          <button onclick="prodPlayerNext()">▷</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4: DISTRIBUTE -->
+    <div class="prod-step">
+      <div class="prod-step-hdr">
+        <span class="prod-step-num">Step 4: Distribute</span>
+      </div>
+      <div class="prod-dist">
+        <button onclick="prodOpenTwitter()">𝕏 Post Thread</button>
+        <button onclick="prodShowSheet()">⬇ Production Sheet</button>
+        <button onclick="prodPlatformInfo('tiktok')">▷ TikTok</button>
+        <button onclick="prodPlatformInfo('reels')">◎ Reels</button>
+        <button onclick="prodPlatformInfo('youtube')">▶ YT Shorts</button>
+      </div>
+      <div class="prod-sheet" id="prodSheet"></div>
+    </div>
+
+    <!-- DAILY SCHEDULE (coming soon) -->
+    <div class="prod-step prod-sched">
+      <div class="prod-step-hdr">
+        <span class="prod-step-num">✦ Daily Schedule</span>
+      </div>
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+        <div style="font-size:12px;color:var(--text-dim)">Auto-produce:</div>
+        <div style="width:40px;height:22px;background:#333;border-radius:11px;position:relative"><div style="position:absolute;top:3px;left:3px;width:16px;height:16px;background:var(--text-dim);border-radius:50%"></div></div>
+        <div style="font-size:12px;color:var(--text-dim)">Release time:</div>
+        <select style="background:#111;border:1px solid var(--border);color:var(--text-dim);padding:4px 8px;border-radius:3px;font-size:11px"><option>9:00 AM</option><option>12:00 PM</option><option>6:00 PM</option></select>
+        <select style="background:#111;border:1px solid var(--border);color:var(--text-dim);padding:4px 8px;border-radius:3px;font-size:11px"><option>Pacific</option><option>Eastern</option><option>UTC</option></select>
+      </div>
+      <div class="prod-meta" style="margin-top:8px">Queue: Ep 10 → Ep 11 → Ep 12 → …<br>When enabled: system generates soundtrack + player at scheduled time, posts to Twitter thread automatically.</div>
+    </div>
+
+    <!-- VERTICAL SERIES FORMAT CARD -->
+    <div class="prod-format">
+      <h3>✦ Vertical Series Format</h3>
+      <p>The vertical series (also: microdrama, duanju) is a <strong style="color:var(--gold)">$26B global format by 2030</strong>.</p>
+      <p>Episodes: 60-120 seconds · Format: 9:16 · Cadence: Daily · Model: Subscription</p>
+      <ul>
+        <li>ReelShort / Crazy Maple Studio — paid subscriptions, 60-sec episodes</li>
+        <li>TikTok Series — paid episode bundles</li>
+        <li>YouTube Shorts — ad revenue + Super Thanks</li>
+        <li>Patreon — subscriber exclusives</li>
+        <li>Substack — literary subscriber community</li>
+      </ul>
+      <div class="hl">The Clarksdale Series positions as: Premium Adult Vertical — Black American cultural history, literary narration, AI comic+video hybrid, daily cadence. No competitor has this combination.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   DAILY EPISODE PRODUCER
+   ══════════════════════════════════════════════════════════════════════ */
+(function(){
+const PROXY='https://awareness-proxy-328246068140.us-central1.run.app';
+
+let prodEpIdx=0;
+let prodCaptionStyle='cinematic';
+let prodSoundUrl=null;
+let prodClipStates={}; // {epId_panelIdx: {status,url}}
+let prodPlayerInterval=null;
+let prodPlayerPlaying=false;
+let prodPlayerPanelIdx=0;
+
+// Get episodes from global EPISODES
+function getEps(){return typeof EPISODES!=='undefined'?EPISODES:[];}
+function prodEp(){return getEps()[prodEpIdx];}
+
+window.openProducer=function(){
+  document.getElementById('producerOverlay').classList.add('show');
+  prodPopulateEps();
+  prodRenderClips();
+  // Init waveform bars
+  const wf=document.getElementById('prodWaveform');
+  if(!wf.children.length){for(let i=0;i<40;i++){const b=document.createElement('div');b.className='bar';b.style.animationDelay=(Math.random()*1.2)+'s';wf.appendChild(b);}}
+  // Restore from localStorage
+  const saved=JSON.parse(localStorage.getItem('prod_clips')||'{}');
+  prodClipStates=saved;
+  prodRenderClips();
+  const savedSound=localStorage.getItem('prod_sound_'+prodEp()?.id);
+  if(savedSound){prodSoundUrl=savedSound;prodShowSoundReady();}
+};
+
+window.closeProducer=function(){
+  document.getElementById('producerOverlay').classList.remove('show');
+  prodStopPlayer();
+};
+
+function prodPopulateEps(){
+  const sel=document.getElementById('prodEpSelect');
+  const eps=getEps();
+  sel.innerHTML=eps.map((e,i)=>`<option value="${i}">${e.title} — ${e.era}</option>`).join('');
+  sel.value=prodEpIdx;
+  prodUpdateEpDet();
+}
+
+window.prodSelectEp=function(){
+  prodEpIdx=parseInt(document.getElementById('prodEpSelect').value);
+  prodUpdateEpDet();
+  prodRenderClips();
+  const savedSound=localStorage.getItem('prod_sound_'+prodEp()?.id);
+  if(savedSound){prodSoundUrl=savedSound;prodShowSoundReady();}
+  else{prodSoundUrl=null;document.getElementById('prodAudio').style.display='none';document.getElementById('prodSoundPreviewBtn').style.display='none';document.getElementById('prodSoundStatus').textContent='Not generated';}
+};
+
+function prodUpdateEpDet(){
+  const e=prodEp();if(!e)return;
+  const imgCount=e.panels.filter(p=>p.imageUrl).length;
+  document.getElementById('prodEpDet').textContent=`${e.panels.length} panels · ${imgCount} images · ${e.subject}`;
+  document.getElementById('prodPanelCount').textContent=e.panels.length;
+  document.getElementById('prodSecPerPanel').textContent=(60/e.panels.length).toFixed(1);
+  prodUpdateOverallStatus();
+}
+
+function prodUpdateOverallStatus(){
+  const e=prodEp();if(!e)return;
+  const clips=e.panels.filter((_,i)=>(prodClipStates[e.id+'_'+i]||{}).status==='ready').length;
+  const hasSound=!!prodSoundUrl;
+  let s=[];
+  if(hasSound)s.push('🎵 Soundtrack ready');else s.push('⬜ No soundtrack');
+  s.push(`${clips}/${e.panels.length} clips`);
+  document.getElementById('prodOverallStatus').textContent=s.join(' · ');
+}
+
+// ── STEP 1: SOUNDTRACK ──
+window.prodGenSound=async function(){
+  const e=prodEp();if(!e)return;
+  const btn=document.getElementById('prodSoundGenBtn');
+  btn.disabled=true;btn.textContent='Generating…';
+  document.getElementById('prodWaveform').classList.add('active');
+  document.getElementById('prodSoundProgress').querySelector('.fill').style.width='20%';
+  document.getElementById('prodSoundStatus').textContent='Generating with AI…';
+  try{
+    // Get music prompt from Gemini
+    const stylePrompt=await prodGemini(`Generate a Fal stable-audio music prompt for this Clarksdale Series episode.
+Episode: "${e.title}" · ${e.era} · Characters: ${e.chars.join(', ')}
+Write a 50-word music generation prompt for a 60-second original score.
+Style: Mississippi Delta Blues era-appropriate. No lyrics. Instrumental only.
+Include: tempo (slow/medium/uptempo), key instruments (guitar, harmonica, piano, upright bass),
+mood (melancholic, triumphant, tense, spiritual), era references.
+Return ONLY the prompt text, no explanation.`);
+    document.getElementById('prodSoundMeta').textContent=stylePrompt.slice(0,120)+'…';
+    document.getElementById('prodSoundProgress').querySelector('.fill').style.width='40%';
+    // Generate via Fal
+    const res=await fetch(PROXY+'/fal/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'fal-ai/stable-audio',prompt:stylePrompt,seconds_total:60,steps:100})});
+    const data=await res.json();
+    document.getElementById('prodSoundProgress').querySelector('.fill').style.width='60%';
+    if(data.request_id){
+      const result=await prodPollFal(data.request_id,'fal-ai/stable-audio');
+      if(result?.audio_file?.url){prodSoundUrl=result.audio_file.url;}
+      else if(result?.audio?.url){prodSoundUrl=result.audio.url;}
+    }else if(data.audio_file?.url){prodSoundUrl=data.audio_file.url;}
+    else if(data.audio?.url){prodSoundUrl=data.audio.url;}
+    if(prodSoundUrl){
+      localStorage.setItem('prod_sound_'+e.id,prodSoundUrl);
+      prodShowSoundReady();
+    }else{document.getElementById('prodSoundStatus').textContent='Generation failed — try again';}
+  }catch(err){document.getElementById('prodSoundStatus').textContent='Error: '+err.message;}
+  btn.disabled=false;btn.textContent='✦ Generate Soundtrack';
+  document.getElementById('prodWaveform').classList.remove('active');
+  document.getElementById('prodSoundProgress').querySelector('.fill').style.width='100%';
+  prodUpdateOverallStatus();
+};
+
+function prodShowSoundReady(){
+  document.getElementById('prodSoundStatus').textContent='✅ Soundtrack ready';
+  const audio=document.getElementById('prodAudio');
+  audio.src=prodSoundUrl;audio.style.display='block';
+  document.getElementById('prodSoundPreviewBtn').style.display='inline-block';
+  document.getElementById('prodSoundProgress').querySelector('.fill').style.width='100%';
+}
+
+window.prodPlaySound=function(){
+  const audio=document.getElementById('prodAudio');
+  if(audio.paused)audio.play();else audio.pause();
+};
+
+// ── STEP 2: VIDEO CLIPS ──
+function prodRenderClips(){
+  const e=prodEp();if(!e)return;
+  const grid=document.getElementById('prodClipsGrid');
+  grid.innerHTML=e.panels.map((p,i)=>{
+    const key=e.id+'_'+i;
+    const cs=prodClipStates[key]||{status:'pending'};
+    const thumb=p.imageUrl?`<img class="thumb" src="${p.imageUrl}">`:`<div class="thumb"></div>`;
+    const stClass=cs.status==='ready'?'st-ready':cs.status==='generating'?'st-gen':cs.status==='failed'?'st-fail':'st-pending';
+    const stIcon=cs.status==='ready'?'✅':cs.status==='generating'?'🔄':cs.status==='failed'?'❌':'⬜';
+    const desc=(p.desc||'').slice(0,40)+'…';
+    const genBtn=cs.status==='generating'?'':`<button class="prod-btn" onclick="prodGenClip(${i})" style="font-size:10px;padding:4px 8px">▶</button>`;
+    return `<div class="prod-clip">${thumb}<div class="info"><div class="ttl">Panel ${i+1}: ${desc}</div><div class="st ${stClass}">${stIcon} ${cs.status}</div></div>${genBtn}</div>`;
+  }).join('');
+}
+
+window.prodGenClip=async function(idx){
+  const e=prodEp();if(!e)return;
+  const p=e.panels[idx];
+  if(!p.imageUrl){prodToast('No image for panel '+(idx+1));return;}
+  const key=e.id+'_'+idx;
+  prodClipStates[key]={status:'generating'};
+  prodRenderClips();
+  try{
+    const motionPrompt=`Subtle parallax camera movement. Comic book panel coming alive. Cinematic breathing motion. ${(p.desc||'').slice(0,80)}. Blues era, Black American history, sepia warmth. No text, no watermarks.`;
+    const res=await fetch(PROXY+'/fal/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'fal-ai/kling-video/v1.6/standard/image-to-video',image_url:p.imageUrl,prompt:motionPrompt,duration:'5',aspect_ratio:'9:16'})});
+    const data=await res.json();
+    if(data.request_id){
+      const result=await prodPollFal(data.request_id,'fal-ai/kling-video/v1.6/standard');
+      if(result?.video?.url){prodClipStates[key]={status:'ready',url:result.video.url};}
+      else{prodClipStates[key]={status:'failed'};}
+    }else if(data.video?.url){prodClipStates[key]={status:'ready',url:data.video.url};}
+    else{prodClipStates[key]={status:'failed'};}
+  }catch(err){prodClipStates[key]={status:'failed'};}
+  localStorage.setItem('prod_clips',JSON.stringify(prodClipStates));
+  prodRenderClips();
+  prodUpdateOverallStatus();
+};
+
+window.prodGenAllClips=function(){
+  const e=prodEp();if(!e)return;
+  e.panels.forEach((_,i)=>{
+    const key=e.id+'_'+i;
+    if((prodClipStates[key]||{}).status!=='ready'){prodGenClip(i);}
+  });
+};
+
+// ── STEP 3: EPISODE PLAYER ──
+window.prodSetCapStyle=function(style,btn){
+  prodCaptionStyle=style;
+  document.querySelectorAll('.prod-cap-opt').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+};
+
+window.prodPreviewEpisode=function(){
+  const e=prodEp();if(!e||!e.panels.length)return;
+  document.getElementById('prodPlayerWrap').style.display='flex';
+  prodPlayerPanelIdx=0;
+  prodPlayerPlaying=false;
+  // Setup title card
+  document.getElementById('prodTCTitle').textContent='"'+e.title+'"';
+  document.getElementById('prodTCMeta').textContent=e.era;
+  prodShowPanel(0);
+  prodStartPlayer();
+};
+
+function prodStartPlayer(){
+  prodStopPlayer();
+  prodPlayerPlaying=true;
+  document.getElementById('prodPlayerPlayBtn').textContent='⏸';
+  const e=prodEp();
+  const totalDur=60;
+  const panelDur=totalDur/e.panels.length;
+  const titleDur=3;
+  const startTime=Date.now();
+  const totalMs=(totalDur+titleDur)*1000;
+  // Start audio
+  if(prodSoundUrl){const a=document.getElementById('prodAudio');a.currentTime=0;a.play().catch(()=>{});}
+  prodPlayerInterval=setInterval(()=>{
+    const elapsed=(Date.now()-startTime)/1000;
+    const pct=Math.min(100,elapsed/(totalDur+titleDur)*100);
+    document.getElementById('prodPbarFill').style.width=pct+'%';
+    if(elapsed<totalDur){
+      const newIdx=Math.min(e.panels.length-1,Math.floor(elapsed/panelDur));
+      if(newIdx!==prodPlayerPanelIdx){prodPlayerPanelIdx=newIdx;prodShowPanel(newIdx);}
+      // Caption timing: show for first 6 seconds of each panel
+      const panelElapsed=elapsed-newIdx*panelDur;
+      const capEl=document.getElementById('prodScreenCap');
+      if(panelElapsed<0.5){capEl.classList.remove('vis');}
+      else if(panelElapsed<6){capEl.classList.add('vis');}
+      else{capEl.classList.remove('vis');}
+    }else if(elapsed<totalDur+titleDur){
+      document.getElementById('prodTitleCard').classList.add('vis');
+      document.getElementById('prodScreenCap').classList.remove('vis');
+    }else{
+      prodStopPlayer();
+    }
+  },100);
+}
+
+function prodStopPlayer(){
+  if(prodPlayerInterval){clearInterval(prodPlayerInterval);prodPlayerInterval=null;}
+  prodPlayerPlaying=false;
+  const btn=document.getElementById('prodPlayerPlayBtn');
+  if(btn)btn.textContent='▶';
+  try{document.getElementById('prodAudio').pause();}catch(e){}
+}
+
+window.prodPlayerToggle=function(){
+  if(prodPlayerPlaying)prodStopPlayer();else prodStartPlayer();
+};
+
+window.prodPlayerPrev=function(){
+  prodStopPlayer();
+  prodPlayerPanelIdx=Math.max(0,prodPlayerPanelIdx-1);
+  prodShowPanel(prodPlayerPanelIdx);
+};
+
+window.prodPlayerNext=function(){
+  prodStopPlayer();
+  const e=prodEp();
+  prodPlayerPanelIdx=Math.min(e.panels.length-1,prodPlayerPanelIdx+1);
+  prodShowPanel(prodPlayerPanelIdx);
+};
+
+function prodShowPanel(idx){
+  const e=prodEp();if(!e)return;
+  const p=e.panels[idx];
+  const key=e.id+'_'+idx;
+  const cs=prodClipStates[key]||{};
+  const img=document.getElementById('prodScreenImg');
+  const vid=document.getElementById('prodScreenVid');
+  const cap=document.getElementById('prodScreenCap');
+  const tc=document.getElementById('prodTitleCard');
+  tc.classList.remove('vis');
+  // Video clip or Ken Burns image
+  if(cs.status==='ready'&&cs.url){
+    img.style.display='none';
+    vid.src=cs.url;vid.style.display='block';vid.play().catch(()=>{});
+  }else if(p.imageUrl){
+    vid.style.display='none';vid.pause();
+    img.src=p.imageUrl;img.style.display='block';
+    // Ken Burns
+    img.style.transition='transform 7s ease-in-out';
+    img.style.transform='scale(1)';
+    requestAnimationFrame(()=>{img.style.transform='scale(1.15) translate('+(Math.random()>0.5?'-3%':'3%')+','+(Math.random()>0.5?'-2%':'2%')+')';}); 
+  }else{
+    img.style.display='none';vid.style.display='none';
+  }
+  // Caption with style
+  cap.textContent=p.caption||'';
+  cap.className='cap';
+  if(prodCaptionStyle==='cinematic'){cap.style.cssText='font-family:Playfair Display,serif;font-size:14px;text-align:center;bottom:12%;background:none';}
+  else if(prodCaptionStyle==='documentary'){cap.style.cssText='font-family:Inter,sans-serif;font-size:12px;text-align:left;bottom:10%;background:linear-gradient(transparent,rgba(0,0,0,.7));padding:12px';}
+  else if(prodCaptionStyle==='comic'){cap.style.cssText='font-family:Bangers,Impact,sans-serif;font-size:16px;text-align:center;bottom:15%;-webkit-text-stroke:1px rgba(0,0,0,.5)';}
+  else{cap.style.cssText='font-family:Inter,sans-serif;font-size:11px;text-align:center;bottom:4%;background:rgba(0,0,0,.6);padding:6px 12px;border-radius:4px';}
+  setTimeout(()=>cap.classList.add('vis'),300);
+}
+
+// ── STEP 4: DISTRIBUTE ──
+window.prodOpenTwitter=function(){
+  closeProducer();
+  if(typeof openTwitterPublisher==='function')openTwitterPublisher();
+  else prodToast('Twitter publisher not available');
+};
+
+window.prodShowSheet=function(){
+  const e=prodEp();if(!e)return;
+  const sheet=document.getElementById('prodSheet');
+  let text=`PRODUCTION SHEET: ${e.title}\n${'━'.repeat(40)}\n\n`;
+  text+=`SOUNDTRACK: ${prodSoundUrl||'[Not generated]'} — 60 seconds — Delta Blues\n\n`;
+  text+=`VIDEO CLIPS:\n`;
+  e.panels.forEach((p,i)=>{
+    const key=e.id+'_'+i;
+    const cs=prodClipStates[key]||{};
+    text+=`  Panel ${i+1}: ${cs.url||'[Not generated]'} — 5 seconds — ${(p.desc||'').slice(0,50)}\n`;
+  });
+  text+=`\nCAPTIONS:\n`;
+  const secPer=60/e.panels.length;
+  e.panels.forEach((p,i)=>{
+    const start=Math.floor(i*secPer);
+    const end=Math.floor((i+1)*secPer);
+    const mm=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+    text+=`  ${mm(start)}-${mm(end)} "${(p.caption||'[no caption]').slice(0,80)}"\n`;
+  });
+  text+=`\nPLATFORM SPECS:\n`;
+  text+=`  TikTok: 9:16 vertical, 60 sec, .mp4 or .mov\n`;
+  text+=`  Reels:  9:16 vertical, under 60 sec\n`;
+  text+=`  YT Shorts: 9:16 vertical, under 60 sec\n`;
+  sheet.textContent=text;
+  sheet.classList.toggle('show');
+};
+
+window.prodPlatformInfo=function(platform){
+  const msgs={
+    tiktok:'TikTok Series: Upload 9:16 vertical, 60 sec. Use Preview player → screen record for highest quality. TikTok Series allows paid episode bundles.',
+    reels:'Instagram Reels: 9:16 vertical, under 60 sec. Screen record the Preview player. Add to Series for sequential viewing.',
+    youtube:'YouTube Shorts: 9:16 vertical, under 60 sec. Upload directly. Enable Super Thanks for monetization.'
+  };
+  prodToast(msgs[platform]||'Platform info');
+};
+
+// ── HELPERS ──
+async function prodGemini(prompt){
+  const body={contents:[{parts:[{text:prompt}]}]};
+  const r=await fetch(PROXY+'/gemini/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  return d?.candidates?.[0]?.content?.parts?.[0]?.text||'';
+}
+
+async function prodPollFal(requestId,model){
+  for(let i=0;i<120;i++){
+    await new Promise(r=>setTimeout(r,3000));
+    try{
+      const r=await fetch(`${PROXY}/fal/status?request_id=${requestId}&model=${model}`);
+      const d=await r.json();
+      if(d.status==='COMPLETED'||d.audio_file||d.video||d.images){
+        if(d.audio_file||d.video||d.images)return d;
+        const r2=await fetch(`${PROXY}/fal/result?request_id=${requestId}&model=${model}`);
+        return await r2.json();
+      }
+      if(d.status==='FAILED')return null;
+    }catch(e){}
+  }
+  return null;
+}
+
+function prodToast(msg){
+  if(typeof toast==='function')toast(msg);
+  else{const el=document.getElementById('statusToast')||document.createElement('div');el.textContent=msg;el.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a1200;border:1px solid #2a1f00;color:#e8d5b0;padding:10px 20px;border-radius:6px;font-size:12px;z-index:2000';document.body.appendChild(el);setTimeout(()=>el.remove(),4000);}
+}
+})();
+</script>
+
 </body>
 </html>
