@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buddy Learning OS</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#080c12;--surface:#0e1623;--border:#1c2a3a;
+--accent:#4361EE;--gold:#c8a84e;--teal:#2ec4b6;--green:#2ecc71;--grey:#4a5568;
+--text:#e2e8f0;--dim:#8892a4;--amber:#f59e0b;--red:#ef4444;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.6;overflow-x:hidden}
+.container{max-width:1440px;margin:0 auto;padding:24px}
+a{color:var(--accent);text-decoration:none}
+
+/* Header */
+.header{display:flex;justify-content:space-between;align-items:flex-start;padding:32px 0 24px;border-bottom:1px solid var(--border);margin-bottom:32px}
+.header h1{font-size:28px;font-weight:700;letter-spacing:2px;color:#fff}
+.header .subtitle{color:var(--accent);font-size:14px;margin-top:4px;font-weight:500}
+.header .powered{color:var(--dim);font-size:12px;margin-top:8px;font-family:'JetBrains Mono',monospace}
+.header-right{text-align:right}
+.header-right .date{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--dim)}
+.header-right .next-session{color:var(--gold);font-size:13px;margin-top:8px;font-family:'JetBrains Mono',monospace}
+
+/* Domain Cards */
+.domain-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:32px}
+.domain-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;text-align:center;transition:transform .2s}
+.domain-card:hover{transform:translateY(-2px)}
+.domain-card h3{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;min-height:36px}
+.radial-wrap{position:relative;width:100px;height:100px;margin:0 auto 16px}
+.radial-wrap svg{transform:rotate(-90deg)}
+.radial-wrap .val{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.domain-card .stats{font-size:12px;color:var(--dim);font-family:'JetBrains Mono',monospace}
+.domain-card .next{font-size:11px;color:var(--amber);margin-top:8px}
+
+/* Main Layout */
+.main-grid{display:grid;grid-template-columns:300px 1fr 320px;gap:24px;margin-bottom:32px}
+@media(max-width:1100px){.main-grid{grid-template-columns:1fr}.domain-cards{grid-template-columns:repeat(2,1fr)}}
+
+/* Panels */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
+.panel h2{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.panel h2::before{content:'';width:3px;height:16px;background:var(--accent);border-radius:2px}
+
+/* Gaps */
+.gap-item{padding:10px 12px;border-left:3px solid var(--amber);margin-bottom:10px;background:rgba(245,158,11,.05);border-radius:0 8px 8px 0;animation:gapPulse 3s ease-in-out infinite}
+@keyframes gapPulse{0%,100%{border-left-color:var(--amber)}50%{border-left-color:#d97706}}
+.gap-item .domain-tag{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:4px}
+.gap-item .gap-text{font-size:12px;color:var(--dim);line-height:1.5}
+.gap-item .priority{font-size:10px;font-family:'JetBrains Mono',monospace;margin-top:4px}
+.priority.high{color:var(--red)}.priority.medium{color:var(--amber)}.priority.low{color:var(--dim)}
+
+/* Concept Map */
+.concept-map{position:relative;min-height:500px;overflow:hidden}
+.concept-node{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;font-size:9px;font-weight:600;text-align:center;line-height:1.2;padding:4px;opacity:0;animation:nodeIn .5s forwards}
+@keyframes nodeIn{to{opacity:1}}
+.concept-node:hover{transform:scale(1.3);z-index:10;box-shadow:0 0 20px rgba(67,97,238,.4)}
+.concept-tooltip{display:none;position:fixed;background:#141e2e;border:1px solid var(--accent);border-radius:8px;padding:16px;max-width:300px;z-index:100;font-size:12px;pointer-events:none}
+.concept-tooltip.show{display:block}
+
+/* Applied Insights */
+.insight-item{padding:12px;border-bottom:1px solid var(--border);opacity:0;animation:slideIn .5s forwards}
+@keyframes slideIn{from{transform:translateX(-20px);opacity:0}to{transform:translateX(0);opacity:1}}
+.insight-date{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent)}
+.insight-concept{font-size:13px;font-weight:600;margin:4px 0}
+.insight-summary{font-size:12px;color:var(--dim);line-height:1.5}
+.insight-applied{font-size:11px;color:var(--gold);margin-top:4px}
+
+/* Sessions */
+.sessions-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:32px}
+.session-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.session-card .s-date{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent);font-weight:600}
+.session-card .s-concept{font-size:12px;margin:8px 0;font-weight:500}
+.session-card .s-domain{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+
+/* Dependency Map */
+.dep-map{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:32px}
+.dep-map h2{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.dep-map h2::before{content:'';width:3px;height:16px;background:var(--accent);border-radius:2px}
+.dep-tree{font-family:'JetBrains Mono',monospace;font-size:13px;line-height:2}
+.dep-tree .project{color:#fff;font-weight:600}
+.dep-tree .relation{color:var(--dim)}
+.dep-tree .status-live{color:var(--green)}.dep-tree .status-blocked{color:var(--red)}.dep-tree .status-deadline{color:var(--amber)}
+.dep-tree .child{margin-left:28px;position:relative}
+.dep-tree .child::before{content:'└── ';color:var(--border)}
+
+/* Session Runner */
+.runner{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:32px}
+.runner h2{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.runner h2::before{content:'';width:3px;height:16px;background:var(--accent);border-radius:2px}
+.run-btn{background:var(--accent);color:#fff;border:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+.run-btn:hover{background:#3451d1;transform:translateY(-1px)}
+.run-btn:disabled{opacity:.5;cursor:not-allowed}
+.runner-output{margin-top:16px;padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7;min-height:60px;white-space:pre-wrap;display:none}
+.typing::after{content:'▊';animation:blink 1s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+.mark-btn{background:var(--gold);color:#080c12;border:none;padding:10px 24px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:12px;display:none;font-family:'Inter',sans-serif}
+
+/* Correction Log */
+.corrections{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:32px}
+.corrections h2{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.corrections h2::before{content:'';width:3px;height:16px;background:var(--accent);border-radius:2px}
+.no-entries{color:var(--dim);font-size:13px;font-style:italic}
+
+/* Section label */
+.section-label{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-label::before{content:'';width:3px;height:16px;background:var(--accent);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <h1>BUDDY LEARNING OS</h1>
+    <div class="subtitle">Scenario Planning & Large Project Awareness</div>
+    <div class="powered">Powered by Inkwell Awareness Model</div>
+  </div>
+  <div class="header-right">
+    <div class="date" id="today-date"></div>
+    <div class="next-session">▸ Next session: 9:00 AM PT</div>
+  </div>
+</div>
+
+<!-- DOMAIN CARDS -->
+<div class="domain-cards" id="domain-cards"></div>
+
+<!-- MAIN 3-COL -->
+<div class="main-grid">
+  <!-- GAPS -->
+  <div class="panel" id="gaps-panel">
+    <h2>Identified Gaps</h2>
+    <div id="gaps-list"></div>
+  </div>
+
+  <!-- CONCEPT MAP -->
+  <div class="panel">
+    <h2>Concept Map</h2>
+    <div class="concept-map" id="concept-map"></div>
+  </div>
+
+  <!-- APPLIED INSIGHTS -->
+  <div class="panel" id="insights-panel">
+    <h2>Applied Insights</h2>
+    <div id="insights-list"></div>
+  </div>
+</div>
+
+<!-- UPCOMING SESSIONS -->
+<div class="section-label">Upcoming Sessions</div>
+<div class="sessions-grid" id="sessions-grid"></div>
+
+<!-- DEPENDENCY MAP -->
+<div class="dep-map">
+  <h2>Project Dependency Map</h2>
+  <div class="dep-tree">
+    <div><span class="project">Block BMOS</span> <span class="relation">←depends on→</span> <span class="status-blocked">Greg deploy (⚠️ blocked)</span></div>
+    <div class="child"><span class="relation">Settlement module</span> ←needs→ <span class="status-blocked">Box.com templates (⚠️ blocked)</span></div>
+    <div class="child"><span class="relation">Neo4j</span> ←connected→ <span class="status-live">✓ live</span></div>
+    <br>
+    <div><span class="project">IAM MCP</span> <span class="relation">←needs→</span> <span class="status-blocked">Greg redeploy with graph fix (⚠️)</span></div>
+    <div class="child"><span class="relation">Graph traversal fix</span> — committed, not deployed</div>
+    <br>
+    <div><span class="project">Vanderbilt MBA</span> <span class="relation">←deadline→</span> <span class="status-deadline">March 9 (⏰ HARD)</span></div>
+    <div class="child">4 in-class apps needed</div>
+    <div class="child">Student API credentials needed <span class="status-blocked">(Greg)</span></div>
+    <br>
+    <div><span class="project">Enginuity Tools</span> <span class="relation">←connected→</span> <span class="status-live">VNY GIS (✓ live)</span></div>
+    <div class="child"><span class="status-deadline">TPA deadline: April 1 ⏰</span></div>
+    <br>
+    <div><span class="project">Recording Academy</span> <span class="relation">←depends on→</span> <span class="status-deadline">Oliver approval to publish</span></div>
+    <br>
+    <div><span class="project">Clarksdale Series</span> <span class="relation">— ongoing creative production</span></div>
+    <div><span class="project">OAHM / Yoby</span> <span class="relation">— health platform</span></div>
+    <div><span class="project">Wildling Beauty</span> <span class="relation">— content</span></div>
+    <div><span class="project">Block BMOS Settlement</span> <span class="relation">— new module from real MCR data</span></div>
+  </div>
+</div>
+
+<!-- SESSION RUNNER -->
+<div class="runner">
+  <h2>Live Session Runner</h2>
+  <button class="run-btn" id="run-btn" onclick="runSession()">▶ Run Learning Session Now</button>
+  <div class="runner-output" id="runner-output"></div>
+  <button class="mark-btn" id="mark-btn" onclick="markStudied()">✓ Mark as Studied</button>
+</div>
+
+<!-- SELF-CORRECTION LOG -->
+<div class="corrections">
+  <h2>Self-Correction Log</h2>
+  <div class="no-entries">No corrections logged yet. The program will track course corrections here — wrong frameworks applied, missed risks, updated curriculum items.</div>
+</div>
+
+</div>
+
+<div class="concept-tooltip" id="tooltip"></div>
+
+<script>
+// ---- DATA ----
+const PROGRESS = {
+  domains: {
+    scenario_planning: {
+      label: 'Scenario Planning', mastery: 2,
+      nextConcept: 'wind_tunneling',
+      gap: 'Rarely formalize scenario thinking as 2×2 matrices with named scenarios.',
+      concepts: {
+        shell_scenario_method:{m:2,d:'Shell\'s pioneering scenario planning method from the 1970s — the gold standard for structured future thinking.'},
+        steep_analysis:{m:2,d:'Social, Technological, Economic, Environmental, Political factor analysis for scenario building.'},
+        wind_tunneling:{m:1,d:'Testing strategy robustness by running it against multiple different scenarios.'},
+        delphi_method:{m:1,d:'Structured expert elicitation for forecasting uncertain futures through iterative rounds.'},
+        monte_carlo:{m:2,d:'Probabilistic outcome modeling using random sampling to understand risk distributions.'},
+        causal_layered_analysis:{m:1,d:'Sohail Inayatullah\'s four-layer model: litany → systemic → worldview → myth.'},
+        cross_impact_matrix:{m:1,d:'Analyzing how different scenarios and trends interact with each other.'},
+        scenario_archetypes:{m:2,d:'The four classic scenario shapes: Growth, Collapse, Discipline, Transform.'},
+        driving_forces:{m:2,d:'Distinguishing driving forces from critical uncertainties to build the 2×2 scenario matrix.'},
+        premortem_analysis:{m:3,d:'Imagining failure before it happens to identify risks proactively.'},
+        reference_class_forecasting:{m:2,d:'Kahneman/Flyvbjerg: using base rates from similar past projects instead of the inside view.'},
+        horizon_scanning:{m:1,d:'Detecting weak signals before they become strong trends.'},
+        wildcards_black_swans:{m:2,d:'Nassim Taleb\'s framework for low-probability, high-impact events.'}
+      }
+    },
+    large_project_awareness: {
+      label: 'Large Project Awareness', mastery: 2,
+      nextConcept: 'dependency_mapping',
+      gap: 'Managing 9+ concurrent projects without a formal dependency map. Most urgent gap.',
+      concepts: {
+        megaproject_management:{m:2,d:'Bent Flyvbjerg — "How Big Things Get Done": planning fallacy, optimism bias, fat tails.'},
+        planning_fallacy:{m:2,d:'Systematic underestimation of time, cost, and risk in project planning.'},
+        fat_tailed_risks:{m:2,d:'Large projects have fat-tailed risk distributions — extreme overruns are common, not rare.'},
+        modular_vs_monolithic:{m:3,d:'Modular project design reduces risk; monolithic designs compound it. The "Pixar principle."'},
+        systems_thinking:{m:2,d:'Donella Meadows\' "Thinking in Systems" — seeing wholes, not just parts.'},
+        stocks_and_flows:{m:2,d:'The fundamental building blocks of system dynamics — accumulations and rates of change.'},
+        feedback_loops:{m:3,d:'Reinforcing (amplifying) vs. balancing (stabilizing) feedback loops in complex systems.'},
+        leverage_points:{m:2,d:'Meadows\' 12 places to intervene in a system, from parameters to paradigms.'},
+        cynefin_framework:{m:2,d:'Dave Snowden\'s sense-making framework: Simple, Complicated, Complex, Chaotic domains.'},
+        program_vs_project:{m:1,d:'Program management: managing portfolios of interdependent projects as a unified whole.'},
+        critical_chain:{m:1,d:'Goldratt\'s constraint-based project scheduling — focus on the bottleneck.'},
+        risk_register:{m:2,d:'Probability × impact matrices for systematic risk identification and tracking.'},
+        stakeholder_mapping:{m:2,d:'Power/interest grids and RACI matrices for managing project stakeholders.'},
+        dependency_mapping:{m:1,d:'Mapping dependencies across concurrent projects — which blocks which?'},
+        escalation_thresholds:{m:1,d:'When to surface a risk vs. resolve it locally — decision rules for escalation.'},
+        iron_triangle:{m:3,d:'Scope / Time / Cost — you can fix two, not three. The fundamental project constraint.'},
+        technical_debt:{m:3,d:'How shortcuts accumulate into systemic fragility in complex technical systems.'},
+        known_unknowns:{m:2,d:'The Rumsfeld matrix: known knowns, known unknowns, unknown unknowns.'}
+      }
+    },
+    decision_science: {
+      label: 'Decision Science', mastery: 2,
+      nextConcept: 'precommitment_devices',
+      gap: 'Default to completing tasks rather than asking if the task is the right next move.',
+      concepts: {
+        expected_value:{m:2,d:'Expected Value and Expected Utility Theory — the foundation of rational decision-making.'},
+        bayesian_updating:{m:2,d:'How to systematically change beliefs with new evidence.'},
+        system1_system2:{m:3,d:'Kahneman\'s dual-process theory — fast intuitive vs. slow deliberate thinking.'},
+        commitment_escalation:{m:2,d:'Sunk cost fallacy — knowing when to abandon a losing course of action.'},
+        regret_minimization:{m:2,d:'Bezos framework: "What will I regret at 80?" for irreversible decisions.'},
+        options_thinking:{m:2,d:'Preserving optionality vs. committing early — real options in project decisions.'},
+        precommitment_devices:{m:1,d:'Designing systems that make good decisions automatic — removing willpower from the equation.'},
+        second_order_thinking:{m:2,d:'Howard Marks: "And then what?" — thinking beyond first-order consequences.'}
+      }
+    },
+    strategic_foresight: {
+      label: 'Strategic Foresight', mastery: 1,
+      nextConcept: 'futures_wheel',
+      gap: 'Can scan horizontally but rarely map 2nd/3rd-order consequences systematically.',
+      concepts: {
+        pestle:{m:2,d:'Political, Economic, Social, Technological, Legal, Environmental analysis framework.'},
+        futures_wheel:{m:1,d:'Mapping second and third-order consequences of a change or decision.'},
+        technology_forecasting:{m:2,d:'S-curves, adoption lifecycle, and methods for predicting technology trajectories.'},
+        emerging_issue_analysis:{m:1,d:'Identifying weak signals of change early — before they hit mainstream awareness.'},
+        roadmapping:{m:2,d:'Connecting present decisions to future desired states through structured planning.'},
+        backcasting:{m:1,d:'Starting from a desired future and working backward to identify necessary steps.'}
+      }
+    },
+    iam_applied: {
+      label: 'IAM-Applied', mastery: 3,
+      nextConcept: 'foresight_totality_continuity',
+      gap: 'Omega runes (Totality + Continuity) not yet deliberately applied to project work.',
+      concepts: {
+        scenario_generative_graph:{m:2,d:'Scenario planning maps to IAM\'s Generative Graph — "what could be" as semantic traversal.'},
+        risk_criticality_necessity:{m:2,d:'Risk analysis encoded through Criticality and Necessity runes in IAM.'},
+        stakeholder_social_graph:{m:2,d:'Stakeholder mapping as Social Graph traversal — "who cares" about each node.'},
+        systems_connectivity_rune:{m:2,d:'Systems thinking expressed through IAM\'s Connectivity and Convergence runes.'},
+        decision_clarity_certainty:{m:3,d:'Decision science maps to Clarity and Certainty in SAVESUCCESS protocol.'},
+        foresight_totality_continuity:{m:1,d:'The final Omega Protocol runes — Totality and Continuity as strategic foresight completion.'}
+      }
+    }
+  },
+  appliedInsights: [
+    {date:'2026-02-28',concept:'Critical Chain / Dependencies',summary:'MCR Fenway settlement data revealed dependency chain: IATSE labor → Steelman actuals → field costs → artist net. Classic critical chain.',appliedTo:'Block BMOS settlement module',impact:'Designed settlement tool with FINAL/ESTIMATE/PLACEHOLDER status to make dependency chain visible'}
+  ],
+  sessions: [
+    {date:'2026-03-01',concept:'dependency_mapping',domain:'Large Project Awareness',priority:'high'},
+    {date:'2026-03-02',concept:'wind_tunneling',domain:'Scenario Planning',priority:'medium'},
+    {date:'2026-03-03',concept:'futures_wheel',domain:'Strategic Foresight',priority:'medium'},
+    {date:'2026-03-04',concept:'precommitment_devices',domain:'Decision Science',priority:'low'},
+    {date:'2026-03-05',concept:'foresight_totality_continuity',domain:'IAM-Applied',priority:'medium'}
+  ]
+};
+
+const MASTERY_COLORS = {0:'#4a5568',1:'#4a5568',2:'#4361EE',3:'#2ec4b6',4:'#c8a84e',5:'#2ecc71'};
+const MASTERY_LABELS = {0:'Not studied',1:'Aware',2:'Familiar',3:'Working',4:'Fluent',5:'Integrated'};
+
+// ---- INIT ----
+document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+// Domain cards
+const cardsEl = document.getElementById('domain-cards');
+Object.entries(PROGRESS.domains).forEach(([key, d]) => {
+  const concepts = Object.values(d.concepts);
+  const total = concepts.length;
+  const mastered = concepts.filter(c => c.m >= 3).length;
+  const pct = (d.mastery / 5) * 100;
+  const color = MASTERY_COLORS[d.mastery];
+  const circumf = 2 * Math.PI * 40;
+  const dash = circumf * pct / 100;
+  const next = d.nextConcept.replace(/_/g,' ');
+  cardsEl.innerHTML += `
+    <div class="domain-card">
+      <h3>${d.label}</h3>
+      <div class="radial-wrap">
+        <svg width="100" height="100"><circle cx="50" cy="50" r="40" fill="none" stroke="var(--border)" stroke-width="6"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="${color}" stroke-width="6" stroke-linecap="round"
+          stroke-dasharray="${dash} ${circumf}" class="arc-anim"/></svg>
+        <div class="val" style="color:${color}">${d.mastery}</div>
+      </div>
+      <div class="stats">${mastered} / ${total} mastered</div>
+      <div class="next">Next: ${next}</div>
+    </div>`;
+});
+
+// Animate arcs
+setTimeout(() => {
+  document.querySelectorAll('.arc-anim').forEach(el => {
+    const target = el.getAttribute('stroke-dasharray');
+    el.setAttribute('stroke-dasharray', `0 ${2*Math.PI*40}`);
+    el.style.transition = 'stroke-dasharray 1.2s ease-out';
+    requestAnimationFrame(() => el.setAttribute('stroke-dasharray', target));
+  });
+}, 100);
+
+// Gaps
+const gapsEl = document.getElementById('gaps-list');
+const gaps = [
+  {domain:'Large Project Awareness',text:PROGRESS.domains.large_project_awareness.gap,priority:'high'},
+  {domain:'Scenario Planning',text:PROGRESS.domains.scenario_planning.gap,priority:'medium'},
+  {domain:'Strategic Foresight',text:PROGRESS.domains.strategic_foresight.gap,priority:'medium'},
+  {domain:'Decision Science',text:PROGRESS.domains.decision_science.gap,priority:'medium'},
+  {domain:'IAM-Applied',text:PROGRESS.domains.iam_applied.gap,priority:'low'}
+];
+gaps.forEach(g => {
+  gapsEl.innerHTML += `<div class="gap-item"><div class="domain-tag">${g.domain}</div><div class="gap-text">${g.text}</div><div class="priority ${g.priority}">${g.priority.toUpperCase()}</div></div>`;
+});
+
+// Concept Map
+const mapEl = document.getElementById('concept-map');
+const allConcepts = [];
+Object.entries(PROGRESS.domains).forEach(([dk, d], di) => {
+  Object.entries(d.concepts).forEach(([ck, c], ci) => {
+    allConcepts.push({key:ck, label:ck.replace(/_/g,' '), mastery:c.m, desc:c.d, domain:d.label, domainIdx:di, idx:ci});
+  });
+});
+const tooltip = document.getElementById('tooltip');
+const cols = 5;
+const mapW = mapEl.offsetWidth || 700;
+const mapH = Math.max(500, Math.ceil(allConcepts.length / cols) * 65 + 40);
+mapEl.style.minHeight = mapH + 'px';
+
+allConcepts.forEach((c, i) => {
+  const col = c.domainIdx;
+  const row = c.idx;
+  const x = 10 + col * (mapW / cols) + (mapW / cols / 2) - 24;
+  const y = 10 + row * 58;
+  const size = c.mastery >= 3 ? 48 : 38;
+  const color = MASTERY_COLORS[c.mastery];
+  const node = document.createElement('div');
+  node.className = 'concept-node';
+  node.style.cssText = `left:${x}px;top:${y}px;width:${size}px;height:${size}px;background:${color}22;border:2px solid ${color};color:${color};animation-delay:${i*40}ms`;
+  node.textContent = c.label.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,3);
+  node.title = c.label;
+  node.addEventListener('mouseenter', e => {
+    tooltip.innerHTML = `<div style="color:${color};font-weight:600;margin-bottom:6px">${c.label}</div><div style="font-size:11px;color:var(--dim);margin-bottom:6px">${c.domain}</div><div style="font-size:12px;margin-bottom:6px">${c.desc}</div><div style="font-size:11px;color:${color}">Mastery: ${c.mastery}/5 — ${MASTERY_LABELS[c.mastery]}</div>`;
+    tooltip.classList.add('show');
+    tooltip.style.left = (e.clientX + 16) + 'px';
+    tooltip.style.top = (e.clientY - 10) + 'px';
+  });
+  node.addEventListener('mouseleave', () => tooltip.classList.remove('show'));
+  mapEl.appendChild(node);
+});
+
+// Applied Insights
+const insEl = document.getElementById('insights-list');
+PROGRESS.appliedInsights.forEach((ins, i) => {
+  insEl.innerHTML += `<div class="insight-item" style="animation-delay:${i*200}ms">
+    <div class="insight-date">${ins.date}</div>
+    <div class="insight-concept">${ins.concept}</div>
+    <div class="insight-summary">${ins.summary}</div>
+    <div class="insight-applied">→ ${ins.appliedTo} | Impact: ${ins.impact}</div>
+  </div>`;
+});
+
+// Sessions
+const sessEl = document.getElementById('sessions-grid');
+PROGRESS.sessions.forEach(s => {
+  sessEl.innerHTML += `<div class="session-card">
+    <div class="s-date">${s.date}</div>
+    <div class="s-concept">${s.concept.replace(/_/g,' ')}</div>
+    <div class="s-domain">${s.domain}</div>
+    <div class="priority ${s.priority}" style="margin-top:6px;font-size:10px;font-family:'JetBrains Mono',monospace">${s.priority}</div>
+  </div>`;
+});
+
+// ---- SESSION RUNNER ----
+const PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+const SYSTEM = 'You are Buddy, an AI assistant studying scenario planning and large project awareness to better support Oliver Luckett\'s work on complex initiatives. Generate a focused 200-word learning synthesis on the given concept, then identify exactly ONE way it applies to one of these current active projects: Block BMOS (entertainment finance platform), Enginuity airport scenario planning (TPA/VNY RFPs), Vanderbilt MBA course (March 9 launch), IAM MCP deployment, Recording Academy AI policy. Be specific and actionable.';
+
+let currentSessionConcept = null;
+
+async function gemini(prompt, system) {
+  const body = { contents: [{ parts: [{ text: prompt }] }] };
+  if (system) body.system_instruction = { parts: [{ text: system }] };
+  const r = await fetch(PROXY, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const d = await r.json();
+  return d?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+async function runSession() {
+  const btn = document.getElementById('run-btn');
+  const output = document.getElementById('runner-output');
+  const markBtn = document.getElementById('mark-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Running...';
+  output.style.display = 'block';
+  output.textContent = '';
+  output.classList.add('typing');
+  markBtn.style.display = 'none';
+
+  // Pick next concept from first scheduled session
+  const next = PROGRESS.sessions[0];
+  currentSessionConcept = next.concept;
+  const prompt = `Study concept: "${next.concept.replace(/_/g,' ')}" from domain "${next.domain}". Generate a 200-word learning synthesis and one specific application.`;
+
+  try {
+    const result = await gemini(prompt, SYSTEM);
+    output.classList.remove('typing');
+    // Typing animation
+    let i = 0;
+    const type = () => {
+      if (i < result.length) {
+        output.textContent += result[i++];
+        setTimeout(type, 8);
+      } else {
+        markBtn.style.display = 'inline-block';
+      }
+    };
+    type();
+  } catch(e) {
+    output.classList.remove('typing');
+    output.textContent = 'Error: ' + e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = '▶ Run Learning Session Now';
+}
+
+function markStudied() {
+  const markBtn = document.getElementById('mark-btn');
+  markBtn.textContent = '✓ Marked as Studied!';
+  markBtn.style.background = 'var(--green)';
+  markBtn.disabled = true;
+  // In production this would update progress.json via API
+}
+</script>
+</body>
+</html>
