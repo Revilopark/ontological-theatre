@@ -685,5 +685,304 @@ function renderAll() { renderEpisodes(); renderPreview(); renderEditor(); }
 // ── INIT ───────────────────────────────────────────────────────────────────
 renderAll();
 </script>
+<!-- Twitter/X Publisher Drawer -->
+<div class="tw-overlay" id="twOverlay" onclick="closeTwitterPublisher()"></div>
+<div class="twitter-drawer" id="twDrawer">
+  <div class="tw-drawer-header">
+    <div>
+      <div class="tw-drawer-title">PUBLISH TO 𝕏</div>
+      <div class="tw-drawer-account">@EveryForty4</div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <button class="tw-gear-btn" onclick="twToggleSettings()" title="Credentials">⚙</button>
+      <button class="tw-drawer-close" onclick="closeTwitterPublisher()">✕</button>
+    </div>
+  </div>
+
+  <!-- Credentials Settings -->
+  <div class="tw-settings-panel" id="twSettings">
+    <div class="tw-label">TWITTER CREDENTIALS</div>
+    <div class="tw-cred-note">Consumer Key</div>
+    <input class="tw-cred-input" id="twCK" placeholder="Consumer Key">
+    <div class="tw-cred-note">Consumer Secret (required)</div>
+    <input class="tw-cred-input" id="twCS" type="password" placeholder="Consumer Secret">
+    <div class="tw-cred-note">Access Token</div>
+    <input class="tw-cred-input" id="twAT" placeholder="Access Token">
+    <div class="tw-cred-note">Access Token Secret (required)</div>
+    <input class="tw-cred-input" id="twATS" type="password" placeholder="Access Token Secret">
+    <div class="tw-cred-note">Stored in localStorage only. Never sent to server.</div>
+    <button class="tw-cred-save" onclick="twSaveCreds()">Save</button>
+  </div>
+
+  <!-- Episode Selection -->
+  <div class="tw-section">
+    <div class="tw-label">EPISODE</div>
+    <select class="tw-select" id="twEpisodeSelect" onchange="twSelectEpisode()"></select>
+  </div>
+
+  <!-- Format Selection -->
+  <div class="tw-section">
+    <div class="tw-label">THREAD FORMAT</div>
+    <div class="format-options">
+      <div class="format-opt"><input type="radio" name="twFormat" value="full" id="twFmtFull" checked><label for="twFmtFull">Full Thread (6-8 tweets)</label></div>
+      <div class="format-opt"><input type="radio" name="twFormat" value="single" id="twFmtSingle"><label for="twFmtSingle">Single Announcement (1 tweet)</label></div>
+      <div class="format-opt"><input type="radio" name="twFormat" value="quote" id="twFmtQuote"><label for="twFmtQuote">Quote Card (image + caption)</label></div>
+    </div>
+    <button class="generate-thread-btn" id="twGenerateBtn" onclick="twGenerateThread()">✦ Generate Thread with AI</button>
+  </div>
+
+  <!-- Preview -->
+  <div id="twPreview" style="flex:1;overflow-y:auto;"></div>
+
+  <!-- Add Tweet -->
+  <button class="tw-add-tweet" id="twAddBtn" style="display:none;" onclick="twAddTweet()">+ Add Tweet</button>
+
+  <!-- History -->
+  <div class="tw-history" id="twHistory"></div>
+
+  <!-- Action Bar -->
+  <div class="tw-actions-bar" id="twActionsBar" style="display:none;">
+    <button class="tw-copy-btn" onclick="twCopyAll()">📋 Copy All</button>
+    <button class="tw-post-btn" id="twPostBtn" onclick="twPostThread()">𝕏 Post Thread</button>
+  </div>
+</div>
+<div class="tw-notice" id="twNotice"></div>
+
+<script>
+(function(){
+  const PROXY='https://awareness-proxy-328246068140.us-central1.run.app';
+  const GEMINI_URL='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyBnBnpLEqJN50KKIFnEuBxQMIb7gjqstsg';
+
+  // Episode data extracted from the page
+  const TW_EPISODES=[
+    {id:'rocket88',title:'Rocket 88',era:'1951',location:'Clarksdale, Mississippi',subject:'Ike Turner & Jackie Brenston',panels:[
+      {narration:'Ike Turner was born in Clarksdale, and the town was already too small for what he heard in his head.',imageSelector:'#social .social-card:nth-child(1) img'},
+      {narration:'He packed a broken amplifier into a car and drove 48 miles north to Memphis. The amp buzzed and distorted. Sam Phillips said: leave it.',imageSelector:null},
+      {narration:'Jackie Brenston sang the vocal. The record said "Jackie Brenston and his Delta Cats." It was Ike\'s band. Ike\'s song. Ike\'s sound.',imageSelector:null},
+      {narration:'"Rocket 88" hit #1 on the R&B chart. Some call it the first rock and roll record. The fuzz came from a broken speaker stuffed with newspaper.',imageSelector:null}
+    ]},
+    {id:'crossroads',title:'The Crossroads',era:'1936',location:'Clarksdale, Mississippi',subject:'Robert Johnson',panels:[
+      {narration:'He went down to the crossroads. He came back able to play things no one had taught him.',imageSelector:null},
+      {narration:'29 songs. Dead at 27. The DNA of everything that came after.',imageSelector:null},
+      {narration:'Robert Johnson recorded in a hotel room in San Antonio and a warehouse in Dallas. That was all.',imageSelector:null}
+    ]},
+    {id:'muddy',title:'Muddy Waters',era:'1943',location:'Stovall Plantation',subject:'Muddy Waters',panels:[
+      {narration:'McKinley Morganfield played on Stovall Plantation. Alan Lomax came with a recording machine from the Library of Congress.',imageSelector:null},
+      {narration:'Muddy heard his own voice played back and decided that was it. He was going to Chicago.',imageSelector:null},
+      {narration:'He took the blues north on the Illinois Central. Electric guitar. Amplified. The Delta plugged in.',imageSelector:null}
+    ]},
+    {id:'bessie',title:'Empress of the Blues',era:'1923',location:'Clarksdale to New York',subject:'Bessie Smith',panels:[
+      {narration:'Bessie Smith sang in the tent shows of Clarksdale before she became the highest-paid Black performer in America.',imageSelector:null},
+      {narration:'She sold 780,000 copies of "Downhearted Blues" in six months. Columbia Records survived because of her.',imageSelector:null}
+    ]},
+    {id:'rosetta',title:'Sister Rosetta Tharpe',era:'1938',location:'Cotton Plant, Arkansas',subject:'Sister Rosetta Tharpe',panels:[
+      {narration:'Sister Rosetta Tharpe played electric guitar in 1938. Before Chuck Berry. Before Elvis. Before anyone.',imageSelector:null},
+      {narration:'She sang gospel with a Gibson SG and made the sacred sound like Saturday night. She invented rock and roll and they forgot to tell anyone.',imageSelector:null}
+    ]},
+    {id:'samcooke',title:'Sam Cooke',era:'1957',location:'Clarksdale to Chicago',subject:'Sam Cooke',panels:[
+      {narration:'Sam Cooke was born in Clarksdale and raised in Chicago. He had the most beautiful voice in American popular music.',imageSelector:null},
+      {narration:'He wrote "A Change Is Gonna Come" after being turned away from a Holiday Inn in Louisiana. He was already famous.',imageSelector:null}
+    ]},
+    {id:'riverside',title:'The Riverside Hotel',era:'1944',location:'615 Sunflower Ave, Clarksdale',subject:'The Riverside Hotel',panels:[
+      {narration:'The G.T. Thomas Afro-American Hospital became the Riverside Hotel in 1944. Bessie Smith died there in 1937. Ike Turner lived there.',imageSelector:null},
+      {narration:'Every blues musician who came through Clarksdale slept at the Riverside. The walls remember all of it.',imageSelector:null}
+    ]},
+    {id:'jukejoint',title:'The Juke Joint',era:'1920s-1960s',location:'Mississippi Delta',subject:'Juke Joints',panels:[
+      {narration:'Juke joints were where Black people could exist without permission. The music was loud because it had to be heard over the pain.',imageSelector:null},
+      {narration:'No stage. No cover charge. Just a room, a guitar, and people who understood what the blues meant.',imageSelector:null}
+    ]},
+    {id:'train',title:'The Illinois Central',era:'1910-1970',location:'Mississippi to Chicago',subject:'The Great Migration',panels:[
+      {narration:'The Illinois Central railroad carried six million Black Americans from the Mississippi Delta to Chicago, Detroit, Cleveland.',imageSelector:null},
+      {narration:'They took the blues with them. Every city they arrived in, the music changed shape but kept its truth.',imageSelector:null}
+    ]}
+  ];
+
+  let twTweets=[];
+  let twSelectedEpisode=null;
+
+  // Load credentials from localStorage
+  function twLoadCreds(){
+    const c=JSON.parse(localStorage.getItem('tw_creds')||'{}');
+    document.getElementById('twCK').value=c.ck||'';
+    document.getElementById('twCS').value=c.cs||'';
+    document.getElementById('twAT').value=c.at||'';
+    document.getElementById('twATS').value=c.ats||'';
+    twUpdatePostBtn();
+  }
+  window.twSaveCreds=function(){
+    localStorage.setItem('tw_creds',JSON.stringify({
+      ck:document.getElementById('twCK').value,
+      cs:document.getElementById('twCS').value,
+      at:document.getElementById('twAT').value,
+      ats:document.getElementById('twATS').value
+    }));
+    twShowNotice('Credentials saved');
+    twUpdatePostBtn();
+  };
+  function twHasCreds(){
+    const c=JSON.parse(localStorage.getItem('tw_creds')||'{}');
+    return !!(c.cs&&c.ats);
+  }
+  function twUpdatePostBtn(){
+    const btn=document.getElementById('twPostBtn');
+    if(!twHasCreds()){btn.textContent='⚠️ Add credentials to post';btn.disabled=true;}
+    else{btn.textContent='𝕏 Post Thread';btn.disabled=false;}
+  }
+
+  // Populate episodes
+  function twPopulateEpisodes(){
+    const sel=document.getElementById('twEpisodeSelect');
+    sel.innerHTML=TW_EPISODES.map(e=>`<option value="${e.id}">${e.title} — ${e.era}</option>`).join('');
+    twSelectedEpisode=TW_EPISODES[0];
+  }
+  window.twSelectEpisode=function(){
+    const id=document.getElementById('twEpisodeSelect').value;
+    twSelectedEpisode=TW_EPISODES.find(e=>e.id===id);
+  };
+
+  // Open/Close
+  window.openTwitterPublisher=function(){
+    twPopulateEpisodes();twLoadCreds();twRenderHistory();
+    document.getElementById('twDrawer').classList.add('open');
+    document.getElementById('twOverlay').classList.add('open');
+  };
+  window.closeTwitterPublisher=function(){
+    document.getElementById('twDrawer').classList.remove('open');
+    document.getElementById('twOverlay').classList.remove('open');
+  };
+  window.twToggleSettings=function(){
+    document.getElementById('twSettings').classList.toggle('open');
+  };
+
+  // Generate thread via Gemini
+  window.twGenerateThread=async function(){
+    const ep=twSelectedEpisode;if(!ep)return;
+    const format=document.querySelector('input[name="twFormat"]:checked').value;
+    const btn=document.getElementById('twGenerateBtn');
+    btn.disabled=true;btn.textContent='✦ Generating...';
+    try{
+      const panels=ep.panels.map(p=>p.narration).join('\n');
+      let prompt;
+      if(format==='full'){
+        prompt=`Write a Twitter/X thread (6-8 tweets) about this Clarksdale Series episode.\n\nEpisode: "${ep.title}"\nEra: ${ep.era} · ${ep.location}\nSubject: ${ep.subject}\nPanel narrations:\n${panels}\n\nRules:\n- Tweet 1: Hook. Dramatic opening with the core historical fact. End with 🧵\n- Tweets 2-6: One panel per tweet. Literary, poetic narration style. Short declarative sentences.\n- Tweet 7: Historical significance. Why this moment matters for American music/culture.\n- NO hashtags. NO emoji spam. ONLY one emoji per tweet maximum.\n- Under 260 characters each.\n- Voice: authoritative, literary, like a documentary narrator who deeply loves this history.\n- Explicitly honor Black American artists and history.\n- Do NOT include any links or URLs.\n\nReturn as JSON array: [{"text": "tweet content", "imageIndex": 0}]\nimageIndex = which panel image to attach (0-based), or null for no image.`;
+      }else if(format==='single'){
+        prompt=`Write ONE tweet announcing this Clarksdale Series episode.\nEpisode: "${ep.title}" · ${ep.era} · ${ep.location}\nSubject: ${ep.subject}\nUnder 260 chars. Literary, evocative. One line of historical truth. No links or URLs.\nReturn as JSON array with one object: [{"text": "...", "imageIndex": 0}]`;
+      }else{
+        prompt=`Write ONE powerful quote-style tweet from this episode.\nEpisode: "${ep.title}"\nPanel narrations: ${panels}\nExtract the single most powerful sentence from the narration.\nUnder 200 chars. Just the quote + attribution.\nReturn as JSON array: [{"text": "...", "imageIndex": 0}]`;
+      }
+      const r=await fetch(GEMINI_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
+      const d=await r.json();
+      const text=(d?.candidates?.[0]?.content?.parts?.[0]?.text||'').trim();
+      const match=text.match(/\[[\s\S]*?\]/);
+      if(match){twTweets=JSON.parse(match[0]);}
+      else{twTweets=[{text:text.slice(0,260),imageIndex:null}];}
+    }catch(e){
+      console.error('Thread gen error:',e);
+      twTweets=[{text:`${ep.subject} — ${ep.location}, ${ep.era}. ${ep.panels[0].narration}`,imageIndex:0}];
+    }
+    btn.disabled=false;btn.textContent='✦ Generate Thread with AI';
+    twRenderTweets();
+  };
+
+  // Render tweets
+  function twRenderTweets(){
+    const container=document.getElementById('twPreview');
+    if(!twTweets.length){container.innerHTML='';document.getElementById('twActionsBar').style.display='none';document.getElementById('twAddBtn').style.display='none';return;}
+    document.getElementById('twActionsBar').style.display='flex';
+    document.getElementById('twAddBtn').style.display='block';
+    twUpdatePostBtn();
+    container.innerHTML=twTweets.map((t,i)=>{
+      const len=t.text.length;
+      const pct=Math.min(100,len/280*100);
+      const cls=len>280?'over':len>240?'near':'';
+      return `<div class="tweet-card">
+        <div class="tweet-card-header">
+          <span class="tweet-num">TWEET ${i+1}/${twTweets.length}</span>
+          <div class="tweet-actions">
+            <button class="tweet-edit-btn" onclick="twEditTweet(${i})">edit</button>
+            <button class="tweet-del-btn" onclick="twDelTweet(${i})">×</button>
+          </div>
+        </div>
+        <div class="tweet-body" id="twBody${i}">${twEsc(t.text)}</div>
+        <div class="tweet-charcount">
+          <div class="tweet-charcount-bar"><div class="tweet-charcount-fill" style="width:${pct}%"></div></div>
+          <span class="tweet-charcount-num ${cls}">${len} chars</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  function twEsc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+  // Edit tweet
+  window.twEditTweet=function(i){
+    const el=document.getElementById('twBody'+i);
+    if(el.tagName==='TEXTAREA'){
+      twTweets[i].text=el.value;
+      twRenderTweets();
+      return;
+    }
+    const ta=document.createElement('textarea');
+    ta.className='tweet-body-edit';ta.id='twBody'+i;
+    ta.value=twTweets[i].text;
+    ta.oninput=function(){
+      twTweets[i].text=ta.value;
+      const cc=ta.parentElement.querySelector('.tweet-charcount-num');
+      const fill=ta.parentElement.querySelector('.tweet-charcount-fill');
+      if(cc){cc.textContent=ta.value.length+' chars';cc.className='tweet-charcount-num'+(ta.value.length>280?' over':ta.value.length>240?' near':'');}
+      if(fill)fill.style.width=Math.min(100,ta.value.length/280*100)+'%';
+    };
+    el.replaceWith(ta);ta.focus();
+  };
+  window.twDelTweet=function(i){twTweets.splice(i,1);twRenderTweets();};
+  window.twAddTweet=function(){twTweets.push({text:'',imageIndex:null});twRenderTweets();twEditTweet(twTweets.length-1);};
+
+  // Copy all
+  window.twCopyAll=function(){
+    const text=twTweets.map((t,i)=>`${i+1}/${twTweets.length}\n${t.text}`).join('\n\n---\n\n');
+    navigator.clipboard.writeText(text).then(()=>twShowNotice('Copied to clipboard!')).catch(()=>twShowNotice('Copy failed'));
+  };
+
+  // Post thread
+  window.twPostThread=async function(){
+    if(!twTweets.length)return;
+    const ep=twSelectedEpisode;
+    const btn=document.getElementById('twPostBtn');
+    btn.disabled=true;btn.textContent='Posting...';
+    try{
+      const res=await fetch(PROXY+'/twitter/thread',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tweets:twTweets.map(t=>({text:t.text,imageUrl:t.imageIndex!==null&&ep.panels[t.imageIndex]?null:null}))})});
+      if(res.ok){const data=await res.json();twShowNotice('Thread posted! '+( data.tweetUrl||''));twLogPost(ep,twTweets.length);}
+      else{throw new Error('Not deployed');}
+    }catch(e){
+      await navigator.clipboard.writeText(twTweets.map((t,i)=>`${i+1}/${twTweets.length}\n${t.text}`).join('\n\n---\n\n')).catch(()=>{});
+      twShowNotice('Copied to clipboard — post at @EveryForty4');
+      twLogPost(ep,twTweets.length);
+    }
+    twUpdatePostBtn();
+  };
+
+  // Notices
+  function twShowNotice(msg){
+    const el=document.getElementById('twNotice');el.textContent=msg;el.classList.add('show');
+    setTimeout(()=>el.classList.remove('show'),3000);
+  }
+
+  // History
+  function twLogPost(ep,count){
+    const hist=JSON.parse(localStorage.getItem('tw_history')||'[]');
+    const d=new Date();
+    hist.unshift({date:d.toLocaleDateString('en-US',{month:'short',day:'numeric'}),title:ep.title,count});
+    if(hist.length>20)hist.length=20;
+    localStorage.setItem('tw_history',JSON.stringify(hist));
+    twRenderHistory();
+  }
+  function twRenderHistory(){
+    const hist=JSON.parse(localStorage.getItem('tw_history')||'[]');
+    const el=document.getElementById('twHistory');
+    if(!hist.length){el.innerHTML='';return;}
+    el.innerHTML='<div class="tw-label">RECENT POSTS</div>'+hist.slice(0,5).map(h=>`<div class="tw-history-item">${h.date} · ${h.title} · ${h.count} tweets</div>`).join('');
+  }
+})();
+</script>
+
 </body>
 </html>
