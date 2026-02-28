@@ -4139,5 +4139,326 @@ Generative: [creative/emergent dimension]
 })();
 </script>
 
+<!-- KNOWLEDGE GRAPH -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+#kg-overlay{position:fixed;inset:0;z-index:9999;background:#0d0d0d;display:none;flex-direction:column;font-family:'Inter',sans-serif;}
+#kg-overlay.active{display:flex;}
+#kg-topbar{display:flex;align-items:center;gap:16px;padding:10px 24px;background:#1a1a1a;border-bottom:1px solid #2a2a2a;flex-shrink:0;}
+#kg-topbar button{padding:6px 14px;border-radius:6px;border:1px solid #2a2a2a;background:transparent;color:#e8d5b0;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;}
+#kg-topbar button:hover{border-color:#D4AF37;color:#D4AF37;}
+#kg-topbar h2{font-family:'Playfair Display',serif;font-size:18px;color:#e8d5b0;font-weight:700;margin:0;}
+#kg-search{padding:6px 12px;border-radius:6px;border:1px solid #2a2a2a;background:#0d0d0d;color:#e8d5b0;font-size:12px;width:200px;outline:none;}
+#kg-search:focus{border-color:#D4AF37;}
+#kg-body{display:flex;flex:1;overflow:hidden;position:relative;}
+#kg-canvas{flex:1;}
+#kg-canvas svg{width:100%;height:100%;}
+#kg-info{width:280px;background:#1a1a1a;border-left:1px solid #2a2a2a;padding:24px;overflow-y:auto;flex-shrink:0;}
+#kg-info.empty::before{content:'Hover or click a node to see details';color:#7A6A4A;font-size:13px;font-style:italic;}
+#kg-info h3{font-family:'Playfair Display',serif;font-size:20px;color:#e8d5b0;margin-bottom:8px;}
+#kg-info .kg-type{font-size:11px;color:#D4AF37;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;}
+#kg-info .kg-bio{font-size:13px;color:#e8d5b0;line-height:1.7;margin-bottom:16px;font-style:italic;opacity:.85;}
+#kg-info .kg-conn{font-size:12px;color:#7A6A4A;margin-bottom:4px;}
+#kg-info .kg-conn span{color:#e8d5b0;}
+#kg-info .kg-ep-btn{display:inline-block;margin:4px 4px 4px 0;padding:4px 10px;border-radius:4px;background:rgba(200,151,58,.15);border:1px solid rgba(200,151,58,.3);color:#D4AF37;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;}
+#kg-info .kg-ep-btn:hover{background:rgba(200,151,58,.3);}
+#kg-legend{position:absolute;bottom:20px;left:20px;background:rgba(26,26,26,.9);border:1px solid #2a2a2a;border-radius:8px;padding:12px 16px;display:flex;gap:16px;font-size:11px;color:#7A6A4A;}
+#kg-legend span{display:flex;align-items:center;gap:5px;}
+#kg-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;}
+</style>
+
+<div id="kg-overlay">
+<div id="kg-topbar">
+<button onclick="toggleKnowledgeGraph()">← Back to Editor</button>
+<h2>🕸 Clarksdale Knowledge Graph</h2>
+<input id="kg-search" type="text" placeholder="Search nodes..." oninput="kgSearch(this.value)">
+<button id="kg-view-toggle" onclick="kgToggleView()">📅 Timeline View</button>
+<button onclick="kgEnrich()">✨ AI Enrich</button>
+</div>
+<div id="kg-body">
+<div id="kg-canvas"></div>
+<div id="kg-info" class="empty"></div>
+<div id="kg-legend">
+<span><i style="background:#D4AF37"></i> Person</span>
+<span><i style="background:#4ECDC4"></i> Place</span>
+<span><i style="background:#C77DFF"></i> Song</span>
+<span><i style="background:#FF6B6B"></i> Theme</span>
+</div>
+</div>
+</div>
+
+<script>
+(function(){
+const GRAPH_DATA={nodes:[
+{id:"robert-johnson",label:"Robert Johnson",type:"person",era:"1936",episodes:[1],bio:"Sold his soul at the Crossroads. Father of Delta Blues."},
+{id:"charley-patton",label:"Charley Patton",type:"person",era:"1929",episodes:[2],bio:"King of the Delta Blues. Dockery Plantation."},
+{id:"son-house",label:"Son House",type:"person",era:"1929",episodes:[2,5],bio:"Preacher turned bluesman. Taught Robert Johnson."},
+{id:"ike-turner",label:"Ike Turner",type:"person",era:"1951",episodes:[3],bio:"Born in Clarksdale. Drove a broken amp to Memphis. Made the first rock & roll record."},
+{id:"sam-phillips",label:"Sam Phillips",type:"person",era:"1951",episodes:[3],bio:"Founded Sun Records. 'If I could find a white man who had the Negro sound...'"},
+{id:"muddy-waters",label:"Muddy Waters",type:"person",era:"1943",episodes:[4],bio:"Stovall Plantation. Took the Delta to Chicago."},
+{id:"sam-cooke",label:"Sam Cooke",type:"person",era:"1963",episodes:[6],bio:"The voice of civil rights. A Change Is Gonna Come."},
+{id:"nate-dogg",label:"Nate Dogg",type:"person",era:"1994",episodes:[7],bio:"King of Hooks. Gospel foundation. The voice hip-hop built around."},
+{id:"rick-ross",label:"Rick Ross",type:"person",era:"1976",episodes:[8],bio:"Born William Leonard Roberts II in Clarksdale, MS. The Delta in every bar."},
+{id:"bessie-smith",label:"Bessie Smith",type:"person",era:"1937",episodes:[9],bio:"Empress of the Blues. Died at the Riverside Hotel. The tragedy that changed everything."},
+{id:"gt-thomas",label:"G.T. Thomas",type:"person",era:"1924",episodes:[9],bio:"Built the hospital for Black patients in 1924. It became the Riverside Hotel."},
+{id:"frank-ratliff",label:"Frank 'Rat' Ratliff",type:"person",era:"present",episodes:[9],bio:"Current keeper of the Riverside Hotel. Blues sanctuary still standing."},
+{id:"clarksdale",label:"Clarksdale, MS",type:"place",episodes:[1,2,3,4,5,6,7,8,9],bio:"The epicenter. Every road leads here. Every sound began here."},
+{id:"crossroads",label:"The Crossroads",type:"place",era:"mythic",episodes:[1],bio:"Highway 61 meets Highway 49. Robert Johnson. The deal. The myth."},
+{id:"dockery-plantation",label:"Dockery Plantation",type:"place",era:"1929",episodes:[2],bio:"Where the blues was born. Charley Patton's stage."},
+{id:"riverside-hotel",label:"Riverside Hotel",type:"place",era:"1924",episodes:[9],bio:"G.T. Thomas Hospital → Bessie Smith's death → Green Book sanctuary → still standing."},
+{id:"sun-records",label:"Sun Records",type:"place",era:"1951",episodes:[3],bio:"706 Union Ave, Memphis. The room where rock & roll was born."},
+{id:"highway-61",label:"Highway 61",type:"place",episodes:[1,2,3,4],bio:"The Blues Highway. From the Delta to Chicago. Freedom road."},
+{id:"stovall-plantation",label:"Stovall Plantation",type:"place",era:"1943",episodes:[4],bio:"Where Alan Lomax recorded Muddy Waters for the Library of Congress."},
+{id:"chicago",label:"Chicago, IL",type:"place",era:"1943",episodes:[4],bio:"The Great Migration destination. The Delta goes electric."},
+{id:"memphis",label:"Memphis, TN",type:"place",era:"1951",episodes:[3,5],bio:"48 miles north. The funnel between Delta and the world."},
+{id:"rocket-88",label:"Rocket 88",type:"song",era:"1951",episodes:[3],bio:"Jackie Brenston & His Delta Cats. Produced by Ike Turner. The first rock & roll song."},
+{id:"a-change-is-gonna-come",label:"A Change Is Gonna Come",type:"song",era:"1963",episodes:[6],bio:"Sam Cooke's masterpiece. Written after being turned away from a whites-only motel."},
+{id:"mannish-boy",label:"Mannish Boy",type:"song",era:"1955",episodes:[4],bio:"Muddy Waters. The Chicago blues distilled."},
+{id:"delta-blues",label:"Delta Blues",type:"theme",episodes:[1,2,3,4,5,9],bio:"The root. All American music — rock, soul, hip hop, country — descended from this."},
+{id:"great-migration",label:"Great Migration",type:"theme",era:"1910-1970",episodes:[4,6],bio:"6 million Black Americans moved north. Music traveled with them."},
+{id:"civil-rights",label:"Civil Rights",type:"theme",era:"1950s-1960s",episodes:[6,9],bio:"The movement that changed America. Clarksdale was ground zero."},
+{id:"green-book",label:"Green Book Era",type:"theme",era:"1936-1966",episodes:[9],bio:"Victor Green's guide for safe travel. The Riverside was listed."},
+{id:"hip-hop-roots",label:"Hip Hop Roots",type:"theme",era:"1990s-present",episodes:[7,8],bio:"The unbroken line from Delta call-and-response to hip hop's foundation."},
+{id:"rock-and-roll-birth",label:"Birth of Rock & Roll",type:"theme",era:"1951",episodes:[3],bio:"Born in a Memphis studio, but conceived on a Clarksdale highway."}
+],edges:[
+{source:"charley-patton",target:"son-house",label:"taught",strength:3},
+{source:"son-house",target:"robert-johnson",label:"taught",strength:3},
+{source:"robert-johnson",target:"muddy-waters",label:"influenced",strength:3},
+{source:"muddy-waters",target:"sam-cooke",label:"influenced",strength:2},
+{source:"son-house",target:"nate-dogg",label:"spiritual lineage",strength:1},
+{source:"sam-cooke",target:"nate-dogg",label:"gospel lineage",strength:2},
+{source:"nate-dogg",target:"rick-ross",label:"collaborated with",strength:3},
+{source:"robert-johnson",target:"crossroads",label:"made the deal",strength:3},
+{source:"crossroads",target:"clarksdale",label:"located in",strength:3},
+{source:"charley-patton",target:"dockery-plantation",label:"performed at",strength:3},
+{source:"ike-turner",target:"clarksdale",label:"born in",strength:3},
+{source:"rick-ross",target:"clarksdale",label:"born in",strength:3},
+{source:"ike-turner",target:"memphis",label:"drove to",strength:2},
+{source:"ike-turner",target:"sun-records",label:"recorded at",strength:3},
+{source:"muddy-waters",target:"stovall-plantation",label:"lived on",strength:3},
+{source:"muddy-waters",target:"chicago",label:"migrated to",strength:3},
+{source:"bessie-smith",target:"riverside-hotel",label:"died at",strength:3},
+{source:"gt-thomas",target:"riverside-hotel",label:"built",strength:3},
+{source:"frank-ratliff",target:"riverside-hotel",label:"keeps",strength:2},
+{source:"ike-turner",target:"rocket-88",label:"created",strength:3},
+{source:"sam-phillips",target:"rocket-88",label:"produced",strength:2},
+{source:"rocket-88",target:"rock-and-roll-birth",label:"ignited",strength:3},
+{source:"sam-cooke",target:"a-change-is-gonna-come",label:"wrote",strength:3},
+{source:"a-change-is-gonna-come",target:"civil-rights",label:"became anthem of",strength:3},
+{source:"muddy-waters",target:"mannish-boy",label:"recorded",strength:3},
+{source:"delta-blues",target:"rock-and-roll-birth",label:"birthed",strength:3},
+{source:"delta-blues",target:"hip-hop-roots",label:"root of",strength:2},
+{source:"great-migration",target:"chicago",label:"destination",strength:3},
+{source:"muddy-waters",target:"great-migration",label:"part of",strength:2},
+{source:"riverside-hotel",target:"green-book",label:"listed in",strength:3},
+{source:"highway-61",target:"great-migration",label:"route of",strength:2},
+{source:"clarksdale",target:"delta-blues",label:"origin of",strength:3}
+]};
+
+const NC={person:'#D4AF37',place:'#4ECDC4',song:'#C77DFF',theme:'#FF6B6B'};
+const TI={person:'🎤',place:'📍',song:'🎵',theme:'💡'};
+let kgSim,kgSvg,kgG,kgNodes,kgLinks,kgLabels,kgLocked=null,kgMode='force',kgInited=false;
+
+window.toggleKnowledgeGraph=function(){
+  const o=document.getElementById('kg-overlay');
+  if(o.classList.contains('active')){o.classList.remove('active');return;}
+  o.classList.add('active');
+  if(!kgInited){kgInit();kgInited=true;}else if(kgMode==='force'){kgSim.alpha(.3).restart();}
+};
+
+// Add button to pipeline bar
+document.addEventListener('DOMContentLoaded',()=>{
+  const pi=document.querySelector('.pipeline-inner');
+  if(pi){
+    const s=document.createElement('span');s.className='pip-arrow';s.textContent='›';
+    const a=document.createElement('a');a.className='pip-step';a.href='#';
+    a.innerHTML='<span class="pip-icon">🕸</span> Knowledge Graph <span class="pip-count">'+GRAPH_DATA.nodes.length+'</span>';
+    a.onclick=e=>{e.preventDefault();toggleKnowledgeGraph();};
+    pi.appendChild(s);pi.appendChild(a);
+  }
+});
+
+function kgInit(){
+  const canvas=document.getElementById('kg-canvas');
+  const W=canvas.clientWidth,H=canvas.clientHeight;
+  const nodes=GRAPH_DATA.nodes.map(d=>({...d}));
+  const edges=GRAPH_DATA.edges.map(d=>({...d}));
+  const nodeMap=Object.fromEntries(nodes.map(n=>[n.id,n]));
+
+  kgSvg=d3.select('#kg-canvas').append('svg').attr('width',W).attr('height',H);
+  const defs=kgSvg.append('defs');
+  // glow filter
+  const f=defs.append('filter').attr('id','glow');
+  f.append('feGaussianBlur').attr('stdDeviation','3').attr('result','blur');
+  const fm=f.append('feMerge');fm.append('feMergeNode').attr('in','blur');fm.append('feMergeNode').attr('in','SourceGraphic');
+
+  kgG=kgSvg.append('g');
+  const zoom=d3.zoom().scaleExtent([.3,5]).on('zoom',e=>kgG.attr('transform',e.transform));
+  kgSvg.call(zoom);
+
+  kgLinks=kgG.append('g').selectAll('line').data(edges).join('line')
+    .attr('stroke','#e8d5b0').attr('stroke-opacity',.15)
+    .attr('stroke-width',d=>d.strength);
+
+  const linkLabels=kgG.append('g').selectAll('text').data(edges).join('text')
+    .text(d=>d.label).attr('font-size',8).attr('fill','#7A6A4A').attr('text-anchor','middle').attr('opacity',0);
+
+  const nodeG=kgG.append('g').selectAll('g').data(nodes).join('g').attr('cursor','pointer');
+
+  nodeG.append('circle')
+    .attr('r',d=>Math.max(8,Math.min(28,d.episodes.length*5)))
+    .attr('fill',d=>NC[d.type]).attr('opacity',.85).attr('filter','url(#glow)');
+
+  kgLabels=nodeG.append('text').text(d=>d.label)
+    .attr('dy',d=>Math.max(8,Math.min(28,d.episodes.length*5))+14)
+    .attr('text-anchor','middle').attr('fill','#e8d5b0').attr('font-size',10).attr('font-weight',500);
+
+  // Interactions
+  nodeG.on('mouseover',function(ev,d){
+    if(kgLocked)return;
+    showNodeInfo(d,edges,nodeMap);
+    highlightNode(d,edges,nodeG,kgLinks,linkLabels);
+  }).on('mouseout',function(){
+    if(kgLocked)return;
+    clearHighlight(nodeG,kgLinks,linkLabels);
+    document.getElementById('kg-info').className='empty';
+    document.getElementById('kg-info').innerHTML='';
+  }).on('click',function(ev,d){
+    ev.stopPropagation();
+    kgLocked=kgLocked===d.id?null:d.id;
+    if(kgLocked){showNodeInfo(d,edges,nodeMap);highlightNode(d,edges,nodeG,kgLinks,linkLabels);}
+    else{clearHighlight(nodeG,kgLinks,linkLabels);document.getElementById('kg-info').className='empty';document.getElementById('kg-info').innerHTML='';}
+  }).on('dblclick',function(ev,d){
+    ev.stopPropagation();
+    // zoom to neighborhood
+    const connected=new Set([d.id]);
+    edges.forEach(e=>{const s=typeof e.source==='object'?e.source.id:e.source;const t=typeof e.target==='object'?e.target.id:e.target;if(s===d.id)connected.add(t);if(t===d.id)connected.add(s);});
+    const cn=nodes.filter(n=>connected.has(n.id));
+    const x0=d3.min(cn,n=>n.x)-80,x1=d3.max(cn,n=>n.x)+80,y0=d3.min(cn,n=>n.y)-80,y1=d3.max(cn,n=>n.y)+80;
+    const scale=Math.min(W/(x1-x0),H/(y1-y0),.9*3);
+    const tx=W/2-(x0+x1)/2*scale,ty=H/2-(y0+y1)/2*scale;
+    kgSvg.transition().duration(750).call(zoom.transform,d3.zoomIdentity.translate(tx,ty).scale(scale));
+  });
+
+  kgSvg.on('click',()=>{kgLocked=null;clearHighlight(nodeG,kgLinks,linkLabels);document.getElementById('kg-info').className='empty';document.getElementById('kg-info').innerHTML='';});
+
+  // Drag
+  nodeG.call(d3.drag().on('start',(ev,d)=>{if(!ev.active)kgSim.alphaTarget(.3).restart();d.fx=d.x;d.fy=d.y;})
+    .on('drag',(ev,d)=>{d.fx=ev.x;d.fy=ev.y;}).on('end',(ev,d)=>{if(!ev.active)kgSim.alphaTarget(0);d.fx=null;d.fy=null;}));
+
+  kgSim=d3.forceSimulation(nodes)
+    .force('link',d3.forceLink(edges).id(d=>d.id).distance(100))
+    .force('charge',d3.forceManyBody().strength(-300))
+    .force('center',d3.forceCenter(W/2,H/2))
+    .force('collision',d3.forceCollide().radius(d=>Math.max(8,d.episodes.length*5)+10))
+    .on('tick',()=>{
+      kgLinks.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+      linkLabels.attr('x',d=>(d.source.x+d.target.x)/2).attr('y',d=>(d.source.y+d.target.y)/2);
+      nodeG.attr('transform',d=>`translate(${d.x},${d.y})`);
+    });
+
+  // Store refs for timeline toggle
+  window._kgRefs={nodes,edges,nodeG,kgLinks,linkLabels,zoom,W,H,nodeMap};
+}
+
+function highlightNode(d,edges,nodeG,kgLinks,linkLabels){
+  const connected=new Set([d.id]);
+  edges.forEach(e=>{const s=typeof e.source==='object'?e.source.id:e.source;const t=typeof e.target==='object'?e.target.id:e.target;if(s===d.id)connected.add(t);if(t===d.id)connected.add(s);});
+  nodeG.select('circle').attr('opacity',n=>connected.has(n.id)?.95:.15);
+  nodeG.select('text').attr('opacity',n=>connected.has(n.id)?1:.15);
+  kgLinks.attr('stroke-opacity',e=>{const s=typeof e.source==='object'?e.source.id:e.source;const t=typeof e.target==='object'?e.target.id:e.target;return(s===d.id||t===d.id)?.8:.05;});
+  linkLabels.attr('opacity',e=>{const s=typeof e.source==='object'?e.source.id:e.source;const t=typeof e.target==='object'?e.target.id:e.target;return(s===d.id||t===d.id)?.9:0;});
+}
+function clearHighlight(nodeG,kgLinks,linkLabels){
+  nodeG.select('circle').attr('opacity',.85);nodeG.select('text').attr('opacity',1);
+  kgLinks.attr('stroke-opacity',.15);linkLabels.attr('opacity',0);
+}
+
+function showNodeInfo(d,edges,nodeMap){
+  const info=document.getElementById('kg-info');info.className='';
+  const conns=[];
+  edges.forEach(e=>{const s=typeof e.source==='object'?e.source.id:e.source;const t=typeof e.target==='object'?e.target.id:e.target;
+    if(s===d.id)conns.push({dir:'→',label:e.label,node:nodeMap[t]||{label:t}});
+    if(t===d.id)conns.push({dir:'←',label:e.label,node:nodeMap[s]||{label:s}});
+  });
+  info.innerHTML=`<h3>${TI[d.type]||''} ${d.label}</h3>
+<div class="kg-type">${d.type}${d.era?' · Era: '+d.era:''}</div>
+<div class="kg-bio">"${d.bio}"</div>
+<div style="font-size:11px;color:#7A6A4A;margin-bottom:8px;">Episodes: ${d.episodes.join(', ')}</div>
+${conns.map(c=>`<div class="kg-conn">${c.dir} <span>${c.label}</span>: ${c.node.label}</div>`).join('')}
+<div style="margin-top:16px">${d.episodes.map(ep=>`<a class="kg-ep-btn" href="#" onclick="toggleKnowledgeGraph();document.querySelector('[data-episode=\\'${ep}\\']')?.scrollIntoView({behavior:'smooth'});return false;">► Episode ${ep}</a>`).join('')}</div>`;
+}
+
+window.kgSearch=function(q){
+  if(!window._kgRefs)return;
+  const{nodeG}=window._kgRefs;
+  if(!q){nodeG.select('circle').attr('opacity',.85);nodeG.select('text').attr('opacity',1);return;}
+  const ql=q.toLowerCase();
+  nodeG.select('circle').attr('opacity',d=>d.label.toLowerCase().includes(ql)?.95:.1);
+  nodeG.select('text').attr('opacity',d=>d.label.toLowerCase().includes(ql)?1:.1);
+};
+
+window.kgToggleView=function(){
+  if(!window._kgRefs)return;
+  const btn=document.getElementById('kg-view-toggle');
+  if(kgMode==='force'){
+    kgMode='timeline';btn.textContent='🕸 Force View';
+    kgSim.stop();
+    const{nodes,W,H}=window._kgRefs;
+    const lanes={person:0,place:1,song:2,theme:3};
+    const laneH=H/5;
+    const parseYear=s=>{if(!s)return 1950;const m=s.match(/\d{4}/);return m?+m[0]:1950;};
+    const years=nodes.filter(n=>n.era).map(n=>parseYear(n.era));
+    const minY=Math.min(1920,...years),maxY=Math.max(2010,...years);
+    const xScale=d3.scaleLinear().domain([minY,maxY]).range([100,W-100]);
+    nodes.forEach(n=>{n.fx=xScale(parseYear(n.era));n.fy=laneH*(lanes[n.type]+1);});
+    kgSim.alpha(.5).restart();
+    setTimeout(()=>kgSim.stop(),500);
+  }else{
+    kgMode='force';btn.textContent='📅 Timeline View';
+    const{nodes}=window._kgRefs;
+    nodes.forEach(n=>{n.fx=null;n.fy=null;});
+    kgSim.alpha(.5).restart();
+  }
+};
+
+window.kgEnrich=async function(){
+  const btn=event.target;btn.disabled=true;btn.textContent='✨ Enriching...';
+  try{
+    const prompt=`You are analyzing the Clarksdale Series comic knowledge graph.\nCurrent nodes: ${GRAPH_DATA.nodes.map(n=>n.label).join(', ')}\nCurrent edges: ${GRAPH_DATA.edges.map(e=>(typeof e.source==='object'?e.source.id:e.source)+' → '+(typeof e.target==='object'?e.target.id:e.target)+' ('+e.label+')').join('; ')}\n\nSuggest 10 new FACTUAL connections between these entities that would deepen the historical narrative.\nFocus on: musical genealogy, geographic connections, temporal relationships, cultural impact.\nReturn ONLY a JSON array: [{source: "id", target: "id", label: "relationship", strength: 1-3}]\nOnly suggest connections between existing node IDs.`;
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyBnBnpLEqJN50KKIFnEuBxQMIb7gjqstsg',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+    });
+    const data=await r.json();
+    const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    const match=text.match(/\[[\s\S]*\]/);
+    if(!match)throw new Error('No JSON found');
+    const newEdges=JSON.parse(match[0]);
+    const nodeIds=new Set(GRAPH_DATA.nodes.map(n=>n.id));
+    const{kgLinks:existLinks}=window._kgRefs;
+    const validEdges=newEdges.filter(e=>nodeIds.has(e.source)&&nodeIds.has(e.target));
+    validEdges.forEach(e=>{GRAPH_DATA.edges.push(e);});
+    // Rebuild links
+    const allEdges=kgSim.force('link').links();
+    validEdges.forEach(e=>allEdges.push({source:e.source,target:e.target,label:e.label,strength:e.strength}));
+    kgSim.force('link').links(allEdges);
+    // Add visual links
+    const newLines=kgG.select('g').selectAll('line.enriched').data(validEdges).join('line')
+      .attr('class','enriched').attr('stroke','#FF6B6B').attr('stroke-opacity',.8).attr('stroke-width',d=>d.strength)
+      .attr('stroke-dasharray','4,2');
+    kgSim.alpha(.5).restart();
+    kgSim.on('tick',function(){
+      kgG.selectAll('line').attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+      kgG.selectAll('g:nth-child(4) g').attr('transform',d=>`translate(${d.x},${d.y})`);
+    });
+    setTimeout(()=>newLines.transition().duration(1000).attr('stroke','#e8d5b0').attr('stroke-opacity',.15).attr('stroke-dasharray',null),5000);
+    btn.textContent='✨ +'+validEdges.length+' connections!';
+  }catch(e){btn.textContent='✨ Error: '+e.message;}
+  setTimeout(()=>{btn.disabled=false;btn.textContent='✨ AI Enrich';},6000);
+};
+})();
+</script>
+
 </body>
 </html>
