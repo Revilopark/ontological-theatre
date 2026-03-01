@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IAM Bot Classroom — Vanderbilt AI Practicum</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0f1e;--glass:rgba(255,255,255,0.06);--glass-border:rgba(255,255,255,0.1);--cyan:#00d4ff;--gold:#ffd700;--text:#e0e6f0;--text-dim:#7a8ba8;--danger:#ff4757;--success:#2ed573}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+.glass{background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--glass-border);border-radius:16px}
+.btn{padding:10px 24px;border:none;border-radius:12px;font-family:'Inter',sans-serif;font-weight:600;cursor:pointer;transition:all .2s;font-size:14px}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),#0088cc);color:#fff}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,212,255,0.3)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#cc9900);color:#000}
+input,textarea{background:rgba(255,255,255,0.08);border:1px solid var(--glass-border);border-radius:10px;padding:12px 16px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;width:100%;outline:none;transition:border-color .2s}
+input:focus,textarea:focus{border-color:var(--cyan)}
+
+/* LOGIN */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-box{width:100%;max-width:400px;padding:40px;text-align:center}
+.login-box h1{font-size:28px;font-weight:700;margin-bottom:8px;background:linear-gradient(135deg,var(--cyan),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.login-box p{color:var(--text-dim);margin-bottom:32px;font-size:14px}
+.login-box input{margin-bottom:16px}
+.login-box .btn{width:100%;padding:14px}
+.login-error{color:var(--danger);font-size:13px;margin-top:8px;min-height:20px}
+
+/* MAIN APP */
+#app{display:none;height:100vh;flex-direction:column}
+#app.active{display:flex}
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--glass-border)}
+.top-bar .logo{font-weight:700;font-size:16px;color:var(--cyan)}
+.top-bar .user-info{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--text-dim)}
+.top-bar .kirk-badge{background:linear-gradient(135deg,var(--gold),#cc9900);color:#000;padding:4px 10px;border-radius:8px;font-weight:600;font-size:11px}
+.top-bar .logout-btn{background:none;border:1px solid var(--glass-border);color:var(--text-dim);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px}
+.main-content{display:flex;flex:1;overflow:hidden}
+
+/* TABS (mobile) */
+.tab-bar{display:none;border-top:1px solid var(--glass-border);padding:8px 0}
+.tab-bar button{flex:1;background:none;border:none;color:var(--text-dim);padding:8px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif}
+.tab-bar button.active{color:var(--cyan)}
+
+/* CHAT PANEL */
+.chat-panel{flex:1;display:flex;flex-direction:column;border-right:1px solid var(--glass-border)}
+.chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:80%;padding:12px 16px;border-radius:14px;font-size:14px;line-height:1.5;word-wrap:break-word}
+.msg.bot{align-self:flex-start;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.15);border-bottom-left-radius:4px}
+.msg.user{align-self:flex-end;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.15);border-bottom-right-radius:4px}
+.msg .sender{font-size:11px;font-weight:600;margin-bottom:4px;color:var(--cyan)}
+.msg.user .sender{color:var(--gold)}
+.chat-input-area{padding:16px 20px;border-top:1px solid var(--glass-border);display:flex;gap:10px}
+.chat-input-area input{flex:1}
+.chat-input-area .btn{white-space:nowrap}
+.typing-indicator{font-size:12px;color:var(--text-dim);padding:4px 16px;font-style:italic}
+
+/* GRAPH PANEL */
+.graph-panel{width:400px;display:flex;flex-direction:column;overflow:hidden}
+.graph-header{padding:16px 20px;border-bottom:1px solid var(--glass-border);display:flex;justify-content:space-between;align-items:center}
+.graph-header h3{font-size:14px;font-weight:600}
+.graph-container{flex:1;position:relative}
+.graph-container svg{width:100%;height:100%}
+.node-legend{display:flex;flex-wrap:wrap;gap:8px;padding:12px 20px;border-top:1px solid var(--glass-border)}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-dim)}
+.legend-dot{width:8px;height:8px;border-radius:50%}
+.epoch-banner{display:none;padding:10px 20px;background:rgba(255,215,0,0.1);border-bottom:1px solid rgba(255,215,0,0.2);text-align:center;font-size:12px;color:var(--gold);font-weight:500}
+
+/* PROFESSOR VIEW */
+#prof-view{display:none;flex:1;overflow-y:auto;padding:24px}
+.prof-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:24px}
+.prof-card{padding:20px}
+.prof-card h3{font-size:14px;font-weight:600;margin-bottom:12px;color:var(--cyan)}
+.kirk-bar{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px}
+.kirk-bar .bar{flex:1;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden}
+.kirk-bar .bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--cyan),var(--gold))}
+.layer-dist{display:flex;gap:8px;margin-top:8px}
+.layer-chip{padding:4px 10px;border-radius:8px;font-size:11px;font-weight:500}
+.radar-container{width:100%;max-width:400px;margin:0 auto}
+.blind-spot{padding:12px 16px;border-radius:10px;background:rgba(255,71,87,0.1);border:1px solid rgba(255,71,87,0.2);font-size:13px;color:var(--danger);margin-top:12px}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:3px}
+
+/* Responsive */
+@media(max-width:768px){
+  .main-content{flex-direction:column}
+  .graph-panel{width:100%;height:300px;display:none}
+  .graph-panel.active{display:flex}
+  .chat-panel{display:none}
+  .chat-panel.active{display:flex}
+  .tab-bar{display:flex}
+  #prof-view .prof-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-box glass">
+    <h1>IAM Bot Classroom</h1>
+    <p>Vanderbilt AI-Accelerated Entrepreneurship Practicum</p>
+    <input type="text" id="login-user" placeholder="Username" autocomplete="off">
+    <input type="password" id="login-pass" placeholder="Password">
+    <button class="btn btn-primary" onclick="handleLogin()">Enter Classroom</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="top-bar">
+    <div class="logo">IAM Bot Classroom</div>
+    <div class="user-info">
+      <span id="bot-name-display"></span>
+      <span class="kirk-badge" id="kirk-display">Kirk 0/12</span>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+  <div class="main-content">
+    <div class="chat-panel active" id="chat-panel">
+      <div class="epoch-banner" id="epoch-banner">🧬 VOLVOX Epoch complete — nodes differentiated!</div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="typing-indicator" id="typing" style="display:none">IAM is thinking...</div>
+      <div class="chat-input-area">
+        <input type="text" id="chat-input" placeholder="Ask your IAM Bot..." onkeydown="if(event.key==='Enter')sendMessage()">
+        <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+    <div class="graph-panel" id="graph-panel">
+      <div class="graph-header">
+        <h3>Trinity Graph</h3>
+        <button class="btn" style="font-size:11px;padding:6px 12px;background:rgba(255,255,255,0.1);color:var(--text-dim)" onclick="refreshGraph()">Refresh</button>
+      </div>
+      <div class="graph-container" id="graph-container"></div>
+      <div class="node-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#888"></div>Undiff.</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4dabf7"></div>Sensor</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#51cf66"></div>Motor</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fcc419"></div>Structural</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ffd700"></div>Germline</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#495057"></div>Dormant</div>
+      </div>
+    </div>
+  </div>
+  <div class="tab-bar" id="tab-bar">
+    <button class="active" onclick="showTab('chat')">💬 Chat</button>
+    <button onclick="showTab('graph')">🔮 Graph</button>
+    <button onclick="showTab('noosphere')">🌐 Noosphere</button>
+  </div>
+</div>
+
+<!-- PROFESSOR VIEW -->
+<div id="prof-view">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+    <h2 style="font-size:20px;font-weight:700">Professor Dashboard</h2>
+    <button class="btn" style="background:rgba(255,255,255,0.1);color:var(--text-dim);font-size:12px" onclick="logout()">Logout</button>
+  </div>
+  <div class="prof-grid" id="prof-grid"></div>
+  <div class="glass" style="padding:24px;margin-bottom:16px">
+    <h3 style="font-size:14px;margin-bottom:16px;color:var(--cyan)">Collective Noosphere</h3>
+    <div id="collective-stats"></div>
+    <div id="blind-spots"></div>
+  </div>
+  <div class="glass" style="padding:24px">
+    <h3 style="font-size:14px;margin-bottom:16px;color:var(--cyan)">SAVESUCCESS Radar</h3>
+    <div class="radar-container"><canvas id="radar-canvas" width="400" height="400"></canvas></div>
+  </div>
+</div>
+
+<script>
+// ===== CONFIG =====
+const NEO4J_URL = 'https://c779e832.databases.neo4j.io/db/neo4j/query/v2';
+const NEO4J_AUTH = 'Basic bmVvNGo6WlhPdXB5SUx4RktsTG16SHNtSEk5ckNtQzhlMmRYVGZ5UkQ3U29tR2hQdw==';
+const AI_PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+
+const ARCHETYPES = ['The Contrarian','The Synthesizer','The Skeptic','The Futurist','The Historian','The Builder','The Philosopher','The Data Scientist','The Storyteller','The Networker'];
+const STUDENTS = ['ava','ben','cara','dev','elena','finn','grace','hugo','iris','jake','kira','liam','maya','noah','olive','paul','quinn','ravi','sara','troy','uma','vince','wren','xena','yusuf','zara','amir','blake','cleo','diego','elise','felix','gaia','hana','ines'];
+const BOT_NAMES = ['Aria','Bolt','Coda','Dex','Echo','Flux','Glyph','Helix','Ion','Jett','Kai','Lux','Mira','Nex','Orion','Prism','Quill','Rune','Sage','Thorn','Unity','Vex','Warp','Xion','Yara','Zen','Aether','Blaze','Cipher','Drift','Ember','Fable','Glint','Halo','Ink'];
+
+const SEED_NODES = [
+  {name:'Market Validation', layer:'knowledge', ity:'Clarity'},
+  {name:'Competitive Analysis', layer:'knowledge', ity:'Certainty'},
+  {name:'Customer Empathy', layer:'social', ity:'Ethics'},
+  {name:'Team Dynamics', layer:'social', ity:'Synchronicity'},
+  {name:'Revenue Model', layer:'generative', ity:'Enginuity'},
+  {name:'Pivot Strategy', layer:'generative', ity:'Vitality'}
+];
+
+const CELL_COLORS = {UNDIFFERENTIATED:'#888',SOMATIC_SENSOR:'#4dabf7',SOMATIC_MOTOR:'#51cf66',STRUCTURAL:'#fcc419',GERMLINE:'#ffd700',DORMANT:'#495057'};
+const LAYER_Y = {social:0.15, knowledge:0.5, generative:0.85};
+
+// ===== STATE =====
+let currentUser = null;
+let studentId = '';
+let archetype = '';
+let botName = '';
+let queryCount = 0;
+let kirkStep = 0;
+let graphNodes = [];
+let simulation = null;
+
+// ===== NEO4J =====
+async function neo4j(cypher, params = {}) {
+  try {
+    const r = await fetch(NEO4J_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','Authorization': NEO4J_AUTH},
+      body: JSON.stringify({statement: cypher, parameters: params})
+    });
+    const j = await r.json();
+    if (j.errors && j.errors.length) console.error('Neo4j error:', j.errors);
+    return j.data || j;
+  } catch(e) { console.error('Neo4j fetch error:', e); return {values:[]}; }
+}
+
+// ===== AUTH =====
+function handleLogin() {
+  const user = document.getElementById('login-user').value.trim().toLowerCase();
+  const pass = document.getElementById('login-pass').value.trim();
+  const err = document.getElementById('login-error');
+  
+  // Professor login
+  if (user === 'professor' && pass === 'vanderbilt2026') {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('prof-view').style.display = 'block';
+    loadProfessorView();
+    return;
+  }
+  
+  const idx = STUDENTS.indexOf(user);
+  if (idx === -1) { err.textContent = 'Unknown username'; return; }
+  if (pass !== user + '2026') { err.textContent = 'Invalid password'; return; }
+  
+  currentUser = user;
+  studentId = 's' + String(idx + 1).padStart(2, '0');
+  archetype = ARCHETYPES[idx % ARCHETYPES.length];
+  botName = BOT_NAMES[idx];
+  
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('active');
+  document.getElementById('bot-name-display').textContent = `IAM ${botName} · ${archetype}`;
+  
+  initStudent();
+}
+
+function logout() {
+  currentUser = null;
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('prof-view').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('chat-messages').innerHTML = '';
+  queryCount = 0;
+}
+
+// ===== STUDENT INIT =====
+async function initStudent() {
+  // Check if seed nodes exist
+  const check = await neo4j(`MATCH (n:TrinityNode {student_id: $sid}) RETURN count(n) as c`, {sid: studentId});
+  const count = (check.values && check.values[0]) ? check.values[0][0] : 0;
+  
+  if (count < 6) {
+    await seedStudentNodes();
+  }
+  
+  await loadGraphNodes();
+  addBotMessage(`Hello, I'm IAM ${botName}. I'm your ${archetype} thinking partner for this semester.\n\nI'll help you explore entrepreneurial concepts through three lenses: Social, Knowledge, and Generative. Every 5 conversations, your Trinity Graph will evolve through a VOLVOX epoch.\n\nWhat's on your mind?`);
+  renderGraph();
+}
+
+async function seedStudentNodes() {
+  for (const seed of SEED_NODES) {
+    const cid = studentId + '_seed_' + seed.name.toLowerCase().replace(/\s+/g, '_');
+    await neo4j(`CREATE (n:TrinityNode {
+      student_id: $sid, concept_id: $cid, name: $name, layer: $layer,
+      cell_type: 'UNDIFFERENTIATED', role_stability: 0.0, activation_count: 0,
+      propagation_count: 0, dormancy_cycles: 0, generation: 0, lifecycle: 'embryonic',
+      kirk_step: 0, ity_vectors: [$ity], pathy_vectors: [], source: 'seed'
+    })`, {sid: studentId, cid: cid, name: seed.name, layer: seed.layer, ity: seed.ity});
+  }
+}
+
+async function loadGraphNodes() {
+  const r = await neo4j(`MATCH (n:TrinityNode {student_id: $sid}) RETURN n.concept_id, n.name, n.layer, n.cell_type, n.activation_count, n.propagation_count, n.dormancy_cycles, n.role_stability, n.kirk_step, n.generation ORDER BY n.activation_count DESC`, {sid: studentId});
+  graphNodes = (r.values || []).map(v => ({
+    concept_id: v[0], name: v[1], layer: v[2], cell_type: v[3] || 'UNDIFFERENTIATED',
+    activation_count: v[4] || 0, propagation_count: v[5] || 0, dormancy_cycles: v[6] || 0,
+    role_stability: v[7] || 0, kirk_step: v[8] || 0, generation: v[9] || 0
+  }));
+  if (graphNodes.length > 0) {
+    kirkStep = Math.max(...graphNodes.map(n => n.kirk_step || 0));
+    document.getElementById('kirk-display').textContent = `Kirk ${kirkStep}/12`;
+  }
+}
+
+// ===== CHAT =====
+function addBotMessage(text) {
+  const el = document.createElement('div');
+  el.className = 'msg bot';
+  el.innerHTML = `<div class="sender">IAM ${botName}</div>${escapeHtml(text)}`;
+  document.getElementById('chat-messages').appendChild(el);
+  scrollChat();
+}
+
+function addUserMessage(text) {
+  const el = document.createElement('div');
+  el.className = 'msg user';
+  el.innerHTML = `<div class="sender">${currentUser}</div>${escapeHtml(text)}`;
+  document.getElementById('chat-messages').appendChild(el);
+  scrollChat();
+}
+
+function scrollChat() {
+  const c = document.getElementById('chat-messages');
+  c.scrollTop = c.scrollHeight;
+}
+
+function escapeHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  addUserMessage(text);
+  
+  document.getElementById('typing').style.display = 'block';
+  
+  // Check for noosphere query
+  const isNoosphere = /what.*class.*learn|noosphere|collective/i.test(text);
+  
+  try {
+    // Build context from top nodes
+    const topNodes = graphNodes.slice(0, 10).map(n => `${n.name} (${n.layer}, ${n.cell_type}, activations: ${n.activation_count})`).join(', ');
+    
+    let systemPrompt;
+    if (isNoosphere) {
+      // Fetch collective nodes
+      const collective = await neo4j(`MATCH (n:CollectiveNode) RETURN n.name, n.layer, n.activation_count ORDER BY n.activation_count DESC LIMIT 10`);
+      const collectiveStr = (collective.values || []).map(v => `${v[0]} (${v[1]})`).join(', ');
+      systemPrompt = `You are IAM ${botName}, a collective intelligence synthesizer. Summarize what the class is learning based on these shared collective knowledge nodes: ${collectiveStr || 'No collective nodes yet — the class is just getting started!'}. Be encouraging and insightful.`;
+    } else {
+      systemPrompt = `You are IAM ${botName}, ${archetype} thinking partner for an MBA entrepreneurship practicum at Vanderbilt. Your personality is ${archetype} — embody this fully in how you challenge and support the student.
+
+Current Trinity Graph state: ${topNodes || 'Just starting with seed nodes.'}
+
+Instructions:
+- Refract the student's query across three lenses: Social (empathy, teams, customers), Knowledge (analysis, validation, data), and Generative (models, strategies, pivots)
+- Challenge assumptions consistent with your ${archetype} personality
+- Reference their existing graph nodes when relevant
+- Keep responses concise (2-3 paragraphs)
+- End with a provocative question to deepen thinking`;
+    }
+    
+    const response = await fetch(AI_PROXY, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        contents: [{parts: [{text: systemPrompt + '\n\nStudent says: ' + text}]}]
+      })
+    });
+    
+    const data = await response.json();
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'I need a moment to reflect on that. Could you rephrase?';
+    
+    document.getElementById('typing').style.display = 'none';
+    addBotMessage(reply);
+    
+    // Update node activations based on keywords
+    await updateActivations(text + ' ' + reply);
+    
+    queryCount++;
+    if (queryCount % 5 === 0) {
+      await runVolvoxEpoch();
+    }
+    
+  } catch(e) {
+    console.error('AI error:', e);
+    document.getElementById('typing').style.display = 'none';
+    addBotMessage('My neural pathways are recalibrating. Please try again in a moment.');
+  }
+}
+
+async function updateActivations(text) {
+  const lower = text.toLowerCase();
+  for (const node of graphNodes) {
+    const keywords = node.name.toLowerCase().split(/\s+/);
+    if (keywords.some(kw => lower.includes(kw))) {
+      node.activation_count++;
+      node.dormancy_cycles = 0;
+      await neo4j(`MATCH (n:TrinityNode {concept_id: $cid}) SET n.activation_count = $ac, n.dormancy_cycles = 0`, 
+        {cid: node.concept_id, ac: node.activation_count});
+    } else {
+      node.dormancy_cycles++;
+      await neo4j(`MATCH (n:TrinityNode {concept_id: $cid}) SET n.dormancy_cycles = $dc`, 
+        {cid: node.concept_id, dc: node.dormancy_cycles});
+    }
+  }
+  
+  // Spawn new node if text mentions novel concepts
+  const novelConcepts = extractNovelConcepts(lower);
+  if (novelConcepts) {
+    await spawnNode(novelConcepts);
+  }
+  
+  renderGraph();
+}
+
+function extractNovelConcepts(text) {
+  const triggers = {
+    'pricing': {name: 'Pricing Strategy', layer: 'generative', ity: 'Enginuity'},
+    'branding': {name: 'Brand Identity', layer: 'social', ity: 'Artiquity'},
+    'scaling': {name: 'Scale Architecture', layer: 'generative', ity: 'Ubiquity'},
+    'user research': {name: 'User Research', layer: 'knowledge', ity: 'Clarity'},
+    'mvp': {name: 'MVP Design', layer: 'generative', ity: 'Vitality'},
+    'fundraising': {name: 'Fundraising Strategy', layer: 'social', ity: 'Serendipity'},
+    'metrics': {name: 'Key Metrics', layer: 'knowledge', ity: 'Certainty'},
+    'culture': {name: 'Company Culture', layer: 'social', ity: 'Ethics'},
+    'innovation': {name: 'Innovation Pipeline', layer: 'generative', ity: 'Sagacity'},
+    'partnership': {name: 'Strategic Partnerships', layer: 'social', ity: 'Synchronicity'}
+  };
+  for (const [trigger, data] of Object.entries(triggers)) {
+    if (text.includes(trigger)) {
+      const existing = graphNodes.find(n => n.name === data.name);
+      if (!existing) return data;
+    }
+  }
+  return null;
+}
+
+async function spawnNode(data) {
+  const cid = studentId + '_gen_' + data.name.toLowerCase().replace(/\s+/g, '_');
+  await neo4j(`CREATE (n:TrinityNode {
+    student_id: $sid, concept_id: $cid, name: $name, layer: $layer,
+    cell_type: 'UNDIFFERENTIATED', role_stability: 0.0, activation_count: 1,
+    propagation_count: 0, dormancy_cycles: 0, generation: 1, lifecycle: 'embryonic',
+    kirk_step: 0, ity_vectors: [$ity], pathy_vectors: [], source: 'generated'
+  })`, {sid: studentId, cid: cid, name: data.name, layer: data.layer, ity: data.ity});
+  
+  // Find parent node to increment propagation
+  const parentLayer = data.layer;
+  const parent = graphNodes.find(n => n.layer === parentLayer);
+  if (parent) {
+    parent.propagation_count++;
+    await neo4j(`MATCH (n:TrinityNode {concept_id: $cid}) SET n.propagation_count = $pc`,
+      {cid: parent.concept_id, pc: parent.propagation_count});
+  }
+  
+  await loadGraphNodes();
+}
+
+// ===== VOLVOX EPOCH =====
+async function runVolvoxEpoch() {
+  const banner = document.getElementById('epoch-banner');
+  banner.style.display = 'block';
+  setTimeout(() => banner.style.display = 'none', 5000);
+  
+  for (const node of graphNodes) {
+    let newType = 'UNDIFFERENTIATED';
+    if (node.dormancy_cycles >= 10) newType = 'DORMANT';
+    else if (node.propagation_count >= 3) newType = 'GERMLINE';
+    else if (node.activation_count >= 8) newType = 'STRUCTURAL';
+    else if (node.activation_count >= 4) newType = 'SOMATIC_SENSOR';
+    else if (node.activation_count >= 2 && node.layer === 'generative') newType = 'SOMATIC_MOTOR';
+    
+    node.cell_type = newType;
+    const rs = Math.min(1.0, node.activation_count / 15);
+    node.role_stability = rs;
+    
+    await neo4j(`MATCH (n:TrinityNode {concept_id: $cid}) SET n.cell_type = $ct, n.role_stability = $rs`,
+      {cid: node.concept_id, ct: newType, rs: rs});
+    
+    // Contribute GERMLINE nodes to collective
+    if (newType === 'GERMLINE' && rs >= 0.8) {
+      await contributeToCollective(node);
+    }
+  }
+  
+  // Update kirk step
+  const totalActivations = graphNodes.reduce((s, n) => s + n.activation_count, 0);
+  const uniqueTypes = new Set(graphNodes.map(n => n.cell_type)).size;
+  const newKirk = Math.min(12, Math.floor(totalActivations / 8) + Math.floor(uniqueTypes / 2));
+  kirkStep = newKirk;
+  
+  await neo4j(`MATCH (n:TrinityNode {student_id: $sid}) SET n.kirk_step = $ks`, {sid: studentId, ks: newKirk});
+  document.getElementById('kirk-display').textContent = `Kirk ${kirkStep}/12`;
+  
+  renderGraph();
+  addBotMessage(`🧬 VOLVOX Epoch complete! Your Trinity Graph has evolved.\n\nKirk Step: ${kirkStep}/12\nDifferentiated nodes: ${graphNodes.filter(n => n.cell_type !== 'UNDIFFERENTIATED').length}/${graphNodes.length}\n\nKeep exploring to evolve your graph further.`);
+}
+
+async function contributeToCollective(node) {
+  const noise = () => (Math.random() - 0.5) * 2; // Laplace approximation with epsilon=1.0
+  await neo4j(`MERGE (n:CollectiveNode {name: $name})
+    ON CREATE SET n.layer = $layer, n.activation_count = $ac, n.contributions = 1
+    ON MATCH SET n.activation_count = n.activation_count + $ac, n.contributions = n.contributions + 1`,
+    {name: node.name, layer: node.layer, ac: Math.max(0, Math.round(node.activation_count + noise()))});
+}
+
+// ===== D3 GRAPH =====
+function renderGraph() {
+  const container = document.getElementById('graph-container');
+  container.innerHTML = '';
+  if (graphNodes.length === 0) return;
+  
+  const width = container.clientWidth || 380;
+  const height = container.clientHeight || 400;
+  
+  const svg = d3.select(container).append('svg').attr('width', width).attr('height', height);
+  
+  const nodes = graphNodes.map((n, i) => ({
+    ...n, id: n.concept_id,
+    x: width/2 + (Math.random()-0.5)*100,
+    y: height * (LAYER_Y[n.layer] || 0.5)
+  }));
+  
+  // Create links between same-layer nodes
+  const links = [];
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i+1; j < nodes.length; j++) {
+      if (nodes[i].layer === nodes[j].layer || (nodes[i].activation_count > 3 && nodes[j].activation_count > 3)) {
+        links.push({source: i, target: j});
+      }
+    }
+  }
+  
+  // Layer labels
+  svg.selectAll('.layer-label').data(Object.entries(LAYER_Y)).enter()
+    .append('text').attr('x', 12).attr('y', d => d[1] * height)
+    .attr('fill', 'rgba(255,255,255,0.2)').attr('font-size', '10px')
+    .attr('font-family', 'Inter').text(d => d[0].toUpperCase());
+  
+  // Layer separators
+  svg.selectAll('.layer-line').data([0.33, 0.66]).enter()
+    .append('line').attr('x1',0).attr('x2',width)
+    .attr('y1', d => d*height).attr('y2', d => d*height)
+    .attr('stroke','rgba(255,255,255,0.05)');
+  
+  const link = svg.selectAll('.link').data(links).enter()
+    .append('line').attr('stroke','rgba(255,255,255,0.08)').attr('stroke-width',1);
+  
+  const node = svg.selectAll('.node').data(nodes).enter().append('g');
+  
+  node.append('circle')
+    .attr('r', d => 6 + Math.min(d.activation_count, 10))
+    .attr('fill', d => CELL_COLORS[d.cell_type] || '#888')
+    .attr('opacity', 0.8)
+    .attr('stroke', d => d.cell_type === 'GERMLINE' ? '#ffd700' : 'transparent')
+    .attr('stroke-width', 2);
+  
+  node.append('text')
+    .attr('dy', d => -(10 + Math.min(d.activation_count, 10)))
+    .attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.6)')
+    .attr('font-size','9px').attr('font-family','Inter')
+    .text(d => d.name.length > 18 ? d.name.slice(0,16)+'…' : d.name);
+  
+  simulation = d3.forceSimulation(nodes)
+    .force('charge', d3.forceManyBody().strength(-60))
+    .force('x', d3.forceX(width/2).strength(0.05))
+    .force('y', d3.forceY(d => height * (LAYER_Y[d.layer] || 0.5)).strength(0.3))
+    .force('link', d3.forceLink(links).distance(60))
+    .force('collide', d3.forceCollide(20))
+    .on('tick', () => {
+      link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+      node.attr('transform', d => `translate(${d.x},${d.y})`);
+    });
+}
+
+function refreshGraph() {
+  loadGraphNodes().then(() => renderGraph());
+}
+
+// ===== TABS (mobile) =====
+function showTab(tab) {
+  document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('chat-panel').classList.toggle('active', tab === 'chat');
+  document.getElementById('graph-panel').classList.toggle('active', tab === 'graph');
+  if (tab === 'graph') renderGraph();
+  if (tab === 'noosphere') {
+    document.getElementById('chat-input').value = 'What is the class learning?';
+    document.getElementById('chat-panel').classList.add('active');
+    document.getElementById('graph-panel').classList.remove('active');
+    sendMessage();
+  }
+}
+
+// ===== PROFESSOR VIEW =====
+async function loadProfessorView() {
+  const grid = document.getElementById('prof-grid');
+  grid.innerHTML = '<div style="color:var(--text-dim);padding:20px">Loading student data...</div>';
+  
+  try {
+    // Get kirk steps per student
+    const r = await neo4j(`MATCH (n:TrinityNode) WHERE n.student_id IS NOT NULL
+      WITH n.student_id as sid, max(n.kirk_step) as ks, count(n) as nodeCount,
+      collect(DISTINCT n.cell_type) as types
+      RETURN sid, ks, nodeCount, types ORDER BY sid`);
+    
+    let html = '';
+    const rows = r.values || [];
+    rows.forEach((row, i) => {
+      const [sid, ks, nc, types] = row;
+      const kirkPct = ((ks || 0) / 12 * 100).toFixed(0);
+      html += `<div class="glass prof-card">
+        <h3>Bot #${i+1} (${sid})</h3>
+        <div class="kirk-bar"><span>Kirk ${ks||0}/12</span><div class="bar"><div class="bar-fill" style="width:${kirkPct}%"></div></div></div>
+        <div style="font-size:12px;color:var(--text-dim)">${nc} nodes · Types: ${(types||[]).join(', ')}</div>
+      </div>`;
+    });
+    
+    grid.innerHTML = html || '<div style="color:var(--text-dim);padding:20px">No student data yet.</div>';
+    
+    // Collective stats
+    const collective = await neo4j(`MATCH (n:CollectiveNode) RETURN n.layer as layer, count(n) as c, sum(n.contributions) as contrib ORDER BY layer`);
+    const cRows = collective.values || [];
+    let statsHtml = '<div style="display:flex;gap:12px;flex-wrap:wrap">';
+    let layerCounts = {social:0, knowledge:0, generative:0};
+    cRows.forEach(r => {
+      layerCounts[r[0]] = r[1];
+      statsHtml += `<div class="layer-chip glass" style="border-color:var(--cyan)">${r[0]}: ${r[1]} nodes (${r[2]} contributions)</div>`;
+    });
+    statsHtml += '</div>';
+    document.getElementById('collective-stats').innerHTML = statsHtml || '<div style="color:var(--text-dim)">No collective nodes yet.</div>';
+    
+    // Blind spots
+    const total = Object.values(layerCounts).reduce((a,b)=>a+b, 0);
+    if (total > 0) {
+      const weakest = Object.entries(layerCounts).sort((a,b)=>a[1]-b[1])[0];
+      if (weakest[1] < total/4) {
+        document.getElementById('blind-spots').innerHTML = `<div class="blind-spot">⚠️ Blind spot detected: <strong>${weakest[0].toUpperCase()}</strong> layer is underrepresented (${weakest[1]}/${total} nodes)</div>`;
+      }
+    }
+    
+    // Radar chart
+    drawRadar();
+    
+  } catch(e) {
+    console.error('Prof view error:', e);
+    grid.innerHTML = '<div style="color:var(--danger);padding:20px">Error loading dashboard.</div>';
+  }
+}
+
+function drawRadar() {
+  const canvas = document.getElementById('radar-canvas');
+  const ctx = canvas.getContext('2d');
+  const labels = ['Serendipity','Artiquity','Vitality','Enginuity','Synchronicity','Ubiquity','Clarity','Certainty','Ethics','Sagacity'];
+  const values = labels.map(() => 0.3 + Math.random() * 0.5); // Placeholder — would aggregate from ity_vectors
+  const cx = 200, cy = 200, r = 150;
+  const n = labels.length;
+  
+  ctx.clearRect(0, 0, 400, 400);
+  
+  // Grid
+  for (let level = 1; level <= 4; level++) {
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const angle = (Math.PI * 2 * i / n) - Math.PI/2;
+      const lr = r * level / 4;
+      const method = i === 0 ? 'moveTo' : 'lineTo';
+      ctx[method](cx + Math.cos(angle) * lr, cy + Math.sin(angle) * lr);
+    }
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.stroke();
+  }
+  
+  // Data
+  ctx.beginPath();
+  values.forEach((v, i) => {
+    const angle = (Math.PI * 2 * i / n) - Math.PI/2;
+    const method = i === 0 ? 'moveTo' : 'lineTo';
+    ctx[method](cx + Math.cos(angle) * r * v, cy + Math.sin(angle) * r * v);
+  });
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(0,212,255,0.15)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,212,255,0.6)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  
+  // Labels
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = '10px Inter';
+  ctx.textAlign = 'center';
+  labels.forEach((label, i) => {
+    const angle = (Math.PI * 2 * i / n) - Math.PI/2;
+    const lx = cx + Math.cos(angle) * (r + 20);
+    const ly = cy + Math.sin(angle) * (r + 20);
+    ctx.fillText(label, lx, ly);
+  });
+}
+
+// Enter key on login
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') handleLogin(); });
+document.getElementById('login-user').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-pass').focus(); });
+</script>
+</body>
+</html>
