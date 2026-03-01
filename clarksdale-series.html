@@ -1178,7 +1178,7 @@ function renderCenter(type, index) {
       ep.panels.forEach((p, pi) => {
         const imgHtml = (p.img || p.imageUrl)
           ? `<img src="${p.img || p.imageUrl}" alt="${ep.title}" loading="lazy" style="width:100%;display:block;">`
-          : `<div style="width:100%;aspect-ratio:3/4;background:linear-gradient(135deg,#1a1008,#2a1a08);display:flex;align-items:center;justify-content:center;color:rgba(212,175,55,0.4);font-size:12px;text-align:center;padding:16px;cursor:pointer;" onclick="if(selectedItem)selectItem(selectedItem.type,selectedItem.index)">✦ Generate Panel</div>`;
+          : `<div style="width:100%;aspect-ratio:3/4;background:linear-gradient(135deg,#1a1008,#2a1a08);display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(212,175,55,0.5);font-size:13px;text-align:center;padding:16px;cursor:pointer;border:1px dashed rgba(212,175,55,0.2);transition:all .2s;" onmouseover="this.style.borderColor='rgba(212,175,55,0.5)';this.style.color='rgba(212,175,55,0.85)'" onmouseout="this.style.borderColor='rgba(212,175,55,0.2)';this.style.color='rgba(212,175,55,0.5)'" onclick="generatePanelAt(${index}, ${pi})"><div style="font-size:22px;margin-bottom:8px;">✦</div><div>Click to Generate</div><div style="font-size:10px;margin-top:4px;opacity:.7">${p.caption ? p.caption.slice(0,40)+'…' : 'Panel '+(pi+1)}</div></div>`;
         html += `<div class="phone-comic-panel">${imgHtml}</div>`;
         if (p.caption) html += `<div class="phone-caption">${p.caption}</div>`;
       });
@@ -1330,8 +1330,20 @@ function renderEditor(type, index) {
       ${actHtml}
       ${sparkHtml ? `<div class="ed-divider"></div><div class="ed-group"><div class="ed-label">STORY SPARKS</div>${sparkHtml}</div>` : ''}
       <div class="ed-divider"></div>
-      <button class="ed-btn gold" onclick="edGeneratePanel()">✦ AI Generate Panel</button>
-      <button class="ed-btn" onclick="edRegenScene()">↻ Regenerate Scene</button>
+      <div class="ed-label">VISUAL STYLE</div>
+      <select id="style-override" style="width:100%;padding:8px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(212,175,55,0.25);border-radius:6px;color:var(--text);font-size:12px;margin-bottom:10px;cursor:pointer;" onchange="syncStyleLabel()">
+        <option value="auto">Auto-detect from era</option>
+        <option value="harlem_renaissance">Harlem Renaissance / WPA (1920s–1940s)</option>
+        <option value="mid_century">Mid-Century / EC Comics (1940s–1960s)</option>
+        <option value="psychedelic">Psychedelic / Civil Rights (1960s–1970s)</option>
+        <option value="hiphop_era">Hip-Hop Era / Afrofuturism (1980s–2000s)</option>
+        <option value="contemporary">Contemporary Graphic Novel</option>
+        <option value="deep_time">Pre-Contact Indigenous Art</option>
+        <option value="colonial">Colonial Era Illustration</option>
+      </select>
+      <button class="ed-btn gold" onclick="edGeneratePanel()" style="font-size:13px;padding:10px 16px;">✦ Generate Panel</button>
+      <button class="ed-btn gold" onclick="generateAllEmpty(EPISODES[selectedItem.index])" style="background:rgba(212,175,55,0.15);font-size:13px;padding:10px 16px;">⚡ Generate All Empty</button>
+      <button class="ed-btn" onclick="edRegenScene()">↻ Regenerate Last Scene</button>
       <button class="ed-btn" onclick="ensureMinPanels(EPISODES[selectedItem.index])" style="border-color:var(--gold-dim);color:var(--gold-dim);" title="Auto-generate panels until minimum 6">⬡ Pad to 6 Panels</button>
       <div class="ed-divider"></div>
       <div class="ed-label">HISTORICAL ACCURACY AGENT</div>
@@ -1768,11 +1780,82 @@ async function falPollResult(requestId, model, maxWait) {
   return null;
 }
 
+// ── STYLE SELECTOR HELPERS ──
+function syncStyleLabel() { /* selector handles itself */ }
+
+function getEffectiveStyle(ep) {
+  const sel = document.getElementById('style-override');
+  const val = sel ? sel.value : 'auto';
+  if (val && val !== 'auto' && ERA_STYLES[val]) return ERA_STYLES[val];
+  return getEraStyle(ep.era);
+}
+
+// ── CLICK-TO-GENERATE (single panel at index) ──
+window.generatePanelAt = async function(epIndex, panelIndex) {
+  const ep = EPISODES[epIndex];
+  if (!ep) return;
+  const panel = ep.panels[panelIndex];
+  if (!panel) return;
+  if (panel.img || panel.imageUrl) { csToast('Panel already has an image. Use Regenerate.'); return; }
+  const eraStyle = getEffectiveStyle(ep);
+  const caption = panel.caption || ep.narration;
+  csToast('✦ Generating panel ' + (panelIndex+1) + '…');
+  const geminiPrompt = `Write a cinematic image generation prompt for a Mississippi Delta blues comic panel.
+
+EPISODE: "${ep.title}" (${ep.era})
+CHARACTERS: ${(ep.characters||[]).join(', ')}
+THIS PANEL: "${caption}"
+NARRATION CONTEXT: ${ep.narration}
+REQUIRED VISUAL STYLE: ${eraStyle.label}
+STYLE DESCRIPTION: ${eraStyle.style}
+HISTORICAL REFERENCES: ${eraStyle.refs}
+COLOR PALETTE: ${eraStyle.palette}
+
+RULES:
+- Black American figures MUST be depicted explicitly as Black American with dignity and power
+- No stereotypes — these are real historical people
+- Era-accurate clothing, props, architecture
+- No anachronistic elements (no electric guitars before 1948, no modern clothing)
+- Cinematic composition, dramatic lighting
+- Focus on THIS panel's specific moment: "${caption}"
+
+Output ONLY the image generation prompt (max 150 words), no explanation.`;
+  const prompt = await gemini(geminiPrompt, 'You are a visual storytelling director specializing in Delta blues imagery and Black American history.');
+  if (!prompt) { csToast('⚠ Prompt generation failed', '#c04040'); return; }
+  const url = await falGenerate(prompt, '3:4', eraStyle);
+  if (url) {
+    ep.panels[panelIndex].img = url;
+    saveEpisodeState(ep);
+    // If this is the selected episode, refresh the view
+    if (selectedItem && selectedItem.type === 'episode' && selectedItem.index === epIndex) {
+      selectItem('episode', epIndex);
+    }
+    csToast('✦ Panel ' + (panelIndex+1) + ' generated!');
+  } else { csToast('⚠ Image generation failed', '#c04040'); }
+};
+
+// ── GENERATE ALL EMPTY PANELS ──
+window.generateAllEmpty = async function(ep) {
+  if (!ep) return;
+  const epIndex = EPISODES.indexOf(ep);
+  const empty = ep.panels.map((p,i) => ({p,i})).filter(({p}) => !p.img && !p.imageUrl);
+  if (!empty.length) { csToast('All panels already have images!'); return; }
+  csToast(`⚡ Generating ${empty.length} empty panel${empty.length>1?'s':''}…`);
+  let done = 0;
+  for (const {p, i} of empty) {
+    csToast(`⚡ Panel ${i+1}/${ep.panels.length} (${done+1}/${empty.length})…`);
+    await window.generatePanelAt(epIndex, i);
+    done++;
+    await new Promise(r => setTimeout(r, 800)); // brief pause between calls
+  }
+  csToast(`✦ Done — ${done} panel${done>1?'s':''} generated!`);
+};
+
 // ── EDITOR BUTTON ACTIONS ──
 window.edGeneratePanel = async function() {
   if (!selectedItem || selectedItem.type !== 'episode') return;
   const ep = EPISODES[selectedItem.index];
-  const eraStyle = getEraStyle(ep.era);
+  const eraStyle = getEffectiveStyle(ep);
   csToast('✦ Generating panel prompt…');
   const geminiPrompt = `Write a cinematic image generation prompt for a Mississippi Delta blues comic panel.
 
@@ -1817,7 +1900,7 @@ window.edRegenScene = async function() {
   if (!selectedItem || selectedItem.type !== 'episode') return;
   const ep = EPISODES[selectedItem.index];
   if (!ep.panels.length) { csToast('No panels to regenerate'); return; }
-  const eraStyle = getEraStyle(ep.era);
+  const eraStyle = getEffectiveStyle(ep);
   csToast('↺ Regenerating last panel…');
   try {
     const lastPanel = ep.panels[ep.panels.length - 1];
