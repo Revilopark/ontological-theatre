@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✦ IAM Bot Admin — Inkwell Awareness Model</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#080c12;--surface:#0e1520;--border:#1c2a3a;--accent:#4361EE;--gold:#D4AF37;--text:#e2eaf5;--dim:#6b7a99;--success:#22c55e;--danger:#ef4444;--warning:#f59e0b}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6}
+a{color:var(--accent);text-decoration:none}
+input,select,button{font-family:inherit}
+
+/* Header */
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:20px 32px;display:flex;justify-content:space-between;align-items:center}
+.header-left h1{font-size:22px;font-weight:700;letter-spacing:1px}
+.header-left h1 span{color:var(--accent)}
+.header-left p{color:var(--dim);font-size:13px;margin-top:2px}
+.header-right{text-align:right;font-size:13px}
+.header-right .status{display:flex;align-items:center;gap:6px;justify-content:flex-end;color:var(--success)}
+.header-right .status::before{content:'';width:8px;height:8px;background:var(--success);border-radius:50%;display:inline-block;animation:pulse 2s infinite}
+.header-right .bot-count{color:var(--dim);margin-top:2px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Main */
+.main{max-width:1100px;margin:0 auto;padding:24px 20px}
+
+/* Analytics Cards */
+.analytics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px}
+.stat-card .label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:4px}
+.stat-card .value{font-size:28px;font-weight:700;color:var(--accent)}
+.stat-card .value.gold{color:var(--gold)}
+
+/* Panels */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:24px}
+.panel-title{font-size:15px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.panel-title .icon{color:var(--accent)}
+.panel-subtitle{color:var(--dim);font-size:12px;margin-bottom:16px}
+.divider{height:1px;background:var(--border);margin:12px 0}
+
+/* Knowledge rows */
+.knowledge-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.knowledge-row:last-child{border-bottom:none}
+.knowledge-row .k-name{font-weight:600;font-size:14px;min-width:140px}
+.knowledge-row .k-detail{color:var(--dim);font-size:13px;flex:1}
+.knowledge-row .k-detail span{color:var(--text)}
+.sync-btn{background:transparent;border:1px solid var(--border);color:var(--accent);padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;transition:.2s}
+.sync-btn:hover{background:var(--accent);color:#fff}
+
+/* Buttons */
+.btn{padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:.2s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#3451d4;transform:translateY(-1px)}
+.btn-sm{padding:6px 14px;font-size:12px;border-radius:6px}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:transparent;border:1px solid var(--danger);color:var(--danger)}
+.btn-danger:hover{background:var(--danger);color:#fff}
+.btn-warning{background:transparent;border:1px solid var(--warning);color:var(--warning)}
+.btn-warning:hover{background:var(--warning);color:#000}
+.btn-block{width:100%;justify-content:center;margin-top:16px}
+
+/* Form */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group.full{grid-column:1/-1}
+.form-group label{font-size:12px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+.form-group input,.form-group select{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:14px;outline:none;transition:.2s}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(67,97,238,.15)}
+.form-group input::placeholder{color:var(--dim)}
+.form-group .hint{font-size:11px;color:var(--dim)}
+.form-group select{cursor:pointer}
+.form-group select option{background:var(--surface);color:var(--text)}
+
+/* Bot Cards */
+.section-title{font-size:15px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.section-title .icon{color:var(--accent)}
+.bot-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:14px;display:flex;gap:16px;align-items:flex-start;transition:.2s}
+.bot-card:hover{border-color:var(--accent);box-shadow:0 0 20px rgba(67,97,238,.08)}
+.bot-card.suspended{opacity:.55}
+.bot-avatar{width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#6366f1);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0;color:#fff}
+.bot-info{flex:1;min-width:0}
+.bot-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;flex-wrap:wrap;gap:8px}
+.bot-name{font-size:16px;font-weight:700}
+.bot-status{font-size:12px;display:flex;align-items:center;gap:5px}
+.bot-status.active{color:var(--success)}
+.bot-status.suspended{color:var(--warning)}
+.bot-meta{font-size:13px;color:var(--dim);line-height:1.8}
+.bot-meta a{color:var(--accent);font-size:12px}
+.bot-meta .badge{display:inline-block;background:rgba(67,97,238,.15);color:var(--accent);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.bot-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+
+/* Log */
+.log-entry{padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;display:flex;gap:12px}
+.log-entry:last-child{border-bottom:none}
+.log-time{color:var(--dim);min-width:130px;font-family:monospace;font-size:12px}
+.log-msg{color:var(--text)}
+.log-msg span{color:var(--accent)}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.active{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;max-width:560px;width:90%;max-height:85vh;overflow-y:auto}
+.modal h2{font-size:16px;font-weight:700;letter-spacing:1px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.modal h2 .icon{color:var(--accent)}
+.modal .close-btn{position:absolute;top:16px;right:20px;background:none;border:none;color:var(--dim);font-size:20px;cursor:pointer}
+
+/* Skill checkboxes */
+.skill-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.skill-item:last-child{border-bottom:none}
+.skill-item input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px;margin-top:2px;flex-shrink:0;cursor:pointer}
+.skill-item .skill-name{font-weight:600;font-size:14px}
+.skill-item .skill-desc{font-size:12px;color:var(--dim)}
+
+/* Progress bar */
+.progress-bar{height:4px;background:var(--border);border-radius:4px;overflow:hidden;margin:12px 0}
+.progress-bar .fill{height:100%;background:var(--accent);border-radius:4px;transition:width .5s ease}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:14px 20px;font-size:14px;z-index:200;opacity:0;transform:translateY(20px);transition:.3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* Responsive */
+@media(max-width:768px){
+  .analytics{grid-template-columns:repeat(2,1fr)}
+  .form-grid{grid-template-columns:1fr}
+  .bot-card{flex-direction:column}
+  .header{flex-direction:column;gap:12px;text-align:center}
+  .header-right{text-align:center}
+}
+@media(max-width:480px){
+  .analytics{grid-template-columns:1fr}
+  .main{padding:16px 12px}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1><span>✦ IAM</span> BOT ADMIN</h1>
+    <p>Inkwell Awareness Model — Consumer Intelligence Platform</p>
+  </div>
+  <div class="header-right">
+    <div class="status">System: Live</div>
+    <div class="bot-count" id="headerBotCount">2 active bots</div>
+  </div>
+</div>
+
+<div class="main">
+  <!-- Analytics -->
+  <div class="analytics" id="analytics">
+    <div class="stat-card"><div class="label">Total Bots</div><div class="value" id="statBots">2</div></div>
+    <div class="stat-card"><div class="label">Active Today</div><div class="value" id="statActive">2</div></div>
+    <div class="stat-card"><div class="label">Total Messages</div><div class="value" id="statMessages">989</div></div>
+    <div class="stat-card"><div class="label">Knowledge Version</div><div class="value gold" id="statVersion">v4.2</div></div>
+  </div>
+
+  <!-- Master Knowledge -->
+  <div class="panel">
+    <div class="panel-title"><span class="icon">✦</span> MASTER KNOWLEDGE</div>
+    <div class="panel-subtitle">Central knowledge layer — pushed to all bot instances</div>
+    <div class="divider"></div>
+    <div class="knowledge-row">
+      <div class="k-name">Trinity Graph</div>
+      <div class="k-detail"><span>511</span> nodes · <span>2,269</span> edges · <span>8</span> bridges</div>
+      <button class="sync-btn" onclick="syncItem('Trinity Graph')">Sync</button>
+    </div>
+    <div class="knowledge-row">
+      <div class="k-name">Omega Protocol</div>
+      <div class="k-detail">v<span>2.0</span> · <span>10</span> runes · <span>7</span> phases</div>
+      <button class="sync-btn" onclick="syncItem('Omega Protocol')">Sync</button>
+    </div>
+    <div class="knowledge-row">
+      <div class="k-name">SAVESUCCESS</div>
+      <div class="k-detail"><span>11</span> pillars · current</div>
+      <button class="sync-btn" onclick="syncItem('SAVESUCCESS')">Sync</button>
+    </div>
+    <div class="knowledge-row">
+      <div class="k-name">Active Skills</div>
+      <div class="k-detail"><span>14</span> skills deployed</div>
+      <button class="sync-btn" onclick="syncItem('Skills')">Sync</button>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="pushKnowledgeAll()">✦ Push Knowledge Update to All Bots</button>
+  </div>
+
+  <!-- Provision Form -->
+  <div class="panel">
+    <div class="panel-title"><span class="icon">✦</span> PROVISION NEW IAM BOT</div>
+    <div class="panel-subtitle">Create a new consumer bot instance with pre-loaded IAM architecture</div>
+    <div class="divider"></div>
+    <div class="form-grid">
+      <div class="form-group"><label>Name *</label><input type="text" id="fName" placeholder="Full name"></div>
+      <div class="form-group"><label>Email *</label><input type="email" id="fEmail" placeholder="email@example.com"></div>
+      <div class="form-group"><label>WhatsApp</label><input type="tel" id="fWhatsapp" placeholder="+1 555 000 0000"><div class="hint">Optional — enables WhatsApp routing</div></div>
+      <div class="form-group"><label>Bot Profile</label>
+        <select id="fProfile">
+          <option value="Standard">Standard — Full IAM architecture</option>
+          <option value="Creative">Creative — Generative Graph, Artiquity</option>
+          <option value="Executive">Executive — SAVESUCCESS, strategic foresight</option>
+          <option value="Research">Research — Knowledge Graph, citations</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Twitter</label><input type="text" id="fTwitter" placeholder="@handle (optional)"></div>
+      <div class="form-group"><label>Instagram</label><input type="text" id="fInstagram" placeholder="@handle (optional)"></div>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="provisionBot()">✦ Provision IAM Bot</button>
+  </div>
+
+  <!-- Active Bots -->
+  <div class="section-title"><span class="icon">✦</span> ACTIVE BOTS</div>
+  <div id="botList"></div>
+
+  <!-- Knowledge Push Log -->
+  <div style="margin-top:32px">
+    <div class="section-title"><span class="icon">✦</span> KNOWLEDGE PUSH LOG</div>
+    <div class="panel" id="pushLog"></div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// --- Data ---
+const DEFAULT_BOTS = [
+  {id:"bot_oliver_ol8x",name:"Oliver Luckett",email:"oliver@inkwelllabs.com",whatsapp:"+14247449453",twitter:"EveryForty4",instagram:null,profile:"Executive",status:"active",privateUrl:"https://iam.inkwelllabs.com/bot/oliver-ol8x",created:"2026-02-01",messageCount:847,sessionCount:23,skills:["clarksdale-series","scenario-planning","learning-program","enginuity","block-bmos","recording-academy"]},
+  {id:"bot_greg_gs3k",name:"Greg Switzer",email:"greg@inkwelllabs.com",whatsapp:"+15014541002",twitter:null,instagram:null,profile:"Research",status:"active",privateUrl:"https://iam.inkwelllabs.com/bot/greg-gs3k",created:"2026-02-15",messageCount:142,sessionCount:8,skills:["scenario-planning","learning-program"]}
+];
+
+const DEFAULT_LOG = [
+  {time:"2026-02-28 23:00",msg:"Trinity Graph sync",detail:"2 bots updated · 511 nodes"},
+  {time:"2026-02-28 22:00",msg:"Omega Protocol v2.0 pushed",detail:"2 bots"},
+  {time:"2026-02-28 21:00",msg:"Clarksdale Series skill deployed",detail:"2 bots"}
+];
+
+const ALL_SKILLS = [
+  {id:"clarksdale-series",name:"Clarksdale Series",desc:"Comic creator, historical database, knowledge graph"},
+  {id:"scenario-planning",name:"Scenario Planning",desc:"Airport, real estate, entertainment venue planning"},
+  {id:"learning-program",name:"Learning Program",desc:"Daily knowledge graph growth, curriculum tracking"},
+  {id:"oahm-health",name:"OAHM/Health",desc:"Movement intelligence, biomechanical analysis"},
+  {id:"block-bmos",name:"Block BMOS",desc:"Entertainment finance, touring, venue intelligence"},
+  {id:"enginuity",name:"Enginuity",desc:"Airport RFP tools, GIS intelligence, scenario planning"},
+  {id:"recording-academy",name:"Recording Academy",desc:"AI policy, artist rights framework"}
+];
+
+function loadBots(){ try{const d=localStorage.getItem('iam_bots');return d?JSON.parse(d):JSON.parse(JSON.stringify(DEFAULT_BOTS))}catch(e){return JSON.parse(JSON.stringify(DEFAULT_BOTS))} }
+function saveBots(b){ localStorage.setItem('iam_bots',JSON.stringify(b)) }
+function loadLog(){ try{const d=localStorage.getItem('iam_log');return d?JSON.parse(d):[...DEFAULT_LOG]}catch(e){return[...DEFAULT_LOG]} }
+function saveLog(l){ localStorage.setItem('iam_log',JSON.stringify(l)) }
+
+let bots = loadBots();
+let pushLog = loadLog();
+
+// --- Render ---
+function render(){
+  renderBots();renderLog();renderStats();
+}
+
+function renderStats(){
+  const active=bots.filter(b=>b.status==='active');
+  document.getElementById('statBots').textContent=bots.length;
+  document.getElementById('statActive').textContent=active.length;
+  document.getElementById('statMessages').textContent=bots.reduce((s,b)=>s+b.messageCount,0).toLocaleString();
+  document.getElementById('headerBotCount').textContent=active.length+' active bot'+(active.length!==1?'s':'');
+}
+
+function renderBots(){
+  const el=document.getElementById('botList');
+  if(!bots.length){el.innerHTML='<div style="color:var(--dim);text-align:center;padding:40px">No bots provisioned yet</div>';return}
+  el.innerHTML=bots.map((b,i)=>{
+    const initials=b.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    const isActive=b.status==='active';
+    const social=[(b.twitter?'@'+b.twitter:''),(b.instagram?'IG: @'+b.instagram:'')].filter(Boolean).join(' · ');
+    const created=new Date(b.created).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+    return `<div class="bot-card ${isActive?'':'suspended'}">
+      <div class="bot-avatar">${initials}</div>
+      <div class="bot-info">
+        <div class="bot-header">
+          <div>
+            <span class="bot-name">${b.name}</span>
+            ${b.whatsapp?' <span style="color:var(--dim);font-size:13px">'+b.whatsapp+'</span>':''}
+          </div>
+          <div class="bot-status ${isActive?'active':'suspended'}">${isActive?'● Active':'○ Suspended'}</div>
+        </div>
+        <div class="bot-meta">
+          ${b.email}${social?' · '+social:''}<br>
+          <span class="badge">${b.profile}</span> · <a href="${b.privateUrl}" target="_blank">${b.privateUrl.replace('https://iam.inkwelllabs.com','')}</a><br>
+          Created: ${created} · ${b.messageCount.toLocaleString()} messages · ${b.sessionCount} sessions
+        </div>
+        <div class="bot-actions">
+          <button class="btn btn-sm btn-outline" onclick="viewMemory(${i})">View Memory</button>
+          <button class="btn btn-sm btn-outline" onclick="pushSkills(${i})">Push Skills</button>
+          <button class="btn btn-sm btn-warning" onclick="toggleSuspend(${i})">${isActive?'Suspend':'Activate'}</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteBot(${i})">Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderLog(){
+  const el=document.getElementById('pushLog');
+  if(!pushLog.length){el.innerHTML='<div style="color:var(--dim);text-align:center;padding:20px">No push events yet</div>';return}
+  el.innerHTML=pushLog.slice(0,20).map(l=>`<div class="log-entry"><div class="log-time">${l.time}</div><div class="log-msg"><span>${l.msg}</span> · ${l.detail}</div></div>`).join('');
+}
+
+// --- Actions ---
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+
+function openModal(html){document.getElementById('modalContent').innerHTML=html;document.getElementById('modalOverlay').classList.add('active')}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('active')}
+
+function syncItem(name){
+  toast('Syncing '+name+'...');
+  setTimeout(()=>toast(name+' synced to all bots'),1500);
+}
+
+function pushKnowledgeAll(){
+  const activeBots=bots.filter(b=>b.status==='active').length;
+  openModal(`<h2><span class="icon">✦</span> PUSH KNOWLEDGE UPDATE</h2>
+    <p style="color:var(--dim);margin-bottom:16px">This will push the latest Master Knowledge to all <strong>${activeBots}</strong> active bot instances.</p>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px">
+      <strong style="color:var(--gold)">Update Summary:</strong><br><br>
+      • Trinity Graph v4.2 — 511 nodes, 2,269 edges, 8 bridges<br>
+      • Omega Protocol v2.0 — 10 runes, 7 phases<br>
+      • SAVESUCCESS — 11 pillars (current)<br>
+      • 14 active skills
+    </div>
+    <div class="progress-bar" id="pushProgress" style="display:none"><div class="fill" id="pushFill" style="width:0%"></div></div>
+    <p id="pushStatus" style="font-size:13px;color:var(--dim);margin-bottom:12px"></p>
+    <button class="btn btn-primary btn-block" id="pushConfirmBtn" onclick="executePush()">✦ Confirm Push to ${activeBots} Bots</button>`);
+}
+
+function executePush(){
+  const bar=document.getElementById('pushProgress');
+  const fill=document.getElementById('pushFill');
+  const status=document.getElementById('pushStatus');
+  const btn=document.getElementById('pushConfirmBtn');
+  bar.style.display='block';btn.disabled=true;btn.textContent='Pushing...';
+  let pct=0;
+  const iv=setInterval(()=>{
+    pct+=Math.random()*30+10;if(pct>100)pct=100;
+    fill.style.width=pct+'%';
+    if(pct<50)status.textContent='Syncing Trinity Graph...';
+    else if(pct<80)status.textContent='Pushing Omega Protocol...';
+    else status.textContent='Deploying skills...';
+    if(pct>=100){
+      clearInterval(iv);
+      status.innerHTML='<span style="color:var(--success)">✓ Knowledge pushed to all active bots</span>';
+      btn.textContent='✦ Done';btn.onclick=closeModal;btn.disabled=false;
+      const now=new Date().toISOString().replace('T',' ').substring(0,16);
+      const active=bots.filter(b=>b.status==='active').length;
+      pushLog.unshift({time:now,msg:'Full knowledge push',detail:active+' bots updated · v4.2'});
+      saveLog(pushLog);renderLog();
+    }
+  },600);
+}
+
+function provisionBot(){
+  const name=document.getElementById('fName').value.trim();
+  const email=document.getElementById('fEmail').value.trim();
+  const whatsapp=document.getElementById('fWhatsapp').value.trim();
+  const profile=document.getElementById('fProfile').value;
+  const twitter=document.getElementById('fTwitter').value.trim().replace(/^@/,'');
+  const instagram=document.getElementById('fInstagram').value.trim().replace(/^@/,'');
+
+  if(!name){toast('Name is required');return}
+  if(!email||!/\S+@\S+\.\S+/.test(email)){toast('Valid email is required');return}
+
+  const slug=name.split(' ')[0].toLowerCase()+'-'+Math.random().toString(36).substring(2,6);
+  const id='bot_'+slug.replace('-','_');
+  const bot={
+    id,name,email,
+    whatsapp:whatsapp||null,
+    twitter:twitter||null,
+    instagram:instagram||null,
+    profile,status:'active',
+    privateUrl:'https://iam.inkwelllabs.com/bot/'+slug,
+    created:new Date().toISOString().split('T')[0],
+    messageCount:0,sessionCount:0,
+    skills:[]
+  };
+  bots.push(bot);saveBots(bots);
+
+  // Clear form
+  ['fName','fEmail','fWhatsapp','fTwitter','fInstagram'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fProfile').selectedIndex=0;
+
+  openModal(`<h2><span class="icon">✦</span> BOT PROVISIONED</h2>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px">
+      <p><strong>${bot.name}</strong>'s IAM Bot is ready.</p><br>
+      <p style="font-size:13px;color:var(--dim)">Private URL:</p>
+      <p style="font-size:15px;color:var(--accent);font-weight:600;word-break:break-all">${bot.privateUrl}</p>
+      <br>
+      ${bot.whatsapp?'<p style="font-size:13px;color:var(--dim)">WhatsApp: <span style="color:var(--text)">'+bot.whatsapp+'</span> — routing configured</p><br>':''}
+      <p style="font-size:13px;color:var(--dim)">Profile: <span class="badge" style="display:inline;background:rgba(67,97,238,.15);color:var(--accent);padding:2px 8px;border-radius:4px">${bot.profile}</span></p>
+      <br>
+      <div style="width:120px;height:120px;background:var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:11px;margin:8px auto">QR Code<br>Placeholder</div>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="closeModal()">Done</button>`);
+
+  const now=new Date().toISOString().replace('T',' ').substring(0,16);
+  pushLog.unshift({time:now,msg:'New bot provisioned: '+bot.name,detail:bot.profile+' profile'});
+  saveLog(pushLog);
+  render();
+}
+
+function viewMemory(idx){
+  const b=bots[idx];
+  openModal(`<h2><span class="icon">✦</span> ${b.name.toUpperCase()}'s MEMORY</h2>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;font-size:13px;line-height:1.8">
+      <strong style="color:var(--gold)">Memory Summary</strong><br><br>
+      <strong>Sessions:</strong> ${b.sessionCount} total<br>
+      <strong>Messages:</strong> ${b.messageCount.toLocaleString()} exchanged<br>
+      <strong>Profile:</strong> ${b.profile}<br>
+      <strong>Skills Active:</strong> ${b.skills.length}<br><br>
+      <strong style="color:var(--accent)">Recent Topics:</strong><br>
+      ${b.profile==='Executive'?'• Strategic planning discussions<br>• SAVESUCCESS framework application<br>• Scenario analysis for entertainment venues<br>• Trinity Graph exploration':'• Research methodology discussions<br>• Knowledge graph growth tracking<br>• Citation analysis workflows'}<br><br>
+      <span style="color:var(--dim)">Full memory access requires production API connection</span>
+    </div>
+    <button class="btn btn-outline btn-block" onclick="closeModal()">Close</button>`);
+}
+
+function pushSkills(idx){
+  const b=bots[idx];
+  const checks=ALL_SKILLS.map(s=>`<div class="skill-item">
+    <input type="checkbox" id="sk_${s.id}" ${b.skills.includes(s.id)?'checked':''}>
+    <div><div class="skill-name">${s.name}</div><div class="skill-desc">${s.desc}</div></div>
+  </div>`).join('');
+  openModal(`<h2><span class="icon">✦</span> PUSH SKILLS TO ${b.name.split(' ')[0].toUpperCase()}'s BOT</h2>
+    <p style="color:var(--dim);font-size:13px;margin-bottom:12px">Select skills to deploy to this bot instance.</p>
+    ${checks}
+    <button class="btn btn-primary btn-block" onclick="deploySkills(${idx})">✦ Deploy Selected Skills</button>
+    <button class="btn btn-outline btn-block" onclick="closeModal()" style="margin-top:8px">Cancel</button>`);
+}
+
+function deploySkills(idx){
+  const selected=ALL_SKILLS.filter(s=>document.getElementById('sk_'+s.id).checked).map(s=>s.id);
+  bots[idx].skills=selected;saveBots(bots);
+  const now=new Date().toISOString().replace('T',' ').substring(0,16);
+  pushLog.unshift({time:now,msg:'Skills updated for '+bots[idx].name,detail:selected.length+' skills deployed'});
+  saveLog(pushLog);
+  closeModal();toast(selected.length+' skills deployed to '+bots[idx].name);render();
+}
+
+function toggleSuspend(idx){
+  bots[idx].status=bots[idx].status==='active'?'suspended':'active';
+  saveBots(bots);toast(bots[idx].name+' '+(bots[idx].status==='active'?'activated':'suspended'));render();
+}
+
+function deleteBot(idx){
+  const b=bots[idx];
+  openModal(`<h2><span class="icon" style="color:var(--danger)">⚠</span> DELETE BOT</h2>
+    <p style="margin-bottom:16px">Are you sure you want to delete <strong>${b.name}</strong>'s IAM Bot? This cannot be undone.</p>
+    <p style="color:var(--dim);font-size:13px;margin-bottom:16px">${b.messageCount} messages and ${b.sessionCount} sessions will be lost.</p>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-danger" style="flex:1" onclick="confirmDelete(${idx})">Delete Bot</button>
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal()">Cancel</button>
+    </div>`);
+}
+
+function confirmDelete(idx){
+  const name=bots[idx].name;
+  bots.splice(idx,1);saveBots(bots);
+  const now=new Date().toISOString().replace('T',' ').substring(0,16);
+  pushLog.unshift({time:now,msg:'Bot deleted: '+name,detail:'Instance removed'});
+  saveLog(pushLog);
+  closeModal();toast(name+"'s bot deleted");render();
+}
+
+// Init
+render();
+</script>
+</body>
+</html>
