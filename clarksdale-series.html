@@ -244,16 +244,145 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-
 .ed-env-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;}
 .ed-env-tag{padding:3px 8px;border:1px solid var(--border);border-radius:10px;font-size:9px;color:var(--text-muted);}
 
+/* ══ MOBILE BOTTOM NAV ══ */
+.mobile-nav{display:none;}
+
 /* ══ RESPONSIVE ══ */
 @media(max-width:1100px){
   .right-panel{width:260px;}
   .sidebar{width:240px;}
 }
-@media(max-width:900px){
-  .app-layout{flex-direction:column;}
-  .sidebar{width:100%;height:auto;max-height:200px;border-right:none;border-bottom:1px solid var(--border);}
-  .right-panel{width:100%;height:auto;max-height:300px;border-left:none;border-top:1px solid var(--border);}
-  .phone-frame{width:280px;min-height:480px;}
+
+/* ── TABLET (768–1024px): sidebar + center, editor as overlay ── */
+@media(max-width:1024px) and (min-width:769px){
+  .right-panel{width:280px;}
+}
+
+/* ── MOBILE (≤768px): bottom nav, single-panel-at-a-time ── */
+@media(max-width:768px){
+  /* Give room for top bar + bottom nav */
+  body{padding-bottom:0;}
+
+  /* Top bar compression */
+  .top-bar{padding:0 12px;height:48px;}
+  .top-bar-stats{display:none;}
+  .top-bar-sub{display:none;}
+  .top-btn{padding:5px 10px;font-size:9px;}
+  .top-bar-right .top-btn:not(.gold){display:none;}
+
+  /* App layout: fill remaining viewport */
+  .app-layout{
+    flex-direction:row;
+    height:calc(100dvh - 48px - 56px);
+    overflow:hidden;
+    position:relative;
+  }
+
+  /* ── SIDEBAR: hidden by default, slides in from left ── */
+  .sidebar{
+    position:fixed;
+    top:48px; left:0;
+    width:100% !important;
+    min-width:unset;
+    height:calc(100dvh - 48px - 56px);
+    max-height:none !important;
+    border-right:none !important;
+    border-bottom:none !important;
+    transform:translateX(-100%);
+    transition:transform .28s cubic-bezier(.4,0,.2,1);
+    z-index:150;
+    background:var(--surface);
+  }
+  .sidebar.mobile-open{transform:translateX(0);}
+
+  /* ── RIGHT PANEL: hidden, slides up from bottom ── */
+  .right-panel{
+    position:fixed;
+    left:0; right:0;
+    bottom:56px;
+    width:100% !important;
+    height:72vh;
+    max-height:none !important;
+    border-left:none !important;
+    border-top:1px solid var(--border) !important;
+    transform:translateY(100%);
+    transition:transform .28s cubic-bezier(.4,0,.2,1);
+    z-index:150;
+    background:var(--surface);
+    overflow-y:auto;
+  }
+  .right-panel.mobile-open{transform:translateY(0);}
+
+  /* ── CENTER PANEL: fills the viewport ── */
+  .center-panel{
+    flex:1;
+    width:100%;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:16px 12px 8px;
+    box-sizing:border-box;
+  }
+
+  /* Phone frame scales to device width */
+  .phone-frame{
+    width:min(340px, 90vw) !important;
+    min-height:auto !important;
+    max-height:none;
+  }
+  .phone-screen{max-height:60vh;}
+
+  /* Center context label */
+  .center-context{font-size:10px;margin-top:8px;text-align:center;}
+
+  /* ── BOTTOM NAV ── */
+  .mobile-nav{
+    display:flex;
+    position:fixed;
+    bottom:0; left:0; right:0;
+    height:56px;
+    background:#0a0a0a;
+    border-top:1px solid var(--border);
+    z-index:200;
+    align-items:stretch;
+  }
+  .mobile-nav-btn{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    background:none;
+    border:none;
+    color:var(--text-muted);
+    font-size:9px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    font-family:'Inter',sans-serif;
+    cursor:pointer;
+    transition:color .15s;
+    padding:0;
+  }
+  .mobile-nav-btn .nav-icon{font-size:18px;line-height:1;}
+  .mobile-nav-btn.active{color:var(--gold);}
+  .mobile-nav-btn.active .nav-icon{filter:drop-shadow(0 0 6px rgba(212,175,55,.5));}
+
+  /* Sidebar content fills height on mobile */
+  .sidebar-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .sidebar-tabs .sidebar-tab{font-size:7px;padding:8px 2px;}
+
+  /* Editor body scrollable on mobile */
+  .editor-body{max-height:calc(72vh - 48px);overflow-y:auto;-webkit-overflow-scrolling:touch;}
+
+  /* Full-width episode cards on mobile */
+  .ep-card{margin:0 0 8px 0;}
+
+  /* Producer overlay: full screen on mobile */
+  .producer-overlay{padding-bottom:56px;}
+  .pub-images{grid-template-columns:repeat(2,1fr) !important;}
 }
 
 /* ══ SCROLLBAR GLOBAL ══ */
@@ -3183,6 +3312,61 @@ function prodToast(msg){
 <div class="ha-overlay" id="haOverlay" onclick="if(event.target===this)closeAgentPanel()">
   <div class="ha-panel" id="haPanel"></div>
 </div>
+
+<!-- ══ MOBILE BOTTOM NAV ══ -->
+<nav class="mobile-nav" id="mobile-nav" aria-label="Main navigation">
+  <button class="mobile-nav-btn" id="mnav-episodes" onclick="mobileNav('episodes')" aria-label="Episodes">
+    <span class="nav-icon">☰</span>
+    <span>Episodes</span>
+  </button>
+  <button class="mobile-nav-btn active" id="mnav-view" onclick="mobileNav('view')" aria-label="View comic">
+    <span class="nav-icon">📱</span>
+    <span>View</span>
+  </button>
+  <button class="mobile-nav-btn" id="mnav-edit" onclick="mobileNav('edit')" aria-label="Edit">
+    <span class="nav-icon">✏️</span>
+    <span>Edit</span>
+  </button>
+</nav>
+
+<script>
+// ── MOBILE NAV ──
+function mobileNav(tab) {
+  // Update active button
+  document.querySelectorAll('.mobile-nav-btn').forEach(function(b){ b.classList.remove('active'); });
+  var btn = document.getElementById('mnav-' + tab);
+  if (btn) btn.classList.add('active');
+
+  var sidebar = document.querySelector('.sidebar');
+  var rightPanel = document.querySelector('.right-panel');
+
+  // Close all first
+  if (sidebar) sidebar.classList.remove('mobile-open');
+  if (rightPanel) rightPanel.classList.remove('mobile-open');
+
+  if (tab === 'episodes') {
+    if (sidebar) sidebar.classList.add('mobile-open');
+  } else if (tab === 'edit') {
+    if (rightPanel) rightPanel.classList.add('mobile-open');
+  }
+  // 'view' = both closed = center panel shows
+}
+
+// Close panels when user selects an item on mobile
+var _origSelectItem = window.selectItem;
+window.selectItem = function(type, index) {
+  if (_origSelectItem) _origSelectItem(type, index);
+  // On mobile, switch to view after selecting
+  if (window.innerWidth <= 768) {
+    mobileNav('view');
+  }
+};
+
+// Init: start on view tab
+if (window.innerWidth <= 768) {
+  document.addEventListener('DOMContentLoaded', function(){ mobileNav('view'); });
+}
+</script>
 
 </body>
 </html>
