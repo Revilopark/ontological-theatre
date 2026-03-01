@@ -2,14 +2,90 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>RoofIQ — AI-Powered Roofing Intelligence for ApexLA</title>
 <meta name="description" content="Satellite roof measurement, permit intelligence, auto-bidding, and targeted ad generation for roofing contractors.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FF5500' stroke-width='2'><path d='M2 20L12 4l10 16'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #07090F; overflow-x: hidden; }
-  #root { min-height: 100vh; }
+  :root {
+    --bg-primary: #0a0e1a;
+    --bg-glass: rgba(255,255,255,0.04);
+    --bg-glass-hover: rgba(255,255,255,0.08);
+    --border-glass: rgba(255,255,255,0.1);
+    --accent-cyan: #00d4ff;
+    --accent-blue: #4facfe;
+    --accent-gold: #D4AF37;
+    --grad-primary: linear-gradient(135deg, #667eea, #764ba2);
+    --grad-cyan: linear-gradient(135deg, #00d4ff, #4facfe);
+  }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { background: #07090F; overflow-x: hidden; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100dvh; color: #DDE3F0; }
+  #root { min-height: 100dvh; padding-bottom: 0; }
+  input, select, textarea { font-size: 16px !important; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  /* Mobile bottom nav */
+  .riq-mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 9999;
+    background: rgba(7,9,15,0.94);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  @media (max-width: 768px) {
+    .riq-mobile-nav { display: flex; }
+    #root { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+  }
+  .riq-mn-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 56px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: rgba(255,255,255,0.4);
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    gap: 4px;
+    padding: 8px 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    transition: color 0.2s;
+  }
+  .riq-mn-tab.active, .riq-mn-tab:hover { color: #FF6B1A; }
+  .riq-mn-tab svg { transition: opacity 0.2s; opacity: 0.5; }
+  .riq-mn-tab.active svg { opacity: 1; }
+  @media (max-width: 480px) {
+    .riq-mn-tab { font-size: 8px; }
+  }
+  /* Responsive wrapper overrides (beat React inline styles) */
+  @media (max-width: 768px) {
+    .riq-wrapper { padding: 0 max(16px, env(safe-area-inset-left)) 80px !important; }
+    .riq-header { flex-wrap: wrap !important; gap: 8px !important; }
+  }
+  @media (max-width: 480px) {
+    .riq-wrapper { padding: 0 12px 80px !important; }
+  }
+  /* Glass panel utility class */
+  .glass-panel {
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+  }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -17,6 +93,27 @@
 </head>
 <body>
 <div id="root"></div>
+
+<!-- Mobile bottom nav (controlled by React state via window.__riqSetView) -->
+<nav class="riq-mobile-nav" aria-label="Main navigation">
+  <button id="riq-mn-0" class="riq-mn-tab active" onclick="(window.__riqSetView||function(){})('search')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <span>Overview</span>
+  </button>
+  <button id="riq-mn-1" class="riq-mn-tab" onclick="(window.__riqSetView||function(){})('results')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Map</span>
+  </button>
+  <button id="riq-mn-2" class="riq-mn-tab" onclick="(window.__riqSetView||function(){})('bid')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    <span>Analysis</span>
+  </button>
+  <button id="riq-mn-3" class="riq-mn-tab" onclick="(window.__riqSetView||function(){})('ads')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    <span>Report</span>
+  </button>
+</nav>
+
 <script type="text/babel">
 const { useState, useEffect, useCallback, useRef } = React;
 
@@ -332,6 +429,13 @@ const RoofIQApp = function RoofIQ() {
   const [co, setCo] = useState({name:"Summit Roofing Co.",phone:"(615) 555-0187",url:"SummitRoofing.com",lic:"TN #12847",rating:"4.9",reviews:"347",yrs:"18",fin:"0% for 18mo"});
 
   useEffect(()=>{store.list().then(setProjs);},[]);
+  // Expose view state to mobile nav
+  useEffect(()=>{
+    window.__riqSetView=setView;
+    const map={search:'riq-mn-0',results:'riq-mn-1',bid:'riq-mn-2',ads:'riq-mn-3'};
+    document.querySelectorAll('.riq-mn-tab').forEach(t=>t.classList.remove('active'));
+    const el=document.getElementById(map[view]);if(el)el.classList.add('active');
+  },[view,setView]);
 
   // ── SEARCH ───────────────────────────────────────────────
   const search = useCallback(async()=>{
@@ -459,7 +563,7 @@ const RoofIQApp = function RoofIQ() {
   return(<div style={S.app}>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
     <style>{`@keyframes spin{to{transform:rotate(360deg)}}input::placeholder{color:#3D4A6B}select option{background:#0D1117;color:#DDE3F0}*::-webkit-scrollbar{width:5px}*::-webkit-scrollbar-thumb{background:${w}0.08);border-radius:3px}`}</style>
-    <div style={S.glow}/><div style={S.wr}>
+    <div style={S.glow}/><div style={S.wr} className="riq-wrapper">
     {/* HDR */}
     <header style={S.hd}>
       <div style={S.logo}><I.Roof/><span style={S.lt}>RoofIQ</span><span style={S.tg}>v7 · Powered by BackyardOne + Gemini</span></div>

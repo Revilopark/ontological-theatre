@@ -2,17 +2,98 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Probe — Document Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <style>
-  html,body,#root{height:100%;margin:0;padding:0;overflow:hidden}
-  body{background:#0C0C0E}
+  :root {
+    --bg-primary: #0a0e1a;
+    --bg-glass: rgba(255,255,255,0.04);
+    --bg-glass-hover: rgba(255,255,255,0.08);
+    --border-glass: rgba(255,255,255,0.1);
+    --accent-cyan: #00d4ff;
+    --accent-blue: #4facfe;
+    --accent-gold: #D4AF37;
+    --grad-primary: linear-gradient(135deg, #667eea, #764ba2);
+    --grad-cyan: linear-gradient(135deg, #00d4ff, #4facfe);
+  }
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html,body,#root { height: 100%; margin: 0; padding: 0; }
+  body { background: #0C0C0E; min-height: 100dvh; overflow-x: hidden; font-family: 'Inter', -apple-system, sans-serif; }
+  input, select, textarea { font-size: 16px !important; }
+  /* Mobile bottom nav */
+  .probe-mobile-nav {
+    display: none;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    z-index: 9999;
+    background: rgba(12,12,14,0.94);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  @media (max-width: 768px) {
+    .probe-mobile-nav { display: flex; }
+    #root { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+  }
+  .probe-mn-tab {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 56px; border: none; background: none; cursor: pointer;
+    color: rgba(255,255,255,0.4); font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 9px; font-weight: 700; gap: 4px; padding: 8px 4px;
+    text-transform: uppercase; letter-spacing: 0.06em; transition: color 0.2s;
+  }
+  .probe-mn-tab.active, .probe-mn-tab:hover { color: #6C63FF; }
+  .probe-mn-tab svg { opacity: 0.5; transition: opacity 0.2s; }
+  .probe-mn-tab.active svg { opacity: 1; }
+  /* Responsive analysis layout */
+  @media (max-width: 768px) {
+    .probe-analysis-layout { flex-direction: column !important; height: auto !important; }
+    .probe-analysis-main { border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+    .probe-chat-panel { width: 100% !important; max-height: 50vh; }
+  }
+  @media (max-width: 480px) {
+    .probe-mn-tab { font-size: 8px; }
+  }
 </style>
 </head>
 <body>
 <div id="root"></div>
+
+<!-- Probe mobile bottom nav -->
+<nav class="probe-mobile-nav" aria-label="Main navigation">
+  <button id="probe-mn-0" class="probe-mn-tab active" onclick="probeMobileNav(0)">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <span>Upload</span>
+  </button>
+  <button id="probe-mn-1" class="probe-mn-tab" onclick="probeMobileNav(1)">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <span>Analyze</span>
+  </button>
+  <button id="probe-mn-2" class="probe-mn-tab" onclick="probeMobileNav(2)">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+    <span>Results</span>
+  </button>
+  <button id="probe-mn-3" class="probe-mn-tab" onclick="probeMobileNav(3)">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    <span>Settings</span>
+  </button>
+</nav>
+<script>
+function probeMobileNav(idx) {
+  document.querySelectorAll('.probe-mn-tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  if(idx===0 && window.__probeReset) window.__probeReset();
+  if(idx===1 && window.__probeSetView) window.__probeSetView('analysis');
+  if(idx===2 && window.__probeSetView) window.__probeSetView('bookmarks');
+  if(idx===3 && window.__probeToggleChallenge) window.__probeToggleChallenge();
+}
+</script>
+
 <script>
 const { useState, useEffect, useCallback, useRef, useMemo } = React;
 const C = {
@@ -392,6 +473,12 @@ function Analysis({ doc, onReset }) {
   const [bookmarked, setBookmarked] = useState(/* @__PURE__ */ new Set());
   const iteration = doc.iteration || 1;
   const chatEnd = useRef(null);
+  // Expose to mobile nav
+  useEffect(() => {
+    window.__probeSetView = setView;
+    window.__probeToggleChallenge = () => setChallenge(c => !c);
+    document.querySelectorAll('.probe-mn-tab').forEach((t,i) => t.classList.toggle('active', i === 1));
+  }, [setView]);
   useEffect(() => {
     chatEnd.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat, loading]);
@@ -495,7 +582,7 @@ ${b.text}
     setCopied(true);
     setTimeout(() => setCopied(false), 2e3);
   }, [CL, A, bookmarks, name]);
-  return /* @__PURE__ */ React.createElement("div", { style: { display: "flex", height: "100vh", background: C.bg } }, /* @__PURE__ */ React.createElement("style", null, GLOBAL_CSS), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, overflowY: "auto", borderRight: `1px solid ${C.border}` } }, /* @__PURE__ */ React.createElement("div", { style: { maxWidth: 680, margin: "0 auto", padding: "28px 32px 60px" } }, /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeUp 0.5s ease", marginBottom: 28 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "start" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ React.createElement("div", { style: { width: 32, height: 32, borderRadius: 10, background: `linear-gradient(135deg, ${C.accent}, #8B5CF6)`, display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ React.createElement("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "white", strokeWidth: "2.5" }, /* @__PURE__ */ React.createElement("path", { d: "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" }), /* @__PURE__ */ React.createElement("polyline", { points: "14 2 14 8 20 8" }))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: C.textDim, fontFamily: F.mono, letterSpacing: 1 } }, CL.type?.replace(/_/g, " ").toUpperCase(), " \xB7 ", CL.stage?.replace(/_/g, " ").toUpperCase(), iteration > 1 ? ` \xB7 V${iteration}` : ""), /* @__PURE__ */ React.createElement("h1", { style: { fontSize: 24, fontFamily: F.display, color: C.text, margin: 0, letterSpacing: -0.3 } }, CL.title || name))), /* @__PURE__ */ React.createElement("button", { onClick: () => onReset(), style: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 12px", fontSize: 12, color: C.textDim, cursor: "pointer", fontFamily: F.body } }, "New doc")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 14, marginTop: 16, alignItems: "start" } }, /* @__PURE__ */ React.createElement("div", { style: {
+  return /* @__PURE__ */ React.createElement("div", { className: "probe-analysis-layout", style: { display: "flex", height: "100vh", background: C.bg } }, /* @__PURE__ */ React.createElement("style", null, GLOBAL_CSS), /* @__PURE__ */ React.createElement("div", { className: "probe-analysis-main", style: { flex: 1, overflowY: "auto", borderRight: `1px solid ${C.border}` } }, /* @__PURE__ */ React.createElement("div", { style: { maxWidth: 680, margin: "0 auto", padding: "28px 32px 60px" } }, /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeUp 0.5s ease", marginBottom: 28 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "start" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ React.createElement("div", { style: { width: 32, height: 32, borderRadius: 10, background: `linear-gradient(135deg, ${C.accent}, #8B5CF6)`, display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ React.createElement("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "white", strokeWidth: "2.5" }, /* @__PURE__ */ React.createElement("path", { d: "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" }), /* @__PURE__ */ React.createElement("polyline", { points: "14 2 14 8 20 8" }))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: C.textDim, fontFamily: F.mono, letterSpacing: 1 } }, CL.type?.replace(/_/g, " ").toUpperCase(), " \xB7 ", CL.stage?.replace(/_/g, " ").toUpperCase(), iteration > 1 ? ` \xB7 V${iteration}` : ""), /* @__PURE__ */ React.createElement("h1", { style: { fontSize: 24, fontFamily: F.display, color: C.text, margin: 0, letterSpacing: -0.3 } }, CL.title || name))), /* @__PURE__ */ React.createElement("button", { onClick: () => onReset(), style: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 12px", fontSize: 12, color: C.textDim, cursor: "pointer", fontFamily: F.body } }, "New doc")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 14, marginTop: 16, alignItems: "start" } }, /* @__PURE__ */ React.createElement("div", { style: {
     width: 48,
     height: 48,
     borderRadius: 14,
@@ -668,7 +755,7 @@ ${b.text}
       style: { background: C.raised, border: `1px solid ${C.border}`, borderRadius: 6, padding: "4px 10px", fontSize: 11, color: C.textDim, cursor: "pointer", fontFamily: F.body }
     },
     "Compare"
-  )))))))), /* @__PURE__ */ React.createElement("div", { style: { width: 400, display: "flex", flexDirection: "column", background: C.surface } }, /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 18px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.body } }, "Conversation"), challenge && /* @__PURE__ */ React.createElement("span", { style: { fontSize: 10, padding: "3px 8px", borderRadius: 6, background: C.redGlow, color: C.red, fontFamily: F.mono, fontWeight: 600 } }, "CHALLENGE")), chat.length === 0 && /* @__PURE__ */ React.createElement("div", { style: { padding: "18px", animation: "fadeIn 0.5s ease 0.3s both" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.textFaint, fontFamily: F.body, marginBottom: 10 } }, "Start exploring"), ["What's the biggest hole in this plan?", "Help me strengthen my value proposition", "What would an investor challenge?", `Explore: "${(A.tensions?.[0]?.claim || "core thesis").slice(0, 50)}"`].map((q, i) => /* @__PURE__ */ React.createElement(
+  )))))))), /* @__PURE__ */ React.createElement("div", { className: "probe-chat-panel", style: { width: 400, display: "flex", flexDirection: "column", background: C.surface } }, /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 18px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.body } }, "Conversation"), challenge && /* @__PURE__ */ React.createElement("span", { style: { fontSize: 10, padding: "3px 8px", borderRadius: 6, background: C.redGlow, color: C.red, fontFamily: F.mono, fontWeight: 600 } }, "CHALLENGE")), chat.length === 0 && /* @__PURE__ */ React.createElement("div", { style: { padding: "18px", animation: "fadeIn 0.5s ease 0.3s both" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.textFaint, fontFamily: F.body, marginBottom: 10 } }, "Start exploring"), ["What's the biggest hole in this plan?", "Help me strengthen my value proposition", "What would an investor challenge?", `Explore: "${(A.tensions?.[0]?.claim || "core thesis").slice(0, 50)}"`].map((q, i) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: i,
@@ -794,7 +881,9 @@ function App() {
     } catch {
     }
     if (reEx) setPending(reEx);
+    document.querySelectorAll('.probe-mn-tab').forEach((t,i) => t.classList.toggle('active', i === 0));
   }, [doc]);
+  useEffect(() => { window.__probeReset = () => reset(); }, [reset]);
   if (!doc) return /* @__PURE__ */ React.createElement(Upload, { onReady: ready, pendingReExamine: pending, onPendingConsumed: () => setPending(null) });
   return /* @__PURE__ */ React.createElement(Analysis, { doc, onReset: reset });
 }
