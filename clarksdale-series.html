@@ -1477,14 +1477,44 @@ function csToast(msg, color) {
 }
 
 // ── FAL IMAGE GENERATION (via awareness proxy) ──
-async function falGenerate(prompt) {
-  const r = await fetch(`${PROXY}/fal/flux-pro`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, image_size: 'landscape_16_9' })
-  });
-  const d = await r.json();
-  return d?.images?.[0]?.url || d?.image?.url || null;
+async function falGenerate(prompt, aspectRatio) {
+  aspectRatio = aspectRatio || '16:9';
+  try {
+    // Try sync first
+    const r = await fetch(`${PROXY}/fal/generate-sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'fal-ai/flux-pro/v1.1-ultra', prompt, aspect_ratio: aspectRatio })
+    });
+    const d = await r.json();
+    if (d?.images?.[0]?.url) return d.images[0].url;
+    if (d?.image?.url) return d.image.url;
+    // Sync returned a request_id — fall through to async poll
+    if (d?.request_id) {
+      const result = await falPollResult(d.request_id, 'fal-ai/flux-pro');
+      return result?.images?.[0]?.url || result?.image?.url || null;
+    }
+    return null;
+  } catch(e) { console.error('falGenerate error:', e); return null; }
+}
+
+async function falPollResult(requestId, model, maxWait) {
+  maxWait = maxWait || 90000;
+  const start = Date.now();
+  while (Date.now() - start < maxWait) {
+    await new Promise(res => setTimeout(res, 3000));
+    try {
+      const sr = await fetch(`${PROXY}/fal/status?request_id=${requestId}&model=${encodeURIComponent(model)}`);
+      const sd = await sr.json();
+      if (sd?.status === 'COMPLETED' || sd?.images || sd?.image) {
+        if (sd?.images || sd?.image) return sd;
+        const rr = await fetch(`${PROXY}/fal/result?request_id=${requestId}&model=${encodeURIComponent(model)}`);
+        return await rr.json();
+      }
+      if (sd?.status === 'FAILED') return null;
+    } catch(_) {}
+  }
+  return null;
 }
 
 // ── EDITOR BUTTON ACTIONS ──
@@ -1499,7 +1529,7 @@ window.edGeneratePanel = async function() {
   if (!prompt) { csToast('⚠ Gemini returned empty', '#c04040'); return; }
   csToast('🎨 Generating image…');
   try {
-    const url = await falGenerate(prompt);
+    const url = await falGenerate(prompt, '3:4');
     if (url) {
       ep.panels.push({ img: url, caption: ep.narration });
       selectItem('episode', selectedItem.index);
@@ -1521,7 +1551,7 @@ window.edRegenScene = async function() {
   try {
     const lastPanel = ep.panels[ep.panels.length - 1];
     const prompt = `Mississippi Delta blues, cinematic panel: ${ep.title} (${ep.era}). ${ep.narration}. Style: vintage graphic novel, expressionist, sepia tones.`;
-    const url = await falGenerate(prompt);
+    const url = await falGenerate(prompt, '3:4');
     if (url) {
       lastPanel.img = url;
       selectItem('episode', selectedItem.index);
@@ -1551,7 +1581,7 @@ window.edRegenPortrait = async function() {
   csToast('🎨 Generating portrait…');
   try {
     const prompt = `Portrait of ${ch.name}, ${ch.archetype}, Mississippi Delta blues era (${ch.era}). ${ch.desc.slice(0,150)}. Style: dramatic oil painting, vintage sepia, expressionist, 3:4 portrait format.`;
-    const url = await falGenerate(prompt);
+    const url = await falGenerate(prompt, '3:4');
     if (url) {
       ch.img = url;
       selectItem('character', selectedItem.index);
@@ -1566,7 +1596,7 @@ window.edRegenArtifactImg = async function() {
   csToast('🎨 Regenerating artifact image…');
   try {
     const prompt = `${a.name} belonging to ${a.owner}. ${a.desc}. Style: vintage still-life photography, sepia tones, Mississippi Delta, 1930s–1960s era.`;
-    const url = await falGenerate(prompt);
+    const url = await falGenerate(prompt, '4:3');
     if (url) {
       a.img = url;
       selectItem('artifact', selectedItem.index);
