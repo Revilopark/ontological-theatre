@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edge Rank & Knowledge Asymmetry | Vanderbilt Owen × Inkwell</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#050508;--bg2:#08080d;--bg3:#0c0c14;
+  --gold:#cfb87c;--gold2:#a8914a;
+  --blue:#4a7bcc;--blue2:#7aa8e8;
+  --red:#cc4a4a;--red2:#e87a7a;
+  --green:#4a9a6a;--green2:#7ac89a;
+  --orange:#cc7a2a;--orange2:#e8a860;
+  --purple:#8a6aac;--purple2:#b09ad0;
+  --text:#e8e4dc;--muted:rgba(232,228,220,.6);--dim:rgba(232,228,220,.28);
+  --border:rgba(207,184,124,.1);--border2:rgba(207,184,124,.05);
+  --glass:rgba(255,255,255,.03);
+  --sans:'Inter',system-ui,sans-serif;
+  --serif:'Playfair Display',Georgia,serif;
+  --mono:'Roboto Mono',monospace;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 80% 50% at 20% 20%,rgba(74,123,204,.05),transparent 60%),
+             radial-gradient(ellipse 60% 60% at 80% 80%,rgba(204,74,74,.04),transparent 60%);z-index:0}
+
+/* ── NAV ───────────────────────────────────────────────── */
+nav{position:sticky;top:0;z-index:100;background:rgba(5,5,8,.95);backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border2);padding:0 2rem;height:48px;
+    display:flex;align-items:center;justify-content:space-between}
+.nav-brand{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
+.nav-links{display:flex;gap:1.25rem}
+.nav-link{font-size:.62rem;color:var(--muted);text-decoration:none;letter-spacing:.05em;text-transform:uppercase;font-weight:500}
+.nav-link:hover{color:var(--gold)}
+@media(max-width:640px){.nav-links{display:none}}
+
+/* ── SHARED ─────────────────────────────────────────────── */
+.section{max-width:1100px;margin:0 auto;padding:5rem 2rem;position:relative;z-index:1}
+.eyebrow{font-size:.58rem;letter-spacing:.28em;text-transform:uppercase;font-weight:700;margin-bottom:.75rem;display:flex;align-items:center;gap:8px}
+.eyebrow::before,.eyebrow::after{content:'';height:1px;background:currentColor;opacity:.3}
+.eyebrow::before{width:18px}.eyebrow::after{width:18px}
+h2.sh{font-family:var(--serif);font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;line-height:1.1;margin-bottom:.6rem}
+h2.sh em{font-style:italic}
+.lead{font-size:.9rem;color:var(--muted);line-height:1.85;max-width:680px;margin-bottom:2rem}
+.divider{width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent)}
+.tag{display:inline-flex;padding:3px 10px;border-radius:10px;font-size:.58rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.tag-blue{background:rgba(74,123,204,.1);border:1px solid rgba(74,123,204,.25);color:var(--blue2)}
+.tag-red{background:rgba(204,74,74,.1);border:1px solid rgba(204,74,74,.2);color:var(--red2)}
+.tag-gold{background:rgba(207,184,124,.1);border:1px solid rgba(207,184,124,.2);color:var(--gold)}
+.tag-green{background:rgba(74,154,106,.1);border:1px solid rgba(74,154,106,.22);color:var(--green2)}
+.tag-orange{background:rgba(204,122,42,.1);border:1px solid rgba(204,122,42,.22);color:var(--orange2)}
+.tag-purple{background:rgba(138,106,172,.1);border:1px solid rgba(138,106,172,.22);color:var(--purple2)}
+
+/* ── FORMULA ────────────────────────────────────────────── */
+.formula-box{background:rgba(207,184,124,.04);border:1px solid rgba(207,184,124,.15);border-radius:10px;padding:1.25rem 1.75rem;font-family:var(--mono);display:inline-block;margin:1rem 0}
+.formula-big{font-size:1.1rem;color:var(--gold);margin-bottom:.4rem;letter-spacing:.03em}
+.formula-parts{display:flex;gap:2rem;flex-wrap:wrap;margin-top:.5rem}
+.fp{font-size:.7rem;color:var(--muted);display:flex;align-items:center;gap:6px}
+.fp .key{color:var(--gold2);font-weight:500}
+
+/* ── DEMO LAYOUT ─────────────────────────────────────────── */
+.demo-grid{display:grid;grid-template-columns:1fr 340px;gap:2rem;align-items:start}
+@media(max-width:900px){.demo-grid{grid-template-columns:1fr}}
+.graph-box{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.graph-title{padding:1rem 1.25rem;border-bottom:1px solid var(--border2);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.graph-svg-wrap{position:relative;height:380px}
+.graph-svg-wrap svg{width:100%;height:100%}
+
+/* ── SLIDERS ─────────────────────────────────────────────── */
+.controls{display:flex;flex-direction:column;gap:1.25rem}
+.control-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem}
+.ctrl-label{font-size:.68rem;font-weight:700;margin-bottom:.25rem;display:flex;justify-content:space-between;align-items:center}
+.ctrl-name{color:var(--text)}
+.ctrl-val{font-family:var(--mono);font-size:.7rem;color:var(--gold)}
+.ctrl-desc{font-size:.62rem;color:var(--dim);margin-bottom:.75rem;line-height:1.6}
+input[type=range]{width:100%;-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(207,184,124,.15);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--gold);cursor:pointer;box-shadow:0 0 6px rgba(207,184,124,.4)}
+
+/* preset buttons */
+.preset-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem}
+.preset-btn{padding:5px 11px;border-radius:6px;border:1px solid var(--border);background:var(--glass);color:var(--muted);font-size:.6rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:.15s;font-family:var(--sans)}
+.preset-btn:hover{border-color:rgba(207,184,124,.3);color:var(--gold)}
+.preset-btn.active{border-color:var(--red2);color:var(--red2);background:rgba(204,74,74,.08)}
+
+/* feed preview */
+.feed-preview{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:1.25rem}
+.feed-header{padding:.75rem 1rem;border-bottom:1px solid var(--border2);font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2)}
+.feed-item{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;border-bottom:1px solid var(--border2);transition:.3s}
+.feed-item:last-child{border-bottom:none}
+.feed-rank{font-family:var(--mono);font-size:.65rem;color:var(--dim);width:18px;flex-shrink:0;text-align:center}
+.feed-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0}
+.feed-info{flex:1}
+.feed-name{font-size:.7rem;font-weight:700;margin-bottom:.15rem}
+.feed-meta{font-size:.58rem;color:var(--dim)}
+.feed-score{font-family:var(--mono);font-size:.65rem;text-align:right;flex-shrink:0}
+.feed-score-bar{height:3px;border-radius:2px;margin-top:3px;transition:.4s}
+
+/* ── CONSEQUENCE CARDS ───────────────────────────────────── */
+.consequence-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;margin-top:2rem}
+.cq-card{border-radius:10px;padding:1.25rem;border:1px solid}
+.cq-red{background:rgba(204,74,74,.05);border-color:rgba(204,74,74,.18)}
+.cq-orange{background:rgba(204,122,42,.05);border-color:rgba(204,122,42,.18)}
+.cq-blue{background:rgba(74,123,204,.05);border-color:rgba(74,123,204,.18)}
+.cq-purple{background:rgba(138,106,172,.05);border-color:rgba(138,106,172,.18)}
+.cq-icon{font-size:1.5rem;margin-bottom:.5rem}
+.cq-title{font-size:.72rem;font-weight:700;margin-bottom:.35rem}
+.cq-desc{font-size:.68rem;color:var(--muted);line-height:1.7}
+.cq-real{font-size:.62rem;color:var(--dim);font-style:italic;margin-top:.5rem}
+
+/* ── KNOWLEDGE ASYM SECTION ─────────────────────────────── */
+.asym-demo{display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:start}
+@media(max-width:768px){.asym-demo{grid-template-columns:1fr}}
+.asym-graph{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.asym-graph-title{padding:1rem 1.25rem;border-bottom:1px solid var(--border2);font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.asym-svg-wrap{height:420px;position:relative}
+.asym-detail{display:flex;flex-direction:column;gap:1rem}
+
+.asym-party{border-radius:10px;padding:1.25rem;border:1px solid;position:relative;cursor:pointer;transition:.2s}
+.asym-party:hover{transform:translateY(-1px)}
+.ap-patient{background:rgba(74,123,204,.06);border-color:rgba(74,123,204,.2)}
+.ap-doctor{background:rgba(74,154,106,.06);border-color:rgba(74,154,106,.2)}
+.ap-insurer{background:rgba(204,74,74,.06);border-color:rgba(204,74,74,.2)}
+.ap-title{font-size:.65rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.35rem;display:flex;justify-content:space-between;align-items:center}
+.ap-patient .ap-title{color:var(--blue2)} .ap-doctor .ap-title{color:var(--green2)} .ap-insurer .ap-title{color:var(--red2)}
+.knowledge-bar-wrap{margin:.4rem 0 .75rem}
+.kb-label{font-size:.58rem;color:var(--dim);margin-bottom:3px}
+.kb-bar{height:6px;border-radius:3px;transition:.4s}
+.ap-patient .kb-bar{background:rgba(74,123,204,.6)}
+.ap-doctor .kb-bar{background:rgba(74,154,106,.6)}
+.ap-insurer .kb-bar{background:rgba(204,74,74,.6)}
+.ap-nodes-list{display:flex;flex-wrap:wrap;gap:4px}
+.ap-node{font-size:.55rem;padding:2px 8px;border-radius:7px;font-weight:500}
+.ap-patient .ap-node{background:rgba(74,123,204,.1);color:#a8c8f8}
+.ap-doctor .ap-node{background:rgba(74,154,106,.1);color:#a0e0b8}
+.ap-insurer .ap-node{background:rgba(204,74,74,.1);color:#f0a8a8}
+.ap-hidden{background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.08);color:var(--dim)}
+.ap-count{font-family:var(--mono);font-size:.75rem;font-weight:700}
+
+.asym-reveal{background:rgba(204,74,74,.04);border:1px solid rgba(204,74,74,.15);border-radius:10px;padding:1.25rem;margin-top:1rem}
+.asym-reveal-title{font-size:.62rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--red2);margin-bottom:.75rem}
+.gap-item{display:flex;gap:.75rem;margin-bottom:.75rem;padding-bottom:.75rem;border-bottom:1px solid rgba(204,74,74,.1)}
+.gap-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.gap-icon{font-size:1.1rem;flex-shrink:0}
+.gap-title{font-size:.72rem;font-weight:700;margin-bottom:.2rem}
+.gap-desc{font-size:.65rem;color:var(--muted);line-height:1.6}
+
+.scenario-tabs{display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap}
+.sc-tab{padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--glass);color:var(--muted);font-size:.62rem;font-weight:600;cursor:pointer;transition:.15s;font-family:var(--sans)}
+.sc-tab:hover,.sc-tab.active{border-color:rgba(207,184,124,.3);color:var(--gold);background:rgba(207,184,124,.06)}
+
+/* ── TRINITY CONNECTION ──────────────────────────────────── */
+.trinity-insight{background:rgba(207,184,124,.04);border:1px solid rgba(207,184,124,.12);border-radius:12px;padding:1.75rem;margin-top:2rem}
+.ti-eyebrow{font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold2);margin-bottom:.5rem;font-weight:700}
+.ti-text{font-size:.82rem;color:var(--muted);line-height:1.85}
+.ti-text strong{color:var(--text)}
+
+footer{padding:2.5rem 2rem;text-align:center;border-top:1px solid var(--border2);font-size:.62rem;color:var(--dim)}
+footer a{color:var(--gold2);text-decoration:none}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">Vanderbilt Owen × Inkwell · Week 2 Concepts</div>
+  <div class="nav-links">
+    <a href="#edgerank" class="nav-link">EdgeRank</a>
+    <a href="#asymmetry" class="nav-link">Knowledge Asymmetry</a>
+    <a href="vanderbilt-day1.html" class="nav-link">← Day 1</a>
+    <a href="vanderbilt-lecture1.html" class="nav-link">Lecture 1</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 1: EDGERANK
+═══════════════════════════════════════════════════════ -->
+<section class="section" id="edgerank">
+  <div class="eyebrow" style="color:var(--blue2)">Social Graph · Edge Weighting</div>
+  <h2 class="sh">EdgeRank &amp; the<br><em>Imbalance Problem</em></h2>
+  <p class="lead">Facebook's original feed algorithm scores every edge in your social graph: <code style="font-family:var(--mono);font-size:.85em;color:var(--gold2)">Score = Affinity × ObjectWeight × TimeDecay</code>. Tamper with any weight and the graph breaks in a specific, predictable way. This is not an accident — it's algorithmic design.</p>
+
+  <div class="formula-box">
+    <div class="formula-big">EdgeRank(e) = Σ &nbsp; A(u,v) &nbsp; × &nbsp; W(type) &nbsp; × &nbsp; D(t)</div>
+    <div class="formula-parts">
+      <span class="fp"><span class="key">A(u,v)</span> Affinity between creator and viewer — interaction history, mutual friends, comment frequency</span>
+      <span class="fp"><span class="key">W(type)</span> Object weight — content type score: video, photo, link, text, live</span>
+      <span class="fp"><span class="key">D(t)</span> Time decay — exponential decay since content was created: e^(-λt)</span>
+    </div>
+  </div>
+
+  <div class="demo-grid" style="margin-top:2rem">
+    <div>
+      <div class="graph-box">
+        <div class="graph-title">
+          <span>Social Graph — Feed Edge Scores</span>
+          <span id="er-scenario-label" class="tag tag-blue">Natural State</span>
+        </div>
+        <div class="graph-svg-wrap" id="er-graph"></div>
+      </div>
+
+      <div class="feed-preview">
+        <div class="feed-header">Feed Order (highest EdgeRank first)</div>
+        <div id="feed-list"></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="control-card">
+        <div class="ctrl-label"><span class="ctrl-name">Affinity Weight</span><span class="ctrl-val" id="affinity-val">1.0×</span></div>
+        <div class="ctrl-desc">How much prior interaction history matters. High = echo chamber. Low = cold strangers surface.</div>
+        <input type="range" id="affinity-slider" min="0" max="3" step="0.1" value="1.0" oninput="updateGraph()">
+      </div>
+      <div class="control-card">
+        <div class="ctrl-label"><span class="ctrl-name">Object Weight Bias</span><span class="ctrl-val" id="owtype-val">Neutral</span></div>
+        <div class="ctrl-desc">Which content type gets boosted. Drag to favor video (Reels), links, or text posts.</div>
+        <input type="range" id="owtype-slider" min="0" max="4" step="1" value="2" oninput="updateGraph()">
+        <div style="display:flex;justify-content:space-between;font-size:.52rem;color:var(--dim);margin-top:3px">
+          <span>Text heavy</span><span>Links</span><span>Neutral</span><span>Photos</span><span>Video</span>
+        </div>
+      </div>
+      <div class="control-card">
+        <div class="ctrl-label"><span class="ctrl-name">Time Decay Rate λ</span><span class="ctrl-val" id="decay-val">Normal</span></div>
+        <div class="ctrl-desc">How fast old content dies. λ=0 = recency irrelevant. λ=high = only seconds-old content surfaces.</div>
+        <input type="range" id="decay-slider" min="0" max="4" step="0.5" value="1.5" oninput="updateGraph()">
+        <div style="display:flex;justify-content:space-between;font-size:.52rem;color:var(--dim);margin-top:3px">
+          <span>No decay</span><span>Slow</span><span>Normal</span><span>Fast</span><span>Brutal</span>
+        </div>
+      </div>
+
+      <div class="control-card" style="border-color:rgba(204,74,74,.18);background:rgba(204,74,74,.03)">
+        <div style="font-size:.62rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--red2);margin-bottom:.6rem">⚠ Tamper Presets</div>
+        <div class="preset-row">
+          <button class="preset-btn" id="preset-natural" onclick="setPreset('natural')">Natural</button>
+          <button class="preset-btn" id="preset-echo" onclick="setPreset('echo')">Echo Chamber</button>
+          <button class="preset-btn" id="preset-reels" onclick="setPreset('reels')">Reels Takeover</button>
+          <button class="preset-btn" id="preset-viral" onclick="setPreset('viral')">Viral Trap</button>
+          <button class="preset-btn" id="preset-outrage" onclick="setPreset('outrage')">Outrage Engine</button>
+        </div>
+      </div>
+
+      <div id="preset-explainer" style="background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:1rem;font-size:.7rem;color:var(--muted);line-height:1.8;display:none"></div>
+    </div>
+  </div>
+
+  <!-- Consequence Cards -->
+  <h3 style="font-family:var(--serif);font-size:1.1rem;font-weight:700;margin:3rem 0 .4rem">What Each Tamper Creates</h3>
+  <p style="font-size:.75rem;color:var(--muted);margin-bottom:0">Each weight manipulation produces a structurally different social graph — and a different psychological environment for users.</p>
+  <div class="consequence-grid">
+    <div class="cq-card cq-red">
+      <div class="cq-icon">🔁</div>
+      <div class="cq-title" style="color:var(--red2)">High Affinity → Echo Chamber</div>
+      <div class="cq-desc">When A(u,v) is maximized, the graph only surfaces nodes you've already interacted with. New ideas can't enter. Confirmation bias accelerates. Edges to new people have near-zero score.</div>
+      <div class="cq-real">Real: Facebook's 2018 "meaningful social interactions" update → political radicalization in isolated communities (internal research, 2021)</div>
+    </div>
+    <div class="cq-card cq-orange">
+      <div class="cq-icon">📱</div>
+      <div class="cq-title" style="color:var(--orange2)">Video Weight → TikTok-ification</div>
+      <div class="cq-desc">When W(video) >> W(text), creators are structurally forced to produce video or die. Text-only creators vanish from feeds. Nuanced long-form writing can't compete with 15-second clips.</div>
+      <div class="cq-real">Real: Instagram Reels rollout (2022) destroyed engagement for photographers and writers. Meta internal memo: "we must out-TikTok TikTok."</div>
+    </div>
+    <div class="cq-card cq-blue">
+      <div class="cq-icon">♾️</div>
+      <div class="cq-title" style="color:var(--blue2)">Low Decay → Viral Trap</div>
+      <div class="cq-desc">When D(t) ≈ 0, a post that goes viral stays viral indefinitely. The graph keeps recirculating the same edges. Old misinformation returns. Zombie content competes with fresh signal.</div>
+      <div class="cq-real">Real: COVID misinformation posts from 2020 were still surfacing in 2022 due to low decay on high-engagement content (MIT Technology Review, 2023)</div>
+    </div>
+    <div class="cq-card cq-purple">
+      <div class="cq-icon">😡</div>
+      <div class="cq-title" style="color:var(--purple2)">Outrage Weight → Anger Engine</div>
+      <div class="cq-desc">If W(angry_reaction) >> W(like), the graph rewards content that provokes anger. Edges to outrage-generating nodes grow stronger with every angry engagement, creating a vicious cycle.</div>
+      <div class="cq-real">Real: Facebook's own research (WSJ, 2021): "Our algorithms exploit the human brain's attraction to divisiveness." The fix was deprioritized because it hurt engagement metrics.</div>
+    </div>
+  </div>
+
+  <div class="trinity-insight">
+    <div class="ti-eyebrow">⬡ Trinity Graph Connection</div>
+    <p class="ti-text">Your <strong>Social Graph layer</strong> must make edge weights explicit and auditable. Unlike Facebook, your Trinity Graph exposes all three weight parameters — and lets the user see them. <strong>Authenticity</strong> as a bridge term means: the graph's edge weights should reflect actual relationship quality, not platform business objectives. When you design edge weights, you're designing the social reality your users experience.</p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 2: KNOWLEDGE ASYMMETRY
+═══════════════════════════════════════════════════════ -->
+<section class="section" id="asymmetry">
+  <div class="eyebrow" style="color:var(--red2)">Knowledge Graph · Power Structures</div>
+  <h2 class="sh">Knowledge Asymmetry:<br><em>Who Knows What</em></h2>
+  <p class="lead">A Knowledge Graph doesn't just store facts — it encodes who has access to which facts. In healthcare and insurance, information asymmetry isn't an accident. It's the business model. Your knowledge graph must make these asymmetries <em>visible</em> — because invisible asymmetries are how power perpetuates itself.</p>
+
+  <div class="scenario-tabs" id="scenario-tabs">
+    <button class="sc-tab active" onclick="setScenario('healthcare')">🏥 Healthcare</button>
+    <button class="sc-tab" onclick="setScenario('insurance')">📋 Insurance</button>
+    <button class="sc-tab" onclick="setScenario('priorauth')">🚫 Prior Authorization</button>
+    <button class="sc-tab" onclick="setScenario('claims')">💰 Claims Denial</button>
+  </div>
+
+  <div class="asym-demo">
+    <div class="asym-graph">
+      <div class="asym-graph-title">
+        <span id="asym-graph-title-text">Knowledge Graph — Healthcare</span>
+        <span id="asym-scenario-tag" class="tag tag-red">Asymmetric</span>
+      </div>
+      <div class="asym-svg-wrap" id="asym-graph"></div>
+    </div>
+
+    <div class="asym-detail">
+      <div class="asym-party ap-patient" id="party-patient" onclick="highlightParty('patient')">
+        <div class="ap-title">🧑 Patient <span class="ap-count" id="patient-count">5 nodes</span></div>
+        <div class="knowledge-bar-wrap">
+          <div class="kb-label">Knowledge coverage of their own care</div>
+          <div class="kb-bar" id="patient-bar" style="width:12%"></div>
+        </div>
+        <div class="ap-nodes-list" id="patient-nodes"></div>
+      </div>
+
+      <div class="asym-party ap-doctor" id="party-doctor" onclick="highlightParty('doctor')">
+        <div class="ap-title">👨‍⚕️ Doctor / Provider <span class="ap-count" id="doctor-count">18 nodes</span></div>
+        <div class="knowledge-bar-wrap">
+          <div class="kb-label">Knowledge coverage</div>
+          <div class="kb-bar" id="doctor-bar" style="width:44%"></div>
+        </div>
+        <div class="ap-nodes-list" id="doctor-nodes"></div>
+      </div>
+
+      <div class="asym-party ap-insurer" id="party-insurer" onclick="highlightParty('insurer')">
+        <div class="ap-title">🏢 Insurer <span class="ap-count" id="insurer-count">42 nodes</span></div>
+        <div class="knowledge-bar-wrap">
+          <div class="kb-label">Knowledge coverage</div>
+          <div class="kb-bar" id="insurer-bar" style="width:100%"></div>
+        </div>
+        <div class="ap-nodes-list" id="insurer-nodes"></div>
+      </div>
+
+      <div class="asym-reveal" id="asym-reveal">
+        <div class="asym-reveal-title" id="asym-reveal-title">Knowledge Gaps — What the Patient Doesn't Know</div>
+        <div id="asym-gaps"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="trinity-insight" style="margin-top:2rem">
+    <div class="ti-eyebrow">⬡ Trinity Graph Connection</div>
+    <p class="ti-text">Your <strong>Knowledge Graph layer</strong> should explicitly model <strong>epistemic ownership</strong> — not just "this fact exists" but "who knows this fact, and who is denied access to it." Use the IAM provenance doctrine: <code style="font-family:var(--mono);font-size:.85em;color:var(--gold2)">CONFIRMED / CITED / INFERRED / ASSUMED</code> on every edge — and add a <code style="font-family:var(--mono);font-size:.85em;color:var(--gold2)">visibility: [patient|doctor|insurer|public]</code> property. <strong>Transparency</strong> and <strong>reciprocity</strong> as bridge terms mean: the graph's knowledge should be as accessible to the patient as it is to the insurer. That's the design objective. Most existing systems do the opposite.</p>
+  </div>
+</section>
+
+<footer>
+  AI for Creative Startups: Building with the Trinity Graph Framework ·
+  Vanderbilt University Owen GSB · Spring 2026 ·
+  <a href="vanderbilt-day1.html">Day 1</a> · <a href="vanderbilt-lecture1.html">Lecture 1</a> · <a href="iam-classroom.html">IAM Classroom</a>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// SECTION 1: EDGERANK
+// ═══════════════════════════════════════════════════════
+
+const PEOPLE = [
+  {id:'you',   name:'You',      emoji:'😶', type:'self',   layer:'center'},
+  {id:'alex',  name:'Alex',     emoji:'🎸', type:'friend', affinity:0.9, age_h:2,  contentType:'video', postLabel:'Guitar reel'},
+  {id:'sam',   name:'Sam',      emoji:'📰', type:'friend', affinity:0.3, age_h:0.5,contentType:'link',  postLabel:'News article'},
+  {id:'maya',  name:'Maya',     emoji:'📸', type:'friend', affinity:0.6, age_h:8,  contentType:'photo', postLabel:'Travel photo'},
+  {id:'brand', name:'BrandCo',  emoji:'💼', type:'page',   affinity:0.1, age_h:1,  contentType:'link',  postLabel:'Sponsored post'},
+  {id:'jo',    name:'Jo',       emoji:'✍️', type:'friend', affinity:0.5, age_h:24, contentType:'text',  postLabel:'Long essay'},
+  {id:'kai',   name:'Kai',      emoji:'🎮', type:'friend', affinity:0.7, age_h:3,  contentType:'video', postLabel:'Gaming stream'},
+  {id:'news',  name:'The News', emoji:'📡', type:'page',   affinity:0.05,age_h:0.3,contentType:'link',  postLabel:'Breaking story'},
+];
+
+const OW_PROFILES = [
+  {video:0.4,photo:0.4,link:0.4,text:0.4},  // 0 text heavy
+  {video:0.6,photo:0.5,link:0.6,text:0.4},  // 1 links
+  {video:0.8,photo:0.8,link:0.6,text:0.5},  // 2 neutral
+  {video:0.8,photo:1.0,link:0.5,text:0.3},  // 3 photos
+  {video:1.5,photo:0.7,link:0.3,text:0.1},  // 4 video
+];
+const OW_LABELS = ['Text-heavy','Link boost','Neutral','Photo boost','Video/Reels'];
+
+function computeScore(person, aff, owtIdx, decay) {
+  const A = person.affinity * aff;
+  const W = (OW_PROFILES[owtIdx] || OW_PROFILES[2])[person.contentType] || 0.5;
+  const D = Math.exp(-decay * person.age_h / 8);
+  return +(A * W * D).toFixed(3);
+}
+
+function getParams() {
+  const aff   = +document.getElementById('affinity-slider').value;
+  const owt   = +document.getElementById('owtype-slider').value;
+  const decay = +document.getElementById('decay-slider').value;
+  return {aff, owt, decay};
+}
+
+const PRESETS = {
+  natural:  {aff:1.0, owt:2, decay:1.5, label:'Natural State',    tag:'tag-blue',   color:null},
+  echo:     {aff:3.0, owt:2, decay:1.5, label:'Echo Chamber',     tag:'tag-orange', color:'#cc7a2a'},
+  reels:    {aff:1.0, owt:4, decay:1.5, label:'Reels Takeover',   tag:'tag-purple', color:'#8a6aac'},
+  viral:    {aff:1.0, owt:2, decay:0.0, label:'Viral Trap',       tag:'tag-blue',   color:'#4a7bcc'},
+  outrage:  {aff:2.5, owt:4, decay:0.5, label:'Outrage Engine',   tag:'tag-red',    color:'#cc4a4a'},
+};
+
+const PRESET_EXPLAINERS = {
+  natural:  'Balanced weights. Each edge score reflects a mix of relationship strength, content type, and recency. Diverse feed — you see close friends but also strangers who post relevant content. This is closest to a healthy social graph.',
+  echo:     'Affinity boosted to 3×. Only people you already know dominate. Alex (high affinity) gets 3× score boost. Sam (low affinity) nearly disappears. New voices can\'t surface. The Burkle Effect: political beliefs polarize because no cross-cutting edges survive.',
+  reels:    'Video/Reels weight = 1.5×, text = 0.1×. Jo\'s thoughtful essay scores near-zero. Alex and Kai\'s videos dominate. Photographers get throttled. Writers give up. Content monoculture. Real: Instagram 2022 "summer of Reels" backlash.',
+  viral:    'Time decay λ = 0. Age is irrelevant. A post from 3 days ago competes equally with a post from 3 minutes ago. Old viral content resurfaces. High-engagement misinformation stays alive forever. Real: COVID disinfo lifecycle extended by months via low-decay algorithms.',
+  outrage:  'High affinity bias + video boost + slow decay = maximum outrage. Angry content accumulates engagement, low decay keeps it alive, high affinity traps you in a community of people who re-engage with it. This is the documented Facebook algorithm pattern from 2017–2021.',
+};
+
+function setPreset(name) {
+  const p = PRESETS[name];
+  document.getElementById('affinity-slider').value  = p.aff;
+  document.getElementById('owtype-slider').value    = p.owt;
+  document.getElementById('decay-slider').value     = p.decay;
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('preset-'+name).classList.add('active');
+  const el = document.getElementById('preset-explainer');
+  el.style.display = 'block';
+  el.innerHTML = `<strong style="color:var(--red2)">${p.label}:</strong> ${PRESET_EXPLAINERS[name]}`;
+  updateGraph();
+}
+
+function updateGraph() {
+  const {aff, owt, decay} = getParams();
+  document.getElementById('affinity-val').textContent = (+aff).toFixed(1)+'×';
+  document.getElementById('owtype-val').textContent   = OW_LABELS[owt];
+  const dLabels = ['None','Slow','Normal','Fast','Brutal'];
+  document.getElementById('decay-val').textContent    = dLabels[Math.round(decay/1)];
+
+  const people = PEOPLE.filter(p => p.id !== 'you');
+  const scores = people.map(p => ({...p, score: computeScore(p, aff, owt, decay)}));
+  scores.sort((a,b) => b.score - a.score);
+  const maxScore = scores[0]?.score || 1;
+
+  // Feed list
+  const fl = document.getElementById('feed-list');
+  fl.innerHTML = '';
+  scores.forEach((p,i) => {
+    const pct = ((p.score/maxScore)*100).toFixed(0);
+    const scoreColor = pct > 60 ? 'var(--green2)' : pct > 30 ? 'var(--gold)' : 'var(--red2)';
+    fl.innerHTML += `<div class="feed-item">
+      <div class="feed-rank">${i+1}</div>
+      <div class="feed-avatar">${p.emoji}</div>
+      <div class="feed-info">
+        <div class="feed-name">${p.name} <span style="font-size:.55rem;font-weight:400;color:var(--dim)">${p.postLabel}</span></div>
+        <div class="feed-meta">affinity ${p.affinity} · ${p.contentType} · ${p.age_h}h ago</div>
+      </div>
+      <div class="feed-score">
+        <div style="color:${scoreColor}">${p.score}</div>
+        <div class="feed-score-bar" style="background:${scoreColor};width:${pct}%;opacity:.6"></div>
+      </div>
+    </div>`;
+  });
+
+  drawERGraph(scores, maxScore);
+  updateERScenarioLabel();
+}
+
+function updateERScenarioLabel() {
+  const {aff, owt, decay} = getParams();
+  // Detect which preset matches
+  let matched = 'Custom';
+  let tagClass = 'tag-blue';
+  for (const [k,p] of Object.entries(PRESETS)) {
+    if (Math.abs(p.aff - aff) < 0.05 && p.owt == owt && Math.abs(p.decay - decay) < 0.05) {
+      matched = p.label; tagClass = p.tag; break;
+    }
+  }
+  const el = document.getElementById('er-scenario-label');
+  el.className = 'tag ' + tagClass;
+  el.textContent = matched;
+}
+
+function drawERGraph(scores, maxScore) {
+  const wrap = document.getElementById('er-graph');
+  wrap.innerHTML = '';
+  const w = wrap.clientWidth || 500;
+  const h = 380;
+  const cx = w/2, cy = h/2;
+  const r = Math.min(w,h)*0.35;
+
+  const svg = d3.select(wrap).append('svg').attr('width',w).attr('height',h);
+
+  // Place people in circle around center "You"
+  const people = scores;
+  people.forEach((p,i) => {
+    const angle = (2*Math.PI*i/people.length) - Math.PI/2;
+    p._x = cx + r*Math.cos(angle);
+    p._y = cy + r*Math.sin(angle);
+  });
+
+  // Edges with thickness + color based on score
+  people.forEach(p => {
+    const frac = p.score / Math.max(maxScore, 0.001);
+    const thick = Math.max(1, frac * 8);
+    const opacity = 0.15 + frac * 0.55;
+    const col = frac > 0.6 ? '#4a9a6a' : frac > 0.3 ? '#cfb87c' : '#cc4a4a';
+    svg.append('line')
+      .attr('x1',cx).attr('y1',cy).attr('x2',p._x).attr('y2',p._y)
+      .attr('stroke',col).attr('stroke-width',thick).attr('stroke-opacity',opacity);
+
+    // Score badge on edge
+    const mx = (cx+p._x)/2, my = (cy+p._y)/2;
+    svg.append('rect').attr('x',mx-16).attr('y',my-9).attr('width',32).attr('height',16)
+      .attr('rx',8).attr('fill','rgba(5,5,8,.85)').attr('stroke',col).attr('stroke-opacity',0.5).attr('stroke-width',1);
+    svg.append('text').attr('x',mx).attr('y',my+1).attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('font-size','8px').attr('font-family','Inter').attr('font-weight','700')
+      .attr('fill',col).text(p.score.toFixed(2));
+  });
+
+  // You node
+  svg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',22)
+    .attr('fill','rgba(207,184,124,.12)').attr('stroke','var(--gold)').attr('stroke-width',2).attr('stroke-opacity',0.6);
+  svg.append('text').attr('x',cx).attr('y',cy-1).attr('text-anchor','middle').attr('dominant-baseline','middle').attr('font-size','14px').text('😶');
+  svg.append('text').attr('x',cx).attr('y',cy+16).attr('text-anchor','middle').attr('font-size','7px').attr('fill','var(--gold)').attr('font-weight','700').text('YOU');
+
+  // Person nodes
+  people.forEach(p => {
+    const frac = p.score / Math.max(maxScore, 0.001);
+    const nr = 14 + frac*10;
+    const col = {video:'#8a6aac',photo:'#4a9a6a',link:'#cfb87c',text:'#4a7bcc'}[p.contentType]||'#888';
+    svg.append('circle').attr('cx',p._x).attr('cy',p._y).attr('r',nr)
+      .attr('fill',col).attr('fill-opacity',0.15 + frac*0.2)
+      .attr('stroke',col).attr('stroke-width',1.5).attr('stroke-opacity',0.5+frac*0.4);
+    svg.append('text').attr('x',p._x).attr('y',p._y-1).attr('text-anchor','middle').attr('dominant-baseline','middle').attr('font-size','12px').text(p.emoji);
+    svg.append('text').attr('x',p._x).attr('y',p._y+nr+10).attr('text-anchor','middle').attr('font-size','7.5px').attr('font-family','Inter').attr('font-weight','600')
+      .attr('fill',col).attr('stroke','rgba(5,5,8,.8)').attr('stroke-width',3).attr('paint-order','stroke fill').text(p.name);
+    // content type badge
+    const ctLabel = {video:'📹',photo:'📸',link:'🔗',text:'📝'}[p.contentType]||'';
+    svg.append('text').attr('x',p._x+nr-2).attr('y',p._y-nr+2).attr('font-size','8px').text(ctLabel);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// SECTION 2: KNOWLEDGE ASYMMETRY
+// ═══════════════════════════════════════════════════════
+
+const SCENARIOS = {
+  healthcare: {
+    title: 'Knowledge Graph — Healthcare Encounter',
+    tag: 'Asymmetric',
+    patient: {
+      nodes: ['My symptoms','My pain level','My insurance card','My family history','What I Googled'],
+      hidden: ['ICD-10 code assigned','CPT billing codes','Formulary tier','Care pathway options','My risk score'],
+      bar: 12, count: '5 known'
+    },
+    doctor: {
+      nodes: ['Diagnosis codes','Treatment protocols','Drug formulary','Referral network','Lab ranges','Clinical guidelines','Prior visit notes','Medication history'],
+      hidden: ['Insurance prior-auth rules','Network contract rates','Formulary change log','Appeals success rates'],
+      bar: 44, count: '18 nodes'
+    },
+    insurer: {
+      nodes: ['Claims history (lifetime)','Risk model score','Actuarial tables','Prior auth rulebook','Network contracts','Preferred drug list','Out-of-network flags','Cost benchmarks','Utilization targets','Denial pattern data','Appeals history','Employer contract','Premium calc model','Loss ratio targets','Fraud signals'],
+      hidden: [],
+      bar: 100, count: '42 nodes'
+    },
+    gaps: [
+      {icon:'💊', title:'Formulary Opacity', desc:'The insurer\'s preferred drug list changes quarterly. Neither you nor your doctor sees next quarter\'s list when prescribing. Your medication may cost $8 or $400 depending on a decision made in a boardroom you never enter.'},
+      {icon:'🚫', title:'Prior Authorization', desc:'Your doctor knows the right treatment. The insurer\'s prior-auth algorithm may deny it. The rulebook has 7,000+ codes. Your doctor spends 16% of clinical time on PA requests. You wait.'},
+      {icon:'🌐', title:'Network Opacity', desc:'You don\'t know if an anesthesiologist in an in-network hospital is in-network. The insurer knows. You find out on the bill. Surprise billing acts only partially closed this gap.'},
+      {icon:'📊', title:'Risk Score Arbitrage', desc:'Insurers assign you a risk score using claims, credit data, zip code, and demographic inference. You cannot see your own risk score. It determines your premium and what you\'re sold.'}
+    ]
+  },
+  insurance: {
+    title: 'Knowledge Graph — Insurance Policy',
+    tag: 'Power Asymmetry',
+    patient: {
+      nodes: ['What I told the agent','My premium','My policy number','The 4 things I know it covers'],
+      hidden: ['My risk tier','My CLV model','Actuarial segment','Renewal pricing model','Churn risk score'],
+      bar: 8, count: '4 known'
+    },
+    doctor: {
+      nodes: ['Pre-auth codes','Diagnosis codes','Procedure codes','Coverage tiers','Network status','Referral rules','Step therapy rules'],
+      hidden: ['Payer contract rates','Denial target rates','Prior auth algorithm','Appeals win rates'],
+      bar: 35, count: '14 nodes'
+    },
+    insurer: {
+      nodes: ['7 years claims history','Credit score proxy','Zip code risk model','Occupation risk','Vehicle telemetry','Credit card behavior','Social media signals','Health proxy indicators','CLV model','Churn model','Renewal price elasticity','Cross-sell score','Fraud score','Litigation risk score','Regulatory filing details'],
+      hidden: [],
+      bar: 100, count: '50+ nodes'
+    },
+    gaps: [
+      {icon:'📈', title:'Price Elasticity Model', desc:'Your insurer knows exactly how much they can raise your premium before you leave. They have historical churn data on millions of customers. You have one number: your current premium.'},
+      {icon:'🔮', title:'Behavioral Prediction', desc:'Using credit card data, location data, and claims patterns, insurers predict future claims before they happen. A new crib purchase predicts pregnancy. A gym cancellation predicts health decline.'},
+      {icon:'⚖️', title:'Policy Language Asymmetry', desc:'Average policy has 47 pages. Average reading grade level required: college. Average policyholder reading grade level: 8th grade. The exclusions are in the fine print. The coverage is in the marketing.'},
+      {icon:'💡', title:'Preferred Provider Opacity', desc:'In-network vs out-of-network designations are negotiated contracts that change annually. The insurer\'s network graph has 100,000+ nodes. Yours has: the one doctor you know.'}
+    ]
+  },
+  priorauth: {
+    title: 'Knowledge Graph — Prior Authorization Bottleneck',
+    tag: 'Systemic Failure',
+    patient: {
+      nodes: ['My diagnosis','My symptoms','My doctor\'s recommendation'],
+      hidden: ['What PA codes exist','Which drugs are covered','Expected denial reason','Appeal pathway','What competitor plans cover'],
+      bar: 7, count: '3 known'
+    },
+    doctor: {
+      nodes: ['Clinical guidelines','Evidence base','ICD codes','PA request submitted','Peer-to-peer option','Appeal filed'],
+      hidden: ['Insurer\'s approval algorithm','Approval rate by code','Time-to-approval by drug','Denial pattern by insurer','Which rep to call'],
+      bar: 30, count: '12 nodes'
+    },
+    insurer: {
+      nodes: ['PA approval algorithm','7,000+ code rulebook','Formulary tier','Step therapy ladder','Utilization targets','Clinical reviewer workload','Denial template library','Appeal overturn rate','Peer-to-peer queue','Gold carding exceptions','State mandate list','CMS audit triggers','Preferred substitute list'],
+      hidden: [],
+      bar: 100, count: '38 nodes'
+    },
+    gaps: [
+      {icon:'⏳', title:'The Wait', desc:'Average PA turnaround: 14 days. For cancer treatments: up to 30 days. The insurer\'s algorithm runs in milliseconds. The human review delay is structural, not technical. It is a feature.'},
+      {icon:'🎲', title:'Opaque Approval Criteria', desc:'CMS requires criteria to be "clinically appropriate." In practice, criteria are proprietary algorithms. Two identical patients with identical diagnoses may receive different decisions from different reviewers on the same day.'},
+      {icon:'🔄', title:'Step Therapy / Fail First', desc:'You must try and fail on Drug A before the insurer will cover Drug B — even if your doctor knows Drug B is clinically superior for your case. You are the experiment.'},
+      {icon:'💸', title:'Administrative Tax', desc:'$35B/year is spent on PA administration in the US. 16% of physician time. 92% of physicians say PA delays necessary care. 34% of physicians say PA has led to a serious adverse event for a patient.'}
+    ]
+  },
+  claims: {
+    title: 'Knowledge Graph — Claims Denial',
+    tag: 'Denial Architecture',
+    patient: {
+      nodes: ['My bill','The denial letter','My diagnosis','My appeal (maybe)'],
+      hidden: ['Denial algorithm','Coverage exception codes','Internal appeal success rates','External review pathway','State insurance commissioner rules','Medical necessity definition used'],
+      bar: 6, count: '4 known'
+    },
+    doctor: {
+      nodes: ['Medical record','ICD codes','CPT codes','Clinical notes','Appeal letter','Peer-to-peer'],
+      hidden: ['Denial reason (real)','Approval rate by reviewer','Success rate by evidence type','Which clinical guidelines insurer accepts'],
+      bar: 28, count: '11 nodes'
+    },
+    insurer: {
+      nodes: ['Denial algorithm (proprietary)','Medical necessity criteria','Coverage policy documents','Internal denial rate targets','Approval rate benchmarks','Appeal overturn rate','External reviewer network','Litigation history','State regulatory compliance','Claim age flags','Re-submission rules','Coding audit patterns','Fraud detection flags','Reserve calculations','Loss ratio impact','Actuarial impact of appeal'],
+      hidden: [],
+      bar: 100, count: '45+ nodes'
+    },
+    gaps: [
+      {icon:'🤖', title:'Algorithmic Denial', desc:'A 2023 ProPublica investigation found UnitedHealth\'s nH Predict algorithm denied post-acute care for 90%+ of patients, overriding individual physician judgments, based on a model trained on cost data, not clinical outcomes.'},
+      {icon:'📉', title:'Denial as Business Model', desc:'The Affordable Care Act caps insurer profit at 15-20% (MLR rule). This incentivizes denying claims to reduce the numerator, not reducing cost. Every successful denial improves the ratio.'},
+      {icon:'📬', title:'The 90-Day Wait Tactic', desc:'Insurers know most patients abandon appeals after 90 days. The appeal window is 180 days but the fatigue is a documented strategy. Only 0.1% of denied claims are appealed externally.'},
+      {icon:'🧩', title:'Coding Vulnerability', desc:'A claim denied for code A may be covered under code B. The insurer knows both codes exist. Your doctor may not know to resubmit. This is documented in insurer training manuals as a "cost containment strategy."'}
+    ]
+  }
+};
+
+let currentScenario = 'healthcare';
+let highlightedParty = null;
+
+function setScenario(name) {
+  currentScenario = name;
+  document.querySelectorAll('.sc-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  renderAsymScenario(name);
+}
+
+function renderAsymScenario(name) {
+  const sc = SCENARIOS[name];
+  if (!sc) return;
+
+  document.getElementById('asym-graph-title-text').textContent = sc.title;
+
+  // Patient
+  document.getElementById('patient-count').textContent = sc.patient.count;
+  document.getElementById('patient-bar').style.width = sc.patient.bar + '%';
+  const pnl = document.getElementById('patient-nodes');
+  pnl.innerHTML = sc.patient.nodes.map(n=>`<span class="ap-node">${n}</span>`).join('')
+    + sc.patient.hidden.map(n=>`<span class="ap-node ap-hidden">🔒 ${n}</span>`).join('');
+
+  // Doctor
+  document.getElementById('doctor-count').textContent = sc.doctor.count;
+  document.getElementById('doctor-bar').style.width = sc.doctor.bar + '%';
+  document.getElementById('doctor-nodes').innerHTML =
+    sc.doctor.nodes.map(n=>`<span class="ap-node">${n}</span>`).join('')
+    + sc.doctor.hidden.map(n=>`<span class="ap-node ap-hidden">🔒 ${n}</span>`).join('');
+
+  // Insurer
+  document.getElementById('insurer-count').textContent = sc.insurer.count;
+  document.getElementById('insurer-bar').style.width = sc.insurer.bar + '%';
+  document.getElementById('insurer-nodes').innerHTML =
+    sc.insurer.nodes.map(n=>`<span class="ap-node">${n}</span>`).join('');
+
+  // Gaps
+  document.getElementById('asym-reveal-title').textContent = 'Knowledge Gaps — What the Patient Doesn\'t Know';
+  const gapEl = document.getElementById('asym-gaps');
+  gapEl.innerHTML = sc.gaps.map(g=>`
+    <div class="gap-item">
+      <div class="gap-icon">${g.icon}</div>
+      <div><div class="gap-title">${g.title}</div><div class="gap-desc">${g.desc}</div></div>
+    </div>`).join('');
+
+  drawAsymGraph(sc, name);
+}
+
+function highlightParty(party) {
+  highlightedParty = highlightedParty === party ? null : party;
+  renderAsymScenario(currentScenario);
+}
+
+function drawAsymGraph(sc, name) {
+  const wrap = document.getElementById('asym-graph');
+  wrap.innerHTML = '';
+  const w = wrap.clientWidth || 420;
+  const h = 420;
+
+  const svg = d3.select(wrap).append('svg').attr('width', w).attr('height', h);
+
+  // Three party positions
+  const parties = [
+    {id:'patient', label:'Patient', emoji:'🧑', color:'#4a7bcc', nodes:sc.patient.nodes, x:w*0.18, y:h*0.5, count:sc.patient.nodes.length},
+    {id:'doctor',  label:'Doctor',  emoji:'👨‍⚕️', color:'#4a9a6a', nodes:sc.doctor.nodes,  x:w*0.5,  y:h*0.2, count:sc.doctor.nodes.length},
+    {id:'insurer', label:'Insurer', emoji:'🏢', color:'#cc4a4a', nodes:sc.insurer.nodes, x:w*0.82, y:h*0.5, count:sc.insurer.nodes.length},
+  ];
+
+  // Draw knowledge node satellites around each party
+  parties.forEach(party => {
+    const isHighlighted = highlightedParty === party.id;
+    const maxR = isHighlighted ? 110 : (party.id === 'insurer' ? 100 : party.id === 'doctor' ? 70 : 45);
+    const nr = Math.min(party.count, 15);
+    const nodeR = Math.max(3, Math.min(7, 130/nr));
+
+    party.nodes.slice(0, nr).forEach((node, i) => {
+      const angle = (2*Math.PI*i/nr) - Math.PI/2;
+      const dist  = maxR * (0.55 + 0.45 * ((i%3)/3));
+      const nx = party.x + dist*Math.cos(angle);
+      const ny = party.y + dist*Math.sin(angle);
+
+      svg.append('line').attr('x1',party.x).attr('y1',party.y).attr('x2',nx).attr('y2',ny)
+        .attr('stroke',party.color).attr('stroke-opacity',isHighlighted ? 0.35 : 0.18).attr('stroke-width',1);
+
+      svg.append('circle').attr('cx',nx).attr('cy',ny).attr('r',nodeR)
+        .attr('fill',party.color).attr('fill-opacity',isHighlighted ? 0.3 : 0.18)
+        .attr('stroke',party.color).attr('stroke-width',0.8).attr('stroke-opacity',0.5);
+    });
+
+    // Hidden/locked nodes for patient (shown as ghosted)
+    if (party.id === 'patient') {
+      sc.patient.hidden.slice(0,5).forEach((node, i) => {
+        const angle = (2*Math.PI*(i + party.count)/(party.count+5)) - Math.PI/2;
+        const dist = 50;
+        const nx = party.x + dist*Math.cos(angle);
+        const ny = party.y + dist*Math.sin(angle);
+        svg.append('line').attr('x1',party.x).attr('y1',party.y).attr('x2',nx).attr('y2',ny)
+          .attr('stroke','#666').attr('stroke-opacity',0.15).attr('stroke-width',0.5).attr('stroke-dasharray','3,3');
+        svg.append('circle').attr('cx',nx).attr('cy',ny).attr('r',4)
+          .attr('fill','none').attr('stroke','#555').attr('stroke-width',1).attr('stroke-dasharray','2,2').attr('stroke-opacity',0.4);
+        svg.append('text').attr('x',nx).attr('y',ny+1).attr('text-anchor','middle').attr('dominant-baseline','middle')
+          .attr('font-size','6px').attr('fill','#555').attr('opacity',0.5).text('🔒');
+      });
+    }
+
+    // Party main node
+    const mainR = party.id === 'insurer' ? 26 : party.id === 'doctor' ? 22 : 20;
+    svg.append('circle').attr('cx',party.x).attr('cy',party.y).attr('r',mainR)
+      .attr('fill',party.color).attr('fill-opacity',0.15)
+      .attr('stroke',party.color).attr('stroke-width', isHighlighted ? 2.5 : 1.5)
+      .attr('stroke-opacity', isHighlighted ? 0.9 : 0.5);
+    svg.append('text').attr('x',party.x).attr('y',party.y-1).attr('text-anchor','middle').attr('dominant-baseline','middle').attr('font-size','14px').text(party.emoji);
+    svg.append('text').attr('x',party.x).attr('y',party.y+mainR+11).attr('text-anchor','middle')
+      .attr('font-size','8px').attr('font-family','Inter').attr('font-weight','700')
+      .attr('fill',party.color).attr('stroke','rgba(5,5,8,.8)').attr('stroke-width',3).attr('paint-order','stroke fill')
+      .text(party.label);
+    // Node count badge
+    svg.append('rect').attr('x',party.x+mainR-8).attr('y',party.y-mainR-12).attr('width',28).attr('height',14).attr('rx',7)
+      .attr('fill',party.color).attr('fill-opacity',0.18).attr('stroke',party.color).attr('stroke-opacity',0.4).attr('stroke-width',1);
+    svg.append('text').attr('x',party.x+mainR+6).attr('y',party.y-mainR-4.5).attr('text-anchor','middle')
+      .attr('font-size','7px').attr('font-family','Inter').attr('font-weight','700').attr('fill',party.color).text(party.count);
+  });
+
+  // Arrows between parties (asymmetric flow)
+  const arrowData = [
+    {from:parties[0], to:parties[1], label:'asks',    opacity:0.3, dashed:false},
+    {from:parties[1], to:parties[0], label:'partial', opacity:0.3, dashed:false},
+    {from:parties[2], to:parties[1], label:'denies',  opacity:0.6, dashed:true, color:'#cc4a4a'},
+    {from:parties[2], to:parties[0], label:'bills',   opacity:0.55, dashed:true, color:'#cc4a4a'},
+    {from:parties[1], to:parties[2], label:'requests',opacity:0.25, dashed:false},
+  ];
+
+  const defs = svg.append('defs');
+  arrowData.forEach((a,i) => {
+    const col = a.color || a.from.color;
+    const mid = defs.append('marker').attr('id',`arr-${i}`)
+      .attr('markerWidth',6).attr('markerHeight',6).attr('refX',5).attr('refY',3).attr('orient','auto');
+    mid.append('path').attr('d','M0,0 L6,3 L0,6 Z').attr('fill',col).attr('opacity',a.opacity+0.2);
+    const dx = a.to.x - a.from.x, dy = a.to.y - a.from.y;
+    const len = Math.sqrt(dx*dx+dy*dy);
+    const fOff = (a.from.id==='insurer'?26:a.from.id==='doctor'?22:20);
+    const tOff = (a.to.id==='insurer'?28:a.to.id==='doctor'?24:22);
+    const x1 = a.from.x + dx/len*fOff, y1 = a.from.y + dy/len*fOff;
+    const x2 = a.to.x   - dx/len*tOff, y2 = a.to.y   - dy/len*tOff;
+    svg.append('line').attr('x1',x1).attr('y1',y1).attr('x2',x2).attr('y2',y2)
+      .attr('stroke',col).attr('stroke-opacity',a.opacity).attr('stroke-width',a.dashed?2:1.5)
+      .attr('stroke-dasharray',a.dashed?'5,4':'none')
+      .attr('marker-end',`url(#arr-${i})`);
+    svg.append('text').attr('x',(x1+x2)/2).attr('y',(y1+y2)/2-6)
+      .attr('text-anchor','middle').attr('font-size','7px').attr('font-family','Inter').attr('fill',col).attr('fill-opacity',a.opacity+0.3)
+      .attr('stroke','rgba(5,5,8,.8)').attr('stroke-width',2).attr('paint-order','stroke fill').text(a.label);
+  });
+
+  // Asymmetry indicator
+  const asymW = w - 20;
+  svg.append('rect').attr('x',10).attr('y',h-32).attr('width',asymW).attr('height',16).attr('rx',8)
+    .attr('fill','rgba(204,74,74,.06)').attr('stroke','rgba(204,74,74,.2)').attr('stroke-width',1);
+  svg.append('rect').attr('x',10).attr('y',h-32).attr('width',sc.insurer.nodes.length / 50 * asymW).attr('height',16).attr('rx',8)
+    .attr('fill','rgba(204,74,74,.4)');
+  svg.append('rect').attr('x',10).attr('y',h-32).attr('width',sc.doctor.nodes.length / 50 * asymW).attr('height',16).attr('rx',8)
+    .attr('fill','rgba(74,154,106,.35)');
+  svg.append('rect').attr('x',10).attr('y',h-32).attr('width',sc.patient.nodes.length / 50 * asymW).attr('height',16).attr('rx',8)
+    .attr('fill','rgba(74,123,204,.5)');
+  svg.append('text').attr('x',w/2).attr('y',h-14).attr('text-anchor','middle').attr('font-size','7px').attr('font-family','Inter')
+    .attr('fill','rgba(232,228,220,.35)').text('← Knowledge asymmetry bar: Patient (blue) · Doctor (green) · Insurer (red) →');
+}
+
+// ── Init ─────────────────────────────────────────────
+setPreset('natural');
+renderAsymScenario('healthcare');
+
+window.addEventListener('resize', () => {
+  updateGraph();
+  renderAsymScenario(currentScenario);
+});
+</script>
+</body>
+</html>
