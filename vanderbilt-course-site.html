@@ -3977,22 +3977,35 @@ function toggleVibeWord(w) {
 }
 
 function renderVibeGrid() {
-  const el = document.getElementById('vibeGrid');
+  const el = document.getElementById('ity-grid');  // fixed ID
   if (!el) return;
+  const sel = vibeMode === 1 ? vibeSelected : vibeSelected2;
   el.innerHTML = VIBE_WORDS.map(({w,g}) => {
     const inA = vibeSelected.has(w), inB = vibeSelected2.has(w);
+    const active = vibeMode===1 ? inA : inB;
+    const other  = vibeMode===1 ? inB : inA;
     const color = g==='social'?'#3b82f6':g==='knowledge'?'#10b981':'#f59e0b';
-    return `<button onclick="toggleVibeWord('${w}')" style="padding:6px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:${inA||inB?700:400};
-      border:2px solid ${inA?color:inB?'#8b5cf6':color+'44'};
-      background:${inA?color+'22':inB?'rgba(139,92,246,0.15)':'white'};
-      color:${inA?color:inB?'#7c3aed':'var(--text-muted)'};">${w}</button>`;
+    return `<button onclick="toggleVibeWord('${w}')" style="padding:6px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:${active||other?700:400};
+      border:2px solid ${active?color:other?'#8b5cf6':color+'44'};
+      background:${active?color+'22':other?'rgba(139,92,246,0.15)':'rgba(255,255,255,0.05)'};
+      color:${active?color:other?'#7c3aed':'var(--text-muted)'};">${w}</button>`;
   }).join('');
-  document.getElementById('vibeCountA').textContent = vibeSelected.size + '/5 selected';
-  document.getElementById('vibeCountB').textContent = vibeSelected2.size + '/5 selected';
+  // Update info text
+  const info = document.getElementById('vibe-selection-info');
+  if (info) info.textContent = `Brand ${vibeMode}: ${sel.size}/5 -ity words selected${sel.size===5?' ✅':''}`;
+}
+
+function setActiveBrand(n) {
+  vibeMode = n;
+  document.getElementById('brand-tab-1').className = 'brand-tab' + (n===1?' active-1':'');
+  document.getElementById('brand-tab-2').className = 'brand-tab' + (n===2?' active-2':'');
+  const label = document.getElementById('vibe-brand-label');
+  if (label) label.textContent = n===1 ? 'Brand 1 Name' : 'Brand 2 Name';
+  renderVibeGrid();
 }
 
 function drawVibeChart() {
-  const canvas = document.getElementById('vibeCanvas');
+  const canvas = document.getElementById('vibe-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
@@ -4002,6 +4015,8 @@ function drawVibeChart() {
   const wordsB = [...vibeSelected2];
   const allWords = [...new Set([...wordsA,...wordsB])];
   if (allWords.length === 0) return;
+  const area = document.getElementById('vibe-canvas-area');
+  if (area) area.style.display = 'block';
   const n = Math.max(5, allWords.length);
   const angleStep = (2*Math.PI)/n;
   // Draw grid

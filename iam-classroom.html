@@ -652,6 +652,8 @@ async function initStudent() {
   await loadGraphNodes();
   // §23.1 — Build static prefix once per session for cache-consistent prompting
   sessionSystemPrompt = buildStaticSystemPrompt();
+  // Load memories async — inject into next prompt
+  loadStudentMemory().then(mems => { studentMemories = mems; });
   if (!sessionQueryMap[studentId]) sessionQueryMap[studentId] = 0;
   addBotMessage(`I'm IAM ${botName} — your ${archetype.replace(/^The /,'')} for this semester.\n\nWe're going to build something real together, and I'm going to push you to think in three layers:\n🔴 **Social** — WHO has the problem, who trusts you, who opens doors\n🔵 **Knowledge** — WHAT you can prove, validate, and cite\n🟢 **Generative** — WHAT IF you build the AI-powered version\n\nYour Trinity Graph (right panel) evolves as we talk. Every concept you explore becomes a node. Tap any node to go deeper.\n\n**Let's start with something real:** Tell me about the venture idea you're bringing to this course — even if it's rough. One sentence: what problem does it solve, and who has that problem right now?`);
   renderGraph();
@@ -844,10 +846,13 @@ async function sendMessage() {
       // §23.1 Cache-aware prompting:
       //   system_instruction → STATIC prefix (identical every turn → LLM prefix cache hit)
       //   contents[0]        → <system-reminder> with DYNAMIC state + student message
+      const memStr = studentMemories.length > 0
+        ? '\nWhat student has shared about their venture:\n' + studentMemories.slice(0,4).map((m,i)=>`  ${i+1}. ${m}`).join('\n')
+        : '';
       const dynamicReminder = `<system-reminder>
 Kirk Step: ${kirkStep}/12
 Active graph nodes: ${topNodes || 'seed nodes only'}
-Session query #${sessionQueryMap[studentId]}
+Session query #${sessionQueryMap[studentId]}${memStr}
 </system-reminder>`;
       apiBody = {
         system_instruction: { parts: [{ text: sessionSystemPrompt }] },
@@ -879,13 +884,19 @@ Session query #${sessionQueryMap[studentId]}
         if(r.ok){const d=await r.json();reply=d?.candidates?.[0]?.content?.parts?.[0]?.text||null;}
       }catch(e){}
     }
-    const replyText = reply || 'I need a moment to reflect on that. Could you rephrase?';
+    const replyText = reply || null;
     
     document.getElementById('typing').style.display = 'none';
-    addBotMessage(replyText);
+    if (replyText) {
+      addBotMessage(replyText);
+      extractAndSaveMemory(text, replyText);
+    } else {
+      // All AI providers failed — show actionable message
+      addBotMessage('⚠️ AI service is offline. To fix:\n1. Go to aistudio.google.com → create a free API key\n2. Log in as professor → tap ⚙️ Admin → paste the key\n\nYour Trinity Graph is still tracking your journey — all graph features work without AI.');
+    }
     
     // Update node activations based on keywords
-    await updateActivations(text + ' ' + replyText);
+    await updateActivations(text + ' ' + (replyText||text));
     
     queryCount++;
     if (queryCount % 5 === 0) {
@@ -1267,6 +1278,16 @@ function renderJourney() {
     return;
   }
 
+  // Memory summary at top of Journey
+  if (studentMemories.length > 0) {
+    html += `<div style="background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.15);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:9px;font-weight:700;color:var(--gold);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">🧠 What IAM Remembers About You</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${studentMemories.slice(0,5).map(m=>`<div style="font-size:11px;color:var(--text);line-height:1.4;padding:5px 8px;background:rgba(255,255,255,.04);border-radius:6px;border-left:2px solid rgba(255,215,0,.3)">${m}</div>`).join('')}
+      </div>
+    </div>`;
+  }
+
   const LAYER_META = {
     social:     { label:'🔴 Social — WHO',     color:'#4a7bcc', emoji:'🧠', desc:'People, empathy, trust, relationships' },
     knowledge:  { label:'🔵 Knowledge — WHAT',  color:'#cfb87c', emoji:'📚', desc:'Data, validation, domain expertise' },
@@ -1383,6 +1404,51 @@ async function nudgeStudent(sid, name) {
     alert(`Nudge saved for ${name}. The class agent will deliver it at next check-in.`);
   } catch(e) { alert('Saved locally.'); }
 }
+
+
+// ===== STUDENT MEMORY SYSTEM =====
+// Stores key venture facts per student in Neo4j — persists across browser sessions
+
+const MEMORY_TRIGGERS = [
+  /my (venture|startup|company|idea|product|service) (is|does|helps|solves)/i,
+  /I'?m (building|working on|developing|creating)/i,
+  /my (customer|user|target|market|audience)/i,
+  /my (co.?founder|team|partner)/i,
+  /we (raised|have|built|launched)/i,
+  /the problem (is|I'?m solving|we'?re solving)/i,
+];
+
+async function extractAndSaveMemory(userMsg, botReply) {
+  if (!studentId) return;
+  // Check if user message contains notable venture info
+  const isNotable = MEMORY_TRIGGERS.some(r => r.test(userMsg));
+  if (!isNotable) return;
+  // Extract key fact (simple heuristic — first sentence that matches)
+  const sentences = userMsg.replace(/[!?]/g,'.').split('.').map(s=>s.trim()).filter(s=>s.length>10);
+  const fact = sentences.find(s => MEMORY_TRIGGERS.some(r => r.test(s))) || sentences[0];
+  if (!fact) return;
+  const ts = Date.now();
+  const memId = `mem_${studentId}_${ts}`;
+  try {
+    await neo4j(
+      'MERGE (m:StudentMemory {id:$id}) SET m.student_id=$sid, m.fact=$fact, m.ts=$ts, m.session=$session',
+      {id:memId, sid:studentId, fact:fact.slice(0,300), ts, session:getCurrentSession()}
+    );
+  } catch(e) { /* silent — memory is best-effort */ }
+}
+
+async function loadStudentMemory() {
+  if (!studentId) return [];
+  try {
+    const r = await neo4j(
+      'MATCH (m:StudentMemory) WHERE m.student_id=$sid RETURN m.fact, m.ts ORDER BY m.ts DESC LIMIT 8',
+      {sid:studentId}
+    );
+    return (r.values||[]).map(v=>v[0]);
+  } catch(e) { return []; }
+}
+
+let studentMemories = [];  // loaded on login, injected into dynamic reminder
 
 function showTab(tab) {
   document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
