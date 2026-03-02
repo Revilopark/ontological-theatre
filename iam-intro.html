@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Welcome to the Serendipity Engine</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  width: 100%; height: 100%;
+  background: #03080F;
+  color: #B0C4D8;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  overflow: hidden;
+}
+
+/* ── Canvas background ── */
+#bg-canvas {
+  position: fixed; inset: 0; z-index: 0;
+}
+
+/* ── Main wrapper ── */
+#scene {
+  position: relative; z-index: 10;
+  width: 100%; height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+
+/* ── Trinity orbs ── */
+.orb-ring {
+  position: absolute;
+  width: 560px; height: 560px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 4px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: orbit linear infinite;
+  cursor: default;
+  transition: transform .3s;
+}
+.orb:hover { transform: scale(1.15) !important; }
+.orb-social {
+  width: 90px; height: 90px;
+  background: radial-gradient(circle, rgba(74,123,204,.55), rgba(74,123,204,.15));
+  border: 1px solid rgba(74,123,204,.5);
+  box-shadow: 0 0 30px rgba(74,123,204,.4), inset 0 0 20px rgba(74,123,204,.1);
+  top: calc(50% - 45px - 210px); left: calc(50% - 45px);
+  animation-duration: 18s;
+}
+.orb-knowledge {
+  width: 80px; height: 80px;
+  background: radial-gradient(circle, rgba(201,168,76,.55), rgba(201,168,76,.15));
+  border: 1px solid rgba(201,168,76,.5);
+  box-shadow: 0 0 30px rgba(201,168,76,.4), inset 0 0 20px rgba(201,168,76,.1);
+  top: calc(50% - 40px + 105px); left: calc(50% - 40px + 182px);
+  animation-duration: 22s; animation-direction: reverse;
+}
+.orb-generative {
+  width: 85px; height: 85px;
+  background: radial-gradient(circle, rgba(138,106,172,.55), rgba(138,106,172,.15));
+  border: 1px solid rgba(138,106,172,.5);
+  box-shadow: 0 0 30px rgba(138,106,172,.4), inset 0 0 20px rgba(138,106,172,.1);
+  top: calc(50% - 42px + 105px); left: calc(50% - 42px - 182px);
+  animation-duration: 26s;
+}
+.orb-label {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; opacity: .85;
+}
+.orb-icon { font-size: 22px; }
+.orb-social .orb-label { color: #7ab3ff; }
+.orb-knowledge .orb-label { color: #D4AF37; }
+.orb-generative .orb-label { color: #c084fc; }
+
+@keyframes orbit {
+  0% { transform: rotate(0deg) translateX(0) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(0) rotate(-360deg); }
+}
+
+/* ── Center content ── */
+#center-content {
+  text-align: center;
+  position: relative; z-index: 20;
+}
+
+.eyebrow {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .18em;
+  color: #00E5FF; opacity: 0;
+  animation: fadeUp .8s ease forwards;
+  animation-delay: .4s;
+  margin-bottom: 16px;
+}
+
+.main-title {
+  font-size: clamp(32px, 7vw, 72px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -.03em;
+  background: linear-gradient(135deg, #ffffff 0%, #a8e6ff 40%, #00E5FF 80%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  opacity: 0;
+  animation: fadeUp .9s ease forwards;
+  animation-delay: .7s;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 0 40px rgba(0,229,255,.3));
+}
+
+.subtitle {
+  font-size: clamp(14px, 2.5vw, 20px);
+  color: rgba(176,196,216,.8);
+  font-weight: 400;
+  line-height: 1.5;
+  opacity: 0;
+  animation: fadeUp .9s ease forwards;
+  animation-delay: 1s;
+  margin-bottom: 8px;
+}
+
+.stats-row {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; flex-wrap: wrap;
+  margin: 20px 0 36px;
+  opacity: 0;
+  animation: fadeUp .9s ease forwards;
+  animation-delay: 1.3s;
+}
+.stat-chip {
+  background: rgba(0,229,255,.08);
+  border: 1px solid rgba(0,229,255,.2);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(176,196,216,.9);
+  display: flex; align-items: center; gap: 6px;
+}
+.stat-chip strong { color: #00E5FF; }
+.stat-sep { color: rgba(255,255,255,.15); font-size: 18px; }
+
+/* ── Word cycling ── */
+.word-cycle-container {
+  font-size: clamp(14px, 2.5vw, 18px);
+  color: rgba(176,196,216,.6);
+  margin-bottom: 40px;
+  opacity: 0;
+  animation: fadeUp .9s ease forwards;
+  animation-delay: 1.5s;
+  height: 28px; overflow: hidden;
+}
+.word-cycle {
+  display: inline-block;
+  color: #00E5FF;
+  font-weight: 700;
+  transition: transform .4s ease, opacity .4s ease;
+}
+
+/* ── CTA ── */
+.cta-wrap {
+  opacity: 0;
+  animation: fadeUp .9s ease forwards;
+  animation-delay: 1.8s;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.cta-btn {
+  position: relative;
+  background: linear-gradient(135deg, #00E5FF, #00BCD4);
+  color: #03080F;
+  border: none;
+  border-radius: 50px;
+  padding: 18px 52px;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  cursor: pointer;
+  transition: all .3s;
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(0,229,255,.4), 0 4px 20px rgba(0,0,0,.4);
+}
+.cta-btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.3), transparent);
+  opacity: 0; transition: opacity .3s;
+}
+.cta-btn:hover { transform: scale(1.06); box-shadow: 0 0 60px rgba(0,229,255,.6), 0 8px 30px rgba(0,0,0,.5); }
+.cta-btn:hover::before { opacity: 1; }
+.cta-btn:active { transform: scale(.98); }
+.cta-arrow { display: inline-block; transition: transform .3s; margin-left: 8px; }
+.cta-btn:hover .cta-arrow { transform: translateX(5px); }
+
+.cta-hint {
+  font-size: 12px; color: rgba(176,196,216,.4);
+  font-style: italic;
+}
+
+/* ── Floating -ity words ── */
+.float-word {
+  position: fixed;
+  pointer-events: none;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  opacity: 0;
+  animation: floatWord linear infinite;
+  z-index: 5;
+}
+@keyframes floatWord {
+  0% { transform: translateY(0) rotate(var(--rot)); opacity: 0; }
+  10% { opacity: var(--max-op); }
+  90% { opacity: var(--max-op); }
+  100% { transform: translateY(-120px) rotate(var(--rot)); opacity: 0; }
+}
+
+/* ── Trinity line connectors ── */
+#connector-svg {
+  position: fixed; inset: 0;
+  z-index: 6; pointer-events: none;
+}
+
+/* ── Volvox cells ── */
+.volvox-cell {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 4;
+  animation: cellPulse ease-in-out infinite;
+}
+@keyframes cellPulse {
+  0%, 100% { transform: scale(1); opacity: var(--base-op); }
+  50% { transform: scale(1.2); opacity: var(--peak-op); }
+}
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Scroll hint ── */
+.scroll-hint {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; color: rgba(176,196,216,.3);
+  letter-spacing: .08em;
+  animation: breathe 2s ease-in-out infinite;
+  z-index: 20;
+  opacity: 0;
+  animation: fadeUp .6s ease forwards 2.5s, breathe 2s ease-in-out 3s infinite;
+}
+@keyframes breathe {
+  0%, 100% { opacity: .3; } 50% { opacity: .7; }
+}
+
+/* ── Confetti burst on enter ── */
+.confetti {
+  position: fixed;
+  pointer-events: none;
+  z-index: 100;
+  border-radius: 2px;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(400px) rotate(720deg); opacity: 0; }
+}
+
+/* ── Tagline rotator ── */
+.tagline {
+  position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
+  text-align: center;
+  font-size: 13px; color: rgba(176,196,216,.35);
+  font-style: italic;
+  opacity: 0; animation: fadeUp .6s ease forwards 3s;
+  z-index: 20; white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .orb-ring { width: 320px; height: 320px; }
+  .orb-social { top: calc(50% - 35px - 130px); left: calc(50% - 35px); width:70px;height:70px; }
+  .orb-knowledge { top: calc(50% - 30px + 65px); left: calc(50% - 30px + 112px); width:60px;height:60px; }
+  .orb-generative { top: calc(50% - 32px + 65px); left: calc(50% - 32px - 112px); width:64px;height:64px; }
+  .orb-label { font-size: 8px; }
+  .orb-icon { font-size: 16px; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<!-- Trinity connector lines -->
+<svg id="connector-svg"></svg>
+
+<!-- Floating -ity words injected by JS -->
+
+<div id="scene">
+  <!-- Trinity orbs -->
+  <div class="orb-ring" id="orb-ring">
+    <div class="orb orb-social" id="orb-s">
+      <div class="orb-icon">🧠</div>
+      <div class="orb-label">WHO</div>
+    </div>
+    <div class="orb orb-knowledge" id="orb-k">
+      <div class="orb-icon">📚</div>
+      <div class="orb-label">WHAT</div>
+    </div>
+    <div class="orb orb-generative" id="orb-g">
+      <div class="orb-icon">✨</div>
+      <div class="orb-label">WHAT IF</div>
+    </div>
+  </div>
+
+  <!-- Center content -->
+  <div id="center-content">
+    <div class="eyebrow">Vanderbilt Owen · Spring 2026</div>
+    <h1 class="main-title">The Serendipity<br>Engine</h1>
+    <p class="subtitle">An AI practicum where your ideas<br>grow into something you can't predict.</p>
+
+    <div class="stats-row">
+      <div class="stat-chip">🎓 <strong>14</strong> sessions</div>
+      <span class="stat-sep">·</span>
+      <div class="stat-chip">👥 <strong>39</strong> minds</div>
+      <span class="stat-sep">·</span>
+      <div class="stat-chip">✦ <strong>511</strong> concept nodes</div>
+      <span class="stat-sep">·</span>
+      <div class="stat-chip">♾ <strong>∞</strong> connections</div>
+    </div>
+
+    <div class="word-cycle-container">
+      Your bot is waiting. It speaks in&nbsp;<span class="word-cycle" id="word-cycle">serendipity</span>.
+    </div>
+
+    <div class="cta-wrap">
+      <button class="cta-btn" onclick="enterClassroom()">
+        Enter the Classroom <span class="cta-arrow">→</span>
+      </button>
+      <div class="cta-hint">First time? You'll take a quick personality quiz.</div>
+    </div>
+  </div>
+</div>
+
+<div class="tagline" id="tagline">
+  "Language isn't overhead. Language is architecture." — Inkwell Labs
+</div>
+
+<div class="scroll-hint">↑ Your Trinity Graph grows every time you chat ↑</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// CANVAS BACKGROUND — Particle field + connections
+// ═══════════════════════════════════════════════
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+let W, H, particles = [], mouse = { x: -999, y: -999 };
+const PARTICLE_COUNT = 90;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+
+class Particle {
+  constructor() { this.reset(true); }
+  reset(init) {
+    this.x = Math.random() * W;
+    this.y = init ? Math.random() * H : H + 10;
+    this.vx = (Math.random() - .5) * .4;
+    this.vy = -(Math.random() * .5 + .1);
+    this.r = Math.random() * 2 + .5;
+    this.life = 0; this.maxLife = Math.random() * 300 + 200;
+    const hues = [190, 200, 195, 170, 220];
+    this.hue = hues[Math.floor(Math.random() * hues.length)];
+  }
+  update() {
+    this.x += this.vx; this.y += this.vy;
+    this.life++;
+    const dx = mouse.x - this.x, dy = mouse.y - this.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist < 120) {
+      this.vx += dx / dist * .02;
+      this.vy += dy / dist * .02;
+    }
+    if (this.y < -20 || this.life > this.maxLife) this.reset(false);
+  }
+  draw() {
+    const progress = this.life / this.maxLife;
+    const alpha = progress < .1 ? progress * 10 : progress > .8 ? (1-progress)*5 : 1;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
+    ctx.fillStyle = `hsla(${this.hue}, 90%, 65%, ${alpha * .6})`;
+    ctx.fill();
+  }
+}
+
+for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(new Particle());
+
+function drawConnections() {
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      if (d < 90) {
+        const alpha = (1 - d/90) * .12;
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.strokeStyle = `rgba(0,229,255,${alpha})`;
+        ctx.lineWidth = .5;
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+function drawGrid() {
+  // Subtle perspective grid
+  ctx.strokeStyle = 'rgba(0,188,212,0.025)';
+  ctx.lineWidth = 1;
+  const cols = 14, rows = 10;
+  const cx = W/2, cy = H*1.2;
+  const spread = W * 1.4;
+  for (let i = 0; i <= cols; i++) {
+    const x = cx - spread/2 + (spread / cols) * i;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(cx + (x-cx)*.3, H);
+    ctx.stroke();
+  }
+  for (let i = 0; i <= rows; i++) {
+    const t = i / rows;
+    ctx.beginPath();
+    ctx.moveTo(cx - spread/2 * (1-t*.7), t * H);
+    ctx.lineTo(cx + spread/2 * (1-t*.7), t * H);
+    ctx.stroke();
+  }
+}
+
+function animateBg() {
+  ctx.fillStyle = 'rgba(3,8,15,.15)';
+  ctx.fillRect(0, 0, W, H);
+  drawGrid();
+  particles.forEach(p => { p.update(); p.draw(); });
+  drawConnections();
+  requestAnimationFrame(animateBg);
+}
+animateBg();
+
+// ═══════════════════════════════════════════════
+// ORB FLOATING ANIMATION
+// ═══════════════════════════════════════════════
+const orbS = document.getElementById('orb-s');
+const orbK = document.getElementById('orb-k');
+const orbG = document.getElementById('orb-g');
+let t = 0;
+function animateOrbs() {
+  t += .005;
+  const cx = window.innerWidth/2, cy = window.innerHeight/2;
+  const r = Math.min(window.innerWidth, window.innerHeight) * .28;
+  const sX = cx + Math.cos(t) * r - 45;
+  const sY = cy + Math.sin(t) * r * .6 - 45 - r;
+  const kX = cx + Math.cos(t + Math.PI*2/3) * r - 40;
+  const kY = cy + Math.sin(t + Math.PI*2/3) * r * .6 - 40;
+  const gX = cx + Math.cos(t + Math.PI*4/3) * r - 42;
+  const gY = cy + Math.sin(t + Math.PI*4/3) * r * .6 - 42;
+  orbS.style.cssText = `position:absolute;left:${sX}px;top:${sY}px;width:90px;height:90px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:radial-gradient(circle, rgba(74,123,204,.55), rgba(74,123,204,.15));border:1px solid rgba(74,123,204,.5);box-shadow:0 0 30px rgba(74,123,204,.5),inset 0 0 20px rgba(74,123,204,.1)`;
+  orbK.style.cssText = `position:absolute;left:${kX}px;top:${kY}px;width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:radial-gradient(circle, rgba(201,168,76,.55), rgba(201,168,76,.15));border:1px solid rgba(201,168,76,.5);box-shadow:0 0 30px rgba(201,168,76,.5),inset 0 0 20px rgba(201,168,76,.1)`;
+  orbG.style.cssText = `position:absolute;left:${gX}px;top:${gY}px;width:85px;height:85px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:radial-gradient(circle, rgba(138,106,172,.55), rgba(138,106,172,.15));border:1px solid rgba(138,106,172,.5);box-shadow:0 0 30px rgba(138,106,172,.5),inset 0 0 20px rgba(138,106,172,.1)`;
+  // Update connector lines
+  updateConnectors(sX+45, sY+45, kX+40, kY+40, gX+42, gY+42);
+  requestAnimationFrame(animateOrbs);
+}
+
+// Force reset orb styles
+orbS.style = ''; orbK.style = ''; orbG.style = '';
+orbS.innerHTML = '<div class="orb-icon">🧠</div><div class="orb-label" style="color:#7ab3ff;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em">WHO</div>';
+orbK.innerHTML = '<div class="orb-icon">📚</div><div class="orb-label" style="color:#D4AF37;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em">WHAT</div>';
+orbG.innerHTML = '<div class="orb-icon">✨</div><div class="orb-label" style="color:#c084fc;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em">WHAT IF</div>';
+animateOrbs();
+
+// Connector SVG lines between orbs
+function updateConnectors(sx, sy, kx, ky, gx, gy) {
+  const svg = document.getElementById('connector-svg');
+  const cx = W/2, cy = H/2;
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="lg-sk" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="rgba(74,123,204,.4)"/><stop offset="100%" stop-color="rgba(201,168,76,.4)"/></linearGradient>
+      <linearGradient id="lg-kg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="rgba(201,168,76,.4)"/><stop offset="100%" stop-color="rgba(138,106,172,.4)"/></linearGradient>
+      <linearGradient id="lg-gs" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="rgba(138,106,172,.4)"/><stop offset="100%" stop-color="rgba(74,123,204,.4)"/></linearGradient>
+    </defs>
+    <line x1="${sx}" y1="${sy}" x2="${kx}" y2="${ky}" stroke="url(#lg-sk)" stroke-width="1" stroke-dasharray="4 6" opacity=".5"/>
+    <line x1="${kx}" y1="${ky}" x2="${gx}" y2="${gy}" stroke="url(#lg-kg)" stroke-width="1" stroke-dasharray="4 6" opacity=".5"/>
+    <line x1="${gx}" y1="${gy}" x2="${sx}" y2="${sy}" stroke="url(#lg-gs)" stroke-width="1" stroke-dasharray="4 6" opacity=".5"/>
+    <circle cx="${cx}" cy="${cy}" r="4" fill="rgba(0,229,255,.6)"/>
+    <circle cx="${cx}" cy="${cy}" r="12" fill="none" stroke="rgba(0,229,255,.15)" stroke-width="1"/>
+    <line x1="${cx}" y1="${cy}" x2="${sx}" y2="${sy}" stroke="rgba(0,229,255,.08)" stroke-width=".5"/>
+    <line x1="${cx}" y1="${cy}" x2="${kx}" y2="${ky}" stroke="rgba(0,229,255,.08)" stroke-width=".5"/>
+    <line x1="${cx}" y1="${cy}" x2="${gx}" y2="${gy}" stroke="rgba(0,229,255,.08)" stroke-width=".5"/>
+  `;
+}
+
+// ═══════════════════════════════════════════════
+// FLOATING -ITY WORDS
+// ═══════════════════════════════════════════════
+const ITY_WORDS = [
+  'serendipity','clarity','creativity','vitality','connectivity',
+  'authenticity','curiosity','possibility','synchronicity','ubiquity',
+  'complexity','simplicity','ingenuity','lucidity','reciprocity',
+  'totality','continuity','sagacity','felicity','certainty',
+  'visibility','familiarity','feasibility','adaptability','capability',
+  'novelty','identity','agility','fluidity','elasticity'
+];
+const ITY_COLORS = ['rgba(0,229,255,.25)','rgba(201,168,76,.25)','rgba(138,106,172,.25)','rgba(74,123,204,.25)'];
+
+function spawnWord() {
+  const word = ITY_WORDS[Math.floor(Math.random() * ITY_WORDS.length)];
+  const el = document.createElement('div');
+  el.className = 'float-word';
+  const x = Math.random() * (window.innerWidth - 120);
+  const y = Math.random() * window.innerHeight * .7 + window.innerHeight * .15;
+  const rot = (Math.random() - .5) * 20;
+  const maxOp = Math.random() * .2 + .08;
+  const dur = Math.random() * 8 + 10;
+  el.textContent = word;
+  el.style.cssText = `left:${x}px;top:${y}px;--rot:${rot}deg;--max-op:${maxOp};color:${ITY_COLORS[Math.floor(Math.random()*ITY_COLORS.length)]};animation-duration:${dur}s;animation-delay:${Math.random()*4}s`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), (dur + 4) * 1000);
+}
+for (let i = 0; i < 20; i++) setTimeout(spawnWord, i * 600);
+setInterval(spawnWord, 2000);
+
+// ═══════════════════════════════════════════════
+// WORD CYCLER
+// ═══════════════════════════════════════════════
+const CYCLE_WORDS = ['serendipity','curiosity','possibility','clarity','creativity','lucidity','synchronicity'];
+let wIdx = 0;
+const wordEl = document.getElementById('word-cycle');
+function cycleWord() {
+  wordEl.style.opacity = '0';
+  wordEl.style.transform = 'translateY(-8px)';
+  setTimeout(() => {
+    wIdx = (wIdx + 1) % CYCLE_WORDS.length;
+    wordEl.textContent = CYCLE_WORDS[wIdx];
+    wordEl.style.transition = 'none';
+    wordEl.style.transform = 'translateY(8px)';
+    wordEl.style.opacity = '0';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        wordEl.style.transition = 'all .4s ease';
+        wordEl.style.transform = 'translateY(0)';
+        wordEl.style.opacity = '1';
+      });
+    });
+  }, 400);
+}
+setTimeout(() => setInterval(cycleWord, 2200), 3000);
+
+// ═══════════════════════════════════════════════
+// VOLVOX MICRO-CELLS
+// ═══════════════════════════════════════════════
+const CELL_TYPES = [
+  { color: 'rgba(0,229,255', size: [4,8], op: [.15,.35] },
+  { color: 'rgba(201,168,76', size: [3,6], op: [.12,.28] },
+  { color: 'rgba(138,106,172', size: [5,9], op: [.1,.25] },
+];
+for (let i = 0; i < 30; i++) {
+  const cell = document.createElement('div');
+  const type = CELL_TYPES[Math.floor(Math.random()*3)];
+  const sz = type.size[0] + Math.random() * (type.size[1]-type.size[0]);
+  const x = Math.random()*100, y = Math.random()*100;
+  const dur = 2 + Math.random()*4;
+  const delay = Math.random()*3;
+  cell.className = 'volvox-cell';
+  cell.style.cssText = `left:${x}vw;top:${y}vh;width:${sz}px;height:${sz}px;background:${type.color},.4);--base-op:${type.op[0]};--peak-op:${type.op[1]};animation-duration:${dur}s;animation-delay:${delay}s`;
+  document.body.appendChild(cell);
+}
+
+// ═══════════════════════════════════════════════
+// TAGLINE ROTATION
+// ═══════════════════════════════════════════════
+const TAGLINES = [
+  '"Language isn\'t overhead. Language is architecture." — Inkwell Labs',
+  '"Every conversation grows your Trinity Graph." — IAM Classroom',
+  '"Serendipity is probabilistic cross-domain discovery." — S.A.V.E.S.U.C.C.E.S.S.',
+  '"The future of AI is defined by the integrity of its architecture." — Oliver Luckett',
+  '"Your bot remembers everything you teach it." — IAM System',
+];
+let tlIdx = 0;
+const taglineEl = document.getElementById('tagline');
+setInterval(() => {
+  taglineEl.style.opacity = '0';
+  setTimeout(() => {
+    tlIdx = (tlIdx + 1) % TAGLINES.length;
+    taglineEl.textContent = TAGLINES[tlIdx];
+    taglineEl.style.transition = 'opacity .8s';
+    taglineEl.style.opacity = '0.35';
+  }, 600);
+}, 5000);
+
+// ═══════════════════════════════════════════════
+// ENTER — Confetti + redirect
+// ═══════════════════════════════════════════════
+function confettiBurst() {
+  const colors = ['#00E5FF','#00BCD4','#C9A84C','#a78bfa','#f0abfc','#ffffff'];
+  for (let i = 0; i < 60; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti';
+    const x = window.innerWidth/2 + (Math.random()-0.5)*300;
+    const w = 6 + Math.random()*8;
+    const h = 4 + Math.random()*6;
+    const rot = Math.random()*360;
+    const dur = .8 + Math.random()*1.2;
+    const vx = (Math.random()-0.5)*6;
+    el.style.cssText = `left:${x}px;top:${window.innerHeight/2}px;width:${w}px;height:${h}px;background:${colors[Math.floor(Math.random()*colors.length)]};transform:rotate(${rot}deg);animation-duration:${dur}s;margin-left:${vx*40}px`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), dur*1000+100);
+  }
+}
+
+function enterClassroom() {
+  confettiBurst();
+  document.getElementById('scene').style.transition = 'opacity .6s ease';
+  document.getElementById('scene').style.opacity = '0';
+  setTimeout(() => {
+    window.location.href = 'iam-classroom.html';
+  }, 700);
+}
+
+// Keyboard shortcut
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') enterClassroom();
+});
+
+// ═══════════════════════════════════════════════
+// ORBS — click to bounce label
+// ═══════════════════════════════════════════════
+const ORB_FACTS = {
+  's': ['WHO — The social layer\nRelationships, psychology, emotions', 'Customer Empathy → Team Dynamics → Trust', '30 social nodes, 50 research-backed relationships'],
+  'k': ['WHAT — The knowledge layer\nFacts, logic, domain expertise', 'Market Validation → Competitive Analysis', '30 knowledge concepts, verified relationships'],
+  'g': ['WHAT IF — The generative layer\nSynthesis, transformation, innovation', 'Pivot Strategy → Revenue Model → Scale', '30 generative concepts, emergent patterns']
+};
+let orbFactIdx = {s:0, k:0, g:0};
+['s','k','g'].forEach(id => {
+  const orb = document.getElementById('orb-'+id);
+  orb.style.cursor = 'pointer';
+  orb.addEventListener('click', () => {
+    const facts = ORB_FACTS[id];
+    const fact = facts[orbFactIdx[id] % facts.length];
+    orbFactIdx[id]++;
+    // Mini tooltip
+    const tip = document.createElement('div');
+    tip.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(6,14,26,.95);border:1px solid rgba(0,229,255,.3);border-radius:12px;padding:12px 20px;font-size:12px;color:#B0C4D8;text-align:center;z-index:200;max-width:280px;line-height:1.6;white-space:pre-line;pointer-events:none;animation:fadeUp .3s ease';
+    tip.textContent = fact;
+    document.body.appendChild(tip);
+    setTimeout(() => { tip.style.opacity='0'; tip.style.transition='opacity .4s'; setTimeout(()=>tip.remove(),400); }, 2500);
+  });
+});
+</script>
+</body>
+</html>
