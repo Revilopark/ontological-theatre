@@ -603,22 +603,38 @@ async function neo4j(cypher, params = {}) {
   } catch(e) { console.error('Neo4j fetch error:', e); return {values:[]}; }
 }
 
+// ===== PAGE INIT — URL reset handler =====
+(function() {
+  const urlReset = new URLSearchParams(window.location.search).get('reset');
+  if (urlReset) {
+    // Find studentId from username
+    const idx = (typeof STUDENTS !== 'undefined') ? STUDENTS.indexOf(urlReset) : -1;
+    const sid = idx >= 0 ? 's' + String(idx + 1).padStart(2, '0') : urlReset;
+    // Clear all possible localStorage keys
+    [`iam_archetype_${sid}`, `iam_quiz_${sid}`, `wa_${sid}`,
+     `iam_archetype_${urlReset}`, `iam_quiz_${urlReset}`, `wa_${urlReset}`]
+      .forEach(k => localStorage.removeItem(k));
+    // Clear Neo4j async (best effort)
+    fetch('https://c779e832.databases.neo4j.io/db/neo4j/query/v2', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','Authorization':'Basic bmVvNGo6WlhPdXB5SUx4RktsTG16SHNtSEk5ckNtQzhlMmRYVGZ5UkQ3U29tR2hQdw=='},
+      body: JSON.stringify({statement:'MATCH (n) WHERE (n:TrinityNode AND n.student_id=$sid) OR (n:IAMStudent AND n.student_id=$sid) DETACH DELETE n', parameters:{sid}})
+    }).catch(()=>{});
+    console.log('Reset student:', urlReset, 'studentId:', sid);
+    // Redirect to clean URL and show confirmation
+    const cleanUrl = window.location.pathname;
+    setTimeout(() => {
+      alert(`✅ Reset complete for "${urlReset}". They can now log in fresh.`);
+      window.location.href = cleanUrl;
+    }, 600);
+  }
+})();
+
 // ===== AUTH =====
 function handleLogin() {
   const user = document.getElementById('login-user').value.trim().toLowerCase();
   const pass = document.getElementById('login-pass').value.trim();
   const err = document.getElementById('login-error');
-  
-  // Professor login
-  // Check URL reset param (professor sends student a link with ?reset=username)
-  const urlReset = new URLSearchParams(window.location.search).get('reset');
-  if (urlReset) {
-    const keysToRemove = [`iam_archetype_${urlReset}`, `iam_quiz_${urlReset}`, `wa_${urlReset}`];
-    keysToRemove.forEach(k => localStorage.removeItem(k));
-    // Clear Neo4j
-    neo4j('MATCH (n) WHERE (n:TrinityNode AND n.student_id=$sid) OR (n:IAMStudent AND n.student_id=$sid) DETACH DELETE n', {sid:urlReset}).catch(()=>{});
-    console.log('Reset student:', urlReset);
-  }
   if (user === 'professor' && pass === 'vanderbilt2026') {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('prof-view').style.display = 'block';
