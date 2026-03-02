@@ -129,6 +129,38 @@ input,textarea,select,button{font-family:var(--sans)}
 .incl-item::before{content:'✓';color:var(--green);font-size:.55rem;flex-shrink:0;margin-top:1px}
 .rm-item{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:5px;cursor:pointer;transition:.15s;margin-bottom:2px}
 .rm-item:hover{background:var(--glass2)}
+/* ── Learning Agent ───────────────────────────────────────────────────── */
+.la-panel{border-top:1px solid var(--border2);background:rgba(0,0,0,.15)}
+.la-header{padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;user-select:none}
+.la-header:hover{background:var(--glass2)}
+.la-title{font-size:.52rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--purple);flex:1}
+.la-count{font-size:.46rem;background:rgba(167,139,250,.2);color:var(--purple);border-radius:10px;padding:2px 7px;font-weight:700}
+.la-toggle{font-size:.5rem;color:var(--dim);transition:.2s}
+.la-body{display:none;padding:0 8px 10px}
+.la-body.open{display:block}
+.fact-card{background:rgba(0,0,0,.3);border:1px solid rgba(167,139,250,.15);border-radius:7px;padding:8px 10px;margin-bottom:6px;transition:.2s}
+.fact-card.approved{border-color:rgba(0,229,160,.3);background:rgba(0,229,160,.04)}
+.fact-card.rejected{opacity:.35;border-color:var(--border2)}
+.fact-triple{font-size:.6rem;line-height:1.7;margin-bottom:5px}
+.fact-subj{color:var(--cyan);font-weight:700}
+.fact-pred{color:rgba(255,255,255,.4);font-style:italic;margin:0 4px}
+.fact-obj{color:var(--text);font-weight:600}
+.fact-source{font-size:.48rem;color:var(--dim);margin-bottom:6px;font-family:var(--mono)}
+.fact-conf{font-size:.46rem;font-weight:700;margin-bottom:6px}
+.fact-conf.high{color:var(--green)}.fact-conf.medium{color:var(--orange)}.fact-conf.low{color:var(--red)}
+.fact-actions{display:flex;gap:5px}
+.fact-btn{font-size:.52rem;padding:3px 10px;border-radius:5px;border:1px solid;cursor:pointer;font-weight:700;transition:.15s;font-family:var(--sans)}
+.fact-btn.approve{background:rgba(0,229,160,.1);border-color:rgba(0,229,160,.3);color:var(--green)}
+.fact-btn.approve:hover{background:rgba(0,229,160,.2)}
+.fact-btn.reject{background:rgba(255,77,109,.07);border-color:rgba(255,77,109,.2);color:var(--red)}
+.fact-btn.reject:hover{background:rgba(255,77,109,.15)}
+.la-status{font-size:.54rem;color:var(--dim);text-align:center;padding:8px;font-style:italic}
+.la-stats{display:flex;gap:6px;padding:6px 12px;border-top:1px solid var(--border2);background:rgba(0,0,0,.2)}
+.la-stat{flex:1;text-align:center}
+.la-stat-val{font-size:.72rem;font-weight:800;color:var(--purple)}
+.la-stat-label{font-size:.42rem;text-transform:uppercase;letter-spacing:.08em;color:var(--dim)}
+.la-extract-status{font-size:.52rem;padding:5px 10px;text-align:center;color:var(--muted);display:none}
+
 .rm-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .rm-dot.done{background:var(--green)}.rm-dot.active{background:var(--cyan)}.rm-dot.pending{background:rgba(255,255,255,.15)}
 .rm-text{font-size:.56rem;color:var(--muted)}
@@ -326,6 +358,26 @@ input,textarea,select,button{font-family:var(--sans)}
       <div style="display:flex;justify-content:space-between;font-size:.58rem;padding:4px 0;border-bottom:1px solid var(--border2)"><span style="color:var(--muted)">Cajas VAV</span><span style="color:var(--red);font-weight:700">39 sem.</span></div>
       <div style="display:flex;justify-content:space-between;font-size:.58rem;padding:4px 0;border-bottom:1px solid var(--border2)"><span style="color:var(--muted)">Extractores Greenheck</span><span style="color:var(--orange);font-weight:700">18 sem.</span></div>
       <div style="display:flex;justify-content:space-between;font-size:.58rem;padding:4px 0"><span style="color:var(--muted)">Rampa Kelley</span><span style="color:var(--gold);font-weight:700">12 sem.</span></div>
+    </div>
+  </div>
+
+  <!-- Learning Agent Panel -->
+  <div class="la-panel" id="la-panel">
+    <div class="la-header" id="la-header" onclick="toggleLA()">
+      <span style="font-size:.8rem">🧠</span>
+      <span class="la-title" id="la-title">Knowledge Learner</span>
+      <span class="la-count" id="la-count">0</span>
+      <span class="la-toggle" id="la-toggle">▾</span>
+    </div>
+    <div class="la-extract-status" id="la-extract-status">⬡ Extracting facts...</div>
+    <div class="la-stats">
+      <div class="la-stat"><div class="la-stat-val" id="la-learned">0</div><div class="la-stat-label">Learned</div></div>
+      <div class="la-stat"><div class="la-stat-val" id="la-pending">0</div><div class="la-stat-label">Pending</div></div>
+      <div class="la-stat"><div class="la-stat-val" id="la-rejected-count">0</div><div class="la-stat-label">Rejected</div></div>
+    </div>
+    <div class="la-body" id="la-body">
+      <div class="la-status" id="la-empty-msg">Chat to start building the graph.</div>
+      <div id="fact-queue"></div>
     </div>
   </div>
 </aside>
@@ -554,6 +606,7 @@ async function sendMessage(retryPayload) {
     killTyping();
     addMsg('bot', fmt(reply), `IAM Abitat · ${new Date().toLocaleTimeString(lang==='es'?'es-MX':'en-US')}`);
     history.push({role:'model',parts:[{text:reply}]});
+    extractFacts(reply); // Learning Agent
   } catch(e) {
     killTyping();
     const retryBtn = `<button onclick="sendMessage(lastPayload)" style="margin-top:8px;font-size:.6rem;padding:5px 12px;border-radius:6px;border:1px solid rgba(0,212,255,.3);background:rgba(0,212,255,.1);color:var(--cyan);cursor:pointer">${lang==='es'?'↺ Reintentar':'↺ Retry'}</button>`;
@@ -575,6 +628,275 @@ function askRev(rev){
 }
 function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
 function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px';}
+
+
+// ═══════════════════════════════════════════════════════════════════════
+// LEARNING AGENT — Empirical Truth-Only Knowledge Graph Builder
+// ═══════════════════════════════════════════════════════════════════════
+
+const NEO4J_HTTP = 'https://c779e832.databases.neo4j.io/db/neo4j/query/v2';
+const NEO4J_AUTH = 'Basic ' + btoa('neo4j:ZXOupyILxFKlLmzHsmHI9rCmC8e2dXTfyRD7SomGhPw');
+
+const EXTRACT_PROMPT = `You are a STRICT knowledge graph fact extractor for a construction project database.
+
+RULES — these are absolute:
+1. Extract ONLY facts that are EXPLICITLY stated in the text. NEVER infer, assume, or extrapolate.
+2. Every fact must be provably true based on the stated content — not implied.
+3. Facts must be about real entities: companies, people, projects, costs, specifications, timelines, relationships.
+4. Ignore opinions, recommendations, and uncertain language ("might", "could", "typically", "usually").
+5. If a fact cannot be sourced to the text verbatim, DO NOT include it.
+6. Confidence: HIGH = directly quoted/stated verbatim; MEDIUM = stated but paraphrased; LOW = inferred (LOW facts should be omitted).
+
+OUTPUT FORMAT (JSON only, no other text):
+{
+  "facts": [
+    {
+      "subject": "exact entity name (company, person, item, concept)",
+      "predicate": "relationship verb (IS_A, COSTS, EMPLOYS, SUPPLIES, REQUIRES, etc.)",
+      "object": "exact entity or value",
+      "subject_type": "VENDOR|PERSON|PROJECT|COST|SPEC|CONCEPT|REGULATION|CONTACT",
+      "object_type": "VENDOR|PERSON|PROJECT|COST|SPEC|CONCEPT|REGULATION|CONTACT|VALUE",
+      "confidence": "HIGH|MEDIUM",
+      "source_quote": "exact phrase from text that proves this fact",
+      "layer": "social|knowledge|generative"
+    }
+  ]
+}
+
+Return empty facts array if no HIGH or MEDIUM confidence facts found. Return JSON ONLY.`;
+
+let pendingFacts = JSON.parse(localStorage.getItem('abitat_facts_pending') || '[]');
+let approvedFacts = JSON.parse(localStorage.getItem('abitat_facts_approved') || '[]');
+let rejectedFacts = JSON.parse(localStorage.getItem('abitat_facts_rejected') || '[]');
+let laOpen = false;
+
+function saveFacts() {
+  localStorage.setItem('abitat_facts_pending', JSON.stringify(pendingFacts));
+  localStorage.setItem('abitat_facts_approved', JSON.stringify(approvedFacts));
+  localStorage.setItem('abitat_facts_rejected', JSON.stringify(rejectedFacts));
+}
+
+function toggleLA() {
+  laOpen = !laOpen;
+  document.getElementById('la-body').classList.toggle('open', laOpen);
+  document.getElementById('la-toggle').textContent = laOpen ? '▴' : '▾';
+  if(laOpen) renderFactQueue();
+}
+
+function updateLAStats() {
+  document.getElementById('la-count').textContent = pendingFacts.length;
+  document.getElementById('la-learned').textContent = approvedFacts.length;
+  document.getElementById('la-pending').textContent = pendingFacts.length;
+  document.getElementById('la-rejected-count').textContent = rejectedFacts.length;
+  // Pulse the count badge when there are pending facts
+  const badge = document.getElementById('la-count');
+  badge.style.background = pendingFacts.length > 0
+    ? 'rgba(167,139,250,.35)' : 'rgba(167,139,250,.15)';
+}
+
+function renderFactQueue() {
+  const q = document.getElementById('fact-queue');
+  const empty = document.getElementById('la-empty-msg');
+  if(pendingFacts.length === 0) {
+    q.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  q.innerHTML = '';
+  pendingFacts.forEach((fact, idx) => {
+    const card = document.createElement('div');
+    card.className = 'fact-card';
+    card.id = `fact-${idx}`;
+    const confClass = fact.confidence === 'HIGH' ? 'high' : fact.confidence === 'MEDIUM' ? 'medium' : 'low';
+    card.innerHTML = `
+      <div class="fact-triple">
+        <span class="fact-subj">${esc(fact.subject)}</span>
+        <span class="fact-pred">${esc(fact.predicate)}</span>
+        <span class="fact-obj">${esc(fact.object)}</span>
+      </div>
+      <div class="fact-conf ${confClass}">⬡ ${fact.confidence} confidence · ${fact.layer || 'knowledge'}</div>
+      <div class="fact-source">"${esc((fact.source_quote||'').slice(0,80))}..."</div>
+      <div class="fact-actions">
+        <button class="fact-btn approve" onclick="approveFact(${idx})">✓ ${lang==='es'?'Aprender':'Learn'}</button>
+        <button class="fact-btn reject" onclick="rejectFact(${idx})">✗ ${lang==='es'?'Rechazar':'Reject'}</button>
+      </div>`;
+    q.appendChild(card);
+  });
+}
+
+function esc(s) {
+  if(!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function approveFact(idx) {
+  const fact = pendingFacts[idx];
+  if(!fact) return;
+  const card = document.getElementById(`fact-${idx}`);
+  if(card) { card.classList.add('approved'); card.querySelector('.fact-actions').innerHTML = '<span style="font-size:.52rem;color:var(--green)">✓ Writing to graph...</span>'; }
+
+  // Write to Neo4j
+  try {
+    await writeFactToNeo4j(fact);
+    approvedFacts.push({...fact, approvedAt: Date.now()});
+    pendingFacts.splice(idx, 1);
+    saveFacts();
+    updateLAStats();
+    setTimeout(()=> renderFactQueue(), 800);
+    // Show success in card briefly
+    if(card) card.querySelector('.fact-actions').innerHTML = '<span style="font-size:.52rem;color:var(--green)">✓ Learned & stored in Trinity Graph</span>';
+  } catch(e) {
+    if(card) card.querySelector('.fact-actions').innerHTML = `<span style="font-size:.52rem;color:var(--red)">Error: ${esc(e.message.slice(0,60))}</span>`;
+  }
+}
+
+function rejectFact(idx) {
+  const fact = pendingFacts[idx];
+  if(!fact) return;
+  const card = document.getElementById(`fact-${idx}`);
+  if(card) { card.classList.add('rejected'); card.querySelector('.fact-actions').innerHTML = '<span style="font-size:.52rem;color:var(--dim)">Rejected</span>'; }
+  rejectedFacts.push({...fact, rejectedAt: Date.now()});
+  pendingFacts.splice(idx, 1);
+  saveFacts();
+  updateLAStats();
+  setTimeout(()=> renderFactQueue(), 500);
+}
+
+async function writeFactToNeo4j(fact) {
+  const subjId = 'abitat_' + fact.subject.toLowerCase().replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').slice(0,40);
+  const objId  = 'abitat_' + fact.object.toLowerCase().replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').slice(0,40);
+  const relType = fact.predicate.toUpperCase().replace(/[^A-Z0-9_]/g,'_').replace(/_+/g,'_');
+
+  // Determine if object is a value/literal or a node
+  const isLiteral = ['VALUE','COST','SPEC','REGULATION'].includes(fact.object_type) || /^[\d\$\€\£]/.test(fact.object);
+
+  // Single Cypher that always creates subject node, and either:
+  // (a) merges subject+object nodes with edge, or
+  // (b) stores the value as a description/property on subject node
+  let statement;
+  if(isLiteral) {
+    statement = `
+      MERGE (a:TrinityNode {id: $subjId})
+      SET a.label = $subjLabel, a.name = $subjLabel,
+          a.layer = $layer, a.type = $subjType,
+          a.owner = 'abitat', a.project = 'supra_c2',
+          a.empirical = true,
+          a.source_quote = $sourceQuote,
+          a.fact_value = $objVal,
+          a.fact_predicate = $relType
+    `;
+  } else {
+    statement = `
+      MERGE (a:TrinityNode {id: $subjId})
+      SET a.label = $subjLabel, a.name = $subjLabel,
+          a.layer = $layer, a.type = $subjType,
+          a.owner = 'abitat', a.project = 'supra_c2', a.empirical = true
+      MERGE (b:TrinityNode {id: $objId})
+      SET b.label = $objLabel, b.name = $objLabel,
+          b.layer = $objLayer, b.type = $objType,
+          b.owner = 'abitat', b.project = 'supra_c2', b.empirical = true
+      MERGE (a)-[r:RELATES {type: $relType}]->(b)
+      SET r.confidence = $confidence, r.source = $sourceQuote, r.learnedAt = timestamp()
+    `;
+  }
+
+  const params = {
+    subjId, subjLabel: fact.subject, objId, objLabel: fact.object,
+    layer: fact.layer || 'knowledge',
+    subjType: fact.subject_type || 'CONCEPT',
+    objType:  fact.object_type  || 'CONCEPT',
+    objLayer: fact.layer || 'knowledge',
+    relType, confidence: fact.confidence,
+    sourceQuote: (fact.source_quote || '').slice(0, 200),
+    objVal: fact.object
+  };
+
+  const res = await fetch(NEO4J_HTTP, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': NEO4J_AUTH
+    },
+    body: JSON.stringify({ statement, parameters: params })
+  });
+
+  if(!res.ok) {
+    const t = await res.text();
+    throw new Error(`Neo4j ${res.status}: ${t.slice(0,100)}`);
+  }
+  return res.json();
+}
+
+async function extractFacts(responseText) {
+  if(!responseText || responseText.length < 50) return;
+  
+  // Show extraction status
+  const status = document.getElementById('la-extract-status');
+  status.style.display = 'block';
+  status.textContent = lang==='es'?'⬡ Extrayendo hechos empíricos...':'⬡ Extracting empirical facts...';
+
+  try {
+    const payload = {
+      contents: [{
+        role: 'user',
+        parts: [{ text: `${EXTRACT_PROMPT}\n\nTEXT TO ANALYZE:\n${responseText.slice(0,3000)}` }]
+      }]
+    };
+    const res = await fetch(`${PROXY}/gemini/generate`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const j = await res.json();
+    const raw = j?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    
+    // Extract JSON from response
+    const jsonMatch = raw.match(/\{[\s\S]*"facts"[\s\S]*\}/);
+    if(!jsonMatch) throw new Error('No JSON in response');
+    const parsed = JSON.parse(jsonMatch[0]);
+    const facts = (parsed.facts || []).filter(f => f.confidence === 'HIGH' || f.confidence === 'MEDIUM');
+    
+    if(facts.length > 0) {
+      // Deduplicate against existing facts
+      const existingKeys = new Set([
+        ...pendingFacts.map(f=>f.subject+'_'+f.predicate+'_'+f.object),
+        ...approvedFacts.map(f=>f.subject+'_'+f.predicate+'_'+f.object),
+        ...rejectedFacts.map(f=>f.subject+'_'+f.predicate+'_'+f.object),
+      ]);
+      const newFacts = facts.filter(f => !existingKeys.has(f.subject+'_'+f.predicate+'_'+f.object));
+      
+      if(newFacts.length > 0) {
+        pendingFacts.push(...newFacts);
+        saveFacts();
+        updateLAStats();
+        if(laOpen) renderFactQueue();
+        // Pulse panel header
+        const header = document.getElementById('la-header');
+        document.getElementById('la-panel').style.borderColor = 'rgba(167,139,250,.4)';
+        setTimeout(()=>{ document.getElementById('la-panel').style.borderColor=''; }, 2000);
+        status.textContent = lang==='es'
+          ?`⬡ ${newFacts.length} hechos nuevos extraídos`
+          :`⬡ ${newFacts.length} new facts extracted`;
+      } else {
+        status.textContent = lang==='es'?'⬡ Sin hechos nuevos (ya conocidos)':'⬡ No new facts (already known)';
+      }
+    } else {
+      status.textContent = lang==='es'?'⬡ Sin hechos verificables en esta respuesta':'⬡ No verifiable facts in this response';
+    }
+  } catch(e) {
+    status.textContent = `⬡ Extraction skipped: ${e.message.slice(0,40)}`;
+  }
+  setTimeout(()=>{ status.style.display='none'; }, 4000);
+}
+
+// Init learning agent
+updateLAStats();
+if(pendingFacts.length > 0 && !laOpen) {
+  // Auto-open if there are pending facts
+  toggleLA();
+}
 
 // Init
 setLang('es');
