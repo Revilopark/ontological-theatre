@@ -861,14 +861,36 @@ Session query #${sessionQueryMap[studentId]}${memStr}
     }
     
     // ── AI PROVIDER CHAIN ─────────────────────────────────────────────────────
-    // NOTE: Direct Gemini API key removed (was revoked — embedded in public GitHub repo)
-    // Route: Emergency key (localStorage) → Awareness proxy → Error
+    // Keys are NEVER hardcoded — set via ⚙️ Admin panel (stored in localStorage only)
     const hdr_c={'Content-Type':'application/json'};
     const body_c=JSON.stringify(apiBody);
     let reply = null;
-    // 1. Emergency key from localStorage (professor sets via admin panel)
+
+    // 1. Emergency key (Anthropic Claude or Gemini)
     const eKey = getEmergencyKey();
-    if(eKey){
+    if(eKey && eKey.startsWith('sk-ant-')){
+      // Claude API — convert Gemini format to Anthropic messages format
+      try{
+        const claudeBody={
+          model:'claude-haiku-4-5-20251001',
+          max_tokens:700,
+          system: apiBody.system_instruction?.parts?.[0]?.text || '',
+          messages:[{role:'user', content: apiBody.contents?.[0]?.parts?.[0]?.text || ''}]
+        };
+        const r=await fetch('https://api.anthropic.com/v1/messages',{
+          method:'POST',
+          headers:{
+            'x-api-key':eKey,
+            'anthropic-version':'2023-06-01',
+            'content-type':'application/json',
+            'anthropic-dangerous-allow-browser-key':'true'
+          },
+          body:JSON.stringify(claudeBody)
+        });
+        if(r.ok){const d=await r.json();reply=d?.content?.[0]?.text||null;}
+      }catch(e){}
+    } else if(eKey && eKey.startsWith('AIzaSy')){
+      // Gemini API
       for(const model of ['gemini-2.5-flash','gemini-2.0-flash']){
         if(reply) break;
         try{
@@ -877,7 +899,8 @@ Session query #${sessionQueryMap[studentId]}${memStr}
         }catch(e){}
       }
     }
-    // 2. Awareness proxy
+
+    // 2. Awareness proxy (fallback — Greg needs to update with fresh Gemini key)
     if(!reply){
       try{
         const r=await fetch(AI_PROXY,{method:'POST',headers:hdr_c,body:body_c});
