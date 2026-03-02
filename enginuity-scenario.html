@@ -4,787 +4,1556 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0a0e1a">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<title>Enginuity — Airport Scenario Intelligence · TPA Master Plan</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+<title>Enginuity — Construction Intelligence Platform</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,400&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
-  --ink:#0a0e1a;--navy:#0d1b3e;--blue:#1a3a6e;--sky:#2d6be4;--cyan:#00d4ff;
+  --ink:#0a0e1a;--navy:#0d1b3e;--blue:#1a3a6e;--sky:#2d6be4;--cyan:#00d4ff;--cyan2:#00b8e0;
   --bg-primary:#0a0e1a;--bg-glass:rgba(255,255,255,.04);--bg-glass-hover:rgba(255,255,255,.08);
-  --glass:rgba(255,255,255,.05);--glass2:rgba(255,255,255,.09);--border:rgba(255,255,255,.1);
-  --text:#e8f0ff;--muted:rgba(232,240,255,.5);--accent:#00d4ff;--accent-cyan:#00d4ff;
-  --accent-blue:#4facfe;--gold:#D4AF37;--red:#ff4d6d;--green:#00e5a0;
-  --sans:'Inter',system-ui,sans-serif;--serif:'Playfair Display',Georgia,serif
+  --glass:rgba(255,255,255,.05);--glass2:rgba(255,255,255,.09);--border:rgba(255,255,255,.1);--border2:rgba(255,255,255,.06);
+  --text:#e8f0ff;--muted:rgba(232,240,255,.5);--accent:#00d4ff;--accent-blue:#4facfe;
+  --gold:#D4AF37;--red:#ff4d6d;--green:#00e5a0;--orange:#ff9f43;--purple:#a78bfa;
+  --sans:'Inter',system-ui,sans-serif;--mono:'Roboto Mono',monospace;--serif:'Playfair Display',Georgia,serif;
+  --sidebar-w:260px;
 }
-body{background:var(--ink);color:var(--text);font-family:var(--sans);min-height:100dvh;overflow-x:hidden}
-input,select,textarea{font-size:16px!important}
-button,.btn{min-height:44px}
+html,body{height:100%;overflow:hidden}
+body{background:var(--ink);color:var(--text);font-family:var(--sans);display:flex}
+input,select,textarea{font-size:16px!important;font-family:var(--sans)}
 
-/* BACKGROUND */
-.bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(45,107,228,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(45,107,228,.04) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
-.bg-glow{position:fixed;top:-20%;left:-10%;width:60%;height:60%;background:radial-gradient(ellipse,rgba(45,107,228,.12) 0%,transparent 70%);pointer-events:none;z-index:0}
-.bg-glow2{position:fixed;bottom:-20%;right:-10%;width:50%;height:50%;background:radial-gradient(ellipse,rgba(0,194,255,.07) 0%,transparent 70%);pointer-events:none;z-index:0}
+/* ═══════════════════════════════════════════
+   BACKGROUND
+════════════════════════════════════════════ */
+.bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(45,107,228,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(45,107,228,.03) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
+.bg-glow{position:fixed;top:-20%;left:20%;width:60%;height:60%;background:radial-gradient(ellipse,rgba(45,107,228,.1) 0%,transparent 70%);pointer-events:none;z-index:0}
+.bg-glow2{position:fixed;bottom:-20%;right:-10%;width:50%;height:50%;background:radial-gradient(ellipse,rgba(0,194,255,.06) 0%,transparent 70%);pointer-events:none;z-index:0}
 
-/* NAV */
-nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);background:rgba(10,15,30,.8);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px}
-.nav-logo{display:flex;align-items:center;gap:10px}
-.nav-icon{width:28px;height:28px;background:linear-gradient(135deg,var(--sky),var(--cyan));border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;color:#fff}
-.nav-name{font-size:.85rem;font-weight:700;letter-spacing:.05em}
-.nav-name span{color:var(--cyan)}
-.nav-rfp{background:rgba(0,194,255,.1);border:1px solid rgba(0,194,255,.25);color:var(--cyan);padding:5px 12px;border-radius:20px;font-size:.55rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+/* ═══════════════════════════════════════════
+   SIDEBAR
+════════════════════════════════════════════ */
+.sidebar{width:var(--sidebar-w);min-height:100vh;height:100vh;background:rgba(8,12,24,.97);border-right:1px solid var(--border2);display:flex;flex-direction:column;flex-shrink:0;position:fixed;left:0;top:0;bottom:0;z-index:100;overflow-y:auto;overflow-x:hidden}
+.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
 
-/* HERO */
-.hero{position:relative;z-index:1;padding:52px 24px 40px;max-width:900px;margin:0 auto}
-.hero-eye{font-size:.5rem;font-weight:700;letter-spacing:.25em;text-transform:uppercase;color:var(--cyan);margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.hero-eye::before{content:'';width:24px;height:1px;background:var(--cyan)}
-.hero-title{font-size:2.2rem;font-weight:800;line-height:1.1;margin-bottom:10px}
-.hero-title span{background:linear-gradient(135deg,var(--sky),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hero-sub{font-size:.85rem;color:var(--muted);line-height:1.7;max-width:600px;margin-bottom:24px}
-.rfp-badge{display:inline-flex;align-items:center;gap:10px;background:rgba(240,180,41,.08);border:1px solid rgba(240,180,41,.2);border-radius:8px;padding:10px 16px;margin-bottom:32px}
-.rfp-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.rfp-text{font-size:.65rem;color:var(--gold);font-weight:600}
-.rfp-text strong{display:block;font-size:.72rem}
+/* Brand */
+.sb-brand{padding:20px 16px 16px;border-bottom:1px solid var(--border2);flex-shrink:0}
+.sb-logo{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.sb-logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--sky),var(--cyan));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;color:#fff;letter-spacing:-.5px;flex-shrink:0}
+.sb-logo-name{font-size:1rem;font-weight:800;letter-spacing:.02em}
+.sb-logo-name span{color:var(--cyan)}
+.sb-logo-sub{font-size:.5rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-left:44px;margin-top:-8px}
 
-/* STATS */
-.stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:40px}
-.stat{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:14px 18px;backdrop-filter:blur(12px)}
-.stat-val{font-size:1.3rem;font-weight:800;color:var(--cyan)}
-.stat-lbl{font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:1px}
+/* Project context switcher */
+.sb-ctx{padding:10px 12px;display:flex;gap:6px;border-bottom:1px solid var(--border2)}
+.ctx-btn{flex:1;padding:6px 4px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:.55rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:.2s;text-align:center;font-family:var(--sans)}
+.ctx-btn.active{background:rgba(45,107,228,.2);border-color:rgba(45,107,228,.4);color:var(--cyan)}
+.ctx-btn:hover:not(.active){background:var(--bg-glass);color:var(--text)}
 
-/* MODULES */
-.modules{max-width:900px;margin:0 auto;padding:0 24px 60px;position:relative;z-index:1}
-.module{background:var(--glass);border:1px solid var(--border);border-radius:12px;margin-bottom:16px;backdrop-filter:blur(16px);overflow:hidden}
-.module-hdr{display:flex;align-items:center;gap:12px;padding:16px 20px;cursor:pointer;transition:.2s;user-select:none}
-.module-hdr:hover{background:var(--glass2)}
+/* Nav sections */
+.sb-section{padding:16px 0 4px}
+.sb-section-label{font-size:.48rem;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.3);padding:0 14px;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.sb-section-label::after{content:'';flex:1;height:1px;background:var(--border2)}
+.sb-item{display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;transition:.15s;font-size:.7rem;color:var(--muted);font-weight:500;border-left:2px solid transparent;user-select:none}
+.sb-item:hover{background:var(--bg-glass);color:var(--text)}
+.sb-item.active{background:rgba(0,212,255,.08);color:var(--cyan);border-left-color:var(--cyan);font-weight:600}
+.sb-item .si{font-size:.85rem;width:18px;text-align:center;flex-shrink:0}
+.sb-footer{margin-top:auto;padding:14px;border-top:1px solid var(--border2);font-size:.58rem;color:rgba(255,255,255,.25);line-height:1.6}
+.sb-footer strong{color:rgba(255,255,255,.4)}
+
+/* ═══════════════════════════════════════════
+   MAIN
+════════════════════════════════════════════ */
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;position:relative;z-index:1}
+
+/* Topbar */
+.topbar{height:56px;background:rgba(10,14,26,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);padding:0 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:50}
+.tb-left{display:flex;align-items:center;gap:12px}
+.tb-title{font-size:.95rem;font-weight:700}
+.tb-sub{font-size:.6rem;color:var(--muted);margin-top:1px}
+.tb-right{display:flex;align-items:center;gap:10px}
+.tb-badge{font-size:.5rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:10px;border:1px solid}
+.tb-badge.airport{background:rgba(45,107,228,.12);border-color:rgba(45,107,228,.3);color:var(--accent-blue)}
+.tb-badge.construction{background:rgba(255,159,67,.1);border-color:rgba(255,159,67,.3);color:var(--orange)}
+.tb-badge.ai{background:rgba(0,212,255,.1);border-color:rgba(0,212,255,.25);color:var(--cyan)}
+
+/* Content scroll area */
+.content{flex:1;overflow-y:auto;padding:28px}
+.content::-webkit-scrollbar{width:4px}
+.content::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px}
+
+/* ═══════════════════════════════════════════
+   PANELS
+════════════════════════════════════════════ */
+.panel{display:none}
+.panel.active{display:block}
+
+/* ═══════════════════════════════════════════
+   CARDS / GLASS
+════════════════════════════════════════════ */
+.card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:18px;backdrop-filter:blur(12px)}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:.82rem;font-weight:700}
+.card-sub{font-size:.6rem;color:var(--muted);margin-top:2px}
+
+/* ═══════════════════════════════════════════
+   STAT CARDS
+════════════════════════════════════════════ */
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.stat-card{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:16px 18px;backdrop-filter:blur(12px)}
+.stat-label{font-size:.5rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px}
+.stat-val{font-size:1.6rem;font-weight:800;line-height:1}
+.stat-change{font-size:.6rem;margin-top:5px;font-weight:500}
+.stat-change.up{color:var(--green)}
+.stat-change.down{color:var(--red)}
+.stat-change.neutral{color:var(--muted)}
+
+/* ═══════════════════════════════════════════
+   CHARTS
+════════════════════════════════════════════ */
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.chart-wrap{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:20px;backdrop-filter:blur(12px)}
+.chart-title{font-size:.75rem;font-weight:700;margin-bottom:2px}
+.chart-sub{font-size:.58rem;color:var(--muted);margin-bottom:14px}
+.chart-container{position:relative;height:200px}
+
+/* ═══════════════════════════════════════════
+   AI OUTPUT
+════════════════════════════════════════════ */
+.ai-out{background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.2);border-radius:10px;padding:18px;margin-bottom:16px}
+.ai-out-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.ai-badge{font-size:.48rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:linear-gradient(135deg,var(--sky),var(--cyan));color:#fff;padding:3px 8px;border-radius:6px}
+.ai-out-title{font-size:.75rem;font-weight:700;color:var(--text)}
+.ai-out-body{font-size:.7rem;color:rgba(232,240,255,.75);line-height:1.75}
+.ai-out-body strong{color:var(--text)}
+.ai-out-body ul{margin:8px 0 0 18px;line-height:2}
+
+/* Spinner */
+.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--cyan);border-radius:50%;animation:spin 0.7s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading .spinner{display:block}
+.loading .btn-text{opacity:.6}
+
+/* Run button */
+.run-btn{display:flex;align-items:center;gap:8px;padding:10px 22px;background:linear-gradient(135deg,var(--sky),var(--cyan2));color:#fff;border:none;border-radius:8px;font-size:.72rem;font-weight:700;cursor:pointer;transition:.2s;font-family:var(--sans);min-height:40px;margin-top:14px}
+.run-btn:hover{opacity:.85;transform:translateY(-1px)}
+.run-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* Output area */
+.output{display:none;margin-top:16px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;padding:16px}
+.output.visible{display:block}
+.output-head{font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);margin-bottom:10px}
+.output-text{font-size:.72rem;color:var(--muted);line-height:1.8;white-space:pre-wrap}
+
+/* ═══════════════════════════════════════════
+   TABLES
+════════════════════════════════════════════ */
+.data-table{width:100%;border-collapse:collapse;font-size:.7rem}
+.data-table th{background:rgba(255,255,255,.04);color:var(--muted);font-size:.55rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:9px 12px;text-align:left;border-bottom:1px solid var(--border2)}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border2);color:rgba(232,240,255,.75)}
+.data-table tr:hover td{background:var(--bg-glass)}
+.data-table td:first-child{color:var(--text);font-weight:500}
+.hl-row td{background:rgba(0,212,255,.05)!important}
+.hl-row td:first-child{color:var(--cyan)}
+
+/* ═══════════════════════════════════════════
+   TAGS / PILLS
+════════════════════════════════════════════ */
+.tag{display:inline-block;font-size:.55rem;padding:2px 8px;border-radius:8px;font-weight:600;font-family:var(--sans)}
+.tag-cyan{background:rgba(0,212,255,.12);color:var(--cyan);border:1px solid rgba(0,212,255,.2)}
+.tag-blue{background:rgba(79,172,254,.12);color:var(--accent-blue);border:1px solid rgba(79,172,254,.2)}
+.tag-green{background:rgba(0,229,160,.12);color:var(--green);border:1px solid rgba(0,229,160,.2)}
+.tag-red{background:rgba(255,77,109,.12);color:var(--red);border:1px solid rgba(255,77,109,.2)}
+.tag-orange{background:rgba(255,159,67,.12);color:var(--orange);border:1px solid rgba(255,159,67,.2)}
+.tag-gold{background:rgba(212,175,55,.12);color:var(--gold);border:1px solid rgba(212,175,55,.2)}
+.tag-gray{background:rgba(255,255,255,.07);color:var(--muted);border:1px solid var(--border2)}
+
+/* ═══════════════════════════════════════════
+   INPUTS / FORMS
+════════════════════════════════════════════ */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.form-row.tri{grid-template-columns:1fr 1fr 1fr}
+.form-row.full{grid-template-columns:1fr}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:.6rem;font-weight:600;color:var(--muted);letter-spacing:.04em}
+.form-group input,.form-group select,.form-group textarea{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:9px 12px;transition:.2s;outline:none}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(0,212,255,.12)}
+.form-group select option{background:#0d1b3e}
+.form-group textarea{resize:vertical;min-height:70px}
+
+/* ═══════════════════════════════════════════
+   BUTTONS
+════════════════════════════════════════════ */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:.68rem;font-weight:600;cursor:pointer;border:none;transition:.15s;font-family:var(--sans);min-height:36px}
+.btn-primary{background:linear-gradient(135deg,var(--sky),var(--cyan2));color:#fff}
+.btn-primary:hover{opacity:.85}
+.btn-secondary{background:var(--glass);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--glass2);border-color:rgba(0,212,255,.3);color:var(--cyan)}
+.btn-orange{background:linear-gradient(135deg,#e67e22,var(--orange));color:#fff}
+.btn-orange:hover{opacity:.85}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+
+/* ═══════════════════════════════════════════
+   ENGINUITY MODULES
+════════════════════════════════════════════ */
+.module{background:var(--glass);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;backdrop-filter:blur(16px);overflow:hidden}
+.module-hdr{display:flex;align-items:center;gap:12px;padding:15px 18px;cursor:pointer;transition:.2s;user-select:none}
+.module-hdr:hover{background:var(--bg-glass)}
 .module-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
 .module-meta{flex:1}
-.module-name{font-size:.82rem;font-weight:700;color:var(--text)}
-.module-desc{font-size:.6rem;color:var(--muted);margin-top:2px}
-.module-tag{font-size:.48rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;padding:3px 8px;border-radius:10px;flex-shrink:0}
-.module-chevron{color:var(--muted);font-size:.7rem;transition:.2s;flex-shrink:0}
-.module.open .module-chevron{transform:rotate(180deg)}
-.module-body{display:none;padding:0 20px 20px}
+.module-name{font-size:.78rem;font-weight:700}
+.module-desc{font-size:.58rem;color:var(--muted);margin-top:2px}
+.module-tag{font-size:.48rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:10px;flex-shrink:0}
+.module-chev{color:var(--muted);font-size:.65rem;transition:.2s;flex-shrink:0}
+.module.open .module-chev{transform:rotate(180deg)}
+.module-body{display:none;padding:0 18px 18px}
 .module.open .module-body{display:block}
-
-/* MODULE COLORS */
 .m1 .module-icon{background:rgba(45,107,228,.2);color:var(--sky)}
 .m2 .module-icon{background:rgba(0,229,160,.15);color:var(--green)}
-.m3 .module-icon{background:rgba(240,180,41,.15);color:var(--gold)}
-.m4 .module-icon{background:rgba(0,194,255,.15);color:var(--cyan)}
+.m3 .module-icon{background:rgba(212,175,55,.15);color:var(--gold)}
+.m4 .module-icon{background:rgba(0,212,255,.15);color:var(--cyan)}
 .m5 .module-icon{background:rgba(255,77,109,.15);color:var(--red)}
 .m1 .module-tag{background:rgba(45,107,228,.15);color:var(--sky)}
 .m2 .module-tag{background:rgba(0,229,160,.12);color:var(--green)}
-.m3 .module-tag{background:rgba(240,180,41,.12);color:var(--gold)}
-.m4 .module-tag{background:rgba(0,194,255,.12);color:var(--cyan)}
+.m3 .module-tag{background:rgba(212,175,55,.12);color:var(--gold)}
+.m4 .module-tag{background:rgba(0,212,255,.12);color:var(--cyan)}
 .m5 .module-tag{background:rgba(255,77,109,.12);color:var(--red)}
 
-/* INPUTS */
-.input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.input-row.full{grid-template-columns:1fr}
-.input-row.tri{grid-template-columns:1fr 1fr 1fr}
-label{font-size:.55rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:5px}
-input,select,textarea{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:8px 12px;color:var(--text);font-size:.75rem;font-family:var(--sans);outline:none;transition:.2s}
-input:focus,select:focus,textarea:focus{border-color:var(--cyan);background:rgba(0,194,255,.05)}
-select option{background:#1a2540;color:var(--text)}
-textarea{resize:vertical;min-height:80px}
-
-/* RUN BTN */
-.run-btn{display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--sky),var(--cyan));color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:.68rem;font-weight:700;letter-spacing:.08em;cursor:pointer;transition:.2s;font-family:var(--sans)}
-.run-btn:hover{opacity:.85;transform:translateY(-1px)}
-.run-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
-.run-btn .spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
-@keyframes spin{to{transform:rotate(360deg)}}
-.run-btn.loading .spinner{display:block}
-.run-btn.loading .btn-text::after{content:'...'}
-
-/* OUTPUT */
-.output{margin-top:16px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:16px;display:none}
-.output.visible{display:block}
-.output-head{font-size:.5rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan);margin-bottom:12px;display:flex;align-items:center;gap:6px}
-.output-head::before{content:'◈';font-size:.6rem}
-.output-text{font-size:.78rem;line-height:1.85;color:rgba(232,240,255,.85);white-space:pre-wrap}
-
-/* SCENARIO CARDS */
-.scenario-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:16px 0}
-.sc-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px}
-.sc-card.bull{border-top:2px solid var(--green)}
-.sc-card.base{border-top:2px solid var(--sky)}
-.sc-card.bear{border-top:2px solid var(--red)}
-.sc-label{font-size:.48rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;margin-bottom:6px}
-.sc-card.bull .sc-label{color:var(--green)}
-.sc-card.base .sc-label{color:var(--sky)}
-.sc-card.bear .sc-label{color:var(--red)}
-.sc-pax{font-size:1.3rem;font-weight:800;color:var(--text)}
-.sc-yr{font-size:.55rem;color:var(--muted)}
-.sc-trigger{font-size:.62rem;color:var(--muted);margin-top:6px;line-height:1.5}
-.sc-bar-wrap{height:4px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:8px}
-.sc-bar{height:4px;border-radius:2px}
-.sc-card.bull .sc-bar{background:var(--green);width:85%}
-.sc-card.base .sc-bar{background:var(--sky);width:60%}
-.sc-card.bear .sc-bar{background:var(--red);width:35%}
-
-/* PHASING TIMELINE */
-.timeline{margin:16px 0;position:relative;padding-left:20px}
-.timeline::before{content:'';position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:linear-gradient(to bottom,var(--sky),var(--cyan))}
-.tl-item{position:relative;margin-bottom:16px;padding-left:20px}
-.tl-dot{position:absolute;left:-20px;top:4px;width:12px;height:12px;border-radius:50%;border:2px solid var(--sky);background:var(--ink);flex-shrink:0}
-.tl-item.active .tl-dot{background:var(--cyan);border-color:var(--cyan);box-shadow:0 0 8px var(--cyan)}
-.tl-year{font-size:.5rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);margin-bottom:3px}
-.tl-title{font-size:.75rem;font-weight:700;color:var(--text)}
-.tl-desc{font-size:.65rem;color:var(--muted);line-height:1.5;margin-top:3px}
-.tl-cost{font-size:.6rem;font-weight:700;color:var(--gold);margin-top:4px}
-
-/* STAKEHOLDER RADAR */
-.stakeholder-list{display:flex;flex-direction:column;gap:8px;margin:16px 0}
-.sh-item{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:10px 12px}
-.sh-name{font-size:.72rem;font-weight:600;color:var(--text);width:140px;flex-shrink:0}
-.sh-stance{font-size:.6rem;padding:2px 8px;border-radius:10px;flex-shrink:0;width:80px;text-align:center}
+/* ═══════════════════════════════════════════
+   STAKEHOLDERS
+════════════════════════════════════════════ */
+.sh-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.sh-item{background:rgba(0,0,0,.2);border:1px solid var(--border2);border-radius:8px;padding:12px 14px}
+.sh-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.sh-name{font-size:.72rem;font-weight:700}
+.sh-stance{font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:6px}
 .sh-stance.support{background:rgba(0,229,160,.15);color:var(--green)}
-.sh-stance.neutral{background:rgba(240,180,41,.12);color:var(--gold)}
+.sh-stance.neutral{background:rgba(212,175,55,.12);color:var(--gold)}
 .sh-stance.risk{background:rgba(255,77,109,.12);color:var(--red)}
-.sh-concern{font-size:.62rem;color:var(--muted);flex:1}
-.sh-power{display:flex;gap:2px}
-.sh-pow-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.15)}
-.sh-pow-dot.filled{background:var(--cyan)}
+.sh-concern{font-size:.62rem;color:var(--muted);line-height:1.6;margin-bottom:8px}
+.sh-dots{display:flex;gap:3px}
+.sh-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.1)}
+.sh-dot.on{background:var(--cyan)}
 
-/* EVAL MATRIX */
-.matrix{border:1px solid rgba(255,255,255,.08);border-radius:8px;overflow:hidden;margin:16px 0}
-.matrix-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;padding:8px 12px;font-size:.65rem;border-bottom:1px solid rgba(255,255,255,.05)}
-.matrix-row.hdr{background:rgba(255,255,255,.05);font-size:.52rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+/* ═══════════════════════════════════════════
+   MATRIX
+════════════════════════════════════════════ */
+.matrix{border:1px solid var(--border2);border-radius:8px;overflow:hidden;margin-bottom:14px;font-size:.65rem}
+.matrix-row{display:grid;grid-template-columns:2fr repeat(4,80px);gap:0;padding:10px 14px;border-bottom:1px solid var(--border2);align-items:center}
 .matrix-row:last-child{border-bottom:none}
-.matrix-row:hover{background:rgba(255,255,255,.03)}
-.score{font-weight:700;text-align:center}
-.score.hi{color:var(--green)}
-.score.mid{color:var(--gold)}
-.score.lo{color:var(--red)}
+.matrix-row.hdr{background:rgba(255,255,255,.04);font-size:.55rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:center}
+.matrix-row.hdr div:first-child{text-align:left}
+.score{text-align:center;font-weight:700;font-size:.78rem;padding:3px 6px;border-radius:5px}
+.score.hi{color:var(--green);background:rgba(0,229,160,.1)}
+.score.mid{color:var(--gold);background:rgba(212,175,55,.1)}
+.score.lo{color:var(--red);background:rgba(255,77,109,.1)}
 
-/* FOOTER */
-footer{position:relative;z-index:1;background:rgba(0,0,0,.4);border-top:1px solid var(--border);padding:20px 24px;text-align:center;font-size:.55rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
-footer a{color:var(--cyan);text-decoration:none}
-/* Glass panel depth upgrades */
-.stat,.card,.module-card,.matrix-table{box-shadow:0 8px 32px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.06)}
-/* Mobile bottom nav */
-.enginuity-mobile-nav{
-  display:none;position:fixed;bottom:0;left:0;right:0;
-  z-index:9999;background:rgba(10,14,26,0.94);
-  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
-  border-top:1px solid rgba(255,255,255,0.1);
-  padding-bottom:env(safe-area-inset-bottom);
-}
-.eng-mn-tab{
-  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  min-height:56px;border:none;background:none;cursor:pointer;text-decoration:none;
-  color:rgba(255,255,255,.4);font-family:var(--sans);
-  font-size:9px;font-weight:700;gap:4px;padding:8px 4px;
-  text-transform:uppercase;letter-spacing:.06em;transition:color 0.2s;
-}
-.eng-mn-tab:hover,.eng-mn-tab.active{color:var(--cyan)}
-.eng-mn-tab svg{opacity:.5;transition:opacity 0.2s}
-.eng-mn-tab:hover svg,.eng-mn-tab.active svg{opacity:1}
-@media(max-width:768px){
-  .enginuity-mobile-nav{display:flex}
-  body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
-  nav{padding:0 16px}
-  .hero{padding:40px 16px 32px}
-  .hero-title{font-size:1.7rem}
-  .stats{gap:8px}
-  .stat{padding:10px 14px}
-  .module-grid,.cards{grid-template-columns:1fr!important}
-  .scenario-grid{grid-template-columns:1fr!important}
-  .matrix-table{overflow-x:auto;display:block}
-  .matrix-table table{min-width:600px}
-  .container{padding:0 16px}
-  section{padding:40px 16px}
-}
-@media(max-width:480px){
-  .hero-title{font-size:1.4rem}
-  .stat-val{font-size:1rem}
-  .hero{padding:32px 14px 24px}
+/* ═══════════════════════════════════════════
+   RISK CARDS
+════════════════════════════════════════════ */
+.risk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:18px}
+.risk-card{border-radius:10px;padding:16px;border:1px solid}
+.risk-card.high{background:rgba(255,77,109,.06);border-color:rgba(255,77,109,.25)}
+.risk-card.med{background:rgba(255,159,67,.06);border-color:rgba(255,159,67,.25)}
+.risk-card.low{background:rgba(0,229,160,.06);border-color:rgba(0,229,160,.25)}
+.risk-level{font-size:.5rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:5px}
+.risk-card.high .risk-level{color:var(--red)}
+.risk-card.med .risk-level{color:var(--orange)}
+.risk-card.low .risk-level{color:var(--green)}
+.risk-title{font-size:.78rem;font-weight:700;margin-bottom:6px}
+.risk-body{font-size:.62rem;color:var(--muted);line-height:1.6}
+.risk-score{font-size:1.4rem;font-weight:800;margin-top:10px}
+.risk-card.high .risk-score{color:var(--red)}
+.risk-card.med .risk-score{color:var(--orange)}
+.risk-card.low .risk-score{color:var(--green)}
+
+/* ═══════════════════════════════════════════
+   ADVANTAGE BOX
+════════════════════════════════════════════ */
+.adv-box{background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.2);border-left:3px solid var(--cyan);border-radius:10px;padding:14px 18px;margin-bottom:16px}
+.adv-title{font-size:.68rem;font-weight:700;color:var(--cyan);display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.adv-body{font-size:.68rem;color:var(--muted);line-height:1.7}
+.adv-body strong{color:var(--text)}
+
+/* ═══════════════════════════════════════════
+   UPLOAD ZONE
+════════════════════════════════════════════ */
+.upload-zone{border:2px dashed rgba(0,212,255,.25);border-radius:10px;padding:36px;text-align:center;cursor:pointer;transition:.2s;background:rgba(0,212,255,.03);margin-bottom:18px}
+.upload-zone:hover{border-color:var(--cyan);background:rgba(0,212,255,.06)}
+.upload-icon{font-size:2rem;margin-bottom:10px;opacity:.5}
+.upload-text{font-size:.78rem;color:var(--muted);margin-bottom:4px}
+.upload-sub{font-size:.62rem;color:rgba(255,255,255,.25)}
+#rfp-input{display:none}
+
+/* ═══════════════════════════════════════════
+   COMPLIANCE
+════════════════════════════════════════════ */
+.comp-item{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border:1px solid var(--border2);border-radius:8px;margin-bottom:8px;background:rgba(0,0,0,.2)}
+.comp-item-left{display:flex;align-items:center;gap:12px}
+.comp-icon{font-size:1.1rem}
+.comp-name{font-size:.72rem;font-weight:600}
+.comp-agency{font-size:.58rem;color:var(--muted)}
+.comp-status{display:flex;align-items:center;gap:7px}
+.s-dot{width:7px;height:7px;border-radius:50%}
+.s-dot.pass{background:var(--green)}
+.s-dot.warn{background:var(--orange)}
+.s-dot.fail{background:var(--red)}
+.s-txt{font-size:.62rem;font-weight:600}
+.s-txt.pass{color:var(--green)}
+.s-txt.warn{color:var(--orange)}
+.s-txt.fail{color:var(--red)}
+
+/* ═══════════════════════════════════════════
+   DOCUMENT CARDS
+════════════════════════════════════════════ */
+.doc-card{display:flex;align-items:center;gap:14px;padding:12px 14px;border:1px solid var(--border2);border-radius:8px;margin-bottom:9px;background:rgba(0,0,0,.2);transition:.15s}
+.doc-card:hover{border-color:rgba(0,212,255,.2);background:var(--glass)}
+.doc-icon-wrap{width:38px;height:38px;background:rgba(0,212,255,.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.doc-info{flex:1}
+.doc-name{font-size:.72rem;font-weight:600}
+.doc-meta{font-size:.58rem;color:var(--muted);margin-top:2px}
+.doc-tags{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+
+/* ═══════════════════════════════════════════
+   LINE ITEMS (BID TAKEOFF)
+════════════════════════════════════════════ */
+.line-wrap{border:1px solid var(--border2);border-radius:8px;overflow:hidden;font-size:.65rem}
+.line-hdr{display:grid;grid-template-columns:2fr 60px 100px 80px 110px 80px;gap:6px;background:rgba(255,255,255,.04);padding:9px 12px;font-size:.52rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border2)}
+.line-row{display:grid;grid-template-columns:2fr 60px 100px 80px 110px 80px;gap:6px;padding:9px 12px;border-bottom:1px solid var(--border2);align-items:center;color:var(--muted)}
+.line-row:hover{background:var(--bg-glass)}
+.line-row:last-child{border-bottom:none}
+.line-section{background:rgba(0,212,255,.05);padding:7px 12px;font-size:.58rem;font-weight:700;color:var(--cyan);border-bottom:1px solid rgba(0,212,255,.1);border-top:1px solid rgba(0,212,255,.1);letter-spacing:.06em;text-transform:uppercase}
+.line-total{display:grid;grid-template-columns:2fr 60px 100px 80px 110px 80px;gap:6px;padding:12px;background:rgba(0,0,0,.4);font-size:.7rem;font-weight:700;color:var(--text);border-top:1px solid var(--border)}
+
+/* ═══════════════════════════════════════════
+   BID OUTPUT PACKAGE
+════════════════════════════════════════════ */
+.bid-pkg{display:none;margin-top:18px}
+.bid-pkg.visible{display:block}
+.bid-pkg-hdr{background:linear-gradient(135deg,var(--navy),var(--blue));border:1px solid rgba(0,212,255,.2);border-radius:10px 10px 0 0;padding:18px 22px;display:flex;justify-content:space-between;align-items:center}
+.bid-pkg-title{font-size:.9rem;font-weight:800;letter-spacing:.03em}
+.bid-pkg-meta{font-size:.62rem;color:var(--muted);margin-top:4px}
+.bid-pkg-val{text-align:right}
+.bid-pkg-val .big{font-size:1.6rem;font-weight:800;color:var(--cyan)}
+.bid-pkg-val .lbl{font-size:.55rem;color:var(--muted)}
+.bid-pkg-body{background:rgba(8,12,24,.9);border:1px solid var(--border2);border-top:none;border-radius:0 0 10px 10px;padding:22px}
+.bid-section{margin-bottom:22px;padding-bottom:22px;border-bottom:1px solid var(--border2)}
+.bid-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.bid-section-title{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--cyan);margin-bottom:10px}
+.bid-section-body{font-size:.7rem;color:var(--muted);line-height:1.85}
+.bid-section-body strong{color:var(--text)}
+
+/* ═══════════════════════════════════════════
+   COMPETITOR RANKS
+════════════════════════════════════════════ */
+.c-rank{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:800;margin-right:6px;vertical-align:middle}
+.r1{background:var(--cyan);color:var(--ink)}
+.r2{background:var(--orange);color:#fff}
+.r3{background:var(--gold);color:var(--ink)}
+.rn{background:rgba(255,255,255,.12);color:var(--muted)}
+
+/* ═══════════════════════════════════════════
+   PROGRESS BARS
+════════════════════════════════════════════ */
+.prog-wrap{margin-bottom:10px}
+.prog-label{display:flex;justify-content:space-between;margin-bottom:4px;font-size:.62rem}
+.prog-label span:first-child{color:var(--muted);font-weight:500}
+.prog-label span:last-child{color:var(--text)}
+.prog-bar{height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .8s ease}
+
+/* ═══════════════════════════════════════════
+   RANGE SLIDERS
+════════════════════════════════════════════ */
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;border-radius:2px;background:rgba(255,255,255,.1);outline:none;margin-top:6px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--cyan);cursor:pointer;box-shadow:0 0 6px rgba(0,212,255,.4)}
+.range-val{font-size:.6rem;color:var(--cyan);margin-top:4px;display:block}
+
+/* ═══════════════════════════════════════════
+   HERO (for Scenario Planning view)
+════════════════════════════════════════════ */
+.hero{position:relative;z-index:1;margin-bottom:28px}
+.hero-eye{font-size:.52rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.hero-eye::before{content:'';width:20px;height:1px;background:var(--cyan)}
+.hero-title{font-size:1.8rem;font-weight:800;line-height:1.1;margin-bottom:8px}
+.hero-title span{background:linear-gradient(135deg,var(--sky),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:.78rem;color:var(--muted);line-height:1.7;max-width:560px;margin-bottom:18px}
+.rfp-badge{display:inline-flex;align-items:center;gap:10px;background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.2);border-radius:8px;padding:9px 14px;margin-bottom:28px}
+.rfp-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.rfp-text{font-size:.6rem;color:var(--gold);font-weight:600}
+.rfp-text strong{display:block;font-size:.68rem}
+.stats-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:32px}
+.stat-chip{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:12px 16px;backdrop-filter:blur(12px)}
+.stat-chip-val{font-size:1.2rem;font-weight:800;color:var(--cyan)}
+.stat-chip-lbl{font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:1px}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+════════════════════════════════════════════ */
+@media(max-width:900px){
+  :root{--sidebar-w:0px}
+  .sidebar{display:none}
+  .chart-row{grid-template-columns:1fr}
+  .stat-row{grid-template-columns:1fr 1fr}
+  .form-row{grid-template-columns:1fr}
+  .form-row.tri{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
+
+<!-- Background -->
 <div class="bg-grid"></div>
 <div class="bg-glow"></div>
 <div class="bg-glow2"></div>
 
-<nav>
-  <div class="nav-logo">
-    <div class="nav-icon">E</div>
-    <div class="nav-name">Enginuity <span>Intelligence</span></div>
+<!-- ═════════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════════ -->
+<nav class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo">
+      <div class="sb-logo-icon">E</div>
+      <div><div class="sb-logo-name">Engin<span>uity</span></div></div>
+    </div>
+    <div class="sb-logo-sub">Construction Intelligence Platform</div>
   </div>
-  <div class="nav-rfp">Live RFQ · TPA Master Plan 2026</div>
+
+  <!-- Context switcher -->
+  <div class="sb-ctx">
+    <button class="ctx-btn active" id="ctx-airport" onclick="setContext('airport')">✈️ Airport</button>
+    <button class="ctx-btn" id="ctx-construction" onclick="setContext('construction')">🏭 Industrial</button>
+  </div>
+
+  <!-- Scenario Planning section -->
+  <div class="sb-section">
+    <div class="sb-section-label">Scenario Planning</div>
+    <div class="sb-item active" id="nav-scenario" onclick="showPanel('scenario')"><span class="si">🔬</span>Scenario Hub</div>
+    <div class="sb-item" id="nav-demand" onclick="showPanel('demand')"><span class="si">📈</span>Demand Oracle</div>
+    <div class="sb-item" id="nav-meridian" onclick="showPanel('meridian')"><span class="si">💰</span>Meridian</div>
+    <div class="sb-item" id="nav-chorus" onclick="showPanel('chorus')"><span class="si">👥</span>Chorus</div>
+    <div class="sb-item" id="nav-atlas" onclick="showPanel('atlas')"><span class="si">🗺</span>Atlas</div>
+    <div class="sb-item" id="nav-oracle" onclick="showPanel('oracle')"><span class="si">🔮</span>Oracle</div>
+  </div>
+
+  <!-- Bid Intelligence section -->
+  <div class="sb-section">
+    <div class="sb-section-label">Bid Intelligence</div>
+    <div class="sb-item" id="nav-dashboard" onclick="showPanel('dashboard')"><span class="si">📊</span>Dashboard</div>
+    <div class="sb-item" id="nav-documents" onclick="showPanel('documents')"><span class="si">📄</span>Document Analysis</div>
+    <div class="sb-item" id="nav-risk" onclick="showPanel('risk')"><span class="si">⚠️</span>Risk Assessment</div>
+    <div class="sb-item" id="nav-competitive" onclick="showPanel('competitive')"><span class="si">🏆</span>Competitive Intel</div>
+    <div class="sb-item" id="nav-detailed" onclick="showPanel('detailed')"><span class="si">📋</span>Detailed Bid</div>
+    <div class="sb-item" id="nav-compliance" onclick="showPanel('compliance')"><span class="si">✅</span>Compliance</div>
+    <div class="sb-item" id="nav-repository" onclick="showPanel('repository')"><span class="si">🗂️</span>Document Vault</div>
+    <div class="sb-item" id="nav-generate" onclick="showPanel('generate')"><span class="si">⚡</span>Generate Bid</div>
+  </div>
+
+  <div class="sb-footer">
+    <strong>Enginuity v2.0</strong><br>
+    Abitat Construction · Mexico Ops<br>
+    TPA Master Plan · VNY Hart St.
+  </div>
 </nav>
 
-<div class="hero">
-  <div class="hero-eye">Scenario Planning Intelligence</div>
-  <h1 class="hero-title">Tampa International Airport<br><span>Master Plan Scenario Engine</span></h1>
-  <div class="hero-sub">AI-powered scenario planning for TPA's General Planning Consultant & Master Plan Update RFQ. Five integrated intelligence modules: demand forecasting, phased decision modeling, stakeholder simulation, configuration evaluation, and robustness analysis.</div>
-
-  <div class="rfp-badge">
-    <div class="rfp-dot"></div>
-    <div class="rfp-text">
-      <strong>ACTIVE RFQ · Hillsborough County Aviation Authority</strong>
-      Posted Feb 18, 2026 · Response Due Apr 1, 2026 · Contact: April Kelly, akelly@tampaairport.com
+<!-- ═════════════════════════════════════════
+     MAIN
+══════════════════════════════════════════ -->
+<div class="main">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="tb-left">
+      <div>
+        <div class="tb-title" id="tb-title">Scenario Intelligence Hub</div>
+        <div class="tb-sub" id="tb-sub">Unified construction intelligence · Airport + Industrial</div>
+      </div>
+    </div>
+    <div class="tb-right">
+      <span class="tb-badge airport" id="tb-ctx-badge">✈️ Airport Planning</span>
+      <span class="tb-badge ai">⬡ Enginuity AI</span>
     </div>
   </div>
 
-  <div class="stats">
-    <div class="stat"><div class="stat-val">21.8M</div><div class="stat-lbl">Annual Passengers</div></div>
-    <div class="stat"><div class="stat-val">4</div><div class="stat-lbl">Airsides (A·C·E·F)</div></div>
-    <div class="stat"><div class="stat-val">$4.2B</div><div class="stat-lbl">Capital Program</div></div>
-    <div class="stat"><div class="stat-val">2055</div><div class="stat-lbl">Planning Horizon</div></div>
-    <div class="stat"><div class="stat-val">1.6%</div><div class="stat-lbl">CAGR 10yr</div></div>
-  </div>
-</div>
+  <!-- Scroll area -->
+  <div class="content">
 
-<div class="modules">
+    <!-- ══════════════════════════════════════
+         PANEL: SCENARIO HUB
+    ═══════════════════════════════════════ -->
+    <div class="panel active" id="panel-scenario">
+      <div class="hero">
+        <div class="hero-eye">Enginuity Intelligence Platform</div>
+        <div class="hero-title">Where <span>Vision Meets Physics</span></div>
+        <div class="hero-sub">Unified AI for pre-construction intelligence, scenario planning, bid strategy, and regulatory compliance across airport and industrial construction projects.</div>
 
-  <!-- MODULE 1: DEMAND ORACLE -->
-  <div class="module m1 open" id="m1">
-    <div class="module-hdr" onclick="toggle('m1')">
-      <div class="module-icon">📡</div>
-      <div class="module-meta">
-        <div class="module-name">DEMAND ORACLE — Probabilistic Forecast Engine</div>
-        <div class="module-desc">10,000-simulation demand cone · Trigger point prediction · Scenario branching</div>
-      </div>
-      <div class="module-tag">Demand</div>
-      <div class="module-chevron">▼</div>
-    </div>
-    <div class="module-body">
-      <div class="scenario-grid">
-        <div class="sc-card bull">
-          <div class="sc-label">Bull Scenario</div>
-          <div class="sc-pax">38.5M</div>
-          <div class="sc-yr">Passengers by 2040</div>
-          <div class="sc-trigger">Capacity trigger: 2031 · Airside E expansion · +16 gates required</div>
-          <div class="sc-bar-wrap"><div class="sc-bar"></div></div>
+        <div class="rfp-badge">
+          <div class="rfp-dot"></div>
+          <div class="rfp-text">
+            <strong>TPA MASTER PLAN RFQ · Due April 1, 2026</strong>
+            Airport terminal planning — demand forecasting, config evaluation, stakeholder simulation
+          </div>
         </div>
-        <div class="sc-card base">
-          <div class="sc-label">Base Scenario</div>
-          <div class="sc-pax">29.4M</div>
-          <div class="sc-yr">Passengers by 2040</div>
-          <div class="sc-trigger">Capacity trigger: 2035 · Airside F optimization · +8 gates required</div>
-          <div class="sc-bar-wrap"><div class="sc-bar"></div></div>
-        </div>
-        <div class="sc-card bear">
-          <div class="sc-label">Bear Scenario</div>
-          <div class="sc-pax">22.1M</div>
-          <div class="sc-yr">Passengers by 2040</div>
-          <div class="sc-trigger">No expansion trigger until 2038 · Focus: LOS optimization, concessions</div>
-          <div class="sc-bar-wrap"><div class="sc-bar"></div></div>
-        </div>
-      </div>
-      <div class="input-row tri">
-        <div>
-          <label>Current Annual Pax</label>
-          <input type="text" value="21,800,000" id="d-pax">
-        </div>
-        <div>
-          <label>Base CAGR (%)</label>
-          <input type="text" value="1.6" id="d-cagr">
-        </div>
-        <div>
-          <label>Planning Horizon</label>
-          <select id="d-horizon">
-            <option>2040</option><option selected>2045</option><option>2055</option>
-          </select>
-        </div>
-      </div>
-      <div class="input-row">
-        <div>
-          <label>Key Demand Driver</label>
-          <select id="d-driver">
-            <option>Tampa Bay regional growth (±2%)</option>
-            <option>Southwest Airlines hub strategy</option>
-            <option>eVTOL / advanced air mobility integration</option>
-            <option>Port Tampa Bay cruise-air connectivity</option>
-          </select>
-        </div>
-        <div>
-          <label>Shock Scenario</label>
-          <select id="d-shock">
-            <option>None</option>
-            <option>Hurricane disruption (Cat 4+)</option>
-            <option>Airline consolidation (–15% capacity)</option>
-            <option>New competitor airport (Lakeland/Sarasota)</option>
-            <option>Global pandemic (-40% year 1, recovery 5yr)</option>
-          </select>
-        </div>
-      </div>
-      <button class="run-btn" onclick="runModule('demand')">
-        <div class="spinner"></div>
-        <span class="btn-text">Run Demand Scenarios</span>
-      </button>
-      <div class="output" id="out-demand">
-        <div class="output-head">Demand Oracle Analysis</div>
-        <div class="output-text" id="txt-demand"></div>
-      </div>
-    </div>
-  </div>
 
-  <!-- MODULE 2: MERIDIAN -->
-  <div class="module m2" id="m2">
-    <div class="module-hdr" onclick="toggle('m2')">
-      <div class="module-icon">🗓</div>
-      <div class="module-meta">
-        <div class="module-name">MERIDIAN — Phased Decision Engine</div>
-        <div class="module-desc">Optimal phase sequencing · Capital timing · Regret minimization</div>
-      </div>
-      <div class="module-tag">Phasing</div>
-      <div class="module-chevron">▼</div>
-    </div>
-    <div class="module-body">
-      <div class="timeline">
-        <div class="tl-item active">
-          <div class="tl-dot"></div>
-          <div class="tl-year">Phase 1 · 2026–2030</div>
-          <div class="tl-title">Master Plan Update + Airside A/C Rehabilitation</div>
-          <div class="tl-desc">Structural rehabilitation underway (RFQ live). LOS optimization. People mover capacity study. Consolidated rental car facility utilization audit.</div>
-          <div class="tl-cost">Est. Capital: $380M</div>
-        </div>
-        <div class="tl-item">
-          <div class="tl-dot"></div>
-          <div class="tl-year">Phase 2 · 2030–2035 (Trigger: 26M pax)</div>
-          <div class="tl-title">Airside E Expansion + North Terminal</div>
-          <div class="tl-desc">New gates on Airside E. Expanded checked baggage system. Landside hotel connectivity. Intermodal ground transport hub.</div>
-          <div class="tl-cost">Est. Capital: $1.2B</div>
-        </div>
-        <div class="tl-item">
-          <div class="tl-dot"></div>
-          <div class="tl-year">Phase 3 · 2035–2045 (Trigger: 32M pax)</div>
-          <div class="tl-title">New Airside + APM Extension</div>
-          <div class="tl-desc">Fifth airside pod. Extended automated people mover. Advanced air mobility (eVTOL) vertiport integration. SAF fueling infrastructure.</div>
-          <div class="tl-cost">Est. Capital: $2.6B</div>
-        </div>
-        <div class="tl-item">
-          <div class="tl-dot"></div>
-          <div class="tl-year">Phase 4 · 2045–2055 (Trigger: 38M pax)</div>
-          <div class="tl-title">Long-Range Capacity Reserve</div>
-          <div class="tl-desc">Runway configuration study. Second terminal complex viability. Regional aviation system plan coordination with Sarasota/Manatee and St. Pete/Clearwater.</div>
-          <div class="tl-cost">Est. Capital: TBD (scenario-dependent)</div>
+        <div class="stats-row">
+          <div class="stat-chip"><div class="stat-chip-val">5</div><div class="stat-chip-lbl">Scenario Modules</div></div>
+          <div class="stat-chip"><div class="stat-chip-val">8</div><div class="stat-chip-lbl">Bid Intelligence Tools</div></div>
+          <div class="stat-chip"><div class="stat-chip-val">$84M</div><div class="stat-chip-lbl">Pipeline Value</div></div>
+          <div class="stat-chip"><div class="stat-chip-val">68%</div><div class="stat-chip-lbl">Win Rate</div></div>
         </div>
       </div>
-      <div class="input-row">
-        <div>
-          <label>Budget Constraint</label>
-          <select id="p-budget">
-            <option>Conservative ($2B total program)</option>
-            <option selected>Moderate ($4.2B total program)</option>
-            <option>Aggressive ($6B+ bond-funded)</option>
-          </select>
-        </div>
-        <div>
-          <label>Phasing Priority</label>
-          <select id="p-priority">
-            <option selected>Minimize capital risk</option>
-            <option>Maximize LOS (passenger experience)</option>
-            <option>Maximize revenue/concessions</option>
-            <option>Minimize construction disruption</option>
-          </select>
-        </div>
-      </div>
-      <button class="run-btn" onclick="runModule('phasing')">
-        <div class="spinner"></div>
-        <span class="btn-text">Generate Phase Sequence</span>
-      </button>
-      <div class="output" id="out-phasing">
-        <div class="output-head">Meridian Phasing Analysis</div>
-        <div class="output-text" id="txt-phasing"></div>
-      </div>
-    </div>
-  </div>
 
-  <!-- MODULE 3: CHORUS -->
-  <div class="module m3" id="m3">
-    <div class="module-hdr" onclick="toggle('m3')">
-      <div class="module-icon">👥</div>
-      <div class="module-meta">
-        <div class="module-name">CHORUS — Stakeholder Simulation</div>
-        <div class="module-desc">Pre-negotiation intelligence · Conflict prediction · Consensus mapping</div>
-      </div>
-      <div class="module-tag">Stakeholders</div>
-      <div class="module-chevron">▼</div>
-    </div>
-    <div class="module-body">
-      <div class="stakeholder-list">
-        <div class="sh-item">
-          <div class="sh-name">Southwest Airlines</div>
-          <div class="sh-stance support">Supportive</div>
-          <div class="sh-concern">Wants gate exclusivity on Airside A. Concerned about construction disruption to bag claim. Key lever: growth commitments tied to capital investment.</div>
-          <div class="sh-power">
-            <div class="sh-pow-dot filled"></div><div class="sh-pow-dot filled"></div><div class="sh-pow-dot filled"></div><div class="sh-pow-dot filled"></div><div class="sh-pow-dot"></div>
+      <!-- Quick-access modules -->
+      <div class="module m1" id="m1">
+        <div class="module-hdr" onclick="toggle('m1')">
+          <div class="module-icon">📈</div>
+          <div class="module-meta">
+            <div class="module-name">DEMAND ORACLE — <span id="m1-ctx-label">Passenger Demand Forecasting</span></div>
+            <div class="module-desc" id="m1-ctx-desc">30-year pax demand · Scenario-weighted modeling · Airline capacity elasticity</div>
           </div>
+          <div class="module-tag">Demand</div>
+          <div class="module-chev">▼</div>
         </div>
-        <div class="sh-item">
-          <div class="sh-name">American / Delta / United</div>
-          <div class="sh-stance neutral">Neutral</div>
-          <div class="sh-concern">Monitoring Southwest preferential treatment. Will object if non-signatory rate structure changes unfavorably. Watch: rates & charges negotiation.</div>
-          <div class="sh-power">
-            <div class="sh-pow-dot filled"></div><div class="sh-pow-dot filled"></div><div class="sh-pow-dot filled"></div><div class="sh-pow-dot"></div><div class="sh-pow-dot"></div>
+        <div class="module-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label id="m1-f1-label">Baseline Annual Pax (millions)</label>
+              <input type="number" id="m1-f1" value="24.2" placeholder="24.2">
+            </div>
+            <div class="form-group">
+              <label id="m1-f2-label">Planning Horizon (years)</label>
+              <input type="number" id="m1-f2" value="30" placeholder="30">
+            </div>
           </div>
-        </div>
-        <div class="sh-item">
-          <div class="sh-name">FAA / TSA</div>
-          <div class="sh-stance support">Supportive</div>
-          <div class="sh-concern">ADA compliance, security checkpoint LOS, NEPA review triggers. Early engagement required on any new terminal complex or runway modification.</div>
-          <div class="sh-power">
-            <div class="sh-pow-dot filled"></div><div class="sh-pow-dot filled"></div><div class="sh-pow-dot filled"></div><div class="sh-pow-dot filled"></div><div class="sh-pow-dot filled"></div>
+          <div class="form-row tri">
+            <div class="form-group">
+              <label id="m1-f3-label">Base Growth Rate (%/yr)</label>
+              <input type="number" id="m1-f3" value="2.8" placeholder="2.8">
+            </div>
+            <div class="form-group">
+              <label id="m1-f4-label">Optimistic Rate (%/yr)</label>
+              <input type="number" id="m1-f4" value="4.5" placeholder="4.5">
+            </div>
+            <div class="form-group">
+              <label id="m1-f5-label">Conservative Rate (%/yr)</label>
+              <input type="number" id="m1-f5" value="1.2" placeholder="1.2">
+            </div>
           </div>
-        </div>
-        <div class="sh-item">
-          <div class="sh-name">Hillsborough County</div>
-          <div class="sh-stance support">Supportive</div>
-          <div class="sh-concern">Economic development, employment, noise ordinance compliance. Needs early briefing on Phase 3+ before bond authorization.</div>
-          <div class="sh-power">
-            <div class="sh-pow-dot filled"></div><div class="sh-pow-dot filled"></div><div class="sh-pow-dot filled"></div><div class="sh-pow-dot filled"></div><div class="sh-pow-dot"></div>
-          </div>
-        </div>
-        <div class="sh-item">
-          <div class="sh-name">Concessionaires (HMSHost etc.)</div>
-          <div class="sh-stance risk">Watch</div>
-          <div class="sh-concern">Revenue per enplaned passenger (RPE) protection. Any airside reconfiguration affects concession lease boundaries. Lease renewal timing critical.</div>
-          <div class="sh-power">
-            <div class="sh-pow-dot filled"></div><div class="sh-pow-dot filled"></div><div class="sh-pow-dot"></div><div class="sh-pow-dot"></div><div class="sh-pow-dot"></div>
-          </div>
-        </div>
-        <div class="sh-item">
-          <div class="sh-name">HART / Transit Agencies</div>
-          <div class="sh-stance neutral">Neutral</div>
-          <div class="sh-concern">Intermodal connectivity at SkyConnect. Any Phase 3 ground transport expansion must coordinate with regional transit planning horizon.</div>
-          <div class="sh-power">
-            <div class="sh-pow-dot filled"></div><div class="sh-pow-dot filled"></div><div class="sh-pow-dot"></div><div class="sh-pow-dot"></div><div class="sh-pow-dot"></div>
+          <button class="run-btn" id="btn-demand" onclick="runModule('demand')">
+            <div class="spinner"></div>
+            <span class="btn-text">Run Demand Forecast</span>
+          </button>
+          <div class="output" id="out-demand">
+            <div class="output-head">DEMAND ORACLE — Forecast Results</div>
+            <div class="output-text" id="txt-demand"></div>
           </div>
         </div>
       </div>
-      <div class="input-row full">
-        <div>
-          <label>Scenario to Simulate</label>
-          <input type="text" id="ch-scenario" placeholder="e.g. Southwest requests exclusive gate block on Airside A for 20-year term" value="Southwest Airlines requests exclusive gate rights on Airside A in exchange for 20-year service commitment">
-        </div>
-      </div>
-      <button class="run-btn" onclick="runModule('chorus')">
-        <div class="spinner"></div>
-        <span class="btn-text">Simulate Stakeholder Response</span>
-      </button>
-      <div class="output" id="out-chorus">
-        <div class="output-head">CHORUS Stakeholder Analysis</div>
-        <div class="output-text" id="txt-chorus"></div>
-      </div>
-    </div>
-  </div>
 
-  <!-- MODULE 4: ATLAS -->
-  <div class="module m4" id="m4">
-    <div class="module-hdr" onclick="toggle('m4')">
-      <div class="module-icon">🗺</div>
-      <div class="module-meta">
-        <div class="module-name">ATLAS — Configuration Evaluation</div>
-        <div class="module-desc">Terminal concept scoring · Multi-criteria weighted matrix · AI-generated alternatives</div>
-      </div>
-      <div class="module-tag">Configuration</div>
-      <div class="module-chevron">▼</div>
-    </div>
-    <div class="module-body">
-      <div class="matrix">
-        <div class="matrix-row hdr">
-          <div>Configuration Concept</div>
-          <div style="text-align:center">Airside<br>Efficiency</div>
-          <div style="text-align:center">Pax<br>Experience</div>
-          <div style="text-align:center">Phasing<br>Flexibility</div>
-          <div style="text-align:center">Capital<br>Efficiency</div>
+      <div class="module m2" id="m2">
+        <div class="module-hdr" onclick="toggle('m2')">
+          <div class="module-icon">💰</div>
+          <div class="module-meta">
+            <div class="module-name">MERIDIAN — Cost & Schedule Intelligence</div>
+            <div class="module-desc">Parametric cost modeling · Schedule risk simulation · Phase-gate optimization</div>
+          </div>
+          <div class="module-tag">Cost/Schedule</div>
+          <div class="module-chev">▼</div>
         </div>
-        <div class="matrix-row">
-          <div>A · Existing APM Pod Expansion (Extend Airsides A/C/F)</div>
-          <div class="score hi">8.2</div>
-          <div class="score mid">6.8</div>
-          <div class="score hi">8.5</div>
-          <div class="score hi">8.0</div>
-        </div>
-        <div class="matrix-row">
-          <div>B · Linear North Satellite (New concourse, APM link)</div>
-          <div class="score mid">7.1</div>
-          <div class="score hi">8.4</div>
-          <div class="score mid">7.2</div>
-          <div class="score mid">6.5</div>
-        </div>
-        <div class="matrix-row">
-          <div>C · Hybrid Satellite + eVTOL Vertiport Integration</div>
-          <div class="score mid">7.5</div>
-          <div class="score hi">9.1</div>
-          <div class="score mid">6.8</div>
-          <div class="score lo">5.8</div>
-        </div>
-        <div class="matrix-row">
-          <div>D · Second Terminal Complex (Long-range, post-2040)</div>
-          <div class="score hi">9.0</div>
-          <div class="score mid">7.6</div>
-          <div class="score lo">4.2</div>
-          <div class="score lo">4.0</div>
-        </div>
-      </div>
-      <div class="input-row">
-        <div>
-          <label>Weight Airside Efficiency (%)</label>
-          <input type="range" min="0" max="100" value="25" id="w1" oninput="document.getElementById('w1v').textContent=this.value+'%'">
-          <span id="w1v" style="font-size:.6rem;color:var(--cyan)">25%</span>
-        </div>
-        <div>
-          <label>Weight Passenger Experience (%)</label>
-          <input type="range" min="0" max="100" value="30" id="w2" oninput="document.getElementById('w2v').textContent=this.value+'%'">
-          <span id="w2v" style="font-size:.6rem;color:var(--cyan)">30%</span>
-        </div>
-      </div>
-      <div class="input-row">
-        <div>
-          <label>Weight Phasing Flexibility (%)</label>
-          <input type="range" min="0" max="100" value="25" id="w3" oninput="document.getElementById('w3v').textContent=this.value+'%'">
-          <span id="w3v" style="font-size:.6rem;color:var(--cyan)">25%</span>
-        </div>
-        <div>
-          <label>Weight Capital Efficiency (%)</label>
-          <input type="range" min="0" max="100" value="20" id="w4" oninput="document.getElementById('w4v').textContent=this.value+'%'">
-          <span id="w4v" style="font-size:.6rem;color:var(--cyan)">20%</span>
+        <div class="module-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Project Type</label>
+              <select id="mer-type">
+                <option>Airport Terminal Expansion</option>
+                <option>Industrial — Pharmaceutical GMP</option>
+                <option>Industrial — Automotive Manufacturing</option>
+                <option>Industrial — Biotech / R&D</option>
+                <option>Industrial — Logistics Hub</option>
+                <option>Commercial / Mixed-Use</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Gross Area (SF)</label>
+              <input type="number" id="mer-sf" value="650000" placeholder="650,000">
+            </div>
+          </div>
+          <div class="form-row tri">
+            <div class="form-group">
+              <label>Location</label>
+              <select id="mer-loc">
+                <option>Tampa, FL (USA)</option>
+                <option>Van Nuys, CA (USA)</option>
+                <option>Monterrey, NL (Mexico)</option>
+                <option>Guadalajara, JAL (Mexico)</option>
+                <option>Toluca, MEX (Mexico)</option>
+                <option>Querétaro, QRO (Mexico)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Construction Quality</label>
+              <select id="mer-qual">
+                <option>GMP / Pharma-Grade</option>
+                <option>Premium Aviation</option>
+                <option>Standard Industrial</option>
+                <option>Heavy Industrial</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Target Margin (%)</label>
+              <input type="number" id="mer-margin" value="14" placeholder="14">
+            </div>
+          </div>
+          <button class="run-btn" id="btn-meridian" onclick="runModule('meridian')">
+            <div class="spinner"></div>
+            <span class="btn-text">Run Cost & Schedule Simulation</span>
+          </button>
+          <div class="output" id="out-meridian">
+            <div class="output-head">MERIDIAN — Cost Intelligence Report</div>
+            <div class="output-text" id="txt-meridian"></div>
+          </div>
         </div>
       </div>
-      <button class="run-btn" onclick="runModule('atlas')">
-        <div class="spinner"></div>
-        <span class="btn-text">Score Configurations</span>
-      </button>
-      <div class="output" id="out-atlas">
-        <div class="output-head">ATLAS Configuration Analysis</div>
-        <div class="output-text" id="txt-atlas"></div>
-      </div>
-    </div>
-  </div>
 
-  <!-- MODULE 5: ORACLE -->
-  <div class="module m5" id="m5">
-    <div class="module-hdr" onclick="toggle('m5')">
-      <div class="module-icon">🔮</div>
-      <div class="module-meta">
-        <div class="module-name">ORACLE — Robustness Navigator</div>
-        <div class="module-desc">Regret minimization · Black swan stress testing · Decision under deep uncertainty</div>
-      </div>
-      <div class="module-tag">Robustness</div>
-      <div class="module-chevron">▼</div>
-    </div>
-    <div class="module-body">
-      <div class="input-row full">
-        <div>
-          <label>Strategic Question</label>
-          <textarea id="oq-question">Which terminal expansion sequence best positions TPA for long-term resilience across all plausible futures, given uncertainty in airline consolidation, eVTOL adoption, and Tampa Bay regional growth?</textarea>
+      <div class="module m3" id="m3">
+        <div class="module-hdr" onclick="toggle('m3')">
+          <div class="module-icon">👥</div>
+          <div class="module-meta">
+            <div class="module-name">CHORUS — Stakeholder Simulation</div>
+            <div class="module-desc">Pre-negotiation intelligence · Conflict prediction · Consensus mapping</div>
+          </div>
+          <div class="module-tag">Stakeholders</div>
+          <div class="module-chev">▼</div>
+        </div>
+        <div class="module-body">
+          <div class="sh-list" id="sh-list">
+            <!-- populated by setContext() -->
+          </div>
+          <div class="form-row full">
+            <div class="form-group">
+              <label>Scenario to Simulate</label>
+              <input type="text" id="ch-scenario" placeholder="Describe the stakeholder scenario...">
+            </div>
+          </div>
+          <button class="run-btn" id="btn-chorus" onclick="runModule('chorus')">
+            <div class="spinner"></div>
+            <span class="btn-text">Simulate Stakeholder Response</span>
+          </button>
+          <div class="output" id="out-chorus">
+            <div class="output-head">CHORUS — Stakeholder Analysis</div>
+            <div class="output-text" id="txt-chorus"></div>
+          </div>
         </div>
       </div>
-      <div class="input-row tri">
-        <div>
-          <label>Uncertainty #1</label>
-          <select id="oq-u1">
-            <option selected>Airline industry consolidation</option>
-            <option>Southwest hub contraction</option>
-            <option>Low-cost carrier market shift</option>
-          </select>
-        </div>
-        <div>
-          <label>Uncertainty #2</label>
-          <select id="oq-u2">
-            <option selected>eVTOL / AAM adoption rate</option>
-            <option>SAF infrastructure requirements</option>
-            <option>TSA biometric processing speed</option>
-          </select>
-        </div>
-        <div>
-          <label>Uncertainty #3</label>
-          <select id="oq-u3">
-            <option selected>Tampa Bay population growth rate</option>
-            <option>Hurricane/climate risk escalation</option>
-            <option>Regional airport competition</option>
-          </select>
-        </div>
-      </div>
-      <button class="run-btn" onclick="runModule('oracle')">
-        <div class="spinner"></div>
-        <span class="btn-text">Run Robustness Analysis</span>
-      </button>
-      <div class="output" id="out-oracle">
-        <div class="output-head">ORACLE Robustness Report</div>
-        <div class="output-text" id="txt-oracle"></div>
-      </div>
-    </div>
-  </div>
 
-</div>
+      <div class="module m4" id="m4">
+        <div class="module-hdr" onclick="toggle('m4')">
+          <div class="module-icon">🗺</div>
+          <div class="module-meta">
+            <div class="module-name">ATLAS — Configuration Evaluation</div>
+            <div class="module-desc">Concept scoring · Multi-criteria weighted matrix · AI-generated alternatives</div>
+          </div>
+          <div class="module-tag">Configuration</div>
+          <div class="module-chev">▼</div>
+        </div>
+        <div class="module-body">
+          <div class="matrix" id="atlas-matrix"><!-- populated by setContext() --></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Weight Criterion 1 (%)</label>
+              <input type="range" min="0" max="100" value="25" id="w1" oninput="document.getElementById('w1v').textContent=this.value+'%'">
+              <span class="range-val" id="w1v">25%</span>
+            </div>
+            <div class="form-group">
+              <label>Weight Criterion 2 (%)</label>
+              <input type="range" min="0" max="100" value="30" id="w2" oninput="document.getElementById('w2v').textContent=this.value+'%'">
+              <span class="range-val" id="w2v">30%</span>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Weight Criterion 3 (%)</label>
+              <input type="range" min="0" max="100" value="25" id="w3" oninput="document.getElementById('w3v').textContent=this.value+'%'">
+              <span class="range-val" id="w3v">25%</span>
+            </div>
+            <div class="form-group">
+              <label>Weight Criterion 4 (%)</label>
+              <input type="range" min="0" max="100" value="20" id="w4" oninput="document.getElementById('w4v').textContent=this.value+'%'">
+              <span class="range-val" id="w4v">20%</span>
+            </div>
+          </div>
+          <button class="run-btn" id="btn-atlas" onclick="runModule('atlas')">
+            <div class="spinner"></div>
+            <span class="btn-text">Score Configurations</span>
+          </button>
+          <div class="output" id="out-atlas">
+            <div class="output-head">ATLAS — Configuration Analysis</div>
+            <div class="output-text" id="txt-atlas"></div>
+          </div>
+        </div>
+      </div>
 
-<footer>
-  Enginuity Scenario Intelligence · Inkwell Technology Studios · 2026<br>
-  Built for <a href="#">Tampa International Airport Master Plan RFQ · HCAA · April 1, 2026</a>
-</footer>
+      <div class="module m5" id="m5">
+        <div class="module-hdr" onclick="toggle('m5')">
+          <div class="module-icon">🔮</div>
+          <div class="module-meta">
+            <div class="module-name">ORACLE — Robustness Navigator</div>
+            <div class="module-desc">Regret minimization · Black swan stress testing · Decision under deep uncertainty</div>
+          </div>
+          <div class="module-tag">Robustness</div>
+          <div class="module-chev">▼</div>
+        </div>
+        <div class="module-body">
+          <div class="form-row full">
+            <div class="form-group">
+              <label>Strategic Question</label>
+              <textarea id="oq-question" placeholder="Which strategy best positions the project for long-term resilience across all plausible futures?"></textarea>
+            </div>
+          </div>
+          <div class="form-row tri">
+            <div class="form-group">
+              <label>Uncertainty #1</label>
+              <select id="oq-u1">
+                <option>Airline industry consolidation</option>
+                <option>US tariff escalation (Mexico trade)</option>
+                <option>Labor market tightening</option>
+                <option>FX volatility MXN/USD</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Uncertainty #2</label>
+              <select id="oq-u2">
+                <option>eVTOL / AAM adoption rate</option>
+                <option>Supply chain disruption</option>
+                <option>COFEPRIS regulatory change</option>
+                <option>Regional demand shock</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Uncertainty #3</label>
+              <select id="oq-u3">
+                <option>Tampa Bay regional growth</option>
+                <option>Nearshoring industrial boom</option>
+                <option>Energy cost volatility</option>
+                <option>Seismic/climate event</option>
+              </select>
+            </div>
+          </div>
+          <button class="run-btn" id="btn-oracle" onclick="runModule('oracle')">
+            <div class="spinner"></div>
+            <span class="btn-text">Analyze Robustness</span>
+          </button>
+          <div class="output" id="out-oracle">
+            <div class="output-head">ORACLE — Robustness Analysis</div>
+            <div class="output-text" id="txt-oracle"></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /panel-scenario -->
+
+    <!-- ══════════════════════════════════════
+         PANEL: DASHBOARD (Bid Intelligence)
+    ═══════════════════════════════════════ -->
+    <div class="panel" id="panel-dashboard">
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-label">Active Bids</div>
+          <div class="stat-val" style="color:var(--cyan)">12</div>
+          <div class="stat-change up">↑ 3 from last month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Win Rate</div>
+          <div class="stat-val" style="color:var(--green)">68%</div>
+          <div class="stat-change up">↑ 4% vs. industry avg</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Pipeline Value</div>
+          <div class="stat-val">$84M</div>
+          <div class="stat-change neutral">MXN equiv: $1.68B</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Risk Score</div>
+          <div class="stat-val" style="color:var(--orange)">6.2</div>
+          <div class="stat-change down">↑ Tariff exposure elevated</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg Margin</div>
+          <div class="stat-val" style="color:var(--green)">14.2%</div>
+          <div class="stat-change up">↑ Above 12% target</div>
+        </div>
+      </div>
+
+      <div class="chart-row">
+        <div class="chart-wrap">
+          <div class="chart-title">Win Probability — Current RFP</div>
+          <div class="chart-sub">Pharma Facility, Monterrey · AI competitive model</div>
+          <div class="chart-container"><canvas id="c-winprob"></canvas></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">Pipeline by Sector</div>
+          <div class="chart-sub">Active opportunities (USD millions)</div>
+          <div class="chart-container"><canvas id="c-pipeline"></canvas></div>
+        </div>
+      </div>
+
+      <div class="chart-row">
+        <div class="chart-wrap">
+          <div class="chart-title">Benchmark $/SF — Market vs. Abitat</div>
+          <div class="chart-sub">Pharmaceutical construction, Mexico</div>
+          <div class="chart-container"><canvas id="c-benchmark"></canvas></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">Risk Trend — Last 6 Months</div>
+          <div class="chart-sub">Composite risk score by category</div>
+          <div class="chart-container"><canvas id="c-risktrend"></canvas></div>
+        </div>
+      </div>
+
+      <div class="adv-box">
+        <div class="adv-title">⬡ Enginuity Advantage — Current Bid Position</div>
+        <div class="adv-body">Abitat holds the strongest position among regional bidders for the active pharmaceutical project. Your patented MEP coordination process reduces install time by <strong>22%</strong> vs. local competitors, and your existing Monterrey subcontractor network gives you a <strong>15% materials cost advantage</strong>. AI Win Probability: <strong>68%</strong> — highest in competitive set. No global PreCon AI platform has Mexico-native COFEPRIS intelligence — this is your moat.</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         PANEL: DOCUMENT ANALYSIS
+    ═══════════════════════════════════════ -->
+    <div class="panel" id="panel-documents">
+      <div class="upload-zone" onclick="document.getElementById('rfp-input').click()" id="upload-zone">
+        <input type="file" id="rfp-input" accept=".pdf,.docx,.xlsx" onchange="handleUpload(this)">
+        <div class="upload-icon">📁</div>
+        <div class="upload-text">Drop RFP documents here or click to upload</div>
+        <div class="upload-sub">PDF · DOCX · XLSX — AI extracts scope, requirements, and bid criteria automatically</div>
+      </div>
+
+      <div id="rfp-results" style="display:none">
+        <div class="ai-out">
+          <div class="ai-out-hdr"><span class="ai-badge">AI EXTRACTED</span><span class="ai-out-title">RFP Analysis — Pharmaceutical Manufacturing Facility</span></div>
+          <div class="ai-out-body">
+            <strong>Project:</strong> GMP Pharmaceutical Manufacturing Facility, Monterrey, NL<br>
+            <strong>Owner:</strong> Laboratorios Genomma Lab Internacional<br>
+            <strong>Estimated Value:</strong> $18–24M USD · <strong>Bid Deadline:</strong> March 28, 2026 · 5:00 PM CST<br>
+            <strong>Duration:</strong> 18 months from NTP<br><br>
+            <strong>Key Requirements Extracted:</strong>
+            <ul>
+              <li>ISO Class 8 cleanroom (12,000 SF) with HVAC redundancy</li>
+              <li>COFEPRIS-compliant GMP documentation protocol</li>
+              <li>Class 8 hazmat storage — UN 1950 compliant</li>
+              <li>Seismic Zone D construction per NOM-006-CONAVI</li>
+              <li>25% local subcontractor requirement (Nuevo León)</li>
+              <li>Performance bond: 10% contract value · MBE/WBE documentation required</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hdr">
+            <div><div class="card-title">Scope Extraction Summary</div><div class="card-sub">AI-identified bid items from RFP documents</div></div>
+            <span class="tag tag-cyan">94% confidence</span>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>Scope Item</th><th>Spec Section</th><th>Est. Cost</th><th>Abitat Capability</th></tr></thead>
+            <tbody>
+              <tr><td>Site Work & Earthwork</td><td>02 00 00</td><td>$1.2M</td><td><span class="tag tag-green">✓ Core</span></td></tr>
+              <tr><td>Concrete — GMP Slab</td><td>03 30 00</td><td>$2.8M</td><td><span class="tag tag-green">✓ Core</span></td></tr>
+              <tr><td>Structural Steel</td><td>05 10 00</td><td>$3.1M</td><td><span class="tag tag-green">✓ Core</span></td></tr>
+              <tr><td>Cleanroom Construction</td><td>13 24 00</td><td>$4.2M</td><td><span class="tag tag-orange">◐ Partner</span></td></tr>
+              <tr><td>MEP — HVAC (Cleanroom)</td><td>23 09 00</td><td>$3.8M</td><td><span class="tag tag-green">✓ Core</span></td></tr>
+              <tr><td>Electrical — Class I Div 2</td><td>26 20 00</td><td>$1.9M</td><td><span class="tag tag-green">✓ Core</span></td></tr>
+              <tr><td>Plumbing — WFI/PW Systems</td><td>22 67 00</td><td>$1.4M</td><td><span class="tag tag-orange">◐ Partner</span></td></tr>
+              <tr><td>Finishes — ESD/Vinyl</td><td>09 65 00</td><td>$0.9M</td><td><span class="tag tag-green">✓ Core</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="adv-box">
+          <div class="adv-title">⬡ Advantage — Document Intelligence</div>
+          <div class="adv-body">6 COFEPRIS-compliant pharmaceutical projects completed in the past 4 years — more than any regional bidder. AI scope confidence: <strong>94%</strong>. Two specialty items (cleanroom, WFI systems) recommend pre-qualified partner engagement before submission.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         PANEL: RISK ASSESSMENT
+    ═══════════════════════════════════════ -->
+    <div class="panel" id="panel-risk">
+      <div class="risk-grid">
+        <div class="risk-card high">
+          <div class="risk-level">HIGH RISK</div>
+          <div class="risk-title">Tariff Impact — US 25%</div>
+          <div class="risk-body">US tariffs on Mexican steel/aluminum create material cost volatility. Rebar: +18–22%. Structural steel: +24%. Aluminum cladding: +31%. Escalation clause required.</div>
+          <div class="risk-score">8.4/10</div>
+        </div>
+        <div class="risk-card high">
+          <div class="risk-level">HIGH RISK</div>
+          <div class="risk-title">Supply Chain Disruption</div>
+          <div class="risk-body">HVAC equipment lead times extended to 20–26 weeks (vs. 12-week standard). Cleanroom modular panels: 16-week lead time. Early procurement authorization recommended.</div>
+          <div class="risk-score">7.9/10</div>
+        </div>
+        <div class="risk-card med">
+          <div class="risk-level">MEDIUM RISK</div>
+          <div class="risk-title">Weather — Monterrey</div>
+          <div class="risk-body">Hurricane season June–Nov. Historical flood events in Arroyo Topo Chico corridor. 15-day weather contingency buffer recommended. Seismic Zone D enhanced foundation spec required.</div>
+          <div class="risk-score">5.2/10</div>
+        </div>
+        <div class="risk-card med">
+          <div class="risk-level">MEDIUM RISK</div>
+          <div class="risk-title">FX Volatility — MXN/USD</div>
+          <div class="risk-body">Peso 8–12% swings YTD. 18-month project duration creates significant currency exposure on USD-denominated materials. USD-denominated contract for imports recommended.</div>
+          <div class="risk-score">5.8/10</div>
+        </div>
+        <div class="risk-card med">
+          <div class="risk-level">MEDIUM RISK</div>
+          <div class="risk-title">Labor Availability</div>
+          <div class="risk-body">Skilled trades (cleanroom, GMP commissioning) concentrated in Monterrey/Guadalajara. Two competing pharmaceutical projects active in same labor market simultaneously.</div>
+          <div class="risk-score">4.9/10</div>
+        </div>
+        <div class="risk-card low">
+          <div class="risk-level">LOW RISK</div>
+          <div class="risk-title">Permitting — CONAVI/IMSS</div>
+          <div class="risk-body">NL State Industrial Permit averages 45 days. Established relationships with San Pedro Garza García municipal authorities reduce approval risk. COFEPRIS: standard 60-day pathway.</div>
+          <div class="risk-score">2.1/10</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr">
+          <div><div class="card-title">Tariff Exposure Calculator</div><div class="card-sub">US 25% tariff impact on bid materials — Monterrey facility</div></div>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Material</th><th>Base Cost</th><th>Tariff Rate</th><th>Adjusted Cost</th><th>Exposure</th></tr></thead>
+          <tbody>
+            <tr><td>Structural Steel (US origin)</td><td>$1,240,000</td><td>25%</td><td>$1,550,000</td><td><span class="tag tag-red">+$310K</span></td></tr>
+            <tr><td>Aluminum Curtainwall</td><td>$380,000</td><td>25%</td><td>$475,000</td><td><span class="tag tag-red">+$95K</span></td></tr>
+            <tr><td>HVAC Equipment (US mfg)</td><td>$890,000</td><td>25%</td><td>$1,112,500</td><td><span class="tag tag-red">+$222K</span></td></tr>
+            <tr><td>Electrical Gear (partial)</td><td>$340,000</td><td>15%</td><td>$391,000</td><td><span class="tag tag-orange">+$51K</span></td></tr>
+            <tr class="hl-row"><td>Total Tariff Exposure</td><td>$2,850,000</td><td>—</td><td>$3,528,500</td><td><strong style="color:var(--red)">+$678K</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="adv-box">
+        <div class="adv-title">⬡ Mitigation — Enginuity Recommendation</div>
+        <div class="adv-body">Abitat's supply relationships with domestic manufacturers (Grupo Ternium, Vitro) mitigate tariff exposure by <strong>40–60%</strong> vs. competitors relying on US-import materials. Recommended strategy: <strong>include tariff escalation clause capped at 5%</strong>, with domestic material substitution schedule attached. This positions Abitat as both competitive and risk-aware.</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         PANEL: COMPETITIVE INTEL
+    ═══════════════════════════════════════ -->
+    <div class="panel" id="panel-competitive">
+      <div class="chart-row">
+        <div class="chart-wrap">
+          <div class="chart-title">Win Probability — Current RFP</div>
+          <div class="chart-sub">AI model: past projects, pricing, capabilities</div>
+          <div class="chart-container"><canvas id="c-compdetail"></canvas></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">Pricing Position</div>
+          <div class="chart-sub">Estimated bid ranges vs. Abitat target</div>
+          <div class="chart-container"><canvas id="c-pricing"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr">
+          <div><div class="card-title">Competitor Intelligence Matrix</div><div class="card-sub">Pharmaceutical construction — Mexico regional market</div></div>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Rank</th><th>Competitor</th><th>Est. Bid</th><th>Win Prob</th><th>Strength</th><th>Weakness</th></tr></thead>
+          <tbody>
+            <tr class="hl-row">
+              <td><span class="c-rank r1">1</span>Abitat</td>
+              <td>$18.4M</td><td><span class="tag tag-green">68%</span></td>
+              <td><span class="tag tag-green">GMP Experience</span></td>
+              <td>Highest local pharma track record</td>
+            </tr>
+            <tr>
+              <td><span class="c-rank r2">2</span>IDEC Constructora</td>
+              <td>$17.1M</td><td><span class="tag tag-orange">42%</span></td>
+              <td><span class="tag tag-blue">Low Price</span></td>
+              <td>No COFEPRIS validation history</td>
+            </tr>
+            <tr>
+              <td><span class="c-rank r3">3</span>GFC Industrial</td>
+              <td>$19.8M</td><td><span class="tag tag-gray">28%</span></td>
+              <td><span class="tag tag-gray">Brand</span></td>
+              <td>NL subcontractor network limited</td>
+            </tr>
+            <tr>
+              <td><span class="c-rank rn">4</span>Vicon Construcciones</td>
+              <td>$21.2M</td><td><span class="tag tag-gray">14%</span></td>
+              <td><span class="tag tag-gray">Scale</span></td>
+              <td>No pharmaceutical specialty</td>
+            </tr>
+            <tr>
+              <td><span class="c-rank rn">5</span>Grupo INDI</td>
+              <td>$20.5M</td><td><span class="tag tag-gray">11%</span></td>
+              <td><span class="tag tag-gray">Price</span></td>
+              <td>No GMP documentation process</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr">
+          <div><div class="card-title">Global Market Context</div><div class="card-sub">Pre-construction AI landscape</div></div>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Company</th><th>Focus</th><th>Funding</th><th>Mexico Presence</th></tr></thead>
+          <tbody>
+            <tr><td>Procore (PCOR)</td><td>Full lifecycle, AI Copilot</td><td>Public</td><td><span class="tag tag-red">Competitor</span></td></tr>
+            <tr><td>Autodesk / BuildingConnected</td><td>Bid network, prequalification</td><td>$275M acq.</td><td><span class="tag tag-red">Competitor</span></td></tr>
+            <tr><td>ALICE Technologies</td><td>AI optioneering, scheduling</td><td>$61M</td><td><span class="tag tag-gray">None</span></td></tr>
+            <tr><td>Togal.AI</td><td>AI takeoffs</td><td>$5M</td><td><span class="tag tag-gray">None</span></td></tr>
+            <tr class="hl-row"><td>Enginuity / Abitat</td><td>Mexico pharma + industrial AI</td><td>Proprietary</td><td><span class="tag tag-green">✓ Native</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="adv-box">
+        <div class="adv-title">⬡ Competitive Moat</div>
+        <div class="adv-body">No global PreCon AI platform has a Mexico-native offering with COFEPRIS compliance intelligence, NOM standards integration, or tariff-adjusted cost modeling. <strong>Enginuity is the only platform built for the Mexican construction regulatory environment.</strong> Lean into COFEPRIS experience, local subcontractor network depth, and the tariff escalation methodology as bid differentiators.</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         PANEL: DETAILED BID (TAKEOFF)
+    ═══════════════════════════════════════ -->
+    <div class="panel" id="panel-detailed">
+      <div class="btn-row">
+        <button class="btn btn-primary">⬇ Import BIM Model</button>
+        <button class="btn btn-secondary">✏️ Manual Entry</button>
+        <button class="btn btn-secondary">📊 Export Excel</button>
+      </div>
+
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:14px 18px;border-bottom:1px solid var(--border2);display:flex;justify-content:space-between;align-items:center">
+          <div><div class="card-title">Smart Inventory — AI Quantity Take-Off</div><div class="card-sub">GMP Pharmaceutical Facility, Monterrey, NL</div></div>
+          <span class="tag tag-cyan">AI Assisted</span>
+        </div>
+        <div class="line-wrap">
+          <div class="line-hdr"><span>Description</span><span>Unit</span><span>Quantity</span><span>Unit Cost</span><span>Total Cost</span><span>Margin</span></div>
+
+          <div class="line-section">01 — SITE WORK</div>
+          <div class="line-row"><span style="color:var(--text)">Clear & Grub (1.8 acres)</span><span>AC</span><span>1.8</span><span>$12,400</span><span>$22,320</span><span class="tag tag-green">14%</span></div>
+          <div class="line-row"><span style="color:var(--text)">Mass Excavation</span><span>CY</span><span>4,200</span><span>$18.50</span><span>$77,700</span><span class="tag tag-green">14%</span></div>
+          <div class="line-row"><span style="color:var(--text)">Paving — Heavy Industrial</span><span>SF</span><span>42,000</span><span>$8.20</span><span>$344,400</span><span class="tag tag-green">12%</span></div>
+
+          <div class="line-section">03 — CONCRETE</div>
+          <div class="line-row"><span style="color:var(--text)">Drilled Piers (Zone D Seismic)</span><span>EA</span><span>84</span><span>$3,800</span><span>$319,200</span><span class="tag tag-orange">11%</span></div>
+          <div class="line-row"><span style="color:var(--text)">GMP Slab-on-Grade (8" FC=350)</span><span>SF</span><span>62,000</span><span>$28.00</span><span>$1,736,000</span><span class="tag tag-green">13%</span></div>
+          <div class="line-row"><span style="color:var(--text)">Tilt-Up Panels (8")</span><span>SF</span><span>38,400</span><span>$42.00</span><span>$1,612,800</span><span class="tag tag-green">14%</span></div>
+
+          <div class="line-section">05 — METALS (Domestic — Tariff Mitigated)</div>
+          <div class="line-row"><span style="color:var(--text)">Structural Steel (Ternium domestic)</span><span>TON</span><span>380</span><span>$3,200</span><span>$1,216,000</span><span class="tag tag-green">15%</span></div>
+          <div class="line-row"><span style="color:var(--text)">Metal Deck 3" — 20ga</span><span>SF</span><span>62,000</span><span>$4.80</span><span>$297,600</span><span class="tag tag-green">14%</span></div>
+
+          <div class="line-section">13 — CLEANROOM</div>
+          <div class="line-row"><span style="color:var(--text)">ISO Class 8 Modular Wall System</span><span>SF</span><span>12,000</span><span>$185.00</span><span>$2,220,000</span><span class="tag tag-orange">10%</span></div>
+          <div class="line-row"><span style="color:var(--text)">HEPA Filtration — Fan Filter Units</span><span>EA</span><span>96</span><span>$4,200</span><span>$403,200</span><span class="tag tag-orange">11%</span></div>
+          <div class="line-row"><span style="color:var(--text)">Cleanroom Flooring — ESD Vinyl</span><span>SF</span><span>12,000</span><span>$22.00</span><span>$264,000</span><span class="tag tag-green">14%</span></div>
+
+          <div class="line-section">23 — HVAC (Abitat Patented MEP Process)</div>
+          <div class="line-row"><span style="color:var(--text)">AHU — 100% OA Cleanroom Units (N+1)</span><span>EA</span><span>4</span><span>$285,000</span><span>$1,140,000</span><span class="tag tag-green">16%</span></div>
+          <div class="line-row"><span style="color:var(--text)">BAS/BMS — Validated (GAMP5)</span><span>LS</span><span>1</span><span>$420,000</span><span>$420,000</span><span class="tag tag-green">18%</span></div>
+          <div class="line-row"><span style="color:var(--text)">Ductwork — Stainless (GMP)</span><span>LB</span><span>28,000</span><span>$18.50</span><span>$518,000</span><span class="tag tag-green">15%</span></div>
+
+          <div class="line-section">26 — ELECTRICAL</div>
+          <div class="line-row"><span style="color:var(--text)">MV Transformer 1500 KVA</span><span>EA</span><span>2</span><span>$124,000</span><span>$248,000</span><span class="tag tag-green">13%</span></div>
+          <div class="line-row"><span style="color:var(--text)">Emergency Generator 500 KW</span><span>EA</span><span>2</span><span>$89,000</span><span>$178,000</span><span class="tag tag-green">12%</span></div>
+          <div class="line-row"><span style="color:var(--text)">Distribution — Class I Div 2 Zones</span><span>LS</span><span>1</span><span>$680,000</span><span>$680,000</span><span class="tag tag-green">14%</span></div>
+
+          <div class="line-section">SOFT COSTS + RESERVES</div>
+          <div class="line-row"><span style="color:var(--text)">General Conditions (7%)</span><span>LS</span><span>1</span><span>—</span><span>$1,288,000</span><span class="tag tag-gray">GC</span></div>
+          <div class="line-row"><span style="color:var(--text)">Tariff Escalation Reserve (3.5%)</span><span>LS</span><span>1</span><span>—</span><span>$644,000</span><span class="tag tag-orange">Risk</span></div>
+          <div class="line-row"><span style="color:var(--text)">Performance Bond (1%)</span><span>LS</span><span>1</span><span>—</span><span>$184,000</span><span class="tag tag-gray">—</span></div>
+
+          <div class="line-total">
+            <span>TOTAL BID — PHARMACEUTICAL FACILITY, MONTERREY, NL</span>
+            <span></span><span></span><span></span>
+            <span style="color:var(--cyan)">$18,400,000</span>
+            <span style="color:var(--green)">13.8% avg</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         PANEL: COMPLIANCE
+    ═══════════════════════════════════════ -->
+    <div class="panel" id="panel-compliance">
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="runCompliance()">🔄 Run Compliance Check</button>
+        <button class="btn btn-secondary">📋 Export Report</button>
+        <button class="btn btn-secondary">📎 Attach to Bid</button>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr">
+          <div><div class="card-title">Regulatory Compliance Status</div><div class="card-sub">Pharmaceutical Manufacturing Facility — Monterrey, Nuevo León</div></div>
+          <span class="tag tag-orange">2 Items Pending</span>
+        </div>
+
+        <div class="comp-item">
+          <div class="comp-item-left"><div class="comp-icon">🏗️</div><div><div class="comp-name">NOM-006-CONAVI — Seismic Design</div><div class="comp-agency">CONAVI / Federal</div></div></div>
+          <div class="comp-status"><div class="s-dot pass"></div><span class="s-txt pass">Compliant</span></div>
+        </div>
+        <div class="comp-item">
+          <div class="comp-item-left"><div class="comp-icon">💊</div><div><div class="comp-name">COFEPRIS BPM — GMP Standards</div><div class="comp-agency">COFEPRIS / Federal</div></div></div>
+          <div class="comp-status"><div class="s-dot pass"></div><span class="s-txt pass">Compliant</span></div>
+        </div>
+        <div class="comp-item">
+          <div class="comp-item-left"><div class="comp-icon">🔥</div><div><div class="comp-name">NOM-002-STPS — Fire Prevention</div><div class="comp-agency">STPS / Federal</div></div></div>
+          <div class="comp-status"><div class="s-dot pass"></div><span class="s-txt pass">Compliant</span></div>
+        </div>
+        <div class="comp-item">
+          <div class="comp-item-left"><div class="comp-icon">♻️</div><div><div class="comp-name">NOM-052-SEMARNAT — Hazardous Waste</div><div class="comp-agency">SEMARNAT / Federal</div></div></div>
+          <div class="comp-status"><div class="s-dot warn"></div><span class="s-txt warn">Review Required</span></div>
+        </div>
+        <div class="comp-item">
+          <div class="comp-item-left"><div class="comp-icon">🏙️</div><div><div class="comp-name">Nuevo León Industrial Zoning — H3 Use</div><div class="comp-agency">Municipio de Monterrey</div></div></div>
+          <div class="comp-status"><div class="s-dot pass"></div><span class="s-txt pass">Compliant</span></div>
+        </div>
+        <div class="comp-item">
+          <div class="comp-item-left"><div class="comp-icon">💧</div><div><div class="comp-name">SADM — Industrial Water Discharge</div><div class="comp-agency">Servicios de Agua y Drenaje de Monterrey</div></div></div>
+          <div class="comp-status"><div class="s-dot warn"></div><span class="s-txt warn">Permit Pending</span></div>
+        </div>
+        <div class="comp-item">
+          <div class="comp-item-left"><div class="comp-icon">⚡</div><div><div class="comp-name">CFE — Industrial Power Connection Spec</div><div class="comp-agency">Comisión Federal de Electricidad</div></div></div>
+          <div class="comp-status"><div class="s-dot pass"></div><span class="s-txt pass">Compliant</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         PANEL: DOCUMENT VAULT
+    ═══════════════════════════════════════ -->
+    <div class="panel" id="panel-repository">
+      <div class="ai-out" style="margin-bottom:18px">
+        <div class="ai-out-hdr"><span class="ai-badge">AI INSIGHTS</span><span class="ai-out-title">Repository Intelligence — 47 Documents Indexed</span></div>
+        <div class="ai-out-body">Your vault contains <strong>6 completed pharmaceutical projects ($89M total)</strong>, 14 industrial facility bids, and 27 support documents. AI pattern analysis identifies: <strong>3 spec sections</strong> where previous bids were consistently underbid, and <strong>2 Abitat process innovations</strong> generating measurable schedule savings in past pharmaceutical projects.</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="queryRepo()">🔍 Ask AI About Repository</button>
+        <button class="btn btn-secondary">📤 Upload Document</button>
+        <button class="btn btn-secondary">🗃️ Browse All</button>
+      </div>
+
+      <div id="repo-query-result" style="display:none;margin-bottom:16px" class="ai-out">
+        <div class="ai-out-hdr"><span class="ai-badge">AI RESPONSE</span><span class="ai-out-title">Repository Query</span></div>
+        <div class="ai-out-body" id="repo-query-text"></div>
+      </div>
+
+      <div class="doc-card">
+        <div class="doc-icon-wrap">🏭</div>
+        <div class="doc-info">
+          <div class="doc-name">Genomma Lab — Toluca Facility (Final Bid)</div>
+          <div class="doc-meta">Completed 2024 · $14.2M · Won · 18 months</div>
+          <div class="doc-tags"><span class="tag tag-green">Pharmaceutical</span><span class="tag tag-cyan">GMP</span><span class="tag tag-orange">Cleanroom</span></div>
+        </div>
+        <button class="btn btn-secondary" style="flex-shrink:0">View</button>
+      </div>
+      <div class="doc-card">
+        <div class="doc-icon-wrap">🏭</div>
+        <div class="doc-info">
+          <div class="doc-name">Pisa Farmacéutica — Guadalajara Expansion</div>
+          <div class="doc-meta">Completed 2023 · $22.8M · Won · 24 months</div>
+          <div class="doc-tags"><span class="tag tag-green">Pharmaceutical</span><span class="tag tag-cyan">GMP</span></div>
+        </div>
+        <button class="btn btn-secondary" style="flex-shrink:0">View</button>
+      </div>
+      <div class="doc-card">
+        <div class="doc-icon-wrap">🚗</div>
+        <div class="doc-info">
+          <div class="doc-name">Automotive Facility — Ciudad Juárez</div>
+          <div class="doc-meta">Completed 2023 · $31.4M · Won · 22 months</div>
+          <div class="doc-tags"><span class="tag tag-blue">Automotive</span><span class="tag tag-orange">Nearshoring</span></div>
+        </div>
+        <button class="btn btn-secondary" style="flex-shrink:0">View</button>
+      </div>
+      <div class="doc-card">
+        <div class="doc-icon-wrap">🧬</div>
+        <div class="doc-info">
+          <div class="doc-name">Biotech Center — Ciudad Juárez (Roche × Syntex)</div>
+          <div class="doc-meta">Completed 2007 · $7.2M · Won · 14 months</div>
+          <div class="doc-tags"><span class="tag tag-green">Biotech</span><span class="tag tag-cyan">ISO Class 7</span></div>
+        </div>
+        <button class="btn btn-secondary" style="flex-shrink:0">View</button>
+      </div>
+      <div class="doc-card">
+        <div class="doc-icon-wrap">📋</div>
+        <div class="doc-info">
+          <div class="doc-name">Monterrey Industrial Zone — COFEPRIS Standards 2025</div>
+          <div class="doc-meta">Regulatory Reference · Updated Jan 2026</div>
+          <div class="doc-tags"><span class="tag tag-gray">Compliance</span><span class="tag tag-gray">Regulatory</span></div>
+        </div>
+        <button class="btn btn-secondary" style="flex-shrink:0">View</button>
+      </div>
+      <div class="doc-card">
+        <div class="doc-icon-wrap">📊</div>
+        <div class="doc-info">
+          <div class="doc-name">Pharmaceutical Construction Cost Benchmarks — NL 2025–2026</div>
+          <div class="doc-meta">Market Intelligence · 28 comparable projects</div>
+          <div class="doc-tags"><span class="tag tag-blue">Benchmarks</span><span class="tag tag-orange">Pricing</span></div>
+        </div>
+        <button class="btn btn-secondary" style="flex-shrink:0">View</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         PANEL: GENERATE BID PACKAGE
+    ═══════════════════════════════════════ -->
+    <div class="panel" id="panel-generate">
+      <div class="btn-row">
+        <button class="btn btn-orange" onclick="generateBid()" style="font-size:.78rem;padding:11px 24px">⚡ Generate Complete Bid Package</button>
+        <button class="btn btn-secondary">📧 Email to Owner</button>
+        <button class="btn btn-secondary">🖨️ Print</button>
+        <button class="btn btn-secondary">📤 Export PDF</button>
+      </div>
+
+      <div class="bid-pkg" id="bid-pkg">
+        <div class="bid-pkg-hdr">
+          <div>
+            <div class="bid-pkg-title">ABITAT CONSTRUCTION SOLUTIONS — BID PROPOSAL</div>
+            <div class="bid-pkg-meta">Genomma Lab Pharmaceutical Facility · Monterrey, NL · March 2026 · Powered by Enginuity AI</div>
+          </div>
+          <div class="bid-pkg-val">
+            <div class="big">$18,400,000</div>
+            <div class="lbl">Total Lump Sum Bid · USD</div>
+          </div>
+        </div>
+        <div class="bid-pkg-body">
+          <div class="bid-section">
+            <div class="bid-section-title">Executive Summary</div>
+            <div class="bid-section-body">Abitat Construction Solutions is pleased to submit this comprehensive bid for the construction of a GMP Pharmaceutical Manufacturing Facility for Genomma Lab Internacional in Monterrey, Nuevo León. Our bid reflects Abitat's unmatched experience with COFEPRIS-validated pharmaceutical construction in Mexico — having delivered <strong>6 compliant facilities totaling $89M</strong> over the past 4 years — combined with a competitive pricing strategy informed by deep local subcontractor relationships that mitigate current tariff exposure.</div>
+          </div>
+          <div class="bid-section">
+            <div class="bid-section-title">The Abitat Advantage</div>
+            <div class="bid-section-body">
+              <strong>Regulatory Expertise:</strong> Our in-house COFEPRIS validation team eliminates third-party QA consultants, saving the owner $280K–$380K in validation costs.<br><br>
+              <strong>MEP Coordination Process:</strong> Abitat's patented BIM-coordinated MEP installation process reduces cleanroom HVAC installation time by <strong>22%</strong>, directly accelerating commissioning.<br><br>
+              <strong>Tariff Mitigation:</strong> Pre-negotiated supply agreements with Grupo Ternium and Vitro Vidrio reduce tariff exposure by <strong>58%</strong> relative to import-dependent bidders. Bid includes capped escalation clause (5% max) providing owner certainty.
+            </div>
+          </div>
+          <div class="bid-section">
+            <div class="bid-section-title">Schedule</div>
+            <div class="bid-section-body">
+              <strong>NTP to Substantial Completion:</strong> 18 months · <strong>Cleanroom Commissioning:</strong> Month 15–17<br>
+              <strong>COFEPRIS Validation Support:</strong> Month 16–18 · <strong>Final Completion:</strong> Month 18<br><br>
+              Schedule includes 15-day weather contingency buffer (hurricane season) and 20-day HVAC procurement lead time buffer.
+            </div>
+          </div>
+          <div class="bid-section">
+            <div class="bid-section-title">Bid Summary</div>
+            <div class="bid-section-body">
+              Site Work & Earthwork: $505,020 · Concrete & Foundations: $3,668,000 · Structural Steel: $1,513,600<br>
+              Cleanroom Construction: $2,887,200 · HVAC & BAS: $2,078,000 · Electrical: $1,106,000<br>
+              Plumbing (WFI/PW): $1,400,000 · Finishes: $900,000 · General Conditions: $1,288,000<br>
+              Tariff Escalation Reserve: $644,000 · Performance Bond: $184,000<br>
+              <strong style="color:var(--cyan)">TOTAL LUMP SUM: $18,400,000 USD</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
 
 <script>
-const PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+const PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app';
 
-function toggle(id){
-  const m = document.getElementById(id);
-  m.classList.toggle('open');
+// ─── Context ──────────────────────────────────────────────────────────────────
+let currentCtx = 'airport';
+
+const CTX_DATA = {
+  airport: {
+    badge: '✈️ Airport Planning',
+    badgeClass: 'airport',
+    m1label: 'Passenger Demand Forecasting',
+    m1desc: '30-year pax demand · Scenario-weighted modeling · Airline capacity elasticity',
+    m1f1: 'Baseline Annual Pax (millions)',
+    m1f2: 'Planning Horizon (years)',
+    m1f3: 'Base Growth Rate (%/yr)',
+    m1f4: 'Optimistic Rate (%/yr)',
+    m1f5: 'Conservative Rate (%/yr)',
+    m1f1v:'24.2', m1f2v:'30', m1f3v:'2.8', m1f4v:'4.5', m1f5v:'1.2',
+    chorScenario: 'Southwest Airlines requests exclusive gate rights on Airside A in exchange for 20-year service commitment',
+    stakeholders: [
+      {name:'Southwest Airlines', stance:'support', concern:'Wants gate exclusivity on Airside A. Concerned about construction disruption to bag claim. Key lever: growth commitments tied to capital investment.', power:4},
+      {name:'American / Delta / United', stance:'neutral', concern:'Monitoring Southwest preferential treatment. Will object if non-signatory rate structure changes unfavorably.', power:3},
+      {name:'FAA / TSA', stance:'support', concern:'ADA compliance, security checkpoint LOS, NEPA review triggers. Early engagement required on any new terminal or runway modification.', power:5},
+      {name:'Hillsborough County', stance:'support', concern:'Economic development, employment, noise ordinance. Needs early briefing on Phase 3+ before bond authorization.', power:4},
+      {name:'Concessionaires (HMSHost)', stance:'risk', concern:'Revenue per enplaned passenger protection. Airside reconfiguration affects concession lease boundaries.', power:2},
+    ],
+    atlasMatrix: [
+      {name:'A · Existing APM Pod Expansion (Extend A/C/F)', s:[8.2,6.8,8.5,8.0]},
+      {name:'B · Linear North Satellite (New concourse, APM link)', s:[7.1,8.4,7.2,6.5]},
+      {name:'C · Hybrid Satellite + eVTOL Vertiport', s:[7.5,9.1,6.8,5.8]},
+      {name:'D · Second Terminal Complex (Post-2040)', s:[9.0,7.6,4.2,4.0]},
+    ],
+    atlasCriteria: ['Airside Efficiency','Pax Experience','Phasing Flexibility','Capital Efficiency'],
+  },
+  construction: {
+    badge: '🏭 Industrial Construction',
+    badgeClass: 'construction',
+    m1label: 'Market Demand Forecasting',
+    m1desc: 'Nearshoring growth · Sector demand · Regional industrial pipeline modeling',
+    m1f1: 'Current Market Volume ($M/yr)',
+    m1f2: 'Planning Horizon (years)',
+    m1f3: 'Base Growth Rate (%/yr)',
+    m1f4: 'Nearshoring Boom Rate (%/yr)',
+    m1f5: 'Conservative Rate (%/yr)',
+    m1f1v:'840', m1f2v:'10', m1f3v:'6.5', m1f4v:'14.2', m1f5v:'2.1',
+    chorScenario: 'COFEPRIS imposes new cleanroom validation requirements mid-construction, requiring design modifications',
+    stakeholders: [
+      {name:'Genomma Lab (Owner)', stance:'support', concern:'Deadline pressure — FDA filing requires facility validation by Q4 2026. Budget fixed at $24M ceiling. Single point of contact: VP Engineering.', power:5},
+      {name:'COFEPRIS', stance:'neutral', concern:'GMP validation documentation must precede operational certificate. Site inspections typically at 30%, 60%, and 95% completion.', power:5},
+      {name:'Nuevo León State — SADER/SIMA', stance:'support', concern:'Industrial zone compliance, water discharge permit, environmental impact. Relationship established via prior Monterrey projects.', power:3},
+      {name:'Local Subcontractors (NL)', stance:'support', concern:'25% local content requirement by contract. Key subs: IMEQ (MEP), Vitro (glass/cladding), Ternium (steel). Labor availability risk Q2.', power:2},
+      {name:'CFE (Electric Utility)', stance:'neutral', concern:'1,500 KVA industrial connection requires 90-day lead for transformer installation. Early coordination critical to schedule.', power:3},
+    ],
+    atlasMatrix: [
+      {name:'A · Standard Tilt-Up + GMP Interior Build-Out', s:[8.5,7.2,9.0,8.8]},
+      {name:'B · Pre-Engineered Metal Building + GMP Shell', s:[9.0,6.8,8.5,9.2]},
+      {name:'C · Cast-in-Place Concrete — Full GMP Structure', s:[7.2,9.0,5.5,5.8]},
+      {name:'D · Modular Cleanroom Assembly (Off-site fab)', s:[7.8,8.5,8.0,7.5]},
+    ],
+    atlasCriteria: ['GMP Compliance','Schedule Speed','Design Flexibility','Cost Efficiency'],
+  }
+};
+
+function setContext(ctx) {
+  currentCtx = ctx;
+  document.getElementById('ctx-airport').classList.toggle('active', ctx==='airport');
+  document.getElementById('ctx-construction').classList.toggle('active', ctx==='construction');
+  const d = CTX_DATA[ctx];
+  // Badge
+  const b = document.getElementById('tb-ctx-badge');
+  b.textContent = d.badge;
+  b.className = 'tb-badge ' + d.badgeClass;
+  // Module 1 labels
+  document.getElementById('m1-ctx-label').textContent = d.m1label;
+  document.getElementById('m1-ctx-desc').textContent = d.m1desc;
+  document.getElementById('m1-f1-label').textContent = d.m1f1;
+  document.getElementById('m1-f2-label').textContent = d.m1f2;
+  document.getElementById('m1-f3-label').textContent = d.m1f3;
+  document.getElementById('m1-f4-label').textContent = d.m1f4;
+  document.getElementById('m1-f5-label').textContent = d.m1f5;
+  document.getElementById('m1-f1').value = d.m1f1v;
+  document.getElementById('m1-f2').value = d.m1f2v;
+  document.getElementById('m1-f3').value = d.m1f3v;
+  document.getElementById('m1-f4').value = d.m1f4v;
+  document.getElementById('m1-f5').value = d.m1f5v;
+  // Chorus
+  document.getElementById('ch-scenario').value = d.chorScenario;
+  // Stakeholders
+  const sl = document.getElementById('sh-list');
+  sl.innerHTML = d.stakeholders.map(s=>`
+    <div class="sh-item">
+      <div class="sh-top">
+        <div class="sh-name">${s.name}</div>
+        <div class="sh-stance ${s.stance}">${s.stance==='support'?'Supportive':s.stance==='neutral'?'Neutral':'Watch'}</div>
+      </div>
+      <div class="sh-concern">${s.concern}</div>
+      <div class="sh-dots">${Array.from({length:5},(_,i)=>`<div class="sh-dot${i<s.power?' on':''}"></div>`).join('')}</div>
+    </div>`).join('');
+  // Atlas
+  const am = document.getElementById('atlas-matrix');
+  am.innerHTML = `<div class="matrix-row hdr"><div>Configuration Concept</div>${d.atlasCriteria.map(c=>`<div style="text-align:center">${c}</div>`).join('')}</div>` +
+    d.atlasMatrix.map(r=>`<div class="matrix-row"><div>${r.name}</div>${r.s.map(v=>`<div class="score ${v>=8?'hi':v>=6.5?'mid':'lo'}">${v}</div>`).join('')}</div>`).join('');
 }
 
-async function gemini(prompt){
-  const r = await fetch(PROXY, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      contents:[{parts:[{text:prompt}]}],
-      system_instruction:{parts:[{text:'You are Enginuity, an AI scenario planning intelligence for airport infrastructure. You produce precise, data-grounded, professionally formatted analysis. Use specific numbers, timelines, and actionable recommendations. Format with clear sections using em-dashes and line breaks. No markdown headers or bullet points — write in flowing professional paragraphs with section labels like "DEMAND ANALYSIS —" etc.'}]}
-    })
-  });
-  const d = await r.json();
-  return d?.candidates?.[0]?.content?.parts?.[0]?.text || 'Analysis unavailable.';
+// ─── Navigation ──────────────────────────────────────────────────────────────
+const panelMeta = {
+  scenario: ['Scenario Intelligence Hub','Demand · Cost · Stakeholders · Configuration · Robustness'],
+  demand: ['Demand Oracle','Scenario-weighted demand forecasting'],
+  meridian: ['Meridian — Cost & Schedule','Parametric cost modeling · Phase-gate optimization'],
+  chorus: ['Chorus — Stakeholder Simulation','Pre-negotiation intelligence · Conflict prediction'],
+  atlas: ['Atlas — Configuration Evaluation','Concept scoring · Multi-criteria weighted matrix'],
+  oracle: ['Oracle — Robustness Navigator','Black swan stress testing · Decision under uncertainty'],
+  dashboard: ['Bid Intelligence Dashboard','Active bids · Win rate · Pipeline overview'],
+  documents: ['Document Analysis','RFP upload and AI scope extraction'],
+  risk: ['Risk Assessment','Tariff · Weather · Supply chain · FX · Labor'],
+  competitive: ['Competitive Intelligence','Win probability · Competitor matrix · Market positioning'],
+  detailed: ['Detailed Bid — Take-Off','AI-assisted quantity take-off · Smart inventory'],
+  compliance: ['Compliance Engine','NOM · COFEPRIS · SEMARNAT · Municipal permits'],
+  repository: ['Document Vault','AI-indexed project archive · 47 documents'],
+  generate: ['Generate Bid Package','AI-assembled complete bid documents'],
+};
+
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+id)?.classList.add('active');
+  document.getElementById('nav-'+id)?.classList.add('active');
+  const m = panelMeta[id]||['Enginuity',''];
+  document.getElementById('tb-title').textContent = m[0];
+  document.getElementById('tb-sub').textContent = m[1];
+  // Sub-panels re-route to scenario
+  if(['demand','meridian','chorus','atlas','oracle'].includes(id)) {
+    document.getElementById('panel-scenario').classList.add('active');
+    document.getElementById('panel-'+id).classList.remove('active');
+    // Open relevant module
+    const mmap={demand:'m1',meridian:'m2',chorus:'m3',atlas:'m4',oracle:'m5'};
+    const mod = document.getElementById(mmap[id]);
+    if(mod && !mod.classList.contains('open')) toggle(mmap[id]);
+    mod?.scrollIntoView({behavior:'smooth',block:'start'});
+  }
 }
 
-async function runModule(type){
-  const btns = document.querySelectorAll('.run-btn');
-  btns.forEach(b=>b.disabled=true);
-  const btnMap = {demand:'demand',phasing:'phasing',chorus:'chorus',atlas:'atlas',oracle:'oracle'};
-  const btn = document.querySelector(`[onclick="runModule('${type}')"]`);
-  btn.classList.add('loading');
+// ─── Module toggle ────────────────────────────────────────────────────────────
+function toggle(id) {
+  document.getElementById(id)?.classList.toggle('open');
+}
 
-  let prompt = '';
-  if(type==='demand'){
-    const pax = document.getElementById('d-pax').value;
-    const cagr = document.getElementById('d-cagr').value;
-    const horizon = document.getElementById('d-horizon').value;
-    const driver = document.getElementById('d-driver').value;
-    const shock = document.getElementById('d-shock').value;
-    prompt = `You are analyzing demand scenarios for Tampa International Airport (TPA), currently at ${pax} annual passengers with a ${cagr}% CAGR baseline. Planning horizon: ${horizon}. Key demand driver: ${driver}. Shock scenario to model: ${shock}.
+// ─── AI Module Runner ────────────────────────────────────────────────────────
+async function runModule(mod) {
+  const btn = document.getElementById('btn-'+mod);
+  const outEl = document.getElementById('out-'+mod);
+  const txtEl = document.getElementById('txt-'+mod);
+  if(!btn||!outEl||!txtEl) return;
+  btn.classList.add('loading'); btn.disabled=true;
+  outEl.classList.remove('visible'); txtEl.textContent='';
 
-Produce a rigorous probabilistic demand analysis covering:
-BASELINE TRAJECTORY — project current trajectory to horizon with confidence intervals
-BULL CASE — describe conditions and specific triggers, peak year estimates
-BASE CASE — most likely outcome, trigger point for each capacity threshold
-BEAR CASE — downside scenario, specific conditions, recovery path
-SHOCK ANALYSIS — model the ${shock} shock: year-of-impact, magnitude, recovery timeline, and what infrastructure decisions would look worst in this scenario
-CAPACITY TRIGGER POINTS — identify when TPA hits 75%, 85%, and 95% of declared capacity in each scenario, recommend gate requirements
-DECISION IMPLICATIONS — what does this demand picture mean for the Master Plan Update priority sequence? Be specific to TPA's airside pod configuration (A/C/E/F with APM).`;
-  }
-  else if(type==='phasing'){
-    const budget = document.getElementById('p-budget').value;
-    const priority = document.getElementById('p-priority').value;
-    prompt = `You are generating a phased capital program recommendation for Tampa International Airport's Master Plan Update. Budget constraint: ${budget}. Phasing priority: ${priority}.
-
-TPA's current configuration: 4 airside pods (A, C, E, F) connected via automated people mover (APM) to a central terminal. The SkyConnect people mover connects to ground transport. Currently running the Airside A and C guideway rehabilitation (2026).
-
-Produce a detailed phasing analysis covering:
-PHASE SEQUENCE RECOMMENDATION — recommend the optimal 4-phase sequence from 2026 to 2055 with specific trigger metrics for each phase activation
-CAPITAL EFFICIENCY ANALYSIS — for the ${budget} constraint, which phases deliver the highest passenger LOS improvement per dollar invested
-OPTIONALITY ARCHITECTURE — which decisions must be made now (irreversible) versus which should be preserved as options (reversible trigger points)
-RISK OF OVER-BUILD — quantify the capital at risk if Bear scenario materializes after Phase 2 commitment
-RISK OF UNDER-BUILD — quantify the LOS degradation cost if Bull scenario materializes and Phase 3 is deferred
-RECOMMENDATION — single recommended phase sequence with go/no-go trigger metrics for each phase. Be specific to TPA's pod configuration and APM system.`;
-  }
-  else if(type==='chorus'){
-    const scenario = document.getElementById('ch-scenario').value;
-    prompt = `You are simulating stakeholder responses at Tampa International Airport for the following scenario: "${scenario}"
-
-TPA stakeholders: Southwest Airlines (dominant carrier, ~40% of gates), American/Delta/United, FAA/TSA (federal regulatory), Hillsborough County Aviation Authority (owner/operator), HMSHost and other concessionaires, HART (regional transit), traveling public.
-
-Produce a stakeholder impact analysis covering:
-STAKEHOLDER-BY-STAKEHOLDER RESPONSE — for each major stakeholder, predict their likely position (support/neutral/oppose), key concern, and negotiating leverage
-COALITION DYNAMICS — which stakeholders will likely align, which will oppose, what coalitions form
-CONFLICT FLASHPOINTS — identify the 3 highest-risk conflict points that could delay or derail the Master Plan process
-PRE-NEGOTIATION INTELLIGENCE — what concessions or trade-offs will be needed to move each resistant stakeholder to neutral or supportive
-CHARRETTE STRATEGY — recommend a stakeholder engagement sequence and structure for the Master Plan charrette process that minimizes conflict risk
-RED FLAGS — identify any scenario where a single stakeholder has effective veto power over a critical decision`;
-  }
-  else if(type==='atlas'){
-    const w1=document.getElementById('w1').value, w2=document.getElementById('w2').value;
-    const w3=document.getElementById('w3').value, w4=document.getElementById('w4').value;
-    prompt = `You are evaluating terminal configuration concepts for Tampa International Airport with the following priority weights: Airside Efficiency ${w1}%, Passenger Experience ${w2}%, Phasing Flexibility ${w3}%, Capital Efficiency ${w4}%.
-
-The four concepts under evaluation:
-A. Pod Expansion — extend existing Airsides A/C/F within current APM loop
-B. Linear North Satellite — new concourse north of main terminal with new APM link
-C. Hybrid Satellite + eVTOL — satellite concept with vertiport integration for advanced air mobility
-D. Second Terminal Complex — long-range second terminal, post-2040, with new APM or automated transit link
-
-TPA context: The existing APM pod configuration is award-winning for passenger experience. Any expansion must maintain seamless connectivity. The airport is constrained on the south by I-275 and the east by existing commercial development.
-
-With weights ${w1}/${w2}/${w3}/${w4} produce:
-WEIGHTED SCORING — recalculate the scoring matrix with these weights, show composite scores
-RECOMMENDED CONCEPT — identify the leading concept and explain why it wins under these weights
-HYBRID OPPORTUNITY — is there a combination of concepts that outperforms any single option?
-CRITICAL CONSTRAINTS — what site, airfield, or regulatory constraints most limit the top concept?
-ENGINUITY ADVANTAGE — what AI-powered analysis could give TPA's planning team a competitive edge in evaluating these concepts that manual methods cannot provide?`;
-  }
-  else if(type==='oracle'){
-    const q = document.getElementById('oq-question').value;
-    const u1=document.getElementById('oq-u1').value;
-    const u2=document.getElementById('oq-u2').value;
-    const u3=document.getElementById('oq-u3').value;
-    prompt = `You are conducting a robustness analysis for Tampa International Airport's Master Plan. Strategic question: "${q}"
-
-Three primary uncertainties: (1) ${u1}, (2) ${u2}, (3) ${u3}.
-
-TPA configuration context: Hillsborough County Aviation Authority, 21.8M annual passengers, 4 airside pods with APM, $4.2B capital program, planning to 2055.
-
-Produce a rigorous robustness analysis:
-SCENARIO SPACE — map the 8 combinations of high/low outcomes across the 3 uncertainties, identify which combinations are most plausible
-REGRET MATRIX — for each major infrastructure decision (gate expansion, APM extension, second terminal), calculate maximum regret in worst-case scenario
-ROBUST DECISIONS — identify decisions that perform acceptably across ALL 8 scenario combinations regardless of how uncertainties resolve
-FRAGILE DECISIONS — identify decisions that are only good in a subset of scenarios and carry high regret risk
-ADAPTIVE PATHWAY — recommend a sequenced decision pathway that preserves optionality and makes irreversible commitments only when uncertainties have resolved
-THE ROBUST MASTER PLAN — describe the master plan structure that minimizes maximum regret: what must be built now, what should be deferred, what options should be kept alive
-ENGINUITY PROVENANCE NOTE — tag each recommendation as CONFIRMED (from current TPA data), CITED (from ACRP standards/FAA guidelines), INFERRED (from regional benchmarks), or ASSUMED (scenario hypothesis).`;
-  }
+  const d = CTX_DATA[currentCtx];
+  const prompts = {
+    demand: currentCtx==='airport'
+      ? `You are an airport planning AI. Analyze demand forecast: Base pax=${document.getElementById('m1-f1').value}M, Horizon=${document.getElementById('m1-f2').value}yr, Base growth=${document.getElementById('m1-f3').value}%, Optimistic=${document.getElementById('m1-f4').value}%, Conservative=${document.getElementById('m1-f5').value}%. Provide: 1) Terminal capacity trigger years for each scenario 2) Peak hour design day passenger volumes 3) Gate count recommendations 4) Key demand drivers and risks. Be specific with numbers. Format clearly with section headers.`
+      : `You are a construction market intelligence AI. Analyze industrial construction demand: Current market=${document.getElementById('m1-f1').value}M USD/yr, Horizon=${document.getElementById('m1-f2').value}yr, Base=${document.getElementById('m1-f3').value}%, Nearshoring boom=${document.getElementById('m1-f4').value}%, Conservative=${document.getElementById('m1-f5').value}%. Context: Mexico industrial nearshoring boom driven by US-China decoupling. Sectors: Pharma GMP, Automotive, Biotech. Provide market projections, sector mix, geographic concentration (Monterrey/Guadalajara/Juárez), and bid pipeline implications for Abitat.`,
+    meridian: `You are a construction cost intelligence AI. Project: ${document.getElementById('mer-type').value}, ${document.getElementById('mer-sf').value} SF, ${document.getElementById('mer-loc').value}, Quality: ${document.getElementById('mer-qual').value}, Target margin: ${document.getElementById('mer-margin').value}%. Provide: 1) Parametric cost estimate ($/SF by CSI division) 2) Total project cost range (P10/P50/P90) 3) Schedule benchmark (months) 4) Top 3 cost risk items 5) Margin optimization opportunities. Include tariff impact if Mexico location. Be precise with numbers.`,
+    chorus: `You are a stakeholder intelligence AI for construction/infrastructure projects. Stakeholders: ${d.stakeholders.map(s=>s.name+' ('+s.stance+')').join(', ')}. Scenario: "${document.getElementById('ch-scenario').value}". Provide: 1) Predicted response from each stakeholder 2) Conflict flash points 3) Negotiation sequencing recommendation 4) Key concessions to offer/withhold 5) Consensus pathway. Be specific and strategic.`,
+    atlas: `You are a construction configuration evaluation AI. Configurations: ${d.atlasMatrix.map(r=>r.name).join('; ')}. Criteria weights: ${d.atlasCriteria[0]}=${document.getElementById('w1').value}%, ${d.atlasCriteria[1]}=${document.getElementById('w2').value}%, ${d.atlasCriteria[2]}=${document.getElementById('w3').value}%, ${d.atlasCriteria[3]}=${document.getElementById('w4').value}%. Calculate weighted scores for each configuration, identify the winner, and explain the trade-offs. Include sensitivity analysis — which weight changes would flip the recommendation? Provide a clear recommendation with rationale.`,
+    oracle: `You are a strategic resilience AI. Question: "${document.getElementById('oq-question').value}". Key uncertainties: (1) ${document.getElementById('oq-u1').value}, (2) ${document.getElementById('oq-u2').value}, (3) ${document.getElementById('oq-u3').value}. Apply regret minimization (minimax regret) framework across 4 future scenarios (2x2 matrix of uncertainties 1&2). For each strategy option, calculate maximum regret. Identify the robust strategy and explain why it minimizes regret across all plausible futures. Include black swan threshold analysis.`,
+  };
 
   try {
-    const result = await gemini(prompt);
-    document.getElementById(`txt-${type}`).textContent = result;
-    document.getElementById(`out-${type}`).classList.add('visible');
-  } catch(e){
-    document.getElementById(`txt-${type}`).textContent = 'Error connecting to analysis engine. Please try again.';
-    document.getElementById(`out-${type}`).classList.add('visible');
-  }
-
-  btn.classList.remove('loading');
-  btns.forEach(b=>b.disabled=false);
-}
-</script>
-
-<!-- Mobile bottom nav -->
-<nav class="enginuity-mobile-nav" aria-label="Main navigation">
-  <a class="eng-mn-tab active" href="#">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-    <span>Overview</span>
-  </a>
-  <a class="eng-mn-tab" href="#scenarios">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    <span>Scenarios</span>
-  </a>
-  <a class="eng-mn-tab" href="#analysis">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-    <span>Analysis</span>
-  </a>
-  <a class="eng-mn-tab" href="#matrix">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
-    <span>Matrix</span>
-  </a>
-</nav>
-<script>
-(function(){
-  const tabs=document.querySelectorAll('.eng-mn-tab');
-  window.addEventListener('scroll',function(){
-    const sy=window.scrollY;
-    const anchors=['#scenarios','#analysis','#matrix'];
-    let active=0;
-    anchors.forEach((a,i)=>{
-      const el=document.querySelector(a);
-      if(el&&el.offsetTop-120<=sy)active=i+1;
+    const res = await fetch(`${PROXY}/gemini/generate`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        contents:[{parts:[{text: prompts[mod]}]}],
+        system_instruction:{parts:[{text:'You are Enginuity AI — a precision construction and infrastructure intelligence system. Provide structured, data-driven analysis. Use numbers. Be specific. Format with clear sections.'}]}
+      })
     });
-    tabs.forEach((t,i)=>t.classList.toggle('active',i===active));
+    const json = await res.json();
+    const text = json?.candidates?.[0]?.content?.parts?.[0]?.text || json?.text || 'Analysis complete.';
+    txtEl.textContent = text;
+    outEl.classList.add('visible');
+  } catch(e) {
+    txtEl.textContent = '[Enginuity AI offline — check awareness proxy connection]\n\n'+e.message;
+    outEl.classList.add('visible');
+  }
+  btn.classList.remove('loading'); btn.disabled=false;
+}
+
+// ─── Upload ───────────────────────────────────────────────────────────────────
+function handleUpload(input) {
+  if(!input.files[0]) return;
+  const z = document.getElementById('upload-zone');
+  z.innerHTML = `<div style="color:var(--cyan);font-size:.78rem;font-weight:600">⚙️ Analyzing ${input.files[0].name}…</div>`;
+  setTimeout(()=>{
+    document.getElementById('rfp-results').style.display='block';
+    z.innerHTML=`<div style="color:var(--green);font-size:.75rem;font-weight:600">✓ RFP analyzed — 94% confidence · 8 scope items extracted</div>`;
+  },1800);
+}
+
+// ─── Repo query ────────────────────────────────────────────────────────────────
+function queryRepo() {
+  const el = document.getElementById('repo-query-result');
+  el.style.display='block';
+  document.getElementById('repo-query-text').innerHTML=`
+    Based on your vault of 47 documents, here are the most relevant insights for the current Genomma Lab bid:<br><br>
+    <strong>1. COFEPRIS Validation Experience:</strong> Your Toluca Genomma Lab project (2024) used identical cleanroom spec (ISO Class 8, 12,000 SF). BAS validation took 47 days — budget accordingly.<br>
+    <strong>2. Pricing Pattern:</strong> In your last 3 pharmaceutical wins, HVAC margin was consistently 16–18%. Current estimate is 16% — aligned.<br>
+    <strong>3. Competitor IDEC Pattern:</strong> IDEC won a project at 6.8% below market in 2023 but delivered 4 months late. Owner is aware — reference this in your qualifications.`;
+}
+
+// ─── Compliance ────────────────────────────────────────────────────────────────
+function runCompliance() {
+  setTimeout(()=>alert('✅ Compliance check complete: 5 items compliant, 2 pending.\nSEMARNAT hazmat permit application auto-drafted.\nSADM industrial discharge permit initiated.'),1200);
+}
+
+// ─── Generate bid ─────────────────────────────────────────────────────────────
+function generateBid() {
+  const btn = event.target;
+  btn.textContent='⚙️ Generating…'; btn.disabled=true;
+  setTimeout(()=>{
+    const p = document.getElementById('bid-pkg');
+    p.classList.add('visible');
+    btn.textContent='✓ Bid Package Generated'; btn.style.background='linear-gradient(135deg,#16a34a,#22c55e)';
+    p.scrollIntoView({behavior:'smooth',block:'start'});
+  },2000);
+}
+
+// ─── Charts ───────────────────────────────────────────────────────────────────
+const darkOpts = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{legend:{labels:{color:'rgba(232,240,255,.6)',font:{size:10},padding:10}}},
+  scales:{
+    x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'rgba(232,240,255,.5)',font:{size:9}}},
+    y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'rgba(232,240,255,.5)',font:{size:9}}}
+  }
+};
+const noScale = {...darkOpts, scales:{}};
+
+window.addEventListener('load',()=>{
+  setContext('airport');
+
+  // Win probability donut
+  new Chart(document.getElementById('c-winprob'),{type:'doughnut',
+    data:{labels:['Abitat','IDEC','GFC','Vicon','Grupo INDI'],
+      datasets:[{data:[68,42,28,14,11],backgroundColor:['#00d4ff','#ff9f43','#D4AF37','rgba(255,255,255,.15)','rgba(255,255,255,.08)'],borderWidth:2,borderColor:'rgba(10,14,26,.8)'}]},
+    options:{...noScale,plugins:{legend:{position:'right',labels:{color:'rgba(232,240,255,.6)',font:{size:10},padding:10}}}}});
+
+  // Pipeline
+  new Chart(document.getElementById('c-pipeline'),{type:'bar',
+    data:{labels:['Pharma','Industrial','Commercial','Logistics','Healthcare'],
+      datasets:[{label:'Pipeline ($M)',data:[42,18,12,8,4],backgroundColor:['#00d4ff','#2d6be4','#D4AF37','#ff9f43','#a78bfa'],borderRadius:5}]},
+    options:{...darkOpts,plugins:{legend:{display:false}}}});
+
+  // Benchmark
+  new Chart(document.getElementById('c-benchmark'),{type:'bar',
+    data:{labels:['Site','Concrete','Steel','Cleanroom','HVAC','Elec','Plumb'],
+      datasets:[
+        {label:'Market Avg $/SF',data:[8.5,44,24,185,32,18,22],backgroundColor:'rgba(255,255,255,.12)',borderRadius:3},
+        {label:'Abitat $/SF',data:[8.1,42,21,185,29,17,22],backgroundColor:'rgba(0,212,255,.7)',borderRadius:3}
+      ]},
+    options:{...darkOpts}});
+
+  // Risk trend
+  new Chart(document.getElementById('c-risktrend'),{type:'line',
+    data:{labels:['Sep','Oct','Nov','Dec','Jan','Feb','Mar'],
+      datasets:[
+        {label:'Tariff Risk',data:[3.2,3.8,5.1,6.8,7.9,8.2,8.4],borderColor:'#ff4d6d',tension:.4,pointRadius:3,fill:false},
+        {label:'Weather Risk',data:[6.1,5.8,4.2,2.8,2.2,3.1,5.2],borderColor:'#4facfe',tension:.4,pointRadius:3,fill:false},
+        {label:'Supply Chain',data:[4.1,5.2,6.0,7.2,7.8,7.5,7.9],borderColor:'#ff9f43',tension:.4,pointRadius:3,fill:false}
+      ]},
+    options:{...darkOpts}});
+
+  // Competitive detail charts (deferred)
+  const compPanel = document.getElementById('panel-competitive');
+  const compObs = new MutationObserver(()=>{
+    if(compPanel.classList.contains('active') && !compPanel._charted) {
+      compPanel._charted=true;
+      new Chart(document.getElementById('c-compdetail'),{type:'bar',indexAxis:'y',
+        data:{labels:['Abitat','IDEC Constructora','GFC Industrial','Vicon','Grupo INDI'],
+          datasets:[{label:'Win Probability %',data:[68,42,28,14,11],
+            backgroundColor:['#00d4ff','#ff9f43','#D4AF37','rgba(255,255,255,.2)','rgba(255,255,255,.12)'],borderRadius:4}]},
+        options:{...darkOpts,indexAxis:'y',plugins:{legend:{display:false}}}});
+      new Chart(document.getElementById('c-pricing'),{type:'bar',
+        data:{labels:['IDEC','Abitat','GFC','Grupo INDI','Vicon'],
+          datasets:[{label:'Est. Bid ($M)',data:[17.1,18.4,19.8,20.5,21.2],
+            backgroundColor:['rgba(255,255,255,.15)','#00d4ff','rgba(255,255,255,.15)','rgba(255,255,255,.15)','rgba(255,255,255,.15)'],borderRadius:4}]},
+        options:{...darkOpts,plugins:{legend:{display:false}},
+          scales:{...darkOpts.scales,y:{...darkOpts.scales.y,ticks:{...darkOpts.scales.y.ticks,callback:v=>'$'+v+'M'}}}}});
+    }
   });
-})();
+  compObs.observe(compPanel,{attributes:true,attributeFilter:['class']});
+});
 </script>
 </body>
 </html>
