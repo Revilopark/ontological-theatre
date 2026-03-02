@@ -108,6 +108,13 @@ input:focus,textarea:focus{border-color:var(--cyan)}
 }
 @keyframes pulse-ring{0%{opacity:.5;r:0}70%{opacity:0;r:12px}100%{opacity:0;r:12px}}
 .graph-container svg .germline-pulse{animation:pulse-ring 2s ease-out infinite}
+
+.q-option { padding:11px 14px; border:1px solid rgba(255,255,255,0.1); border-radius:9px; background:rgba(255,255,255,0.03);
+  color:var(--text); font-size:12px; cursor:pointer; text-align:left; transition:all 0.15s; display:flex; align-items:center; gap:10px; }
+.q-option:hover { border-color:rgba(212,175,55,0.4); background:rgba(212,175,55,0.06); }
+.q-option.selected { border-color:var(--gold); background:rgba(212,175,55,0.12); color:var(--gold); }
+.q-opt-emoji { font-size:1.2rem; min-width:24px; }
+
 </style>
 </head>
 <body>
@@ -121,6 +128,42 @@ input:focus,textarea:focus{border-color:var(--cyan)}
     <input type="password" id="login-pass" placeholder="Password">
     <button class="btn btn-primary" onclick="handleLogin()">Enter Classroom</button>
     <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+
+<!-- PERSONALITY QUIZ -->
+<div id="quiz-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:900;display:none;align-items:center;justify-content:center;flex-direction:column;padding:20px">
+  <div style="width:100%;max-width:480px">
+    <!-- Progress -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:24px">
+      <div id="q-progress-bar" style="flex:1;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden">
+        <div id="q-progress-fill" style="height:100%;background:var(--gold);transition:width 0.4s ease;width:0%"></div>
+      </div>
+      <div id="q-counter" style="font-size:10px;color:var(--text-dim);min-width:30px;text-align:right">1/5</div>
+    </div>
+    <!-- Question card -->
+    <div class="glass" style="padding:24px 20px;border-radius:14px;min-height:320px;display:flex;flex-direction:column">
+      <div id="q-emoji" style="font-size:2rem;margin-bottom:10px;text-align:center"></div>
+      <div id="q-text" style="font-size:15px;font-weight:700;color:var(--text);line-height:1.4;margin-bottom:20px;text-align:center"></div>
+      <div id="q-options" style="display:flex;flex-direction:column;gap:8px;flex:1"></div>
+    </div>
+    <!-- Skip (returning students) -->
+    <div style="text-align:center;margin-top:14px">
+      <button onclick="skipQuiz()" style="background:none;border:none;color:var(--text-dim);font-size:10px;cursor:pointer;text-decoration:underline">Skip — returning student</button>
+    </div>
+  </div>
+</div>
+
+<!-- ARCHETYPE REVEAL -->
+<div id="reveal-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:901;align-items:center;justify-content:center;flex-direction:column;padding:20px;text-align:center">
+  <div style="width:100%;max-width:400px">
+    <div id="reveal-emoji" style="font-size:3.5rem;margin-bottom:16px"></div>
+    <div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Your IAM Bot is</div>
+    <div id="reveal-archetype" style="font-size:26px;font-weight:800;color:var(--text);margin-bottom:12px"></div>
+    <div id="reveal-student-type" style="font-size:12px;color:var(--text-dim);margin-bottom:16px;line-height:1.5"></div>
+    <div id="reveal-reason" style="font-size:11px;color:var(--text-dim);line-height:1.6;padding:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;margin-bottom:22px"></div>
+    <button class="btn btn-primary" onclick="startChat()" style="width:100%">Meet your bot →</button>
   </div>
 </div>
 
@@ -288,6 +331,145 @@ const ARCHETYPES = ['The Contrarian','The Synthesizer','The Skeptic','The Futuri
 const STUDENTS = ['ava','ben','cara','dev','elena','finn','grace','hugo','iris','jake','kira','liam','maya','noah','olive','paul','quinn','ravi','sara','troy','uma','vince','wren','xena','yusuf','zara','amir','blake','cleo','diego','elise','felix','gaia','hana','ines'];
 const BOT_NAMES = ['Aria','Bolt','Coda','Dex','Echo','Flux','Glyph','Helix','Ion','Jett','Kai','Lux','Mira','Nex','Orion','Prism','Quill','Rune','Sage','Thorn','Unity','Vex','Warp','Xion','Yara','Zen','Aether','Blaze','Cipher','Drift','Ember','Fable','Glint','Halo','Ink'];
 
+// ── PERSONALITY QUIZ ──────────────────────────────────────────────────────────
+const QUIZ_QUESTIONS = [
+  {
+    emoji: '🚀',
+    text: "Your first 10 customers just signed up. What do you do RIGHT NOW?",
+    options: [
+      {emoji:'🗣️', text:'Call each one personally',      dim:'S'},
+      {emoji:'📊', text:'Build a cohort analysis',       dim:'A'},
+      {emoji:'⚡', text:'Start scaling acquisition',     dim:'E'},
+      {emoji:'🔮', text:"Ask: why only 10?",             dim:'V'}
+    ]
+  },
+  {
+    emoji: '😬',
+    text: "Your competitor just shipped your exact idea. Your move?",
+    options: [
+      {emoji:'💪', text:"That's fine — execution beats ideas",  dim:'E'},
+      {emoji:'🧩', text:'Find the angle they missed',           dim:'V'},
+      {emoji:'📞', text:'Call everyone in my network',          dim:'S'},
+      {emoji:'📈', text:'Model both TAMs and find the gap',     dim:'A'}
+    ]
+  },
+  {
+    emoji: '🏆',
+    text: "Your startup's biggest unfair advantage should be...",
+    options: [
+      {emoji:'🌐', text:'A network nobody can replicate',       dim:'S'},
+      {emoji:'💡', text:'A contrarian insight into the market', dim:'V'},
+      {emoji:'🔬', text:'Perfect customer data',               dim:'A'},
+      {emoji:'🔧', text:'Speed of shipping',                   dim:'E'}
+    ]
+  },
+  {
+    emoji: '🤝',
+    text: "You can make ONE hire. You pick...",
+    options: [
+      {emoji:'🧠', text:'Smartest person in the room',         dim:'A'},
+      {emoji:'❤️', text:'True believer in the mission',        dim:'V'},
+      {emoji:'📣', text:'Makes everyone want to join',         dim:'S'},
+      {emoji:'🔨', text:'Can build literally anything',        dim:'E'}
+    ]
+  },
+  {
+    emoji: '🔭',
+    text: "In 10 years your company is famous for...",
+    options: [
+      {emoji:'🏗️', text:'The infrastructure powering the industry', dim:'E'},
+      {emoji:'📖', text:'The story that changed how people think',  dim:'V'},
+      {emoji:'🤝', text:'The community that formed around it',      dim:'S'},
+      {emoji:'🧮', text:'The data insights nobody else has',        dim:'A'}
+    ]
+  }
+];
+
+// Student type → Complementary bot archetype + emoji + rationale
+const ARCHETYPE_MAP = {
+  S: { type:'The Connector', archetype:'The Contrarian', emoji:'⚡',
+       reason:"You lead with people and relationships — your IAM Bot is a Contrarian who will push you to stress-test your assumptions and find the angles your network isn't showing you." },
+  A: { type:'The Analyst',   archetype:'The Storyteller', emoji:'📖',
+       reason:"You lead with data and logic — your IAM Bot is a Storyteller who will help you translate your insights into narratives that move people, investors, and teams." },
+  V: { type:'The Visionary', archetype:'The Skeptic', emoji:'🔍',
+       reason:"You lead with ideas and future-thinking — your IAM Bot is a Skeptic who will ground your vision in evidence and challenge every assumption before you commit." },
+  E: { type:'The Builder',   archetype:'The Philosopher', emoji:'🌌',
+       reason:"You lead with execution and speed — your IAM Bot is a Philosopher who will slow you down at the right moments and ask: why are we building this, and for whom?" }
+};
+
+let quizScores = {S:0, A:0, E:0, V:0};
+let quizStep = 0;
+let quizActive = false;
+
+function showQuizScreen() {
+  quizScores = {S:0, A:0, E:0, V:0};
+  quizStep = 0;
+  quizActive = true;
+  document.getElementById('quiz-screen').style.display = 'flex';
+  renderQuizStep();
+}
+
+function renderQuizStep() {
+  const q = QUIZ_QUESTIONS[quizStep];
+  const pct = (quizStep / QUIZ_QUESTIONS.length) * 100;
+  document.getElementById('q-progress-fill').style.width = pct + '%';
+  document.getElementById('q-counter').textContent = (quizStep+1) + '/5';
+  document.getElementById('q-emoji').textContent = q.emoji;
+  document.getElementById('q-text').textContent = q.text;
+  const optEl = document.getElementById('q-options');
+  optEl.innerHTML = q.options.map((o,i) =>
+    `<button class="q-option" onclick="selectOption('${o.dim}',${i})">
+       <span class="q-opt-emoji">${o.emoji}</span><span>${o.text}</span>
+     </button>`
+  ).join('');
+}
+
+function selectOption(dim, idx) {
+  // Highlight
+  document.querySelectorAll('.q-option').forEach((b,i) => b.classList.toggle('selected', i===idx));
+  quizScores[dim]++;
+  // Advance after short delay
+  setTimeout(() => {
+    quizStep++;
+    if (quizStep < QUIZ_QUESTIONS.length) {
+      renderQuizStep();
+    } else {
+      showReveal();
+    }
+  }, 350);
+}
+
+function showReveal() {
+  // Find dominant dimension
+  const dom = Object.keys(quizScores).reduce((a,b) => quizScores[a]>=quizScores[b]?a:b);
+  const map = ARCHETYPE_MAP[dom];
+  // Assign archetype override + persist
+  archetype = map.archetype;
+  if (studentId) localStorage.setItem('iam_archetype_' + studentId, archetype);
+  document.getElementById('quiz-screen').style.display = 'none';
+  const rev = document.getElementById('reveal-screen');
+  rev.style.display = 'flex';
+  document.getElementById('reveal-emoji').textContent = map.emoji;
+  document.getElementById('reveal-archetype').textContent = map.archetype;
+  document.getElementById('reveal-student-type').textContent = 'You think like ' + map.type + '.';
+  document.getElementById('reveal-reason').textContent = map.reason;
+  // Update bot display name
+  document.getElementById('bot-name-display').textContent = `IAM ${botName} · ${archetype}`;
+}
+
+function startChat() {
+  document.getElementById('reveal-screen').style.display = 'none';
+  quizActive = false;
+  initStudent();
+}
+
+function skipQuiz() {
+  document.getElementById('quiz-screen').style.display = 'none';
+  quizActive = false;
+  initStudent();
+}
+
+
 const SEED_NODES = [
   {name:'Market Validation', layer:'knowledge', ity:'Clarity'},
   {name:'Competitive Analysis', layer:'knowledge', ity:'Certainty'},
@@ -347,14 +529,22 @@ function handleLogin() {
   
   currentUser = user;
   studentId = 's' + String(idx + 1).padStart(2, '0');
-  archetype = ARCHETYPES[idx % ARCHETYPES.length];
   botName = BOT_NAMES[idx];
+  
+  // Check if student has already taken the quiz (localStorage)
+  const savedArchetype = localStorage.getItem('iam_archetype_' + studentId);
+  archetype = savedArchetype || ARCHETYPES[idx % ARCHETYPES.length];
   
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').classList.add('active');
   document.getElementById('bot-name-display').textContent = `IAM ${botName} · ${archetype}`;
   
-  initStudent();
+  if (!savedArchetype) {
+    // First time — show personality quiz
+    showQuizScreen();
+  } else {
+    initStudent();
+  }
 }
 
 function logout() {
@@ -547,39 +737,41 @@ Session query #${sessionQueryMap[studentId]}
       };
     }
     
-    // Retry on 503/429 (Gemini overload) → OpenRouter fallback
-    let response, _attempt = 0, reply = null;
-    const DELAYS = [2000,4000,8000];
-    while (true) {
-      response = await fetch(AI_PROXY, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(apiBody)
-      });
-      if ((response.status===503||response.status===429) && _attempt<3) {
-        await new Promise(r=>setTimeout(r, DELAYS[_attempt++]));
-        continue;
-      }
-      break;
-    }
-    
-    if(response.status===503||response.status===429){
-      // Gemini exhausted — try OpenRouter
-      const OR_KEY='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';
-      const sys=apiBody?.system_instruction?.parts?.[0]?.text||'';
-      const msgs=[{role:'system',content:sys}];
-      (apiBody?.contents||[]).forEach(c=>msgs.push({role:'user',content:(c.parts||[]).map(p=>p.text||'').join('')}));
-      for(const model of ['google/gemini-2.5-flash-preview','anthropic/claude-3.5-haiku']){
+    // ── FAST PATH: OpenRouter Haiku (primary, ~1s) → Gemini fallback ──────────
+    const OR_KEY_C='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';
+    const sys_c=apiBody?.system_instruction?.parts?.[0]?.text||'';
+    const msgs_c=[{role:'system',content:sys_c}];
+    (apiBody?.contents||[]).forEach(turn=>msgs_c.push({
+      role:turn.role==='model'?'assistant':'user',
+      content:(turn.parts||[]).map(p=>p.text||'').join('')
+    }));
+    let reply = null;
+    // Try Haiku first (fastest)
+    try{
+      const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+OR_KEY_C,'HTTP-Referer':'https://revilopark.github.io'},
+        body:JSON.stringify({model:'anthropic/claude-3.5-haiku',messages:msgs_c,max_tokens:600})});
+      if(r.ok){const d=await r.json();reply=d?.choices?.[0]?.message?.content||null;}
+    }catch(e){}
+    // Fallback: Gemini proxy (2 attempts)
+    if(!reply){
+      for(let attempt=0;attempt<2;attempt++){
         try{
-          const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',
-            headers:{'Content-Type':'application/json','Authorization':'Bearer '+OR_KEY,'HTTP-Referer':'https://revilopark.github.io'},
-            body:JSON.stringify({model,messages:msgs})});
-          if(r.ok){const d=await r.json();reply=d?.choices?.[0]?.message?.content;if(reply)break;}
-        }catch(e){}
+          const r=await fetch(AI_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(apiBody)});
+          if(r.ok){const d=await r.json();reply=d?.candidates?.[0]?.content?.parts?.[0]?.text||null;if(reply)break;}
+          if((r.status===503||r.status===429)&&attempt<1){await new Promise(res=>setTimeout(res,2000));continue;}
+          break;
+        }catch(e){if(attempt<1){await new Promise(res=>setTimeout(res,2000));continue;}}
       }
-    } else {
-      const data = await response.json();
-      reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    }
+    // Last resort: gemini-2.5-flash via OpenRouter
+    if(!reply){
+      try{
+        const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+OR_KEY_C,'HTTP-Referer':'https://revilopark.github.io'},
+          body:JSON.stringify({model:'google/gemini-2.5-flash-preview',messages:msgs_c,max_tokens:600})});
+        if(r.ok){const d=await r.json();reply=d?.choices?.[0]?.message?.content||null;}
+      }catch(e){}
     }
     const replyText = reply || 'I need a moment to reflect on that. Could you rephrase?';
     
