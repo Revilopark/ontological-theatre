@@ -1959,6 +1959,18 @@ window.generatePanelAt = async function(epIndex, panelIndex) {
   const eraStyle = getEffectiveStyle(ep);
   const caption = panel.caption || ep.narration;
   csToast('✦ Generating panel ' + (panelIndex+1) + '…');
+  // Use pre-written prompt if available (saves Gemini call, historically precise)
+  if (panel.prompt) {
+    const img = await falGenerate(panel.prompt, '2:3', eraStyle);
+    if (img) {
+      panel.img = img;
+      const key = 'cs_ep_panels_' + ep.id;
+      try { const saved = JSON.parse(localStorage.getItem(key)||'[]'); saved[panelIndex] = panel; localStorage.setItem(key, JSON.stringify(saved)); } catch(e){}
+      renderCenter('episode', epIndex);
+      csToast('✦ Panel ' + (panelIndex+1) + ' generated!', '#40a060');
+    } else { csToast('⚠ Generation failed', '#c04040'); }
+    return;
+  }
   const geminiPrompt = `Write a cinematic image generation prompt for a Mississippi Delta blues comic panel.
 
 EPISODE: "${ep.title}" (${ep.era})
@@ -5360,6 +5372,18 @@ window.generatePanelAt = async function(epIndex, panelIndex) {
   const eraStyle = getEffectiveStyle(ep);
   const caption = panel.caption || ep.narration;
   csToast('✦ Generating panel ' + (panelIndex+1) + '…');
+  // Use pre-written prompt if available (saves Gemini call, historically precise)
+  if (panel.prompt) {
+    const img = await falGenerate(panel.prompt, '2:3', eraStyle);
+    if (img) {
+      panel.img = img;
+      const key = 'cs_ep_panels_' + ep.id;
+      try { const saved = JSON.parse(localStorage.getItem(key)||'[]'); saved[panelIndex] = panel; localStorage.setItem(key, JSON.stringify(saved)); } catch(e){}
+      renderCenter('episode', epIndex);
+      csToast('✦ Panel ' + (panelIndex+1) + ' generated!', '#40a060');
+    } else { csToast('⚠ Generation failed', '#c04040'); }
+    return;
+  }
   const geminiPrompt = `Write a cinematic image generation prompt for a Mississippi Delta blues comic panel.
 
 EPISODE: "${ep.title}" (${ep.era})
