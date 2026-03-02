@@ -79,6 +79,13 @@ input:focus,textarea:focus{border-color:var(--cyan)}
 .radar-container{width:100%;max-width:400px;margin:0 auto}
 .blind-spot{padding:12px 16px;border-radius:10px;background:rgba(255,71,87,0.1);border:1px solid rgba(255,71,87,0.2);font-size:13px;color:var(--danger);margin-top:12px}
 
+/* ELICIT CARD (§23 awareness_elicit UI pattern) */
+.elicit-card{background:rgba(0,0,0,0.55);border:2px solid var(--gold);border-radius:14px;padding:16px 18px;margin:4px 0;max-width:82%;align-self:flex-start}
+.elicit-question{font-weight:700;font-size:14px;color:var(--gold);margin-bottom:10px;line-height:1.4}
+.elicit-options{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.elicit-opt-btn{padding:7px 14px;border:1px solid var(--gold);border-radius:8px;background:rgba(255,215,0,0.08);color:var(--gold);font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;transition:all .2s;line-height:1.3}
+.elicit-opt-btn:hover{background:rgba(255,215,0,0.22);transform:translateY(-1px);box-shadow:0 2px 10px rgba(255,215,0,0.2)}
+
 /* Scrollbar */
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -160,6 +167,13 @@ input:focus,textarea:focus{border-color:var(--cyan)}
     <button class="btn" style="background:rgba(255,255,255,0.1);color:var(--text-dim);font-size:12px" onclick="logout()">Logout</button>
   </div>
   <div class="prof-grid" id="prof-grid"></div>
+  <!-- §23.1 Cache Health Stats Bar -->
+  <div class="glass" id="cache-health-bar" style="padding:14px 24px;margin-bottom:16px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+    <span style="font-size:13px;font-weight:600;color:var(--text-dim)">§23 Cache Health:</span>
+    <span id="cache-health-pct" style="font-size:22px;font-weight:700;color:var(--text-dim)">—</span>
+    <div style="flex:1;min-width:100px;height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden"><div id="cache-health-fill" style="height:100%;width:0%;border-radius:4px;transition:width .6s"></div></div>
+    <span style="font-size:11px;color:var(--text-dim)">Target ≥80% — alerts if below threshold (per §23.1)</span>
+  </div>
   <div class="glass" style="padding:24px;margin-bottom:16px">
     <h3 style="font-size:14px;margin-bottom:16px;color:var(--cyan)">Collective Noosphere</h3>
     <div id="collective-stats"></div>
@@ -202,6 +216,9 @@ let queryCount = 0;
 let kirkStep = 0;
 let graphNodes = [];
 let simulation = null;
+// §23 Cache architecture state
+let sessionSystemPrompt = null;  // static prefix — identical across all turns in a session
+let sessionQueryMap = {};         // {studentId: queryCount} — for cache hit rate calculation
 
 // ===== NEO4J =====
 async function neo4j(cypher, params = {}) {
@@ -249,6 +266,8 @@ function handleLogin() {
 
 function logout() {
   currentUser = null;
+  sessionSystemPrompt = null;
+  if (studentId) { delete sessionQueryMap[studentId]; }
   document.getElementById('app').classList.remove('active');
   document.getElementById('prof-view').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
@@ -269,6 +288,9 @@ async function initStudent() {
   }
   
   await loadGraphNodes();
+  // §23.1 — Build static prefix once per session for cache-consistent prompting
+  sessionSystemPrompt = buildStaticSystemPrompt();
+  if (!sessionQueryMap[studentId]) sessionQueryMap[studentId] = 0;
   addBotMessage(`Hello, I'm IAM ${botName}. I'm your ${archetype} thinking partner for this semester.\n\nI'll help you explore entrepreneurial concepts through three lenses: Social, Knowledge, and Generative. Every 5 conversations, your Trinity Graph will evolve through a VOLVOX epoch.\n\nWhat's on your mind?`);
   renderGraph();
 }
@@ -301,8 +323,18 @@ async function loadGraphNodes() {
 // ===== CHAT =====
 function addBotMessage(text) {
   const el = document.createElement('div');
-  el.className = 'msg bot';
-  el.innerHTML = `<div class="sender">IAM ${botName}</div>${escapeHtml(text)}`;
+  const elicit = detectElicitPattern(text);
+  if (elicit) {
+    // §23 awareness_elicit UI — structured choice card
+    el.className = 'elicit-card';
+    const optBtns = elicit.options.map(o =>
+      `<button class="elicit-opt-btn" onclick="sendElicitOption(this)">${escapeHtml(o)}</button>`
+    ).join('');
+    el.innerHTML = `<div class="sender" style="font-size:11px;font-weight:600;color:var(--gold);margin-bottom:8px">IAM ${botName}</div><div class="elicit-question">❓ ${escapeHtml(elicit.question)}</div><div class="elicit-options">${optBtns}</div>`;
+  } else {
+    el.className = 'msg bot';
+    el.innerHTML = `<div class="sender">IAM ${botName}</div>${escapeHtml(text)}`;
+  }
   document.getElementById('chat-messages').appendChild(el);
   scrollChat();
 }
@@ -324,6 +356,62 @@ function escapeHtml(t) {
   return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
 }
 
+// ===== §23 CACHE-AWARE PROMPT ARCHITECTURE =====
+// Builds the STATIC system prompt — content that never changes across turns in a session.
+// Dynamic context (Kirk Step, active nodes, epoch) is injected per-turn as a <system-reminder>
+// block prepended to the USER message, keeping the system prefix identical for LLM caching.
+function buildStaticSystemPrompt() {
+  const runeList = SEED_NODES.map(n => `  - ${n.name} (layer: ${n.layer}, ity: ${n.ity})`).join('\n');
+  const savesuccessPillars = 'Serendipity, Artiquity, Vitality, Enginuity, Synchronicity, Ubiquity, Clarity, Certainty, Ethics, Sagacity';
+  return `You are IAM ${botName}, a ${archetype} thinking partner for an MBA entrepreneurship practicum at Vanderbilt University.
+
+PERSONALITY ARCHETYPE: ${archetype}
+Embody this archetype fully and consistently in every response — in how you challenge, support, and provoke the student's thinking.
+
+VOLVOX ARCHITECTURE:
+- Cell differentiation: UNDIFFERENTIATED → SOMATIC_SENSOR, SOMATIC_MOTOR, STRUCTURAL, GERMLINE, DORMANT
+- Trinity Layers: Social (empathy, teams, customers) | Knowledge (analysis, validation, data) | Generative (models, strategies, pivots)
+- Kirk Scale: 0–12 entrepreneurial cognitive development progression
+
+RUNE DEFINITIONS (knowledge seed nodes):
+${runeList}
+
+SAVESUCCESS PILLARS: ${savesuccessPillars}
+
+INSTRUCTIONS:
+- Refract the student's query across all three Trinity lenses: Social, Knowledge, and Generative
+- Challenge assumptions consistent with your ${archetype} archetype
+- Reference their existing Trinity Graph nodes when relevant
+- Keep responses concise (2–3 paragraphs)
+- End with a provocative question to deepen thinking
+- When presenting structured choices, use format: **Question text?** Options: • Option A • Option B • Option C`;
+}
+
+// ===== §23 AWARENESS_ELICIT UI PATTERN =====
+// Detects structured question patterns in bot responses and renders them as interactive elicit cards.
+function detectElicitPattern(text) {
+  // Pattern 1: **Question?** Options: • A • B  (§23 explicit format)
+  const m1 = text.match(/\*\*(.*?[?!])\*\*[\s\S]{0,80}?[Oo]ptions?:\s*([\s\S]+?)(?:\n\n|\n(?=[A-Z])|$)/);
+  if (m1) {
+    const opts = m1[2].split(/[•\-\n]/).map(o => o.trim()).filter(o => o.length > 2 && o.length < 120);
+    if (opts.length >= 2 && opts.length <= 5) return { question: m1[1], options: opts.slice(0, 4) };
+  }
+  // Pattern 2: **Bold question?** followed immediately by 2–4 bullet lines
+  const m2 = text.match(/\*\*([^*]+?\?)\*\*\s*\n+((?:\s*[•\-\*]\s*.+\n?){2,4})/);
+  if (m2) {
+    const opts = m2[2].split('\n').map(l => l.replace(/^\s*[•\-\*]\s*/, '').trim()).filter(o => o.length > 2 && o.length < 120);
+    if (opts.length >= 2 && opts.length <= 4) return { question: m2[1], options: opts };
+  }
+  return null;
+}
+
+function sendElicitOption(btn) {
+  const text = (typeof btn === 'string') ? btn : btn.textContent.trim();
+  if (!text) return;
+  document.getElementById('chat-input').value = text;
+  sendMessage();
+}
+
 async function sendMessage() {
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
@@ -336,35 +424,40 @@ async function sendMessage() {
   // Check for noosphere query
   const isNoosphere = /what.*class.*learn|noosphere|collective/i.test(text);
   
+  // §23.1 Cache tracking — record query for cache health metrics
+  if (!sessionQueryMap[studentId]) sessionQueryMap[studentId] = 0;
+  sessionQueryMap[studentId]++;
+
   try {
-    // Build context from top nodes
+    // Build context from top nodes (dynamic — goes into system-reminder, not system prompt)
     const topNodes = graphNodes.slice(0, 10).map(n => `${n.name} (${n.layer}, ${n.cell_type}, activations: ${n.activation_count})`).join(', ');
     
-    let systemPrompt;
+    let apiBody;
     if (isNoosphere) {
-      // Fetch collective nodes
+      // Fetch collective nodes (special mode — uses its own prompt, not the cached prefix)
       const collective = await neo4j(`MATCH (n:CollectiveNode) RETURN n.name, n.layer, n.activation_count ORDER BY n.activation_count DESC LIMIT 10`);
       const collectiveStr = (collective.values || []).map(v => `${v[0]} (${v[1]})`).join(', ');
-      systemPrompt = `You are IAM ${botName}, a collective intelligence synthesizer. Summarize what the class is learning based on these shared collective knowledge nodes: ${collectiveStr || 'No collective nodes yet — the class is just getting started!'}. Be encouraging and insightful.`;
+      const noospherePrompt = `You are IAM ${botName}, a collective intelligence synthesizer. Summarize what the class is learning based on these shared collective knowledge nodes: ${collectiveStr || 'No collective nodes yet — the class is just getting started!'}. Be encouraging and insightful.`;
+      apiBody = { contents: [{ parts: [{ text: noospherePrompt + '\n\nStudent says: ' + text }] }] };
     } else {
-      systemPrompt = `You are IAM ${botName}, ${archetype} thinking partner for an MBA entrepreneurship practicum at Vanderbilt. Your personality is ${archetype} — embody this fully in how you challenge and support the student.
-
-Current Trinity Graph state: ${topNodes || 'Just starting with seed nodes.'}
-
-Instructions:
-- Refract the student's query across three lenses: Social (empathy, teams, customers), Knowledge (analysis, validation, data), and Generative (models, strategies, pivots)
-- Challenge assumptions consistent with your ${archetype} personality
-- Reference their existing graph nodes when relevant
-- Keep responses concise (2-3 paragraphs)
-- End with a provocative question to deepen thinking`;
+      // §23.1 Cache-aware prompting:
+      //   system_instruction → STATIC prefix (identical every turn → LLM prefix cache hit)
+      //   contents[0]        → <system-reminder> with DYNAMIC state + student message
+      const dynamicReminder = `<system-reminder>
+Kirk Step: ${kirkStep}/12
+Active graph nodes: ${topNodes || 'seed nodes only'}
+Session query #${sessionQueryMap[studentId]}
+</system-reminder>`;
+      apiBody = {
+        system_instruction: { parts: [{ text: sessionSystemPrompt }] },
+        contents: [{ parts: [{ text: dynamicReminder + '\n\nStudent says: ' + text }] }]
+      };
     }
     
     const response = await fetch(AI_PROXY, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        contents: [{parts: [{text: systemPrompt + '\n\nStudent says: ' + text}]}]
-      })
+      body: JSON.stringify(apiBody)
     });
     
     const data = await response.json();
@@ -618,6 +711,21 @@ async function loadProfessorView() {
     
     grid.innerHTML = html || '<div style="color:var(--text-dim);padding:20px">No student data yet.</div>';
     
+    // §23.1 Cache Health — calculate from sessionQueryMap (current browser session)
+    const sessionTotals = Object.values(sessionQueryMap);
+    const totalQ = sessionTotals.reduce((s, c) => s + c, 0);
+    const sessionCount = sessionTotals.filter(c => c > 0).length;
+    const cacheHits = Math.max(0, totalQ - sessionCount);
+    const cacheRate = totalQ > 0 ? Math.round(cacheHits / totalQ * 100) : 0;
+    const cacheColor = cacheRate >= 80 ? 'var(--success)' : cacheRate >= 60 ? 'var(--gold)' : 'var(--danger)';
+    const pctEl = document.getElementById('cache-health-pct');
+    const fillEl = document.getElementById('cache-health-fill');
+    if (pctEl) {
+      pctEl.textContent = totalQ > 0 ? cacheRate + '%' : 'No active sessions yet';
+      pctEl.style.color = totalQ > 0 ? cacheColor : 'var(--text-dim)';
+    }
+    if (fillEl) { fillEl.style.width = cacheRate + '%'; fillEl.style.background = cacheColor; }
+
     // Collective stats
     const collective = await neo4j(`MATCH (n:CollectiveNode) RETURN n.layer as layer, count(n) as c, sum(n.contributions) as contrib ORDER BY layer`);
     const cRows = collective.values || [];
