@@ -226,8 +226,26 @@ input:focus,textarea:focus{border-color:var(--cyan)}
 <!-- PROFESSOR VIEW -->
 <div id="prof-view">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+    <div id="admin-panel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;align-items:center;justify-content:center">
+      <div class="glass" style="padding:28px;max-width:460px;width:90%;border-radius:16px">
+        <div style="font-size:16px;font-weight:700;color:var(--cyan);margin-bottom:16px">⚙️ Admin — Emergency Key Setup</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;line-height:1.6">The Gemini API key was revoked (embedded in public GitHub repo).<br>Get a new free key at <a href="https://aistudio.google.com" target="_blank" style="color:var(--cyan)">aistudio.google.com</a> → API Keys → Create new key.</div>
+        <input type="text" id="emergency-key-input" placeholder="AIzaSy..." style="width:100%;margin-bottom:12px;font-family:monospace;font-size:12px">
+        <button onclick="saveEmergencyKey()" class="btn" style="width:100%;background:var(--cyan);color:#000;margin-bottom:8px">Save Key (stored locally only)</button>
+        <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:16px">Key is stored in your browser only — not sent to GitHub or any server.</div>
+        <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:8px">Reset a Student</div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="reset-sid-input" placeholder="username (e.g. ava)" style="flex:1;font-size:12px">
+          <button onclick="resetStudentFromAdmin()" style="background:rgba(255,71,87,.15);border:1px solid rgba(255,71,87,.3);color:var(--danger);padding:8px 14px;border-radius:10px;cursor:pointer;font-size:12px">Reset</button>
+        </div>
+        <div style="margin-top:16px;text-align:right"><button onclick="document.getElementById('admin-panel').style.display='none'" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:12px">Close</button></div>
+      </div>
+    </div>
     <h2 style="font-size:20px;font-weight:700">Professor Dashboard</h2>
-    <button class="btn" style="background:rgba(255,255,255,0.1);color:var(--text-dim);font-size:12px" onclick="logout()">Logout</button>
+    <div style="display:flex;gap:8px">
+      <button onclick="document.getElementById('admin-panel').style.display='flex'" style="background:rgba(255,71,87,.1);border:1px solid rgba(255,71,87,.25);color:var(--danger);padding:7px 14px;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600">⚙️ Admin</button>
+      <button class="btn" style="background:rgba(255,255,255,0.1);color:var(--text-dim);font-size:12px" onclick="logout()">Logout</button>
+    </div>
   </div>
   <div class="prof-grid" id="prof-grid"></div>
   <!-- §23.1 Cache Health Stats Bar -->
@@ -335,6 +353,37 @@ input:focus,textarea:focus{border-color:var(--cyan)}
 const NEO4J_URL = 'https://c779e832.databases.neo4j.io/db/neo4j/query/v2';
 const NEO4J_AUTH = 'Basic bmVvNGo6WlhPdXB5SUx4RktsTG16SHNtSEk5ckNtQzhlMmRYVGZ5UkQ3U29tR2hQdw==';
 const AI_PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+
+// Emergency key slot — professor can set via admin panel without a code deploy
+// NEVER embed API keys in public GitHub HTML. This reads from localStorage only.
+function getEmergencyKey() { return localStorage.getItem('iam_gemini_emergency_key')||''; }
+
+// Session-to-date mapping (March 9 = S1, +2 days per session)
+function getCurrentSession() {
+  const S1 = new Date('2026-03-09T00:00:00');
+  const now = new Date();
+  const daysDiff = Math.max(0, Math.floor((now - S1) / (1000*60*60*24)));
+  // Sessions Mon + Wed, so approximately every 3.5 days
+  const session = Math.min(14, Math.floor(daysDiff / 3.5) + 1);
+  return session;
+}
+
+const SESSION_PLAN = {
+  1:  { title:'Welcome to the Serendipity Engine', focus:'Team formation, co-founder rationale, venture idea framing', task:'Student describes their venture idea in one sentence. Who is the specific person with this problem?', concept:'Serendipity' },
+  2:  { title:'AI Tool Landscape & Sprint Methodology', focus:'AI tool categories, sprint cadence, build vs. buy', task:'Map your venture to 3 AI tool categories. What will you build vs. use off-the-shelf?', concept:'Enginuity' },
+  3:  { title:'Social Graph Deep Dive', focus:'Customer discovery, network mapping, influence paths', task:'Draw your customer network. Who are the 5 people who can make or break this venture?', concept:'Vitality' },
+  4:  { title:'Knowledge Graph Construction', focus:'Domain expertise, validated assumptions, what you know vs. believe', task:'List 5 assumptions. Which ones, if wrong, would kill the venture?', concept:'Clarity' },
+  5:  { title:'Generative AI for Entrepreneurs', focus:'LLMs, image models, multimodal AI, practical use cases', task:'Use AI to generate your first customer persona. Does it match who you imagined?', concept:'Ubiquity' },
+  6:  { title:'Trinity Convergence — Where Graphs Meet', focus:'Cross-layer synthesis, convergence patterns, the Trinity thesis', task:'Find one insight that only appears when you combine Social + Knowledge + Generative.', concept:'Synchronicity' },
+  7:  { title:'Midterm — Venture Thesis Defense', focus:'Present your Trinity Graph, investor narrative, go-to-market', task:'3-minute pitch: problem, WHO, WHY NOW, HOW AI changes it', concept:'Certainty' },
+  8:  { title:'Revenue Models & Monetization', focus:'SaaS, marketplace, usage-based, freemium, network effects', task:'Model 3 revenue scenarios. Which one is most defensible?', concept:'Artiquity' },
+  9:  { title:'Team & Org Design for AI Startups', focus:'Hiring AI talent, org structures, human-AI collaboration', task:'Design your founding team. What roles does AI replace vs. augment?', concept:'Sagacity' },
+  10: { title:'Partnership & Distribution Strategy', focus:'Channel strategy, platform partnerships, go-to-market', task:'Name 3 distribution partners who already have your customer.', concept:'Ubiquity' },
+  11: { title:'Ethics & Governance in AI Ventures', focus:'Bias, privacy, attribution, responsible AI, regulatory', task:'Identify 2 ethical risks in your venture. What safeguards exist?', concept:'Ethics' },
+  12: { title:'Fundraising & AI Investor Landscape', focus:'VC landscape, AI-specific investors, pitch dynamics', task:'Find 3 investors who have funded your closest competitor.', concept:'Certainty' },
+  13: { title:'Scaling & Infrastructure', focus:'Data flywheels, platform thinking, defensible moats', task:'What makes your venture harder to replicate 2 years from now?', concept:'Vitality' },
+  14: { title:'Demo Day — Investor Pitch', focus:'Final pitch + live demo of AI-powered product', task:'3-minute pitch + 2-minute demo. Make it real, make it compelling.', concept:'Success' },
+};
 
 const ARCHETYPES = ['The Contrarian','The Synthesizer','The Skeptic','The Futurist','The Historian','The Builder','The Philosopher','The Data Scientist','The Storyteller','The Networker'];
 const STUDENTS = ['ava','ben','cara','dev','elena','finn','grace','hugo','iris','jake','kira','liam','maya','noah','olive','paul','quinn','ravi','sara','troy','uma','vince','wren','xena','yusuf','zara','amir','blake','cleo','diego','elise','felix','gaia','hana','ines'];
@@ -489,6 +538,18 @@ const SEED_NODES = [
 ];
 
 const CELL_COLORS = {UNDIFFERENTIATED:'#888',SOMATIC_SENSOR:'#4dabf7',SOMATIC_MOTOR:'#51cf66',STRUCTURAL:'#fcc419',GERMLINE:'#ffd700',DORMANT:'#495057'};
+// Business-friendly display names (same internal codes for Neo4j compatibility)
+const CELL_DISPLAY = {
+  UNDIFFERENTIATED:{ label:'Seed Idea',   short:'seed',        emoji:'🌱', desc:'Raw concept — not yet explored or validated' },
+  SOMATIC_SENSOR:  { label:'Scout',       short:'scout',       emoji:'🔭', desc:'Actively gathering market signals and customer insights' },
+  SOMATIC_MOTOR:   { label:'Builder',     short:'builder',     emoji:'⚡', desc:'In execution mode — testing, shipping, iterating' },
+  STRUCTURAL:      { label:'Anchor',      short:'anchor',      emoji:'⚓', desc:'Validated, load-bearing concept central to your thesis' },
+  GERMLINE:        { label:'Cornerstone', short:'cornerstone', emoji:'♦', desc:'Foundational insight that shapes all future thinking' },
+  DORMANT:         { label:'Parked',      short:'parked',      emoji:'🅿️', desc:'Temporarily shelved — may reactivate later' },
+};
+function cellLabel(ct) { return (CELL_DISPLAY[ct]||{label:ct||'—'}).label; }
+function cellShort(ct) { return (CELL_DISPLAY[ct]||{short:ct||'?'}).short; }
+function cellEmoji(ct) { return (CELL_DISPLAY[ct]||{emoji:'·'}).emoji; }
 const LAYER_Y = {social:0.15, knowledge:0.5, generative:0.85};
 
 // ===== STATE =====
@@ -525,6 +586,15 @@ function handleLogin() {
   const err = document.getElementById('login-error');
   
   // Professor login
+  // Check URL reset param (professor sends student a link with ?reset=username)
+  const urlReset = new URLSearchParams(window.location.search).get('reset');
+  if (urlReset) {
+    const keysToRemove = [`iam_archetype_${urlReset}`, `iam_quiz_${urlReset}`, `wa_${urlReset}`];
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    // Clear Neo4j
+    neo4j('MATCH (n) WHERE (n:TrinityNode AND n.student_id=$sid) OR (n:IAMStudent AND n.student_id=$sid) DETACH DELETE n', {sid:urlReset}).catch(()=>{});
+    console.log('Reset student:', urlReset);
+  }
   if (user === 'professor' && pass === 'vanderbilt2026') {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('prof-view').style.display = 'block';
@@ -666,9 +736,18 @@ const ARCHETYPE_VOICE = {
 };
 
 function buildStaticSystemPrompt() {
+  const session = getCurrentSession();
+  const plan = SESSION_PLAN[session] || SESSION_PLAN[1];
+
   const voice = ARCHETYPE_VOICE[archetype] || 'Challenge assumptions. Push deeper. Celebrate insight.';
   const runeList = SEED_NODES.map(n => `  - ${n.name} (${n.layer} layer, ity-word: ${n.ity})`).join('\n');
   return `You are IAM ${botName}, an entrepreneurship thinking partner for a Vanderbilt Owen MBA practicum (AI-Accelerated Entrepreneurship Practicum, Spring 2026).
+
+## TODAY: Session ${session} of 14 — "${plan.title}"
+SESSION FOCUS: ${plan.focus}
+SESSION TASK: Guide the student toward completing: ${plan.task}
+KEY -ITY CONCEPT: ${plan.concept}
+Do NOT announce or lecture about the session plan. Weave it naturally into conversation — nudge toward the session task through dialogue, not instruction.
 
 ## YOUR ARCHETYPE: ${archetype}
 ${voice}
@@ -776,23 +855,24 @@ Session query #${sessionQueryMap[studentId]}
       };
     }
     
-    // ── DIRECT GEMINI 2.5-flash (primary) → 2.0-flash → Proxy fallback ─────────
+    // ── AI PROVIDER CHAIN ─────────────────────────────────────────────────────
+    // NOTE: Direct Gemini API key removed (was revoked — embedded in public GitHub repo)
+    // Route: Emergency key (localStorage) → Awareness proxy → Error
     const hdr_c={'Content-Type':'application/json'};
     const body_c=JSON.stringify(apiBody);
     let reply = null;
-    // 1. Direct Gemini 2.5-flash (fastest & most capable)
-    try{
-      const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=AIzaSyDmqhRDt2eJ-RO-gcRP3c1Sa85wk_E8KJ4',{method:'POST',headers:hdr_c,body:body_c});
-      if(r.ok){const d=await r.json();reply=d?.candidates?.[0]?.content?.parts?.[0]?.text||null;}
-    }catch(e){}
-    // 2. Direct Gemini 2.0-flash (fallback)
-    if(!reply){
-      try{
-        const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyDmqhRDt2eJ-RO-gcRP3c1Sa85wk_E8KJ4',{method:'POST',headers:hdr_c,body:body_c});
-        if(r.ok){const d=await r.json();reply=d?.candidates?.[0]?.content?.parts?.[0]?.text||null;}
-      }catch(e){}
+    // 1. Emergency key from localStorage (professor sets via admin panel)
+    const eKey = getEmergencyKey();
+    if(eKey){
+      for(const model of ['gemini-2.5-flash','gemini-2.0-flash']){
+        if(reply) break;
+        try{
+          const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${eKey}`,{method:'POST',headers:hdr_c,body:body_c});
+          if(r.ok){const d=await r.json();reply=d?.candidates?.[0]?.content?.parts?.[0]?.text||null;}
+        }catch(e){}
+      }
     }
-    // 3. Awareness proxy (final fallback)
+    // 2. Awareness proxy
     if(!reply){
       try{
         const r=await fetch(AI_PROXY,{method:'POST',headers:hdr_c,body:body_c});
@@ -924,7 +1004,7 @@ async function runVolvoxEpoch() {
   document.getElementById('kirk-display').textContent = `Kirk ${kirkStep}/12`;
   
   renderGraph();
-  addBotMessage(`🧬 VOLVOX Epoch complete! Your Trinity Graph has evolved.\n\nKirk Step: ${kirkStep}/12\nDifferentiated nodes: ${graphNodes.filter(n => n.cell_type !== 'UNDIFFERENTIATED').length}/${graphNodes.length}\n\nKeep exploring to evolve your graph further.`);
+  addBotMessage(`🧬 VOLVOX Epoch complete! Your Trinity Graph has evolved.\n\nKirk Step: ${kirkStep}/12\nAnchors & Cornerstones: ${graphNodes.filter(n => n.cell_type === 'STRUCTURAL' || n.cell_type === 'GERMLINE').length}/${graphNodes.length} nodes\nScouts active: ${graphNodes.filter(n => n.cell_type === 'SOMATIC_SENSOR').length}\n\nKeep exploring to unlock your next stage.`);
 }
 
 async function contributeToCollective(node) {
@@ -1114,7 +1194,7 @@ function renderGraph() {
     .text(d => d.name.length > 22 ? d.name.slice(0,20)+'…' : d.name);
 
   // Cell type badge below name (colored, abbreviated)
-  const CT_SHORT = {UNDIFFERENTIATED:'undiff',SOMATIC_SENSOR:'sensor',SOMATIC_MOTOR:'motor',STRUCTURAL:'struct',GERMLINE:'♦ germline',DORMANT:'dormant'};
+  // CT_SHORT replaced by CELL_DISPLAY global — use cellShort()/cellLabel()
   const CT_COLOR = {UNDIFFERENTIATED:'rgba(136,136,136,0.6)',SOMATIC_SENSOR:'rgba(77,171,247,0.8)',SOMATIC_MOTOR:'rgba(81,207,102,0.8)',STRUCTURAL:'rgba(252,196,25,0.9)',GERMLINE:'rgba(255,215,0,1)',DORMANT:'rgba(73,80,87,0.5)'};
   nodeG.filter(d => d.cell_type && d.cell_type !== 'UNDIFFERENTIATED').append('text')
     .attr('dy', d => nodeRadius(d) + 22)
@@ -1123,7 +1203,7 @@ function renderGraph() {
     .attr('fill', d => CT_COLOR[d.cell_type] || '#888')
     .attr('font-size','7px').attr('font-family','Inter').attr('font-weight','600')
     .attr('letter-spacing','0.06em').attr('text-transform','uppercase')
-    .text(d => (CT_SHORT[d.cell_type]||d.cell_type).toUpperCase());
+    .text(d => cellShort(d.cell_type).toUpperCase());
 
   // Hover tooltip overlay
   const tooltip = d3.select(container).append('div')
@@ -1137,11 +1217,11 @@ function renderGraph() {
     const lc = nodeLayerColor(d);
     tooltip.style('display','block').html(`
       <div style="font-weight:700;color:${lc};margin-bottom:4px">${d.name}</div>
-      <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">${d.layer} graph</div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span>Cell type</span><span style="color:${CT_COLOR[d.cell_type]||'#888'};font-weight:600">${d.cell_type||'—'}</span></div>
+      <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">${d.layer} layer</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span>Stage</span><span style="color:${CT_COLOR[d.cell_type]||'#888'};font-weight:600">${cellEmoji(d.cell_type)} ${cellLabel(d.cell_type)}</span></div>
       <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span>Activations</span><span style="color:${lc};font-weight:700">${d.activation_count||0}</span></div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span>Generation</span><span>${d.generation||0}</span></div>
-      ${d.ity?`<div style="margin-top:6px;font-size:9px;color:rgba(255,255,255,.4)">-ity: ${d.ity}</div>`:''}
+      ${d.ity?`<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.08);font-size:9px;color:rgba(255,255,255,.4)">-ity: ${d.ity}</div>`:''}
+      <div style="margin-top:5px;font-size:8px;color:rgba(255,255,255,.25);line-height:1.4">${(CELL_DISPLAY[d.cell_type]||{desc:''}).desc}</div>
     `);
   }).on('mousemove', function(event) {
     const rect = container.getBoundingClientRect();
@@ -1234,7 +1314,7 @@ function renderJourney() {
       const isGermline = ct === 'GERMLINE';
       const isStruct = ct === 'STRUCTURAL';
       const opacity = acts === 0 ? 0.45 : 1;
-      const ctLabel = {GERMLINE:'♦',STRUCTURAL:'⬡',SOMATIC_SENSOR:'◉',SOMATIC_MOTOR:'◈',DORMANT:'○',UNDIFFERENTIATED:'·'}[ct]||'·';
+      const ctLabel = cellEmoji(ct);
       html += `<div style="opacity:${opacity};background:${m.color}18;border:1px solid ${m.color}${isGermline?'':'44'};${isGermline?`box-shadow:0 0 8px ${m.color}44;`:''}border-radius:9px;padding:8px 9px;position:relative;cursor:pointer"
         onclick="document.getElementById('chat-input').value='Tell me more about ${node.name.replace(/'/g,"\\'")} and how it connects to my venture';document.getElementById('chat-input').focus()">
         <div style="font-size:11px;font-weight:700;color:${m.color};line-height:1.3;word-break:break-word">${node.name}</div>
@@ -1274,6 +1354,22 @@ function renderJourney() {
 }
 
 // ===== PROFESSOR HELPERS =====
+function saveEmergencyKey() {
+  const key = document.getElementById('emergency-key-input').value.trim();
+  if (!key.startsWith('AIza')) { alert('Invalid key format — should start with AIza'); return; }
+  localStorage.setItem('iam_gemini_emergency_key', key);
+  document.getElementById('admin-panel').style.display='none';
+  alert('✅ Key saved. The AI should work now — try sending a message.');
+}
+async function resetStudentFromAdmin() {
+  const sid = document.getElementById('reset-sid-input').value.trim().toLowerCase();
+  if (!sid) return;
+  ['iam_archetype_', 'iam_quiz_', 'wa_'].forEach(pre => localStorage.removeItem(pre+sid));
+  try {
+    await neo4j('MATCH (n) WHERE (n:TrinityNode AND n.student_id=$sid) OR (n:IAMStudent AND n.student_id=$sid) DETACH DELETE n', {sid});
+    alert(`✅ Reset complete for ${sid}. Send them this link to clear their quiz:\n${window.location.origin}${window.location.pathname}?reset=${sid}`);
+  } catch(e) { alert(`Local clear done. Send reset link: ?reset=${sid}`); }
+}
 async function toggleConsent(sid, checked) {
   try {
     await neo4j('MERGE (s:IAMStudent {student_id:$sid}) SET s.consent_shared=$v', {sid, v: checked});
@@ -1318,7 +1414,7 @@ const SID_TO_NAME = {};
 ['ava','ben','cara','dev','elena','finn','grace','hugo','iris','jake','kira','liam','maya','noah','olive','paul','quinn','ravi','sara','troy','uma','vince','wren','xena','yusuf','zara','amir','blake','cleo','diego','elise','felix','gaia','hana','ines'].forEach((sid,i)=>SID_TO_NAME[sid]=STUDENT_NAMES[i]);
 
 const CT_CHIP_COLOR = {UNDIFFERENTIATED:'rgba(120,120,130,0.5)',SOMATIC_SENSOR:'rgba(77,171,247,0.7)',SOMATIC_MOTOR:'rgba(81,207,102,0.7)',STRUCTURAL:'rgba(252,196,25,0.85)',GERMLINE:'rgba(255,215,0,1)',DORMANT:'rgba(60,65,75,0.6)'};
-const CT_CHIP_LABEL = {UNDIFFERENTIATED:'undiff',SOMATIC_SENSOR:'sensor',SOMATIC_MOTOR:'motor',STRUCTURAL:'struct',GERMLINE:'♦ germline',DORMANT:'dormant'};
+const CT_CHIP_LABEL = {UNDIFFERENTIATED:'Seed Idea',SOMATIC_SENSOR:'Scout',SOMATIC_MOTOR:'Builder',STRUCTURAL:'Anchor',GERMLINE:'♦ Cornerstone',DORMANT:'Parked'};
 const LAYER_CHIP_COLOR = {social:'rgba(74,123,204,0.7)',knowledge:'rgba(207,184,124,0.7)',generative:'rgba(138,106,172,0.7)'};
 
 async function loadProfessorView() {
