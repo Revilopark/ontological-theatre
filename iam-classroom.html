@@ -206,10 +206,18 @@ input:focus,textarea:focus{border-color:var(--cyan)}
     <div class="kg-panel" id="kg-panel">
       <iframe id="kg-iframe" src="" title="Knowledge Graph Viewer" allow="fullscreen"></iframe>
     </div>
+    <div class="graph-panel" id="journey-panel" style="overflow-y:auto;background:rgba(0,0,0,.3)">
+      <div class="graph-header">
+        <h3>🗺️ Learning Journey</h3>
+        <button class="btn" style="font-size:10px;padding:5px 10px;background:rgba(255,255,255,0.08);color:var(--text-dim)" onclick="renderJourney()">Refresh</button>
+      </div>
+      <div id="journey-container" style="padding:12px 16px;min-height:200px"></div>
+    </div>
   </div>
   <div class="tab-bar" id="tab-bar">
     <button class="active" onclick="showTab('chat')">💬 Chat</button>
     <button onclick="showTab('graph')">🔮 Graph</button>
+    <button onclick="showTab('journey')">🗺️ Journey</button>
     <button onclick="showTab('noosphere')">🌐 Noosphere</button>
     <button onclick="showTab('kg')">✦ KG</button>
   </div>
@@ -997,12 +1005,13 @@ function renderGraph() {
         .attr('stroke',color).attr('stroke-opacity',0.15);
     }
 
-    // layer label with emoji
-    svg.append('text').attr('x',10).attr('y',by+14)
-      .attr('fill',color).attr('opacity',0.55)
-      .attr('font-size','8.5px').attr('font-weight','700')
+    // layer label with emoji — right-aligned so it never clips
+    svg.append('text').attr('x',width-8).attr('y',by+13)
+      .attr('text-anchor','end')
+      .attr('fill',color).attr('opacity',0.6)
+      .attr('font-size','8px').attr('font-weight','700')
       .attr('font-family','Inter').attr('letter-spacing','0.1em')
-      .text(LAYER_ICON[layer]+'  '+layer.toUpperCase()+' GRAPH');
+      .text(LAYER_ICON[layer]+' '+layer.toUpperCase());
   });
 
   const nodes = graphNodes.map(n => ({
@@ -1102,7 +1111,7 @@ function renderGraph() {
     .attr('fill-opacity', d => d.cell_type==='DORMANT' ? 0.35 : 1)
     .attr('font-size','9.5px').attr('font-family','Inter').attr('font-weight','700')
     .attr('letter-spacing','0.01em')
-    .text(d => d.name.length > 16 ? d.name.slice(0,14)+'…' : d.name);
+    .text(d => d.name.length > 22 ? d.name.slice(0,20)+'…' : d.name);
 
   // Cell type badge below name (colored, abbreviated)
   const CT_SHORT = {UNDIFFERENTIATED:'undiff',SOMATIC_SENSOR:'sensor',SOMATIC_MOTOR:'motor',STRUCTURAL:'struct',GERMLINE:'♦ germline',DORMANT:'dormant'};
@@ -1169,13 +1178,125 @@ function refreshGraph() {
 }
 
 // ===== TABS (mobile) =====
+// ===== SUBWAY MAP — LEARNING JOURNEY =====
+function renderJourney() {
+  const container = document.getElementById('journey-container');
+  if (!container) return;
+  if (graphNodes.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-dim);font-size:13px;padding:20px 0;text-align:center">Start a conversation to build your learning journey.</div>';
+    return;
+  }
+
+  const LAYER_META = {
+    social:     { label:'🔴 Social — WHO',     color:'#4a7bcc', emoji:'🧠', desc:'People, empathy, trust, relationships' },
+    knowledge:  { label:'🔵 Knowledge — WHAT',  color:'#cfb87c', emoji:'📚', desc:'Data, validation, domain expertise' },
+    generative: { label:'🟢 Generative — WHAT IF', color:'#8a6aac', emoji:'✨', desc:'Strategy, synthesis, AI-powered scenarios' }
+  };
+
+  // Sort nodes by activation_count desc (most-engaged = primary journey)
+  const sorted = [...graphNodes].sort((a,b) => (b.activation_count||0)-(a.activation_count||0));
+  const byLayer = { social:[], knowledge:[], generative:[] };
+  sorted.forEach(n => { if (byLayer[n.layer]) byLayer[n.layer].push(n); });
+
+  const maxLen = Math.max(...Object.values(byLayer).map(a=>a.length), 1);
+
+  let html = `
+  <div style="font-size:11px;color:rgba(255,255,255,.35);margin-bottom:14px;letter-spacing:.04em">
+    Your concepts, mapped by Trinity layer · <strong style="color:var(--gold)">Kirk ${kirkStep}/12</strong> · ${graphNodes.length} nodes total
+  </div>`;
+
+  // Header row with layer labels
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">`;
+  ['social','knowledge','generative'].forEach(layer => {
+    const m = LAYER_META[layer];
+    html += `<div style="background:${m.color}22;border:1px solid ${m.color}44;border-radius:8px;padding:7px 8px;text-align:center">
+      <div style="font-size:13px">${m.emoji}</div>
+      <div style="font-size:9px;font-weight:700;color:${m.color};line-height:1.3;margin-top:2px">${m.label}</div>
+      <div style="font-size:8px;color:rgba(255,255,255,.3);margin-top:2px">${byLayer[layer].length} node${byLayer[layer].length!==1?'s':''}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // Subway grid — row per position
+  html += `<div style="display:flex;flex-direction:column;gap:6px">`;
+
+  for (let i = 0; i < maxLen; i++) {
+    html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">`;
+    ['social','knowledge','generative'].forEach(layer => {
+      const m = LAYER_META[layer];
+      const node = byLayer[layer][i];
+      if (!node) {
+        html += `<div style="min-height:52px;border-left:2px solid ${m.color}22;margin-left:50%"></div>`;
+        return;
+      }
+      const acts = node.activation_count || 0;
+      const ct = node.cell_type || 'UNDIFFERENTIATED';
+      const isGermline = ct === 'GERMLINE';
+      const isStruct = ct === 'STRUCTURAL';
+      const opacity = acts === 0 ? 0.45 : 1;
+      const ctLabel = {GERMLINE:'♦',STRUCTURAL:'⬡',SOMATIC_SENSOR:'◉',SOMATIC_MOTOR:'◈',DORMANT:'○',UNDIFFERENTIATED:'·'}[ct]||'·';
+      html += `<div style="opacity:${opacity};background:${m.color}18;border:1px solid ${m.color}${isGermline?'':'44'};${isGermline?`box-shadow:0 0 8px ${m.color}44;`:''}border-radius:9px;padding:8px 9px;position:relative;cursor:pointer"
+        onclick="document.getElementById('chat-input').value='Tell me more about ${node.name.replace(/'/g,"\\'")} and how it connects to my venture';document.getElementById('chat-input').focus()">
+        <div style="font-size:11px;font-weight:700;color:${m.color};line-height:1.3;word-break:break-word">${node.name}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+          <span style="font-size:8px;color:rgba(255,255,255,.35)">${ctLabel} ${ct.replace('_',' ').toLowerCase()}</span>
+          ${acts>0?`<span style="font-size:9px;font-weight:700;color:${m.color};background:${m.color}22;padding:1px 5px;border-radius:5px">×${acts}</span>`:''}
+        </div>
+        ${node.ity?`<div style="font-size:8px;color:rgba(255,255,255,.2);margin-top:2px;font-style:italic">${node.ity}</div>`:''}
+      </div>`;
+    });
+    html += `</div>`;
+
+    // Cross-layer bridge line if nodes in different layers both exist at this level with activations
+    const nodesAtLevel = ['social','knowledge','generative'].map(l=>byLayer[l][i]).filter(n=>n&&(n.activation_count||0)>2);
+    if (nodesAtLevel.length > 1) {
+      html += `<div style="display:flex;align-items:center;gap:4px;padding:0 10px;opacity:.35">
+        <div style="flex:1;height:1px;background:linear-gradient(90deg,#4a7bcc,#cfb87c,#8a6aac);border-radius:1px"></div>
+        <span style="font-size:8px;color:rgba(255,255,255,.4)">connected</span>
+        <div style="flex:1;height:1px;background:linear-gradient(90deg,#8a6aac,#cfb87c,#4a7bcc);border-radius:1px"></div>
+      </div>`;
+    }
+  }
+  html += `</div>`;
+
+  // WHO summary at bottom (Social layer nodes that are activated = the WHO)
+  const whoNodes = byLayer.social.filter(n=>(n.activation_count||0)>0);
+  if (whoNodes.length > 0) {
+    html += `<div style="margin-top:16px;padding:12px;background:rgba(74,123,204,.08);border:1px solid rgba(74,123,204,.2);border-radius:10px">
+      <div style="font-size:10px;font-weight:700;color:#7aaedf;margin-bottom:8px;letter-spacing:.05em">🧠 WHO MATTERS — Social Layer Active Nodes</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${whoNodes.map(n=>`<span style="background:rgba(74,123,204,.2);border:1px solid rgba(74,123,204,.3);color:#a8c8f0;font-size:10px;font-weight:600;padding:4px 10px;border-radius:8px">${n.name}${n.activation_count>3?' ✦':''}</span>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+// ===== PROFESSOR HELPERS =====
+async function toggleConsent(sid, checked) {
+  try {
+    await neo4j('MERGE (s:IAMStudent {student_id:$sid}) SET s.consent_shared=$v', {sid, v: checked});
+  } catch(e) { console.warn('Consent save failed:', e); }
+}
+async function nudgeStudent(sid, name) {
+  const msg = prompt(`Send ${name} a nudge message (delivered via class agent):`);
+  if (!msg) return;
+  try {
+    await neo4j('MERGE (n:ProfNudge {student_id:$sid}) SET n.message=$m, n.ts=timestamp()', {sid, m:msg});
+    alert(`Nudge saved for ${name}. The class agent will deliver it at next check-in.`);
+  } catch(e) { alert('Saved locally.'); }
+}
+
 function showTab(tab) {
   document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
   document.getElementById('chat-panel').classList.toggle('active', tab === 'chat');
   document.getElementById('graph-panel').classList.toggle('active', tab === 'graph');
   document.getElementById('kg-panel').classList.toggle('active', tab === 'kg');
+  document.getElementById('journey-panel').classList.toggle('active', tab === 'journey');
   if (tab === 'graph') renderGraph();
+  if (tab === 'journey') renderJourney();
   if (tab === 'kg') {
     const iframe = document.getElementById('kg-iframe');
     if (!iframe.src || iframe.src === window.location.href) {
@@ -1192,26 +1313,106 @@ function showTab(tab) {
 }
 
 // ===== PROFESSOR VIEW =====
+const STUDENT_NAMES = ['Ava','Ben','Cara','Dev','Elena','Finn','Grace','Hugo','Iris','Jake','Kira','Liam','Maya','Noah','Olive','Paul','Quinn','Ravi','Sara','Troy','Uma','Vince','Wren','Xena','Yusuf','Zara','Amir','Blake','Cleo','Diego','Elise','Felix','Gaia','Hana','Ines'];
+const SID_TO_NAME = {};
+['ava','ben','cara','dev','elena','finn','grace','hugo','iris','jake','kira','liam','maya','noah','olive','paul','quinn','ravi','sara','troy','uma','vince','wren','xena','yusuf','zara','amir','blake','cleo','diego','elise','felix','gaia','hana','ines'].forEach((sid,i)=>SID_TO_NAME[sid]=STUDENT_NAMES[i]);
+
+const CT_CHIP_COLOR = {UNDIFFERENTIATED:'rgba(120,120,130,0.5)',SOMATIC_SENSOR:'rgba(77,171,247,0.7)',SOMATIC_MOTOR:'rgba(81,207,102,0.7)',STRUCTURAL:'rgba(252,196,25,0.85)',GERMLINE:'rgba(255,215,0,1)',DORMANT:'rgba(60,65,75,0.6)'};
+const CT_CHIP_LABEL = {UNDIFFERENTIATED:'undiff',SOMATIC_SENSOR:'sensor',SOMATIC_MOTOR:'motor',STRUCTURAL:'struct',GERMLINE:'♦ germline',DORMANT:'dormant'};
+const LAYER_CHIP_COLOR = {social:'rgba(74,123,204,0.7)',knowledge:'rgba(207,184,124,0.7)',generative:'rgba(138,106,172,0.7)'};
+
 async function loadProfessorView() {
   const grid = document.getElementById('prof-grid');
   grid.innerHTML = '<div style="color:var(--text-dim);padding:20px">Loading student data...</div>';
   
   try {
-    // Get kirk steps per student
-    const r = await neo4j(`MATCH (n:TrinityNode) WHERE n.student_id IS NOT NULL
-      WITH n.student_id as sid, max(n.kirk_step) as ks, count(n) as nodeCount,
-      collect(DISTINCT n.cell_type) as types
-      RETURN sid, ks, nodeCount, types ORDER BY sid`);
+    // Rich query: per student — kirk, node count, cell types breakdown, layer breakdown, archetype
+    const r = await neo4j(
+      'MATCH (n:TrinityNode) WHERE n.student_id IS NOT NULL ' +
+      'WITH n.student_id as sid, max(n.kirk_step) as ks, count(n) as nc, ' +
+      'collect(DISTINCT n.cell_type) as types, ' +
+      'sum(CASE WHEN n.layer="social" THEN 1 ELSE 0 END) as sc, ' +
+      'sum(CASE WHEN n.layer="knowledge" THEN 1 ELSE 0 END) as kc, ' +
+      'sum(CASE WHEN n.layer="generative" THEN 1 ELSE 0 END) as gc, ' +
+      'sum(n.activation_count) as totalActs, max(n.activation_count) as peakAct ' +
+      'RETURN sid, ks, nc, types, sc, kc, gc, totalActs, peakAct ORDER BY sid'
+    );
+    // Archetype query
+    const ra = await neo4j('MATCH (s:IAMStudent) WHERE s.archetype IS NOT NULL RETURN s.student_id, s.archetype, s.whatsapp, s.consent_shared, s.team ORDER BY s.student_id');
+    const archetypeMap = {};
+    (ra.values||[]).forEach(v => {
+      archetypeMap[v[0]] = {archetype:v[1], whatsapp:v[2], consent:v[3], team:v[4]};
+    });
     
     let html = '';
     const rows = r.values || [];
     rows.forEach((row, i) => {
-      const [sid, ks, nc, types] = row;
+      const [sid, ks, nc, types, sc, kc, gc, totalActs, peakAct] = row;
       const kirkPct = ((ks || 0) / 12 * 100).toFixed(0);
-      html += `<div class="glass prof-card">
-        <h3>Bot #${i+1} (${sid})</h3>
-        <div class="kirk-bar"><span>Kirk ${ks||0}/12</span><div class="bar"><div class="bar-fill" style="width:${kirkPct}%"></div></div></div>
-        <div style="font-size:12px;color:var(--text-dim)">${nc} nodes · Types: ${(types||[]).join(', ')}</div>
+      const sname = SID_TO_NAME[sid] || sid;
+      const meta = archetypeMap[sid] || {};
+      const archLabel = meta.archetype ? meta.archetype.replace(/^The /,'') : '—';
+      const archColor = {'Contrarian':'#ff6b6b','Storyteller':'#ffa07a','Skeptic':'#ffd700','Philosopher':'#a29bfe','Networker':'#74b9ff','Builder':'#55efc4','Historian':'#fdcb6e','Futurist':'#00cec9','Synthesizer':'#e84393','Data Scientist':'#6c5ce7'}[archLabel] || '#aaa';
+      const totalN = (sc||0)+(kc||0)+(gc||0);
+      const pctS = totalN>0 ? Math.round((sc||0)/totalN*100) : 0;
+      const pctK = totalN>0 ? Math.round((kc||0)/totalN*100) : 0;
+      const pctG = totalN>0 ? Math.round((gc||0)/totalN*100) : 100-pctS-pctK;
+      // Cell type chips
+      const ctypes = (types||[]).filter(t=>t && t!=='UNDIFFERENTIATED');
+      const chipHtml = ctypes.map(t => `<span style="background:${CT_CHIP_COLOR[t]||'rgba(120,120,130,0.5)'};color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;margin:2px 2px 0 0;display:inline-block;letter-spacing:.04em">${(CT_CHIP_LABEL[t]||t).toUpperCase()}</span>`).join('') || '<span style="color:rgba(255,255,255,.25);font-size:10px">seed stage</span>';
+      // Consent & WA
+      const consentChecked = meta.consent ? 'checked' : '';
+      const waStatus = meta.whatsapp ? `<span style="color:#25D366;font-size:10px">📱 ${meta.whatsapp}</span>` : `<span style="color:rgba(255,255,255,.25);font-size:10px">no WhatsApp</span>`;
+      const teamBadge = meta.team ? `<span style="background:rgba(0,212,255,.15);color:var(--cyan);border:1px solid rgba(0,212,255,.25);font-size:9px;font-weight:600;padding:1px 7px;border-radius:8px">${meta.team}</span>` : '';
+      
+      html += `<div class="glass prof-card" style="position:relative">
+        <!-- Header -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div>
+            <div style="font-size:15px;font-weight:700;color:var(--text)">${sname}</div>
+            <div style="font-size:10px;color:var(--text-dim);margin-top:1px">${sid} ${teamBadge}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;font-weight:700;color:${archColor};background:${archColor}22;border:1px solid ${archColor}44;padding:3px 9px;border-radius:8px">${archLabel}</div>
+            ${waStatus}
+          </div>
+        </div>
+        <!-- Kirk bar -->
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:10px;font-weight:700;color:var(--gold)">Kirk Scale</span>
+            <span style="font-size:12px;font-weight:800;color:var(--gold)">${ks||0}/12</span>
+          </div>
+          <div class="bar"><div class="bar-fill" style="width:${kirkPct}%"></div></div>
+        </div>
+        <!-- Trinity layer breakdown -->
+        <div style="margin-bottom:10px">
+          <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px">Trinity Layer Distribution</div>
+          <div style="display:flex;gap:0;border-radius:6px;overflow:hidden;height:10px">
+            <div style="width:${pctS}%;background:#4a7bcc" title="Social: ${sc} nodes"></div>
+            <div style="width:${pctK}%;background:#cfb87c" title="Knowledge: ${kc} nodes"></div>
+            <div style="width:${pctG}%;background:#8a6aac" title="Generative: ${gc} nodes"></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:4px">
+            <span style="font-size:9px;color:#7aaedf">🔴 Social ${sc||0}</span>
+            <span style="font-size:9px;color:#cfb87c">🔵 Know. ${kc||0}</span>
+            <span style="font-size:9px;color:#8a6aac">🟢 Gen. ${gc||0}</span>
+            <span style="font-size:9px;color:rgba(255,255,255,.3);margin-left:auto">⚡ ${totalActs||0} acts</span>
+          </div>
+        </div>
+        <!-- Cell type chips -->
+        <div style="margin-bottom:10px">
+          <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px">Cell Differentiation</div>
+          <div>${chipHtml}</div>
+        </div>
+        <!-- Consent + actions -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid rgba(255,255,255,.07)">
+          <label style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text-dim);cursor:pointer">
+            <input type="checkbox" ${consentChecked} onchange="toggleConsent('${sid}',this.checked)" style="width:12px;height:12px;margin:0">
+            Share data with class
+          </label>
+          <button onclick="nudgeStudent('${sid}','${sname}')" style="background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.2);color:var(--cyan);font-size:10px;padding:3px 10px;border-radius:7px;cursor:pointer">Send nudge</button>
+        </div>
       </div>`;
     });
     
