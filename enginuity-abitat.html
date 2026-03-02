@@ -475,22 +475,45 @@ function showTyping(){
 }
 function killTyping(){document.getElementById('typing')?.remove();}
 
+// ── Model status banner ──────────────────────────────────────────────────
+function showModelBanner(msg, type='warn') {
+  let b = document.getElementById('model-banner');
+  if(!b) {
+    b = document.createElement('div');
+    b.id = 'model-banner';
+    b.style.cssText = 'position:fixed;top:52px;left:280px;right:260px;z-index:100;padding:7px 16px;font-size:.6rem;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px;';
+    document.body.appendChild(b);
+  }
+  const colors = {warn:'rgba(255,159,67,.15);border-color:rgba(255,159,67,.3);color:#ff9f43', ok:'rgba(0,229,160,.1);border-color:rgba(0,229,160,.25);color:#00e5a0'};
+  b.style.background = colors[type]?.split(';')[0]?.split(':')[1] || 'rgba(255,159,67,.15)';
+  b.style.border = '1px solid rgba(255,159,67,.3)';
+  b.style.color = '#ff9f43';
+  b.innerHTML = msg;
+  if(type==='ok') { b.style.background='rgba(0,229,160,.1)'; b.style.border='1px solid rgba(0,229,160,.25)'; b.style.color='#00e5a0'; setTimeout(()=>b.remove(),4000); }
+}
+function hideBanner() { document.getElementById('model-banner')?.remove(); }
+
 async function callProxy(payload, attempt=1) {
+  const maxAttempts = 6;
+  const delays = [0, 2000, 4000, 8000, 12000, 18000];
+  if(attempt > 1) {
+    showModelBanner(`⏳ ${lang==='es'?`Gemini saturado — reintento ${attempt-1}/${maxAttempts-1}...`:`Gemini busy — retry ${attempt-1}/${maxAttempts-1}...`}`);
+    updateTyping(lang==='es'?`Servidor saturado, reintentando (${attempt-1}/${maxAttempts-1})...`:`Server busy, retrying (${attempt-1}/${maxAttempts-1})...`);
+  }
   const res = await fetch(`${PROXY}/gemini/generate`, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify(payload)
   });
-  if(res.status===503 && attempt<4) {
-    const wait = attempt * 2000;
-    updateTyping(lang==='es'?`Servidor ocupado, reintentando (${attempt}/3)...`:`Server busy, retrying (${attempt}/3)...`);
-    await new Promise(r=>setTimeout(r,wait));
+  if((res.status===503||res.status===429) && attempt<maxAttempts) {
+    await new Promise(r=>setTimeout(r, delays[attempt]||10000));
     return callProxy(payload, attempt+1);
   }
   if(!res.ok) {
-    const t=await res.text();
+    const t = await res.text();
     throw new Error(`HTTP ${res.status}: ${t.slice(0,200)}`);
   }
+  hideBanner();
   return res.json();
 }
 
