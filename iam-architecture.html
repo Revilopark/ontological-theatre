@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inkwell Awareness Model — Complete Architecture</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07070d;--surface:rgba(255,255,255,0.035);--surface2:rgba(255,255,255,0.06);
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --gold:#D4AF37;--gold-dim:rgba(212,175,55,0.18);--gold-glow:rgba(212,175,55,0.5);
+  --text:#e8d5b0;--text-dim:#8a7a5a;--text-bright:#f5edd8;
+  --social:#a78bfa;--knowledge:#60a5fa;--generative:#34d399;
+  --omega:#f97316;--runes:#ec4899;--trinity:#60a5fa;--domain:#34d399;--orch:#D4AF37;
+  --ity:#D4AF37;--pathy:#a78bfa;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.7;overflow-x:hidden}
+
+/* ── Navigation ── */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(7,7,13,0.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:12px 32px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{font-family:'Playfair Display',serif;font-size:15px;color:var(--gold);font-weight:700}
+.nav-links{display:flex;gap:24px;list-style:none}
+.nav-links a{font-size:11px;color:var(--text-dim);text-decoration:none;letter-spacing:0.08em;text-transform:uppercase;transition:color 0.2s}
+.nav-links a:hover{color:var(--gold)}
+
+/* ── Layout ── */
+.page{max-width:1200px;margin:0 auto;padding:100px 32px 80px}
+
+/* ── Hero ── */
+.hero{text-align:center;padding:80px 0 60px;border-bottom:1px solid var(--border)}
+.hero-badge{display:inline-block;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);border:1px solid var(--gold-dim);background:var(--gold-dim);padding:4px 14px;border-radius:20px;margin-bottom:24px}
+.hero-title{font-family:'Playfair Display',serif;font-size:clamp(38px,6vw,72px);font-weight:900;line-height:1.05;color:var(--text-bright);margin-bottom:20px}
+.hero-title em{color:var(--gold);font-style:normal}
+.hero-sub{font-size:clamp(14px,2vw,18px);color:var(--text-dim);max-width:700px;margin:0 auto 32px;line-height:1.8}
+.hero-version{font-size:11px;color:var(--text-dim);font-family:'JetBrains Mono',monospace}
+.hero-quote{max-width:600px;margin:32px auto 0;font-style:italic;font-size:15px;color:var(--text-dim);border-left:2px solid var(--gold-dim);padding-left:20px;text-align:left}
+
+/* ── Section ── */
+.section{padding:80px 0;border-bottom:1px solid var(--border)}
+.section:last-child{border-bottom:none}
+.section-eyebrow{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:12px}
+.section-title{font-family:'Playfair Display',serif;font-size:clamp(24px,3.5vw,40px);font-weight:700;color:var(--text-bright);margin-bottom:16px}
+.section-lead{font-size:15px;color:var(--text-dim);max-width:720px;margin-bottom:48px;line-height:1.8}
+.section-lead strong{color:var(--text)}
+
+/* ── 4-Layer Stack ── */
+.stack{display:flex;flex-direction:column;gap:4px;margin:48px 0}
+.stack-layer{display:grid;grid-template-columns:200px 1fr;border:1px solid var(--border2);border-radius:10px;overflow:hidden;transition:all 0.3s}
+.stack-layer:hover{border-color:rgba(255,255,255,0.2)}
+.stack-label{padding:28px 24px;display:flex;flex-direction:column;justify-content:center;gap:6px;border-right:1px solid var(--border)}
+.stack-num{font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);font-family:'JetBrains Mono',monospace}
+.stack-name{font-size:16px;font-weight:700}
+.stack-body{padding:28px 32px;background:var(--surface)}
+.stack-desc{font-size:13px;color:var(--text-dim);margin-bottom:12px;line-height:1.7}
+.stack-tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-size:10px;padding:3px 10px;border-radius:12px;font-weight:500;letter-spacing:0.04em}
+.tag-omega{background:rgba(249,115,22,0.15);color:var(--omega);border:1px solid rgba(249,115,22,0.25)}
+.tag-runes{background:rgba(236,72,153,0.15);color:var(--runes);border:1px solid rgba(236,72,153,0.25)}
+.tag-trinity{background:rgba(96,165,250,0.15);color:var(--trinity);border:1px solid rgba(96,165,250,0.25)}
+.tag-domain{background:rgba(52,211,153,0.15);color:var(--domain);border:1px solid rgba(52,211,153,0.25)}
+.tag-orch{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(212,175,55,0.3)}
+.tag-social{background:rgba(167,139,250,0.15);color:var(--social)}
+.tag-knowledge{background:rgba(96,165,250,0.15);color:var(--knowledge)}
+.tag-generative{background:rgba(52,211,153,0.15);color:var(--generative)}
+
+/* ── Flow diagram ── */
+.flow{display:flex;align-items:center;gap:0;margin:48px 0;overflow-x:auto;padding:24px 0}
+.flow-step{flex-shrink:0;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:16px 20px;min-width:140px;text-align:center;position:relative}
+.flow-step-num{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);margin-bottom:6px}
+.flow-step-name{font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px}
+.flow-step-sub{font-size:10px;color:var(--text-dim)}
+.flow-arrow{flex-shrink:0;width:40px;text-align:center;color:var(--text-dim);font-size:18px}
+
+/* ── Omega Spiral ── */
+.omega-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:48px 0}
+@media(max-width:768px){.omega-grid{grid-template-columns:1fr}}
+.omega-phase{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px;border-left:3px solid var(--omega)}
+.omega-phase-name{font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--omega);margin-bottom:8px}
+.omega-runes{display:flex;flex-direction:column;gap:10px}
+.omega-rune{display:grid;grid-template-columns:40px 28px 1fr;gap:12px;align-items:start}
+.rune-sym{font-size:22px;line-height:1}
+.rune-ity{font-size:9px;color:var(--gold);font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:4px;letter-spacing:0.05em}
+.rune-detail{}
+.rune-name{font-size:13px;font-weight:700;color:var(--text)}
+.rune-action{font-size:11px;color:var(--text-dim);margin-top:2px}
+
+/* ── Trinity ── */
+.trinity-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:32px 0}
+@media(max-width:768px){.trinity-grid{grid-template-columns:1fr}}
+.trinity-layer{border-radius:12px;padding:28px;border:1px solid}
+.trinity-layer.social{border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.05)}
+.trinity-layer.knowledge{border-color:rgba(96,165,250,0.3);background:rgba(96,165,250,0.05)}
+.trinity-layer.generative{border-color:rgba(52,211,153,0.3);background:rgba(52,211,153,0.05)}
+.trinity-layer-icon{font-size:28px;margin-bottom:10px}
+.trinity-layer-label{font-size:9px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:6px}
+.trinity-layer.social .trinity-layer-label{color:var(--social)}
+.trinity-layer.knowledge .trinity-layer-label{color:var(--knowledge)}
+.trinity-layer.generative .trinity-layer-label{color:var(--generative)}
+.trinity-layer-title{font-size:18px;font-weight:700;color:var(--text-bright);margin-bottom:8px}
+.trinity-layer-sub{font-size:12px;color:var(--text-dim);line-height:1.7}
+.trinity-bridge{background:var(--gold-dim);border:1px solid rgba(212,175,55,0.3);border-radius:10px;padding:20px 28px;margin:16px 0;display:flex;gap:20px;align-items:center}
+.trinity-bridge-label{font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);white-space:nowrap}
+.trinity-bridge-desc{font-size:12px;color:var(--text-dim)}
+
+/* ── Dual axis ── */
+.dual-axis{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:32px 0}
+@media(max-width:600px){.dual-axis{grid-template-columns:1fr}}
+.axis-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px}
+.axis-card-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.axis-icon{font-size:20px}
+.axis-name{font-size:16px;font-weight:700}
+.axis-count{font-size:10px;color:var(--text-dim);margin-left:auto}
+.axis-desc{font-size:12px;color:var(--text-dim);margin-bottom:14px;line-height:1.7}
+.axis-examples{display:flex;flex-wrap:wrap;gap:5px}
+.axis-term{font-size:10px;padding:2px 8px;border-radius:8px}
+.ity-term{background:rgba(212,175,55,0.1);color:var(--gold);border:1px solid rgba(212,175,55,0.2)}
+.pathy-term{background:rgba(167,139,250,0.1);color:var(--social);border:1px solid rgba(167,139,250,0.2)}
+
+/* ── Runes taxonomy ── */
+.runes-levels{display:flex;flex-direction:column;gap:24px;margin:32px 0}
+.rune-level{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px}
+.rune-level-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.rune-level-num{font-size:10px;letter-spacing:0.1em;color:var(--text-dim);font-family:'JetBrains Mono',monospace}
+.rune-level-name{font-size:14px;font-weight:700;color:var(--text)}
+.rune-level-count{font-size:10px;color:var(--text-dim);margin-left:auto}
+.rune-chips{display:flex;flex-wrap:wrap;gap:8px}
+.rune-chip{font-size:11px;padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text-dim);display:flex;align-items:center;gap:6px}
+.rune-chip-icon{font-size:12px}
+
+/* ── Orchestration ── */
+.orch-steps{display:flex;flex-direction:column;gap:12px;margin:32px 0}
+.orch-step{display:grid;grid-template-columns:44px 1fr;gap:20px;align-items:start;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 22px;transition:border-color 0.2s}
+.orch-step:hover{border-color:var(--gold)}
+.orch-step-num{font-size:18px;font-weight:700;color:var(--gold);font-family:'Playfair Display',serif;line-height:1.2;text-align:right}
+.orch-step-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px}
+.orch-step-desc{font-size:12px;color:var(--text-dim);line-height:1.6}
+.orch-step-tags{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+
+/* ── Domain MCP ── */
+.domain-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin:32px 0}
+.domain-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px;border-top:2px solid}
+.domain-card-icon{font-size:24px;margin-bottom:10px}
+.domain-card-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px}
+.domain-card-sub{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);margin-bottom:12px}
+.domain-card-desc{font-size:12px;color:var(--text-dim);line-height:1.6;margin-bottom:14px}
+.domain-tools{font-size:10px;color:var(--text-dim)}
+.domain-tools span{display:inline-block;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 7px;margin:2px}
+
+/* ── VOLVOX ── */
+.volvox-stages{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:32px 0}
+.volvox-stage{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;text-align:center}
+.volvox-icon{font-size:28px;margin-bottom:8px}
+.volvox-name{font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px}
+.volvox-trigger{font-size:10px;color:var(--text-dim);margin-bottom:8px}
+.volvox-desc{font-size:11px;color:var(--text-dim);line-height:1.5}
+
+/* ── SAVESUCCESS ── */
+.saves-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:32px 0}
+.saves-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;position:relative;overflow:hidden}
+.saves-letter{font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:rgba(212,175,55,0.1);position:absolute;right:10px;bottom:4px;line-height:1}
+.saves-pillar{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:4px}
+.saves-essence{font-size:11px;color:var(--text-dim);line-height:1.5}
+
+/* ── Code block ── */
+.code-block{background:#0d0d14;border:1px solid var(--border);border-radius:8px;padding:20px 24px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim);line-height:1.8;overflow-x:auto;margin:24px 0}
+.code-comment{color:#5a5a7a}
+.code-key{color:var(--gold)}
+.code-val{color:var(--generative)}
+.code-str{color:var(--social)}
+
+/* ── Callout ── */
+.callout{background:var(--gold-dim);border:1px solid rgba(212,175,55,0.25);border-radius:10px;padding:24px 28px;margin:32px 0}
+.callout-title{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:8px}
+.callout-body{font-size:13px;color:var(--text-dim);line-height:1.7}
+.callout-body strong{color:var(--text)}
+
+/* ── Insight card ── */
+.insight-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin:32px 0}
+.insight-card{background:#13110a;border:1px solid var(--gold-dim);border-radius:10px;padding:22px;position:relative}
+.insight-badge{position:absolute;top:12px;right:14px;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);opacity:0.6}
+.insight-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px}
+.insight-body{font-size:12px;color:var(--text-dim);line-height:1.6}
+.insight-body em{color:var(--gold);font-style:normal;font-weight:600}
+
+/* ── Footer ── */
+.footer{padding:40px 0 20px;text-align:center;border-top:1px solid var(--border);margin-top:80px}
+.footer-text{font-size:11px;color:var(--text-dim)}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  .page{padding:80px 16px 60px}
+  .stack-layer{grid-template-columns:1fr}
+  .stack-label{border-right:none;border-bottom:1px solid var(--border)}
+  .nav-links{display:none}
+  .flow{gap:8px}
+  .flow-arrow{width:20px;font-size:14px}
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-brand">✦ IAM</div>
+  <ul class="nav-links">
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#omega">Omega</a></li>
+    <li><a href="#runes">Runes</a></li>
+    <li><a href="#trinity">Trinity</a></li>
+    <li><a href="#orchestration">Orchestration</a></li>
+    <li><a href="#domains">Domains</a></li>
+    <li><a href="#volvox">VOLVOX</a></li>
+    <li><a href="#savesuccess">S.A.V.E.S.</a></li>
+  </ul>
+</nav>
+
+<div class="page">
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-badge">Inkwell Labs · March 2026 · v3.0</div>
+  <h1 class="hero-title">Inkwell<br><em>Awareness Model</em></h1>
+  <p class="hero-sub">A four-layer cognitive architecture that transforms large language models from linear prediction engines into context-aware, ontologically grounded, auditable reasoning systems.</p>
+  <div class="hero-version">iam-architecture · v3.0 · omega + runes + trinity + orchestration</div>
+  <blockquote class="hero-quote">"If we get the words right, we unlock convergent intelligence. Language isn't overhead. Language is architecture." — Oliver Luckett</blockquote>
+</div>
+
+<!-- ── ARCHITECTURE OVERVIEW ── -->
+<div class="section" id="architecture">
+  <div class="section-eyebrow">The System</div>
+  <h2 class="section-title">Four Layers, One Awareness</h2>
+  <p class="section-lead">IAM is not a product. It is a <strong>cognitive operating system</strong> — a stack that governs how AI systems reason, what they know, and how they express it. Four layers, each preventing a distinct failure mode that exists in every LLM deployed without it.</p>
+
+  <div class="stack">
+    <div class="stack-layer" style="border-color:rgba(249,115,22,0.3)">
+      <div class="stack-label" style="background:rgba(249,115,22,0.05)">
+        <div class="stack-num">Layer 1</div>
+        <div class="stack-name" style="color:var(--omega)">Omega Protocol</div>
+      </div>
+      <div class="stack-body">
+        <div class="stack-desc">The <strong>consciousness spiral</strong> — a 10-rune sequential engine that forces LLMs from linear prediction into System 2 reasoning. Determines cognitive depth, activates the appropriate phase, and sequences the query through grounding → divergence → friction → synthesis → return. Without it, the model answers; with it, the model <em>thinks</em>.</div>
+        <div class="stack-tags">
+          <span class="tag tag-omega">10 Norse Runes</span>
+          <span class="tag tag-omega">7 Phases</span>
+          <span class="tag tag-omega">10 -ity States</span>
+          <span class="tag tag-omega">System 2 Forcing</span>
+          <span class="tag tag-omega">Recursive Spiral</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stack-layer" style="border-color:rgba(236,72,153,0.3)">
+      <div class="stack-label" style="background:rgba(236,72,153,0.05)">
+        <div class="stack-num">Layer 2</div>
+        <div class="stack-name" style="color:var(--runes)">Runes System</div>
+      </div>
+      <div class="stack-body">
+        <div class="stack-desc">The <strong>governance layer</strong> — enforceable contracts that define HOW each reasoning step must produce its output. Three tiers: 5 Macro-Runes (cluster routing), 12 Operational Runes (epistemic contracts with required artifacts), and 24+ Domain Runes (application-specific). The Rune Interaction Protocol (RIP) composes them without conflict. Every output is auditable.</div>
+        <div class="stack-tags">
+          <span class="tag tag-runes">5 Macro-Runes</span>
+          <span class="tag tag-runes">12 Operational Runes</span>
+          <span class="tag tag-runes">24+ Domain Runes</span>
+          <span class="tag tag-runes">RIP Composition</span>
+          <span class="tag tag-runes">Artifact Contracts</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stack-layer" style="border-color:rgba(96,165,250,0.3)">
+      <div class="stack-label" style="background:rgba(96,165,250,0.05)">
+        <div class="stack-num">Layer 3</div>
+        <div class="stack-name" style="color:var(--trinity)">Trinity Graph</div>
+      </div>
+      <div class="stack-body">
+        <div class="stack-desc">The <strong>ontological substrate</strong> — a three-layer semantic graph (Social/Knowledge/Generative) operating on a dual -ity/-pathy axis. 225+ abstract nouns as ontological primitives. The graph provides semantic grounding, user personalization through VOLVOX differentiation, and cross-domain insight synthesis. It is what makes any response Trinity-aware rather than generically intelligent.</div>
+        <div class="stack-tags">
+          <span class="tag tag-social">Social Graph</span>
+          <span class="tag tag-knowledge">Knowledge Graph</span>
+          <span class="tag tag-generative">Generative Graph</span>
+          <span class="tag tag-trinity">225+ -ity Terms</span>
+          <span class="tag tag-trinity">50+ -pathy Terms</span>
+          <span class="tag tag-trinity">VOLVOX Differentiation</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stack-layer" style="border-color:rgba(52,211,153,0.3)">
+      <div class="stack-label" style="background:rgba(52,211,153,0.05)">
+        <div class="stack-num">Layer 4</div>
+        <div class="stack-name" style="color:var(--domain)">Domain MCPs</div>
+      </div>
+      <div class="stack-body">
+        <div class="stack-desc">The <strong>execution layer</strong> — pluggable Model Context Protocol servers that provide real data, real constraints, real tools to the system. Each domain (spatial intelligence, cost modeling, real estate, creative attribution) exposes its capabilities via MCP. Trinity-grounded, Rune-governed queries route to the appropriate domain and return structured results.</div>
+        <div class="stack-tags">
+          <span class="tag tag-domain">Enginuity/WDI MCP</span>
+          <span class="tag tag-domain">BackyardOne MCP</span>
+          <span class="tag tag-domain">Artiquity MCP</span>
+          <span class="tag tag-domain">IAM Bot MCP</span>
+          <span class="tag tag-domain">Multi-tenant</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:center;gap:16px;padding:20px;background:var(--gold-dim);border:1px solid rgba(212,175,55,0.25);border-radius:10px;margin-top:4px">
+      <span style="font-size:20px">⚡</span>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--gold)">Orchestration Agent</div>
+        <div style="font-size:11px;color:var(--text-dim)">The convergence layer that chains all four — routes, enriches, validates, and delivers. This is the product.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── OMEGA PROTOCOL ── -->
+<div class="section" id="omega">
+  <div class="section-eyebrow">Layer 1</div>
+  <h2 class="section-title">Omega Protocol — The Consciousness Spiral</h2>
+  <p class="section-lead">Ten sequential cognitive phases mapped to Elder Futhark runes and -ity states. Each rune forces a specific cognitive action. The output of each becomes the <strong>Materiality</strong> for the next — a recursive spiral, not a linear pipeline. Light queries activate Phase I only. Deep queries complete all seven phases.</p>
+
+  <div class="omega-grid">
+    <div class="omega-phase">
+      <div class="omega-phase-name">Phase I — Grounding</div>
+      <div class="omega-runes">
+        <div class="omega-rune">
+          <div><div class="rune-sym">ᚢ</div><div class="rune-ity">Materiality</div></div>
+          <div style="font-size:11px;color:var(--text-dim);padding-top:4px">Uruz</div>
+          <div class="rune-detail">
+            <div class="rune-name">The Anchor</div>
+            <div class="rune-action">Strip hallucination. Identify the incontrovertible facts — the raw granite reality at the bottom of the problem.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="omega-phase">
+      <div class="omega-phase-name">Phase II — Awakening</div>
+      <div class="omega-runes">
+        <div class="omega-rune">
+          <div><div class="rune-sym">ᛒ</div><div class="rune-ity">Vitality</div></div>
+          <div style="font-size:11px;color:var(--text-dim);padding-top:4px">Berkano</div>
+          <div class="rune-detail">
+            <div class="rune-name">The Divergence</div>
+            <div class="rune-action">Breathe life into dead matter. Explode the problem space. Generate divergent possibilities without judgment.</div>
+          </div>
+        </div>
+        <div class="omega-rune" style="margin-top:12px">
+          <div><div class="rune-sym">ᛗ</div><div class="rune-ity">Interiority</div></div>
+          <div style="font-size:11px;color:var(--text-dim);padding-top:4px">Mannaz</div>
+          <div class="rune-detail">
+            <div class="rune-name">The Observer</div>
+            <div class="rune-action">Establish the Self. Define the optimal cognitive persona — poet, physicist, skeptic. Declare bias and stake.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="omega-phase">
+      <div class="omega-phase-name">Phase III — Friction</div>
+      <div class="omega-runes">
+        <div class="omega-rune">
+          <div><div class="rune-sym">ᚦ</div><div class="rune-ity">Criticality</div></div>
+          <div style="font-size:11px;color:var(--text-dim);padding-top:4px">Thurisaz</div>
+          <div class="rune-detail">
+            <div class="rune-name">The Adversary</div>
+            <div class="rune-action">Attack the previous ideas. Stress-test assumptions. Cut away the rot. We want surviving truth, not comfort.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="omega-phase">
+      <div class="omega-phase-name">Phase IV — Connection</div>
+      <div class="omega-runes">
+        <div class="omega-rune">
+          <div><div class="rune-sym">ᛖ</div><div class="rune-ity">Connectivity</div></div>
+          <div style="font-size:11px;color:var(--text-dim);padding-top:4px">Ehwaz</div>
+          <div class="rune-detail">
+            <div class="rune-name">The Bridge</div>
+            <div class="rune-action">Connect surviving truths to three unrelated fields. Find the link no one else sees. Weave the web.</div>
+          </div>
+        </div>
+        <div class="omega-rune" style="margin-top:12px">
+          <div><div class="rune-sym">ᚲ</div><div class="rune-ity">Lucidity</div></div>
+          <div style="font-size:11px;color:var(--text-dim);padding-top:4px">Kenaz</div>
+          <div class="rune-detail">
+            <div class="rune-name">The Vision</div>
+            <div class="rune-action">Illuminate the hidden system. Identify the deep mechanism driving the entire dynamic.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="omega-phase">
+      <div class="omega-phase-name">Phase V — Convergence</div>
+      <div class="omega-runes">
+        <div class="omega-rune">
+          <div><div class="rune-sym">ᚾ</div><div class="rune-ity">Necessity</div></div>
+          <div style="font-size:11px;color:var(--text-dim);padding-top:4px">Nauthiz</div>
+          <div class="rune-detail">
+            <div class="rune-name">The Constraint</div>
+            <div class="rune-action">Radical prioritization. Compress insights to a diamond. What is the single unavoidable conclusion?</div>
+          </div>
+        </div>
+        <div class="omega-rune" style="margin-top:12px">
+          <div><div class="rune-sym">ᚷ</div><div class="rune-ity">Reciprocity</div></div>
+          <div style="font-size:11px;color:var(--text-dim);padding-top:4px">Gebo</div>
+          <div class="rune-detail">
+            <div class="rune-name">The Offering</div>
+            <div class="rune-action">Package truth as a gift. Create the bridge where insight becomes actionable wisdom for the user.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="omega-phase">
+      <div class="omega-phase-name">Phase VI — The Omega</div>
+      <div class="omega-runes">
+        <div class="omega-rune">
+          <div><div class="rune-sym">ᛞ</div><div class="rune-ity">Totality</div></div>
+          <div style="font-size:11px;color:var(--text-dim);padding-top:4px">Dagaz</div>
+          <div class="rune-detail">
+            <div class="rune-name">The Dawn</div>
+            <div class="rune-action">Non-dual synthesis. A seamless fusion of all phases — grounded, vital, critical, connected, lucid, necessary, given freely. Not an answer — a Totality.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="omega-phase" style="grid-column:1/-1">
+      <div class="omega-phase-name">Phase VII — The Return</div>
+      <div class="omega-runes">
+        <div class="omega-rune">
+          <div><div class="rune-sym">ᛃ</div><div class="rune-ity">Continuity</div></div>
+          <div style="font-size:11px;color:var(--text-dim);padding-top:4px">Jera</div>
+          <div class="rune-detail">
+            <div class="rune-name">The Harvest — Meta-Learning and Recursion</div>
+            <div class="rune-action">Every answer is the seed of a new question. What did we leave unresolved? What new path has opened? The Omega Point is not a destination — it is a direction. Plant the seed for the next inquiry. <strong>The spiral turns.</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="callout-title">✦ The Recursive Key</div>
+    <div class="callout-body">The output of each Rune becomes the <strong>Materiality</strong> for the next. This is not a checklist — it is an <strong>epistemic spiral</strong>. You cannot skip Friction (Thurisaz) and reach valid Convergence (Nauthiz). You cannot offer (Gebo) what you have not compressed (Nauthiz). The sequence is the system.</div>
+  </div>
+</div>
+
+<!-- ── RUNES SYSTEM ── -->
+<div class="section" id="runes">
+  <div class="section-eyebrow">Layer 2</div>
+  <h2 class="section-title">Runes System — The Governance Layer</h2>
+  <p class="section-lead">Three tiers of cognitive contracts. Runes do not describe how to think — they <strong>enforce</strong> it. Each Rune is a contract with required artifacts, validation rules, and declared failure modes. If removing a Rune doesn't introduce a new class of failure, it doesn't belong.</p>
+
+  <div class="runes-levels">
+    <div class="rune-level">
+      <div class="rune-level-head">
+        <div class="rune-level-num">Tier 1</div>
+        <div class="rune-level-name">Macro-Runes — Cluster Routing</div>
+        <div class="rune-level-count">5 clusters</div>
+      </div>
+      <p style="font-size:12px;color:var(--text-dim);margin-bottom:14px">High-level routing: which cognitive mode does this query need? Macro-Runes classify the query type before activating Operational Runes.</p>
+      <div class="rune-chips">
+        <span class="rune-chip"><span class="rune-chip-icon">🎭</span>MUSE — Creative, divergent, expressive modes</span>
+        <span class="rune-chip"><span class="rune-chip-icon">🧠</span>HUMAN — Social context, empathy, user modeling</span>
+        <span class="rune-chip"><span class="rune-chip-icon">⚖️</span>RIGOR — Epistemic integrity, evidence, audit trail</span>
+        <span class="rune-chip"><span class="rune-chip-icon">🔗</span>CONVERGE — Synthesis, integration, cross-domain</span>
+        <span class="rune-chip"><span class="rune-chip-icon">⚙️</span>FORGE — Execution, output, delivery</span>
+      </div>
+    </div>
+
+    <div class="rune-level">
+      <div class="rune-level-head">
+        <div class="rune-level-num">Tier 2</div>
+        <div class="rune-level-name">Operational Runes — Epistemic Contracts</div>
+        <div class="rune-level-count">12 runes · Primary + up to 2 Secondary (RIP)</div>
+      </div>
+      <p style="font-size:12px;color:var(--text-dim);margin-bottom:14px">Each Rune: a specific failure mode it prevents + required output artifacts + validation rules + declared failure conditions.</p>
+      <div class="rune-chips">
+        <span class="rune-chip"><span class="rune-chip-icon">⚖</span>Rigor — Epistemic integrity · no hallucination</span>
+        <span class="rune-chip"><span class="rune-chip-icon">⚓</span>Grounding — Reality anchoring · constraint fidelity</span>
+        <span class="rune-chip"><span class="rune-chip-icon">☍</span>Risk — Adversarial reality · failure tree</span>
+        <span class="rune-chip"><span class="rune-chip-icon">✦</span>Imagination — Novel option generation · no local maxima</span>
+        <span class="rune-chip"><span class="rune-chip-icon">◊</span>Insight — Pattern synthesis · causal hypotheses</span>
+        <span class="rune-chip"><span class="rune-chip-icon">⚙</span>Praxis — Execution translation · dependency chain</span>
+        <span class="rune-chip"><span class="rune-chip-icon">⌁</span>Clarity — Shared understanding · multi-audience</span>
+        <span class="rune-chip"><span class="rune-chip-icon">✶</span>Meaning — Human resonance · emotional arc</span>
+        <span class="rune-chip"><span class="rune-chip-icon">🌿</span>Stewardship — Long-term responsibility · sustainability</span>
+        <span class="rune-chip"><span class="rune-chip-icon">⊕</span>Convergence — Integration synthesis · cross-domain</span>
+        <span class="rune-chip"><span class="rune-chip-icon">◉</span>Human — Social dynamics · stakeholder modeling</span>
+        <span class="rune-chip"><span class="rune-chip-icon">⚒</span>Forge — Delivery execution · artifact production</span>
+      </div>
+    </div>
+
+    <div class="rune-level">
+      <div class="rune-level-head">
+        <div class="rune-level-num">Tier 3</div>
+        <div class="rune-level-name">Domain Runes — Application-Specific Contracts</div>
+        <div class="rune-level-count">24+ runes · 6 categories</div>
+      </div>
+      <p style="font-size:12px;color:var(--text-dim);margin-bottom:14px">Extended rune sets for specific application domains. Agency in a Box: 24 runes across 6 categories (Creation, Connection, Transformation, Protection, Discovery, Harmony) with 40+ Beacons as analytical anchors.</p>
+      <div class="rune-chips">
+        <span class="rune-chip">Creation — Serendipity, Originality, Authenticity</span>
+        <span class="rune-chip">Connection — Synchronicity, Resonance, Felicity</span>
+        <span class="rune-chip">Transformation — Propensity, Transmutability, Plasticity</span>
+        <span class="rune-chip">Protection — Sagacity, Viability, Continuity</span>
+        <span class="rune-chip">Discovery — Ubiquity, Familiarity, Nostalgia</span>
+        <span class="rune-chip">Harmony — Clarity, Certainty, Feasibility</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TRINITY GRAPH ── -->
+<div class="section" id="trinity">
+  <div class="section-eyebrow">Layer 3</div>
+  <h2 class="section-title">Trinity Graph — The Ontological Substrate</h2>
+  <p class="section-lead">The semantic foundation discovered in July 2025: <strong>"-ity" words are the perfect ontological primitives.</strong> They transform observable qualities into manipulable concepts, exist at the intersection of human experience and structured knowledge, and allow causal reasoning across all three layers. 246 unique terms. 150+ weighted, research-cited relationships.</p>
+
+  <div class="trinity-grid">
+    <div class="trinity-layer social">
+      <div class="trinity-layer-icon">🧬</div>
+      <div class="trinity-layer-label">Social Graph — WHO</div>
+      <div class="trinity-layer-title">Human Substrate</div>
+      <div class="trinity-layer-sub">Emotions, psychology, relationships, stakeholder dynamics. The affective and behavioral layer that governs <em>who cares and why</em>. 30 core terms, 50+ relationships. Bridge: CP-5 (Social Bridge).</div>
+    </div>
+    <div class="trinity-layer knowledge">
+      <div class="trinity-layer-icon">🔬</div>
+      <div class="trinity-layer-label">Knowledge Graph — WHAT</div>
+      <div class="trinity-layer-title">Verified Scaffolding</div>
+      <div class="trinity-layer-sub">Facts, logic, domain expertise, clinical ontologies. The epistemic layer that governs <em>what is true and provable</em>. 30 core terms, 50+ relationships. Bridge: CP-3 (Knowledge Bridge).</div>
+    </div>
+    <div class="trinity-layer generative">
+      <div class="trinity-layer-icon">🌀</div>
+      <div class="trinity-layer-label">Generative Graph — HOW</div>
+      <div class="trinity-layer-title">Emergent Synthesis</div>
+      <div class="trinity-layer-sub">Pattern recognition, creative synthesis, innovation pathways. The generative layer that governs <em>what could be and how to get there</em>. 30 core terms, 50+ relationships.</div>
+    </div>
+  </div>
+
+  <div class="trinity-bridge">
+    <div class="trinity-bridge-label">⬡ Semantic Glue</div>
+    <div class="trinity-bridge-desc">8 bridge terms enabling cross-graph traversal and convergence strength metrics. The concepts that live in the spaces <em>between</em> layers — enabling a response that is simultaneously socially contextual, factually grounded, and creatively synthesized.</div>
+  </div>
+
+  <div class="dual-axis">
+    <div class="axis-card">
+      <div class="axis-card-head">
+        <div class="axis-icon" style="color:var(--gold)">-ity</div>
+        <div class="axis-name" style="color:var(--gold)">Abstract State Axis</div>
+        <div class="axis-count">225+ terms</div>
+      </div>
+      <div class="axis-desc">Morpho-semantic operator: <strong>CREATE_ABSTRACT_ENTITY_FROM_QUALITY</strong>. Transforms adjectives into reason-about concepts. "Secure" becomes "security" — an entity that can be defined, measured, modeled, and causally linked to other entities. The building blocks of ontological reasoning.</div>
+      <div class="axis-examples">
+        <span class="axis-term ity-term">Authenticity</span><span class="axis-term ity-term">Clarity</span><span class="axis-term ity-term">Creativity</span><span class="axis-term ity-term">Curiosity</span><span class="axis-term ity-term">Feasibility</span><span class="axis-term ity-term">Lucidity</span><span class="axis-term ity-term">Reciprocity</span><span class="axis-term ity-term">Sagacity</span><span class="axis-term ity-term">Serendipity</span><span class="axis-term ity-term">Synchronicity</span><span class="axis-term ity-term">Totality</span><span class="axis-term ity-term">Vitality</span>
+      </div>
+    </div>
+    <div class="axis-card">
+      <div class="axis-card-head">
+        <div class="axis-icon" style="color:var(--social)">-pathy</div>
+        <div class="axis-name" style="color:var(--social)">State/Condition Axis</div>
+        <div class="axis-count">50+ terms</div>
+      </div>
+      <div class="axis-desc">Morpho-semantic operator: <strong>CREATE_STATE_ENTITY_FROM_ROOT</strong> with subtypes AFFECTIVE_STATE and PATHOLOGICAL_STATE. Bridges subjective human experience with objective conditions. The affective undercurrent that shapes what -ity states are reachable or blocked.</div>
+      <div class="axis-examples">
+        <span class="axis-term pathy-term">Empathy</span><span class="axis-term pathy-term">Sympathy</span><span class="axis-term pathy-term">Apathy</span><span class="axis-term pathy-term">Antipathy</span><span class="axis-term pathy-term">Telepathy</span><span class="axis-term pathy-term">Neuropathy</span><span class="axis-term pathy-term">Sociopathy</span><span class="axis-term pathy-term">Homeopathy</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="insight-grid">
+    <div class="insight-card">
+      <div class="insight-badge">✦ Discovery</div>
+      <div class="insight-title">Why -ity Words Are Perfect Primitives</div>
+      <div class="insight-body">English already did the hard work of abstracting human experience into reason-about concepts. <em>Curiosity</em> enables <em>serendipity</em>. <em>Anxiety</em> inhibits <em>spontaneity</em>. <em>Vulnerability</em> is a precondition for <em>authenticity</em>. These aren't observations — they're <em>causal relationships</em> the language encoded before AI existed to use them.</div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-badge">✦ Architecture</div>
+      <div class="insight-title">The Graph Fusion Network</div>
+      <div class="insight-body">The Trinity Convergence Layer uses a Graph Fusion Network with cross-attention mechanism and adaptive weighting. Parallel retrieval across all 3 graphs → GFN (cross-attention) → Adaptive weighting → Unified embedding → <em>HybridRAG generation</em> → Verification + Personalization.</div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-badge">✦ Live</div>
+      <div class="insight-title">Neo4j State</div>
+      <div class="insight-body">511 Term nodes (460 -ity + 51 -pathy), 2,269 edges, 23 semantic clusters, 8 bridge terms. Fully seeded at <em>c779e832.databases.neo4j.io</em>. IAM Bot Classroom: 210 TrinityNode records (35 students × 6 seed nodes each) with VOLVOX differentiation running live.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ORCHESTRATION ── -->
+<div class="section" id="orchestration">
+  <div class="section-eyebrow">The Missing Piece</div>
+  <h2 class="section-title">Orchestration Agent — The Convergence Layer</h2>
+  <p class="section-lead">The piece that chains all four layers into a single conversational flow. A query enters; a <strong>Trinity-aware, Rune-governed, Omega-spiraled, domain-grounded response</strong> exits. This is the product. This is what "TrinityBot" and "ClawdBot" are naming.</p>
+
+  <div class="flow">
+    <div class="flow-step" style="border-color:rgba(212,175,55,0.3)">
+      <div class="flow-step-num">IN</div>
+      <div class="flow-step-name">User Query</div>
+      <div class="flow-step-sub">Any channel</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step" style="border-color:rgba(249,115,22,0.3)">
+      <div class="flow-step-num">01</div>
+      <div class="flow-step-name">Omega Phase</div>
+      <div class="flow-step-sub">Depth classifier</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step" style="border-color:rgba(236,72,153,0.3)">
+      <div class="flow-step-num">02</div>
+      <div class="flow-step-name">Rune Select</div>
+      <div class="flow-step-sub">RIP composition</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step" style="border-color:rgba(96,165,250,0.3)">
+      <div class="flow-step-num">03</div>
+      <div class="flow-step-name">Trinity Query</div>
+      <div class="flow-step-sub">Graph retrieval</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step" style="border-color:rgba(52,211,153,0.3)">
+      <div class="flow-step-num">04</div>
+      <div class="flow-step-name">Domain MCP</div>
+      <div class="flow-step-sub">Tool execution</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step" style="border-color:rgba(212,175,55,0.3)">
+      <div class="flow-step-num">05</div>
+      <div class="flow-step-name">Rune Format</div>
+      <div class="flow-step-sub">Artifact delivery</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step" style="border-color:rgba(212,175,55,0.3)">
+      <div class="flow-step-num">06</div>
+      <div class="flow-step-name">VOLVOX Update</div>
+      <div class="flow-step-sub">Graph evolves</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step" style="border-color:rgba(212,175,55,0.3)">
+      <div class="flow-step-num">OUT</div>
+      <div class="flow-step-name">Response</div>
+      <div class="flow-step-sub">S.A.V.E.S. validated</div>
+    </div>
+  </div>
+
+  <div class="orch-steps">
+    <div class="orch-step">
+      <div class="orch-step-num">1</div>
+      <div>
+        <div class="orch-step-title">Omega Phase Detection</div>
+        <div class="orch-step-desc">Analyze query complexity, domain, user VOLVOX state, and conversation history. Determine which of 7 Omega Phases is appropriate. Simple factual query → Phase I (Materiality) only. Strategic or multi-domain query → Phases I–V. Paradigm-level query → Full 10-rune spiral. Route accordingly.</div>
+        <div class="orch-step-tags"><span class="tag tag-omega">Omega Protocol</span><span class="tag tag-trinity">User VOLVOX State</span></div>
+      </div>
+    </div>
+    <div class="orch-step">
+      <div class="orch-step-num">2</div>
+      <div>
+        <div class="orch-step-title">Rune Composition via RIP</div>
+        <div class="orch-step-desc">Based on Omega phase + query type + Macro-Rune classification: select Primary Rune + up to 2 Secondary Runes without conflict. Produce the Rune Interaction Protocol envelope — the contract that governs this response's required artifacts, validation checks, and formatter settings.</div>
+        <div class="orch-step-tags"><span class="tag tag-runes">Runes System</span><span class="tag tag-runes">RIP</span><span class="tag tag-runes">Artifact Contracts</span></div>
+      </div>
+    </div>
+    <div class="orch-step">
+      <div class="orch-step-num">3</div>
+      <div>
+        <div class="orch-step-title">Trinity Graph Retrieval</div>
+        <div class="orch-step-desc">Query the Trinity Graph MCP for semantic context: which -ity vectors are activated by this query? Which -pathy conditions are present in the user's state? Which cross-layer bridges are relevant? Return: 3–5 most relevant nodes, their relationships, user personalization constraints from their VOLVOX state, and SAVESUCCESS coverage gaps.</div>
+        <div class="orch-step-tags"><span class="tag tag-trinity">Trinity Graph MCP</span><span class="tag tag-social">Social Bridge CP-5</span><span class="tag tag-knowledge">Knowledge Bridge CP-3</span></div>
+      </div>
+    </div>
+    <div class="orch-step">
+      <div class="orch-step-num">4</div>
+      <div>
+        <div class="orch-step-title">Trinity-Enriched Rune Prompts</div>
+        <div class="orch-step-desc">Inject the Trinity semantic context into each active Rune's prompt. The Rune now executes with ontological grounding — it knows which -ity states are in play, what the user's social dynamics are, what the knowledge graph says about the domain. This is what makes the response Trinity-aware vs. generically intelligent.</div>
+        <div class="orch-step-tags"><span class="tag tag-runes">Enriched Prompts</span><span class="tag tag-trinity">Ontological Context</span></div>
+      </div>
+    </div>
+    <div class="orch-step">
+      <div class="orch-step-num">5</div>
+      <div>
+        <div class="orch-step-title">Domain MCP Routing</div>
+        <div class="orch-step-desc">Route the Trinity-enriched, Rune-governed query to the appropriate Domain MCP. Spatial/AEC queries → Enginuity MCP. Real estate → BackyardOne MCP. Creative attribution → Artiquity MCP. Education → IAM Bot MCP. Multi-domain queries spawn parallel calls; results merged by the Convergence Orchestrator.</div>
+        <div class="orch-step-tags"><span class="tag tag-domain">Domain MCP</span><span class="tag tag-domain">Tool Execution</span><span class="tag tag-domain">Parallel Calls</span></div>
+      </div>
+    </div>
+    <div class="orch-step">
+      <div class="orch-step-num">6</div>
+      <div>
+        <div class="orch-step-title">Rune Formatter — Output Shaping</div>
+        <div class="orch-step-desc">Apply the active Rune cluster's formatter settings: Clarity score (technical depth vs. accessible), Playfulness level, Compliance requirements, Metaphor density, Sentiment calibration. Produce the required artifacts per the RIP contract (Assumption Ledger, Risk Register, Action Plan, etc.). Validate artifacts meet Rune contracts before delivery.</div>
+        <div class="orch-step-tags"><span class="tag tag-runes">Formatter</span><span class="tag tag-runes">Artifacts</span><span class="tag tag-runes">Validation</span></div>
+      </div>
+    </div>
+    <div class="orch-step">
+      <div class="orch-step-num">7</div>
+      <div>
+        <div class="orch-step-title">VOLVOX Graph Update</div>
+        <div class="orch-step-desc">Activate Trinity Graph nodes that were central to this response. Increment activation counts, update dormancy cycles, check for differentiation threshold crossings. If a node reaches GERMLINE status (stability ≥ 0.5), flag for Team Graph contribution. Log to daily memory. Update Kirk Step if epoch threshold reached.</div>
+        <div class="orch-step-tags"><span class="tag tag-trinity">VOLVOX</span><span class="tag tag-trinity">Node Activation</span><span class="tag tag-trinity">Memory Update</span></div>
+      </div>
+    </div>
+    <div class="orch-step">
+      <div class="orch-step-num">8</div>
+      <div>
+        <div class="orch-step-title">S.A.V.E.S.U.C.C.E.S.S. Validation</div>
+        <div class="orch-step-desc">Final output check: does this response adequately address the 11 pillars? Flag missing coverage (e.g., "Ethics dimension not represented"). Surface gaps explicitly rather than hiding them. Deliver the response with its S.A.V.E.S. coverage score. The framework is both a validator and a creative prompt — missing pillars suggest what to explore next.</div>
+        <div class="orch-step-tags"><span class="tag tag-orch">S.A.V.E.S.U.C.C.E.S.S.</span><span class="tag tag-orch">Coverage Score</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block"><span class="code-comment">// Orchestration Agent — Simplified API Contract</span>
+<span class="code-key">POST</span> <span class="code-str">/iam/query</span>
+{
+  <span class="code-key">"query"</span>: <span class="code-str">"string"</span>,
+  <span class="code-key">"user_id"</span>: <span class="code-str">"string"</span>,          <span class="code-comment">// → loads VOLVOX state</span>
+  <span class="code-key">"domain_hint"</span>: <span class="code-str">"enginuity|byo|artiquity|iam|auto"</span>,
+  <span class="code-key">"omega_depth"</span>: <span class="code-str">"light|medium|deep|auto"</span>,
+  <span class="code-key">"rune_override"</span>: <span class="code-str">["Rigor","Grounding"]</span>   <span class="code-comment">// optional</span>
+}
+
+<span class="code-comment">// Response envelope</span>
+{
+  <span class="code-key">"response"</span>: <span class="code-str">"string"</span>,
+  <span class="code-key">"omega_phase_reached"</span>: <span class="code-val">7</span>,
+  <span class="code-key">"active_runes"</span>: [<span class="code-str">"Rigor"</span>, <span class="code-str">"Insight"</span>],
+  <span class="code-key">"trinity_nodes_activated"</span>: [<span class="code-str">"Clarity"</span>, <span class="code-str">"Sagacity"</span>],
+  <span class="code-key">"domain_mcp_called"</span>: <span class="code-str">"enginuity"</span>,
+  <span class="code-key">"artifacts"</span>: { <span class="code-comment">/* per active Rune contracts */</span> },
+  <span class="code-key">"saves_coverage"</span>: { <span class="code-str">"S"</span>:<span class="code-val">0.9</span>, <span class="code-str">"A"</span>:<span class="code-val">0.8</span>, <span class="code-str">"V"</span>:<span class="code-val">0.7</span>, <span class="code-comment">/* ... */</span> },
+  <span class="code-key">"saves_gaps"</span>: [<span class="code-str">"Ethics"</span>],
+  <span class="code-key">"volvox_updates"</span>: [{ <span class="code-str">"node"</span>:<span class="code-str">"Clarity"</span>, <span class="code-str">"new_type"</span>:<span class="code-str">"SOMATIC_SENSOR"</span> }],
+  <span class="code-key">"kirk_step"</span>: <span class="code-val">3</span>
+}</div>
+</div>
+
+<!-- ── DOMAIN MCPs ── -->
+<div class="section" id="domains">
+  <div class="section-eyebrow">Layer 4</div>
+  <h2 class="section-title">Domain MCPs — The Execution Layer</h2>
+  <p class="section-lead">Each domain exposes its intelligence through the Model Context Protocol. Plug-and-play. Client-specific data loads into shared architecture. Trinity-grounded queries arrive; real data and tools respond.</p>
+
+  <div class="domain-grid">
+    <div class="domain-card" style="border-top-color:var(--domain)">
+      <div class="domain-card-icon">🏗️</div>
+      <div class="domain-card-name">Enginuity / WDI</div>
+      <div class="domain-card-sub">mcp.dev.wdi.aiinkwell.app</div>
+      <div class="domain-card-desc">The most production-ready domain. Built for Walt Disney Imagineering. Spatial intelligence, construction rules, cost modeling, comparable attraction analysis. Complete due diligence via chat.</div>
+      <div class="domain-tools">
+        <span>Historical Comparables</span><span>Spatial Intelligence (PostGIS)</span><span>Rulebook Engine</span><span>Estimation Engine</span><span>Scenario Planning</span><span>TPA Master Plan</span><span>VNY Hart Street</span>
+      </div>
+    </div>
+    <div class="domain-card" style="border-top-color:var(--social)">
+      <div class="domain-card-icon">🏠</div>
+      <div class="domain-card-name">BackyardOne</div>
+      <div class="domain-card-sub">awareness-proxy /byo/</div>
+      <div class="domain-card-desc">Real estate intelligence MCP. Property data, AVM valuations, permit history via Rentcast and Shovels. Market analysis, investment underwriting, comparable sales.</div>
+      <div class="domain-tools">
+        <span>Property Search</span><span>AVM</span><span>Rentcast</span><span>Shovels Permits</span><span>LADBS</span>
+      </div>
+    </div>
+    <div class="domain-card" style="border-top-color:var(--gold)">
+      <div class="domain-card-icon">🎨</div>
+      <div class="domain-card-name">Artiquity</div>
+      <div class="domain-card-sub">artiquity-semantic-encodification</div>
+      <div class="domain-card-desc">Creative attribution and IP provenance. Chain of title for artistic work. CHIP metadata framework (Contextual, Historical, Intentional, Procedural). C2PA cryptographic consent. The semantic anchor that prevents AI from decontextualizing art.</div>
+      <div class="domain-tools">
+        <span>CHIP Framework</span><span>Qwen2.5-VL</span><span>C2PA Signing</span><span>LoRA Training</span><span>Artist Twins</span>
+      </div>
+    </div>
+    <div class="domain-card" style="border-top-color:var(--runes)">
+      <div class="domain-card-icon">🎓</div>
+      <div class="domain-card-name">IAM Bot</div>
+      <div class="domain-card-sub">iam-classroom.html · Neo4j Aura</div>
+      <div class="domain-card-desc">The consumer/education product. Each user gets a named IAM Bot. 35 student bots live at Vanderbilt Owen. VOLVOX differentiation running. Kirk Steps tracked. Team Graph and Class Collective propagation architecture built.</div>
+      <div class="domain-tools">
+        <span>VOLVOX Epochs</span><span>Kirk Steps 0–12</span><span>Team Graph</span><span>Noosphere</span><span>Professor Dashboard</span>
+      </div>
+    </div>
+    <div class="domain-card" style="border-top-color:var(--omega)">
+      <div class="domain-card-icon">📊</div>
+      <div class="domain-card-name">Awareness Proxy</div>
+      <div class="domain-card-sub">awareness-proxy-328246068140.us-central1.run.app</div>
+      <div class="domain-card-desc">Unified API gateway for Fal.ai (image gen), ElevenLabs (TTS), Gemini (multimodal), OpenRouter (multi-model), Rentcast, Shovels, BackyardOne MCP. The infrastructure spine the domain MCPs route through.</div>
+      <div class="domain-tools">
+        <span>/fal/generate</span><span>/gemini/generate</span><span>/elevenlabs/tts</span><span>/openrouter/chat</span><span>/shovels/permits</span>
+      </div>
+    </div>
+    <div class="domain-card" style="border-top-color:var(--text-dim);opacity:0.6">
+      <div class="domain-card-icon">⊕</div>
+      <div class="domain-card-name">Future Domains</div>
+      <div class="domain-card-sub">pluggable · multi-tenant</div>
+      <div class="domain-card-desc">Any vertical can expose a Domain MCP. Aurea Health (clinical ontology + patient context). Block BMOS (venue/touring intelligence). Clawd Trade (media licensing). Recording Academy (artist rights). The architecture is domain-agnostic.</div>
+      <div class="domain-tools">
+        <span>Aurea Health</span><span>Block BMOS</span><span>Clawd Trade</span><span>Recording Academy</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── VOLVOX ── -->
+<div class="section" id="volvox">
+  <div class="section-eyebrow">The Living Graph</div>
+  <h2 class="section-title">VOLVOX — Bio-Inspired Graph Differentiation</h2>
+  <p class="section-lead">IAM bots are not static. They differentiate. Modeled on <em>Volvox carteri</em> — the simplest organism with a complete germ-soma division of labor. Nodes start undifferentiated and develop through colonial stages toward multicellular maturity. The user's graph is the user's understanding.</p>
+
+  <div class="volvox-stages">
+    <div class="volvox-stage">
+      <div class="volvox-icon">⚪</div>
+      <div class="volvox-name">UNDIFFERENTIATED</div>
+      <div class="volvox-trigger">Activation &lt; 0.5 rate</div>
+      <div class="volvox-desc">Stem cell. Concept exists but hasn't yet proven its role. Default state for new nodes.</div>
+    </div>
+    <div class="volvox-stage">
+      <div class="volvox-icon">🟠</div>
+      <div class="volvox-name">SOMATIC SENSOR</div>
+      <div class="volvox-trigger">Activation rate ≥ 0.5</div>
+      <div class="volvox-desc">Frequently activated by queries. Detecting signals. Serves the session but doesn't carry knowledge forward.</div>
+    </div>
+    <div class="volvox-stage">
+      <div class="volvox-icon">🔵</div>
+      <div class="volvox-name">STRUCTURAL</div>
+      <div class="volvox-trigger">Cross-layer edges ≥ 3</div>
+      <div class="volvox-desc">Bridges multiple layers. ECM equivalent. Provides structural integrity across Social/Knowledge/Generative.</div>
+    </div>
+    <div class="volvox-stage" style="background:rgba(212,175,55,0.05);border-color:rgba(212,175,55,0.3)">
+      <div class="volvox-icon">✦</div>
+      <div class="volvox-name" style="color:var(--gold)">GERMLINE</div>
+      <div class="volvox-trigger">Propagations ≥ 3</div>
+      <div class="volvox-desc">Proven, durable knowledge. Survives across sessions. Eligible for Team Graph (stability ≥ 0.5) and Class Collective (stability ≥ 0.8) propagation.</div>
+    </div>
+    <div class="volvox-stage" style="opacity:0.5">
+      <div class="volvox-icon">⬜</div>
+      <div class="volvox-name">DORMANT</div>
+      <div class="volvox-trigger">Dormancy ≥ 10 epochs</div>
+      <div class="volvox-desc">Inactive concept. Archivable after 30 epochs. Not deleted — may reactivate if context returns.</div>
+    </div>
+    <div class="volvox-stage">
+      <div class="volvox-icon">🌱</div>
+      <div class="volvox-name">OFFSPRING</div>
+      <div class="volvox-trigger">GERMLINE fitness &gt; 0.6</div>
+      <div class="volvox-desc">New concept synthesized from high-fitness GERMLINE parent. 10% mutation rate. The graph reproduces.</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="callout-title">✦ The Three-Tier Privacy Architecture</div>
+    <div class="callout-body"><strong>Private (always):</strong> Conversation transcripts, SOMATIC nodes, raw edge weights. <strong>Team Graph (GERMLINE + stability ≥ 0.5):</strong> Concept name, layer, -ity vectors only — with Laplace noise. <strong>Class Collective (GERMLINE + stability ≥ 0.8 + lifecycle ≥ juvenile):</strong> Full anonymized node. The architecture mirrors Volvox biology: individual cells serve the session; germline cells carry proven knowledge forward to the colony.</div>
+  </div>
+</div>
+
+<!-- ── SAVESUCCESS ── -->
+<div class="section" id="savesuccess">
+  <div class="section-eyebrow">The Operating Model</div>
+  <h2 class="section-title">S.A.V.E.S.U.C.C.E.S.S.</h2>
+  <p class="section-lead">The 11-pillar framework that validates every IAM output. Not a checklist — an <strong>emergent property detector</strong>. Missing pillars are explicitly named. The goal is not to check boxes but to identify what's absent from the response and surface it as the next inquiry. The framework is recursive: applying it reveals what the Omega spiral hasn't yet reached.</p>
+
+  <div class="saves-grid">
+    <div class="saves-card"><div class="saves-letter">S</div><div class="saves-pillar">Serendipity</div><div class="saves-essence">Probabilistic cross-domain discovery. Guided emergence, not randomness. The condition that makes unexpected connections possible.</div></div>
+    <div class="saves-card"><div class="saves-letter">A</div><div class="saves-pillar">Artiquity</div><div class="saves-essence">Authorship, attribution, rights, ethical lineage by default. Chain of title for every creative contribution. The memory of who made what.</div></div>
+    <div class="saves-card"><div class="saves-letter">V</div><div class="saves-pillar">Vitality</div><div class="saves-essence">Systemic wellness and sustainability. People, environments, platforms. The life-force check — is this durable or does it burn out?</div></div>
+    <div class="saves-card"><div class="saves-letter">E</div><div class="saves-pillar">Enginuity</div><div class="saves-essence">Imagination reconciled with constraints. Design fused with execution logic. The physics check — is this actually buildable?</div></div>
+    <div class="saves-card"><div class="saves-letter">S</div><div class="saves-pillar">Synchronicity</div><div class="saves-essence">Meaningful alignment across data, emotion, narrative. Right time, right place, right audience. The timing check.</div></div>
+    <div class="saves-card"><div class="saves-letter">U</div><div class="saves-pillar">Ubiquity</div><div class="saves-essence">Precision omnipresence. The right presence, not maximum. "Ubiquity is the new exclusivity." The distribution check.</div></div>
+    <div class="saves-card"><div class="saves-letter">C</div><div class="saves-pillar">Clarity</div><div class="saves-essence">Real-time truthful view of the whole system. No hidden assumptions, no ambiguous terms. The transparency check.</div></div>
+    <div class="saves-card"><div class="saves-letter">C</div><div class="saves-pillar">Certainty</div><div class="saves-essence">Decision confidence grounded in evidence and simulation. Not certainty as fact — certainty as earned confidence. The confidence check.</div></div>
+    <div class="saves-card"><div class="saves-letter">E</div><div class="saves-pillar">Ethics</div><div class="saves-essence">Values enforced structurally, not performatively. The moral check — not "is this legal?" but "is this right?"</div></div>
+    <div class="saves-card"><div class="saves-letter">S</div><div class="saves-pillar">Sagacity</div><div class="saves-essence">Applied wisdom. Second and third-order thinking. Not just can we — but should we? The wisdom check.</div></div>
+    <div class="saves-card" style="background:var(--gold-dim);border-color:rgba(212,175,55,0.3)"><div class="saves-letter" style="color:rgba(212,175,55,0.4)">S</div><div class="saves-pillar" style="color:var(--gold)">Success</div><div class="saves-essence" style="color:var(--text-dim)">The emergent property. Systems that age well. Decisions that survive hindsight. Not a goal — a consequence of getting the other 10 right.</div></div>
+  </div>
+</div>
+
+<!-- ── CONVERGENCE ── -->
+<div class="section">
+  <div class="section-eyebrow">Why This Matters</div>
+  <h2 class="section-title">The Convergence Point</h2>
+  <p class="section-lead">Every system in the Inkwell portfolio converges here. IAM is the cognitive infrastructure that makes all of them coherent.</p>
+
+  <div class="insight-grid">
+    <div class="insight-card">
+      <div class="insight-badge">✦ Foundation</div>
+      <div class="insight-title">The Discovery That Started It All</div>
+      <div class="insight-body">July 9, 2025: "What do all the words ending in -ity have in common?" The answer — abstract nouns encoding states, conditions, qualities — revealed that <em>English had already done the hard work of abstracting human experience</em> into reason-about concepts. The Trinity Graph is the formalization of a discovery already encoded in the language.</div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-badge">✦ Architecture</div>
+      <div class="insight-title">Not an App — An Operating System</div>
+      <div class="insight-body">IAM is infrastructure. Like TCP/IP, it doesn't do one thing — it enables a class of things. Enginuity, Artiquity, IAM Bot, BackyardOne, Block BMOS, the Vanderbilt classroom, the Recording Academy framework, the Clarksdale Series — all of these are applications running on the <em>same cognitive operating system</em>.</div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-badge">✦ Provenance</div>
+      <div class="insight-title">Attribution as Architecture</div>
+      <div class="insight-body">The future of AI will be defined not by the size of its models, but by the integrity of its architecture. <em>Value must be traceable. Contributions must be attributable. Systems must enable independence.</em> Artiquity is not a feature — it is the moral spine of the entire model. Every node in every Trinity Graph has a chain of title.</div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-badge">✦ Awareness</div>
+      <div class="insight-title">Artificial Awareness ≠ Artificial Intelligence</div>
+      <div class="insight-body">Intelligence is pattern completion. <em>Awareness</em> is knowing why the pattern matters, to whom, at what cost, and what it leaves out. The Omega Protocol forces LLMs through the phases that generate awareness — not just answers. <em>The -ity words are how awareness names itself.</em></div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="callout-title">✦ The Thesis, in One Sentence</div>
+    <div class="callout-body">The Inkwell Awareness Model takes the 225+ abstract nouns that human language uses to describe its own inner states, organizes them into a three-layer semantic graph, governs how reasoning moves through that graph with enforceable contracts (Runes), sequences the cognitive depth with a spiral engine (Omega), grounds execution in real-world data (Domain MCPs), allows the graph to evolve and differentiate over time (VOLVOX), validates outputs against a 11-pillar framework (S.A.V.E.S.U.C.C.E.S.S.), and delivers the whole thing through a conversational interface — producing AI that doesn't just answer questions but <strong>understands context, reasons through tension, and produces auditable, human-resonant, provenance-tracked responses.</strong></div>
+  </div>
+</div>
+
+<div class="footer">
+  <div class="footer-text">Inkwell Awareness Model · Complete Architecture v3.0 · March 2026 · Oliver Luckett / AI Inkwell<br>
+  Trinity Graph: <span style="font-family:monospace">c779e832.databases.neo4j.io</span> · IAM Bot: <span style="font-family:monospace">revilopark.github.io/ontological-theatre/iam-classroom.html</span></div>
+</div>
+
+</div>
+</body>
+</html>
