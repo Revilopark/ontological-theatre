@@ -475,40 +475,66 @@ function showTyping(){
 }
 function killTyping(){document.getElementById('typing')?.remove();}
 
-async function sendMessage() {
+async function callProxy(payload, attempt=1) {
+  const res = await fetch(`${PROXY}/gemini/generate`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  });
+  if(res.status===503 && attempt<4) {
+    const wait = attempt * 2000;
+    updateTyping(lang==='es'?`Servidor ocupado, reintentando (${attempt}/3)...`:`Server busy, retrying (${attempt}/3)...`);
+    await new Promise(r=>setTimeout(r,wait));
+    return callProxy(payload, attempt+1);
+  }
+  if(!res.ok) {
+    const t=await res.text();
+    throw new Error(`HTTP ${res.status}: ${t.slice(0,200)}`);
+  }
+  return res.json();
+}
+
+function updateTyping(msg) {
+  const el = document.querySelector('#typing .msg-body');
+  if(el) el.innerHTML = `<small style="color:var(--muted);font-size:.6rem">${msg}</small>`;
+}
+
+let lastPayload = null;
+
+async function sendMessage(retryPayload) {
   const inp = document.getElementById('msg-input');
   const btn = document.getElementById('send-btn');
-  const txt = inp.value.trim();
-  if(!txt) return;
-  inp.value=''; inp.style.height='auto'; btn.disabled=true;
-  addMsg('user', fmt(txt));
-  history.push({role:'user', parts:[{text:txt}]});
-  if(history.length>20) history=history.slice(-20);
+  let txt, payload;
+  if(retryPayload) {
+    payload = retryPayload;
+    // remove last user msg from display since it's already there
+  } else {
+    txt = inp.value.trim();
+    if(!txt) return;
+    inp.value=''; inp.style.height='auto';
+    addMsg('user', fmt(txt));
+    history.push({role:'user', parts:[{text:txt}]});
+    if(history.length>20) history=history.slice(-20);
+    payload = {
+      contents: history,
+      system_instruction: {parts:[{text: lang==='es'?SYSTEM_ES:SYSTEM_EN}]}
+    };
+    lastPayload = payload;
+  }
+  btn.disabled=true;
   showTyping();
   try {
-    const res = await fetch(`${PROXY}/gemini/generate`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        contents: history,
-        system_instruction: {parts:[{text: lang==='es'?SYSTEM_ES:SYSTEM_EN}]}
-      })
-    });
-    if(!res.ok) {
-      const t=await res.text();
-      throw new Error(`HTTP ${res.status}: ${t.slice(0,150)}`);
-    }
-    const j=await res.json();
+    const j = await callProxy(payload);
     const reply = j?.candidates?.[0]?.content?.parts?.[0]?.text
-      || j?.text
-      || j?.error
+      || j?.text || j?.error
       || (lang==='es'?'Sin respuesta del servidor.':'No response from server.');
     killTyping();
     addMsg('bot', fmt(reply), `IAM Abitat · ${new Date().toLocaleTimeString(lang==='es'?'es-MX':'en-US')}`);
     history.push({role:'model',parts:[{text:reply}]});
   } catch(e) {
     killTyping();
-    addMsg('bot', `<strong>${lang==='es'?'Error de conexión':'Connection error'}</strong><br><code>${e.message}</code>`);
+    const retryBtn = `<button onclick="sendMessage(lastPayload)" style="margin-top:8px;font-size:.6rem;padding:5px 12px;border-radius:6px;border:1px solid rgba(0,212,255,.3);background:rgba(0,212,255,.1);color:var(--cyan);cursor:pointer">${lang==='es'?'↺ Reintentar':'↺ Retry'}</button>`;
+    addMsg('bot', `<strong>${lang==='es'?'Error de conexión':'Connection error'}</strong><br><code style="font-size:.58rem">${e.message.slice(0,180)}</code><br>${retryBtn}`);
   }
   btn.disabled=false; inp.focus();
 }
