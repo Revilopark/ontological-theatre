@@ -1230,6 +1230,33 @@ function drawRadar() {
 // Enter key on login
 document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') handleLogin(); });
 document.getElementById('login-user').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-pass').focus(); });
+
+function toggleWAField(){
+  const f=document.getElementById('wa-field');
+  f.style.display=f.style.display==='none'?'block':'none';
+  if(f.style.display==='block'){
+    // Load saved number
+    const saved=localStorage.getItem('wa_'+studentId)||'';
+    document.getElementById('wa-number').value=saved;
+  }
+}
+async function saveWANumber(){
+  const num=document.getElementById('wa-number').value.trim().replace(/\s/g,'');
+  if(!num.match(/^\+?[0-9]{10,15}$/)){
+    document.getElementById('wa-status').textContent='Please enter a valid number with country code';
+    return;
+  }
+  localStorage.setItem('wa_'+studentId, num);
+  // Save to Neo4j on student's primary node
+  try{
+    await neo4j('MERGE (n:IAMStudent {student_id:$sid}) SET n.whatsapp=$num, n.updated=timestamp()',{sid:studentId,num});
+    document.getElementById('wa-status').textContent='✅ Saved — you\'ll receive class insights here';
+    document.getElementById('wa-btn').textContent='📱✓';
+  }catch(e){
+    document.getElementById('wa-status').textContent='Saved locally (sync pending)';
+  }
+}
+
 </script>
 </body>
 </html>
