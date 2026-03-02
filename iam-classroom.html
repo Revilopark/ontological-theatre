@@ -106,6 +106,8 @@ input:focus,textarea:focus{border-color:var(--cyan)}
   .tab-bar{display:flex}
   #prof-view .prof-grid{grid-template-columns:1fr}
 }
+@keyframes pulse-ring{0%{opacity:.5;r:0}70%{opacity:0;r:12px}100%{opacity:0;r:12px}}
+.graph-container svg .germline-pulse{animation:pulse-ring 2s ease-out infinite}
 </style>
 </head>
 <body>
@@ -149,12 +151,12 @@ input:focus,textarea:focus{border-color:var(--cyan)}
       </div>
       <div class="graph-container" id="graph-container"></div>
       <div class="node-legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#888"></div>Undiff.</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#4dabf7"></div>Sensor</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#51cf66"></div>Motor</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#fcc419"></div>Structural</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#ffd700"></div>Germline</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#495057"></div>Dormant</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4a7bcc"></div>🧠 Social</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#cfb87c"></div>📚 Knowledge</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#8a6aac"></div>✨ Generative</div>
+        <div class="legend-item" style="margin-left:auto"><div class="legend-dot" style="background:#ffd700;box-shadow:0 0 4px #ffd700"></div>Germline ✦</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fcc419;border:1px dashed rgba(255,255,255,.3)"></div>Structural</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2a2e38;border:1px solid #444"></div>Dormant</div>
       </div>
     </div>
     <div class="kg-panel" id="kg-panel">
@@ -699,71 +701,186 @@ async function contributeToCollective(node) {
 }
 
 // ===== D3 GRAPH =====
+const LAYER_COLOR = {social:'#4a7bcc', knowledge:'#cfb87c', generative:'#8a6aac'};
+const LAYER_ICON  = {social:'🧠', knowledge:'📚', generative:'✨'};
+const LAYER_BAND  = {social:[0,0.33], knowledge:[0.33,0.66], generative:[0.66,1.0]};
+
+function nodeRadius(d) {
+  const base = {UNDIFFERENTIATED:12,SOMATIC_SENSOR:14,SOMATIC_MOTOR:14,STRUCTURAL:16,GERMLINE:19,DORMANT:9}[d.cell_type]||12;
+  return base + Math.min(d.activation_count||0, 5);
+}
+function nodeLayerColor(d) {
+  return d.cell_type==='DORMANT' ? '#2a2e38' : (LAYER_COLOR[d.layer]||'#888');
+}
+
 function renderGraph() {
   const container = document.getElementById('graph-container');
   container.innerHTML = '';
   if (graphNodes.length === 0) return;
-  
-  const width = container.clientWidth || 380;
-  const height = container.clientHeight || 400;
-  
-  const svg = d3.select(container).append('svg').attr('width', width).attr('height', height);
-  
-  const nodes = graphNodes.map((n, i) => ({
+
+  const width  = container.clientWidth  || 380;
+  const height = container.clientHeight || 420;
+
+  const svg = d3.select(container).append('svg')
+    .attr('width', width).attr('height', height);
+
+  // ── SVG Defs ──────────────────────────────────────────
+  const defs = svg.append('defs');
+
+  // Glow filter — GERMLINE
+  const glowF = defs.append('filter').attr('id','iam-glow').attr('x','-60%').attr('y','-60%').attr('width','220%').attr('height','220%');
+  glowF.append('feGaussianBlur').attr('in','SourceGraphic').attr('stdDeviation','4').attr('result','blur');
+  const fm1 = glowF.append('feMerge');
+  fm1.append('feMergeNode').attr('in','blur');
+  fm1.append('feMergeNode').attr('in','SourceGraphic');
+
+  // Soft glow — STRUCTURAL
+  const glow2F = defs.append('filter').attr('id','iam-glow2').attr('x','-40%').attr('y','-40%').attr('width','180%').attr('height','180%');
+  glow2F.append('feGaussianBlur').attr('in','SourceGraphic').attr('stdDeviation','2').attr('result','blur');
+  const fm2 = glow2F.append('feMerge');
+  fm2.append('feMergeNode').attr('in','blur');
+  fm2.append('feMergeNode').attr('in','SourceGraphic');
+
+  // Radial gradient per layer (node fill)
+  Object.entries(LAYER_COLOR).forEach(([layer, color]) => {
+    const rg = defs.append('radialGradient').attr('id',`iam-rg-${layer}`).attr('cx','35%').attr('cy','35%').attr('r','65%');
+    rg.append('stop').attr('offset','0%').attr('stop-color','#fff').attr('stop-opacity',0.18);
+    rg.append('stop').attr('offset','100%').attr('stop-color',color).attr('stop-opacity',0.9);
+  });
+
+  // ── Layer Bands ───────────────────────────────────────
+  Object.entries(LAYER_BAND).forEach(([layer, [y1, y2]]) => {
+    const color = LAYER_COLOR[layer];
+    const bh = (y2 - y1) * height;
+    const by = y1 * height;
+
+    // background tint
+    svg.append('rect').attr('x',0).attr('y',by).attr('width',width).attr('height',bh)
+      .attr('fill',color).attr('fill-opacity',0.035);
+
+    // left accent stripe
+    svg.append('rect').attr('x',0).attr('y',by).attr('width',3).attr('height',bh)
+      .attr('fill',color).attr('opacity',0.45);
+
+    // separator line (not top of social)
+    if (y1 > 0) {
+      svg.append('line').attr('x1',3).attr('x2',width).attr('y1',by).attr('y2',by)
+        .attr('stroke',color).attr('stroke-opacity',0.15);
+    }
+
+    // layer label with emoji
+    svg.append('text').attr('x',10).attr('y',by+14)
+      .attr('fill',color).attr('opacity',0.55)
+      .attr('font-size','8.5px').attr('font-weight','700')
+      .attr('font-family','Inter').attr('letter-spacing','0.1em')
+      .text(LAYER_ICON[layer]+'  '+layer.toUpperCase()+' GRAPH');
+  });
+
+  const nodes = graphNodes.map(n => ({
     ...n, id: n.concept_id,
-    x: width/2 + (Math.random()-0.5)*100,
+    x: width/2 + (Math.random()-0.5)*80,
     y: height * (LAYER_Y[n.layer] || 0.5)
   }));
-  
-  // Create links between same-layer nodes
+
+  // ── Links ─────────────────────────────────────────────
   const links = [];
   for (let i = 0; i < nodes.length; i++) {
     for (let j = i+1; j < nodes.length; j++) {
-      if (nodes[i].layer === nodes[j].layer || (nodes[i].activation_count > 3 && nodes[j].activation_count > 3)) {
-        links.push({source: i, target: j});
-      }
+      const sameLayer = nodes[i].layer === nodes[j].layer;
+      const bothActive = (nodes[i].activation_count||0) > 3 && (nodes[j].activation_count||0) > 3;
+      if (sameLayer || bothActive) links.push({source:i, target:j, cross:!sameLayer});
     }
   }
-  
-  // Layer labels
-  svg.selectAll('.layer-label').data(Object.entries(LAYER_Y)).enter()
-    .append('text').attr('x', 12).attr('y', d => d[1] * height)
-    .attr('fill', 'rgba(255,255,255,0.2)').attr('font-size', '10px')
-    .attr('font-family', 'Inter').text(d => d[0].toUpperCase());
-  
-  // Layer separators
-  svg.selectAll('.layer-line').data([0.33, 0.66]).enter()
-    .append('line').attr('x1',0).attr('x2',width)
-    .attr('y1', d => d*height).attr('y2', d => d*height)
-    .attr('stroke','rgba(255,255,255,0.05)');
-  
-  const link = svg.selectAll('.link').data(links).enter()
-    .append('line').attr('stroke','rgba(255,255,255,0.08)').attr('stroke-width',1);
-  
-  const node = svg.selectAll('.node').data(nodes).enter().append('g');
-  
-  node.append('circle')
-    .attr('r', d => 6 + Math.min(d.activation_count, 10))
-    .attr('fill', d => CELL_COLORS[d.cell_type] || '#888')
-    .attr('opacity', 0.8)
-    .attr('stroke', d => d.cell_type === 'GERMLINE' ? '#ffd700' : 'transparent')
-    .attr('stroke-width', 2);
-  
-  node.append('text')
-    .attr('dy', d => -(10 + Math.min(d.activation_count, 10)))
-    .attr('text-anchor','middle').attr('fill','rgba(255,255,255,0.6)')
-    .attr('font-size','9px').attr('font-family','Inter')
-    .text(d => d.name.length > 18 ? d.name.slice(0,16)+'…' : d.name);
-  
+
+  // Gradient defs per link (userSpaceOnUse, updated on tick)
+  links.forEach((l, i) => {
+    const sc = LAYER_COLOR[nodes[l.source]?.layer] || '#888';
+    const tc = LAYER_COLOR[nodes[l.target]?.layer] || '#888';
+    const lg = defs.append('linearGradient').attr('id',`iam-lg-${i}`)
+      .attr('gradientUnits','userSpaceOnUse');
+    lg.append('stop').attr('offset','0%').attr('stop-color',sc).attr('stop-opacity',0.28);
+    lg.append('stop').attr('offset','100%').attr('stop-color',tc).attr('stop-opacity',0.28);
+  });
+
+  const link = svg.selectAll('.link').data(links).enter().append('line')
+    .attr('stroke', (d,i) => `url(#iam-lg-${i})`)
+    .attr('stroke-width', d => d.cross ? 1.5 : 1)
+    .attr('stroke-dasharray', d => d.cross ? '5,4' : 'none');
+
+  // ── Nodes ─────────────────────────────────────────────
+  const nodeG = svg.selectAll('.node').data(nodes).enter().append('g').attr('class','node');
+
+  // GERMLINE pulsing outer ring (CSS animated via circle with class)
+  nodeG.filter(d => d.cell_type==='GERMLINE').append('circle')
+    .attr('class','germline-pulse')
+    .attr('r', d => nodeRadius(d) + 4)
+    .attr('fill','none')
+    .attr('stroke', d => LAYER_COLOR[d.layer] || '#ffd700')
+    .attr('stroke-width',1.5)
+    .attr('stroke-opacity',0.5);
+
+  // STRUCTURAL outer accent ring
+  nodeG.filter(d => d.cell_type==='STRUCTURAL').append('circle')
+    .attr('r', d => nodeRadius(d) + 3)
+    .attr('fill','none')
+    .attr('stroke', d => LAYER_COLOR[d.layer] || '#fcc419')
+    .attr('stroke-width',1)
+    .attr('stroke-opacity',0.3)
+    .attr('stroke-dasharray','3,3');
+
+  // Main filled circle
+  nodeG.append('circle')
+    .attr('r', d => nodeRadius(d))
+    .attr('fill', d => d.cell_type==='DORMANT' ? 'rgba(42,46,56,0.6)' : `url(#iam-rg-${d.layer})`)
+    .attr('stroke', d => nodeLayerColor(d))
+    .attr('stroke-width', d => d.cell_type==='GERMLINE' ? 2 : 1.5)
+    .attr('stroke-opacity', d => d.cell_type==='DORMANT' ? 0.2 : 0.7)
+    .attr('filter', d => {
+      if (d.cell_type==='GERMLINE')   return 'url(#iam-glow)';
+      if (d.cell_type==='STRUCTURAL') return 'url(#iam-glow2)';
+      return null;
+    });
+
+  // Inner highlight (depth)
+  nodeG.append('circle')
+    .attr('r', d => nodeRadius(d) * 0.45)
+    .attr('fill','#fff').attr('fill-opacity', d => d.cell_type==='DORMANT' ? 0.03 : 0.08);
+
+  // Layer emoji icon inside node
+  nodeG.append('text')
+    .attr('text-anchor','middle').attr('dominant-baseline','central')
+    .attr('dy','0.05em')
+    .attr('font-size', d => Math.max(9, Math.round(nodeRadius(d)*0.72))+'px')
+    .attr('fill-opacity', d => d.cell_type==='DORMANT' ? 0.25 : 0.9)
+    .text(d => LAYER_ICON[d.layer] || '⬡');
+
+  // Node name label below — with soft text shadow via stroke trick
+  nodeG.append('text')
+    .attr('dy', d => nodeRadius(d) + 10)
+    .attr('text-anchor','middle')
+    .attr('stroke', 'rgba(10,15,30,0.9)').attr('stroke-width',3).attr('paint-order','stroke fill')
+    .attr('fill', d => nodeLayerColor(d))
+    .attr('fill-opacity', d => d.cell_type==='DORMANT' ? 0.35 : 0.9)
+    .attr('font-size','8px').attr('font-family','Inter').attr('font-weight','600')
+    .attr('letter-spacing','0.01em')
+    .text(d => d.name.length > 15 ? d.name.slice(0,13)+'…' : d.name);
+
+  // ── Simulation ────────────────────────────────────────
   simulation = d3.forceSimulation(nodes)
-    .force('charge', d3.forceManyBody().strength(-60))
-    .force('x', d3.forceX(width/2).strength(0.05))
-    .force('y', d3.forceY(d => height * (LAYER_Y[d.layer] || 0.5)).strength(0.3))
-    .force('link', d3.forceLink(links).distance(60))
-    .force('collide', d3.forceCollide(20))
+    .force('charge', d3.forceManyBody().strength(-90))
+    .force('x', d3.forceX(width/2).strength(0.04))
+    .force('y', d3.forceY(d => height * (LAYER_Y[d.layer]||0.5)).strength(0.35))
+    .force('link', d3.forceLink(links).distance(65))
+    .force('collide', d3.forceCollide(d => nodeRadius(d) + 9))
     .on('tick', () => {
-      link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
-      node.attr('transform', d => `translate(${d.x},${d.y})`);
+      link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+          .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+      // update gradient positions
+      links.forEach((l,i) => {
+        const s = l.source, t = l.target;
+        svg.select(`#iam-lg-${i}`).attr('x1',s.x).attr('y1',s.y).attr('x2',t.x).attr('y2',t.y);
+      });
+      nodeG.attr('transform', d => `translate(${d.x},${d.y})`);
     });
 }
 
