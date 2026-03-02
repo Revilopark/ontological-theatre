@@ -1705,20 +1705,30 @@ function switchModule(mod) {
 // ═══════════════════════════════════════════════════════
 // GEMINI API CALL
 // ═══════════════════════════════════════════════════════
-async function callGemini(userMessage, conversationHistory) {
+async function callGemini(userMessage, conversationHistory, attempt=1) {
   const contents = conversationHistory || [{role:'user', parts:[{text: userMessage}]}];
   const payload = {
     contents,
     system_instruction: { parts: [{ text: SYSTEM_PROMPT }] }
   };
+  if (attempt > 1) {
+    const banner = document.getElementById('retry-banner');
+    if (banner) { banner.style.display='block'; banner.textContent=`⏳ Server busy — retry ${attempt-1}/5...`; }
+  }
   const res = await fetch(GEMINI_URL, {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify(payload)
   });
+  const banner = document.getElementById('retry-banner');
+  if (banner) banner.style.display='none';
+  if ((res.status===503||res.status===429) && attempt<6) {
+    await new Promise(r=>setTimeout(r,[2000,4000,8000,12000,18000][attempt-1]||10000));
+    return callGemini(userMessage, conversationHistory, attempt+1);
+  }
   if (!res.ok) throw new Error(`API error ${res.status}`);
   const data = await res.json();
-  return data.candidates[0].content.parts[0].text;
+  return data.candidates[0]?.content?.parts?.[0]?.text || 'No response from AI.';
 }
 
 function formatMarkdown(text) {

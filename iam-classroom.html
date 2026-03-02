@@ -545,11 +545,21 @@ Session query #${sessionQueryMap[studentId]}
       };
     }
     
-    const response = await fetch(AI_PROXY, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(apiBody)
-    });
+    // Retry on 503/429 (Gemini overload)
+    let response, _attempt = 0;
+    const DELAYS = [2000,4000,8000,12000,18000];
+    while (true) {
+      response = await fetch(AI_PROXY, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(apiBody)
+      });
+      if ((response.status===503||response.status===429) && _attempt<5) {
+        await new Promise(r=>setTimeout(r, DELAYS[_attempt++]));
+        continue;
+      }
+      break;
+    }
     
     const data = await response.json();
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'I need a moment to reflect on that. Could you rephrase?';
