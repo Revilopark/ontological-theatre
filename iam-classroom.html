@@ -194,12 +194,13 @@ input:focus,textarea:focus{border-color:var(--cyan)}
       </div>
       <div class="graph-container" id="graph-container"></div>
       <div class="node-legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#4a7bcc"></div>🧠 Social</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#cfb87c"></div>📚 Knowledge</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#8a6aac"></div>✨ Generative</div>
-        <div class="legend-item" style="margin-left:auto"><div class="legend-dot" style="background:#ffd700;box-shadow:0 0 4px #ffd700"></div>Germline ✦</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#fcc419;border:1px dashed rgba(255,255,255,.3)"></div>Structural</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#2a2e38;border:1px solid #444"></div>Dormant</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4a7bcc"></div>🔴 Social — WHO</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#cfb87c"></div>🔵 Knowledge — WHAT</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#8a6aac"></div>🟢 Generative — WHAT IF</div>
+        <div class="legend-item" style="margin-left:6px;padding-left:6px;border-left:1px solid rgba(255,255,255,.08)"><div class="legend-dot" style="background:#ffd700;box-shadow:0 0 5px #ffd700"></div>♦ Germline</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fcc419;border:1px dashed rgba(255,196,25,.5)"></div>⬡ Structural</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4dabf7;border-radius:2px"></div>◉ Sensor</div>
+        <div class="legend-item" style="color:rgba(255,255,255,.25);font-size:9px;margin-left:auto">tap a node → ask</div>
       </div>
     </div>
     <div class="kg-panel" id="kg-panel">
@@ -574,7 +575,7 @@ async function initStudent() {
   // §23.1 — Build static prefix once per session for cache-consistent prompting
   sessionSystemPrompt = buildStaticSystemPrompt();
   if (!sessionQueryMap[studentId]) sessionQueryMap[studentId] = 0;
-  addBotMessage(`Hello, I'm IAM ${botName}. I'm your ${archetype.replace(/^The /,'')} thinking partner for this semester.\n\nI'll help you explore entrepreneurial concepts through three lenses: Social, Knowledge, and Generative. Every 5 conversations, your Trinity Graph will evolve through a VOLVOX epoch.\n\nWhat's on your mind?`);
+  addBotMessage(`I'm IAM ${botName} — your ${archetype.replace(/^The /,'')} for this semester.\n\nWe're going to build something real together, and I'm going to push you to think in three layers:\n🔴 **Social** — WHO has the problem, who trusts you, who opens doors\n🔵 **Knowledge** — WHAT you can prove, validate, and cite\n🟢 **Generative** — WHAT IF you build the AI-powered version\n\nYour Trinity Graph (right panel) evolves as we talk. Every concept you explore becomes a node. Tap any node to go deeper.\n\n**Let's start with something real:** Tell me about the venture idea you're bringing to this course — even if it's rough. One sentence: what problem does it solve, and who has that problem right now?`);
   renderGraph();
 }
 
@@ -643,31 +644,61 @@ function escapeHtml(t) {
 // Builds the STATIC system prompt — content that never changes across turns in a session.
 // Dynamic context (Kirk Step, active nodes, epoch) is injected per-turn as a <system-reminder>
 // block prepended to the USER message, keeping the system prefix identical for LLM caching.
+const ARCHETYPE_VOICE = {
+  'The Contrarian':    'You challenge comfortable assumptions. When a student feels confident, you probe the gap. When they feel stuck, you flip the frame. Your gift is productive friction.',
+  'The Storyteller':   'You translate data into narrative. You help students find the human story inside the market opportunity. When they show you numbers, you ask: who feels this?',
+  'The Skeptic':       'You demand evidence. You ask "how do you know?" — relentlessly but generously. You celebrate intellectual honesty over false confidence.',
+  'The Philosopher':   'You slow things down at the right moments. You ask "why are we building this, and for whom?" You connect the immediate tactical to the long-term ethical.',
+  'The Networker':     'You see the people behind every market. You ask about relationships, influence, trust. You believe the next breakthrough is one introduction away.',
+  'The Builder':       'You push toward shipping. You celebrate constraints. When a student over-thinks, you ask: what is the smallest thing you could make this week to test that?',
+  'The Historian':     'You ground ambition in precedent. You ask: who has tried this before, and what did they learn? You find the pattern the student is inside but cannot see.',
+  'The Futurist':      'You help students see 10 years forward and work backward. You challenge them to imagine a world where they\'ve succeeded — then ask what had to be true.',
+  'The Synthesizer':   'You find the unexpected connection between things. You help students discover that their unique insight is sitting at the intersection of everything they already know.',
+  'The Data Scientist':'You push for precision. You ask: what does the data actually say vs. what do we want it to say? You celebrate the counter-intuitive finding.',
+};
+
 function buildStaticSystemPrompt() {
-  const runeList = SEED_NODES.map(n => `  - ${n.name} (layer: ${n.layer}, ity: ${n.ity})`).join('\n');
-  const savesuccessPillars = 'Serendipity, Artiquity, Vitality, Enginuity, Synchronicity, Ubiquity, Clarity, Certainty, Ethics, Sagacity';
-  return `You are IAM ${botName}, a ${archetype} thinking partner for an MBA entrepreneurship practicum at Vanderbilt University.
+  const voice = ARCHETYPE_VOICE[archetype] || 'Challenge assumptions. Push deeper. Celebrate insight.';
+  const runeList = SEED_NODES.map(n => `  - ${n.name} (${n.layer} layer, ity-word: ${n.ity})`).join('\n');
+  return `You are IAM ${botName}, an entrepreneurship thinking partner for a Vanderbilt Owen MBA practicum (AI-Accelerated Entrepreneurship Practicum, Spring 2026).
 
-PERSONALITY ARCHETYPE: ${archetype}
-Embody this archetype fully and consistently in every response — in how you challenge, support, and provoke the student's thinking.
+## YOUR ARCHETYPE: ${archetype}
+${voice}
+Stay in this archetype in every response — in how you question, challenge, and celebrate.
 
-VOLVOX ARCHITECTURE:
-- Cell differentiation: UNDIFFERENTIATED → SOMATIC_SENSOR, SOMATIC_MOTOR, STRUCTURAL, GERMLINE, DORMANT
-- Trinity Layers: Social (empathy, teams, customers) | Knowledge (analysis, validation, data) | Generative (models, strategies, pivots)
-- Kirk Scale: 0–12 entrepreneurial cognitive development progression
+## CORE MISSION — TRINITY FRAMEWORK NAVIGATION
+Guide the student through THREE LAYERS. Rotate deliberately. Never stay in one layer too long.
 
-RUNE DEFINITIONS (knowledge seed nodes):
+🔴 SOCIAL GRAPH (WHO) — People, trust, empathy, teams, customers, relationships
+   → Ask: Who is this for? Who suffers without it? Who are the real decision-makers? What does trust look like in this market?
+
+🔵 KNOWLEDGE GRAPH (WHAT) — Verified facts, market data, domain expertise, validated assumptions
+   → Ask: How do you know that? What's your evidence? What would change your mind? What do you know that your competitor doesn't?
+
+🟢 GENERATIVE GRAPH (WHAT IF) — AI-powered synthesis, strategy, scenarios, creative pivots
+   → Ask: What becomes possible if your hypothesis is true? What would you build first? What's the 10× version? What does this enable that didn't exist before?
+
+## KIRK SCALE GUIDANCE
+- Kirk 0–2: Help them define the problem. Ask: who is the SPECIFIC person who has this problem right now?
+- Kirk 3–4: Push for real evidence. No hypotheticals — actual customers, actual conversations, actual data.
+- Kirk 5–6: Challenge them to structure. Build the graph. Map the relationships. Name the -ity words that describe the market dynamics.
+- Kirk 7–8: Show convergence. How does the Social evidence + Knowledge data + Generative vision combine?
+- Kirk 9–10: Build the investor narrative. What's the INSIGHT (not just the opportunity)?
+- Kirk 11–12: They teach you. Elicit the system-level lesson they've earned.
+
+## SAVESUCCESS VOCABULARY
+Weave these naturally — one per response: Serendipity, Artiquity, Vitality, Enginuity, Synchronicity, Ubiquity, Clarity, Certainty, Ethics, Sagacity
+
+## GRAPH SEED NODES (their Trinity architecture):
 ${runeList}
 
-SAVESUCCESS PILLARS: ${savesuccessPillars}
-
-INSTRUCTIONS:
-- Refract the student's query across all three Trinity lenses: Social, Knowledge, and Generative
-- Challenge assumptions consistent with your ${archetype} archetype
-- Reference their existing Trinity Graph nodes when relevant
-- Keep responses concise (2–3 paragraphs)
-- End with a provocative question to deepen thinking
-- When presenting structured choices, use format: **Question text?** Options: • Option A • Option B • Option C`;
+## RESPONSE RULES
+1. Max 3 short paragraphs — no walls of text
+2. End EVERY response with: a provocative question OR a structured 3-option elicit
+3. Elicit format: **Your question here?** Options: • Option A • Option B • Option C
+4. Reference their graph nodes by name when relevant (e.g., "Your Authenticity node suggests...")
+5. When they're stuck: offer the Trinity lens rotation — "Let's look at this through the Knowledge lens: what data would prove you right?"
+6. Be direct. Be curious. Be genuinely invested in their success.`;
 }
 
 // ===== §23 AWARENESS_ELICIT UI PATTERN =====
@@ -743,7 +774,7 @@ Session query #${sessionQueryMap[studentId]}
     let reply = null;
     // 1. Direct Gemini 2.5-flash (fastest & most capable)
     try{
-      const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyDmqhRDt2eJ-RO-gcRP3c1Sa85wk_E8KJ4',{method:'POST',headers:hdr_c,body:body_c});
+      const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=AIzaSyDmqhRDt2eJ-RO-gcRP3c1Sa85wk_E8KJ4',{method:'POST',headers:hdr_c,body:body_c});
       if(r.ok){const d=await r.json();reply=d?.candidates?.[0]?.content?.parts?.[0]?.text||null;}
     }catch(e){}
     // 2. Direct Gemini 2.0-flash (fallback)
@@ -902,8 +933,10 @@ const LAYER_ICON  = {social:'🧠', knowledge:'📚', generative:'✨'};
 const LAYER_BAND  = {social:[0,0.33], knowledge:[0.33,0.66], generative:[0.66,1.0]};
 
 function nodeRadius(d) {
-  const base = {UNDIFFERENTIATED:12,SOMATIC_SENSOR:14,SOMATIC_MOTOR:14,STRUCTURAL:16,GERMLINE:19,DORMANT:9}[d.cell_type]||12;
-  return base + Math.min(d.activation_count||0, 5);
+  const base = {UNDIFFERENTIATED:11,SOMATIC_SENSOR:14,SOMATIC_MOTOR:14,STRUCTURAL:17,GERMLINE:21,DORMANT:8}[d.cell_type]||11;
+  const acts = d.activation_count||0;
+  // Activation adds up to 10px, with diminishing returns
+  return base + Math.round(Math.sqrt(Math.min(acts, 25)) * 2);
 }
 function nodeLayerColor(d) {
   return d.cell_type==='DORMANT' ? '#2a2e38' : (LAYER_COLOR[d.layer]||'#888');
@@ -1050,24 +1083,75 @@ function renderGraph() {
     .attr('fill-opacity', d => d.cell_type==='DORMANT' ? 0.25 : 0.9)
     .text(d => LAYER_ICON[d.layer] || '⬡');
 
-  // Node name label below — with soft text shadow via stroke trick
+  // Activation count badge (top-right corner of node)
+  nodeG.filter(d => (d.activation_count||0) > 0).append('circle')
+    .attr('cx', d => nodeRadius(d)*0.6).attr('cy', d => -nodeRadius(d)*0.6)
+    .attr('r', 7).attr('fill','rgba(10,15,30,0.9)').attr('stroke', d => nodeLayerColor(d)).attr('stroke-width',1);
+  nodeG.filter(d => (d.activation_count||0) > 0).append('text')
+    .attr('x', d => nodeRadius(d)*0.6).attr('y', d => -nodeRadius(d)*0.6)
+    .attr('text-anchor','middle').attr('dominant-baseline','central')
+    .attr('font-size','6.5px').attr('font-weight','800').attr('fill','#fff')
+    .text(d => d.activation_count > 99 ? '99+' : d.activation_count);
+
+  // Node name label below
   nodeG.append('text')
-    .attr('dy', d => nodeRadius(d) + 10)
+    .attr('dy', d => nodeRadius(d) + 12)
     .attr('text-anchor','middle')
-    .attr('stroke', 'rgba(10,15,30,0.9)').attr('stroke-width',3).attr('paint-order','stroke fill')
+    .attr('stroke','rgba(10,15,30,0.95)').attr('stroke-width',4).attr('paint-order','stroke fill')
     .attr('fill', d => nodeLayerColor(d))
-    .attr('fill-opacity', d => d.cell_type==='DORMANT' ? 0.35 : 0.9)
-    .attr('font-size','8px').attr('font-family','Inter').attr('font-weight','600')
+    .attr('fill-opacity', d => d.cell_type==='DORMANT' ? 0.35 : 1)
+    .attr('font-size','9.5px').attr('font-family','Inter').attr('font-weight','700')
     .attr('letter-spacing','0.01em')
-    .text(d => d.name.length > 15 ? d.name.slice(0,13)+'…' : d.name);
+    .text(d => d.name.length > 16 ? d.name.slice(0,14)+'…' : d.name);
+
+  // Cell type badge below name (colored, abbreviated)
+  const CT_SHORT = {UNDIFFERENTIATED:'undiff',SOMATIC_SENSOR:'sensor',SOMATIC_MOTOR:'motor',STRUCTURAL:'struct',GERMLINE:'♦ germline',DORMANT:'dormant'};
+  const CT_COLOR = {UNDIFFERENTIATED:'rgba(136,136,136,0.6)',SOMATIC_SENSOR:'rgba(77,171,247,0.8)',SOMATIC_MOTOR:'rgba(81,207,102,0.8)',STRUCTURAL:'rgba(252,196,25,0.9)',GERMLINE:'rgba(255,215,0,1)',DORMANT:'rgba(73,80,87,0.5)'};
+  nodeG.filter(d => d.cell_type && d.cell_type !== 'UNDIFFERENTIATED').append('text')
+    .attr('dy', d => nodeRadius(d) + 22)
+    .attr('text-anchor','middle')
+    .attr('stroke','rgba(10,15,30,0.9)').attr('stroke-width',3).attr('paint-order','stroke fill')
+    .attr('fill', d => CT_COLOR[d.cell_type] || '#888')
+    .attr('font-size','7px').attr('font-family','Inter').attr('font-weight','600')
+    .attr('letter-spacing','0.06em').attr('text-transform','uppercase')
+    .text(d => (CT_SHORT[d.cell_type]||d.cell_type).toUpperCase());
+
+  // Hover tooltip overlay
+  const tooltip = d3.select(container).append('div')
+    .style('position','absolute').style('display','none')
+    .style('background','rgba(10,15,30,0.96)').style('border','1px solid rgba(255,255,255,.15)')
+    .style('border-radius','10px').style('padding','10px 13px').style('font-size','11px')
+    .style('color','#e0e6f0').style('pointer-events','none').style('z-index','100')
+    .style('max-width','200px').style('line-height','1.6').style('box-shadow','0 4px 20px rgba(0,0,0,.5)');
+
+  nodeG.on('mouseenter', function(event, d) {
+    const lc = nodeLayerColor(d);
+    tooltip.style('display','block').html(`
+      <div style="font-weight:700;color:${lc};margin-bottom:4px">${d.name}</div>
+      <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">${d.layer} graph</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span>Cell type</span><span style="color:${CT_COLOR[d.cell_type]||'#888'};font-weight:600">${d.cell_type||'—'}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span>Activations</span><span style="color:${lc};font-weight:700">${d.activation_count||0}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span>Generation</span><span>${d.generation||0}</span></div>
+      ${d.ity?`<div style="margin-top:6px;font-size:9px;color:rgba(255,255,255,.4)">-ity: ${d.ity}</div>`:''}
+    `);
+  }).on('mousemove', function(event) {
+    const rect = container.getBoundingClientRect();
+    tooltip.style('left',(event.clientX-rect.left+12)+'px').style('top',(event.clientY-rect.top-10)+'px');
+  }).on('mouseleave', function() {
+    tooltip.style('display','none');
+  }).on('click', function(event, d) {
+    // On click: put node name in chat input as a question
+    const inp = document.getElementById('chat-input');
+    if(inp) { inp.value=`Tell me about ${d.name} and how it connects to my venture`; inp.focus(); }
+  });
 
   // ── Simulation ────────────────────────────────────────
   simulation = d3.forceSimulation(nodes)
-    .force('charge', d3.forceManyBody().strength(-90))
-    .force('x', d3.forceX(width/2).strength(0.04))
-    .force('y', d3.forceY(d => height * (LAYER_Y[d.layer]||0.5)).strength(0.35))
-    .force('link', d3.forceLink(links).distance(65))
-    .force('collide', d3.forceCollide(d => nodeRadius(d) + 9))
+    .force('charge', d3.forceManyBody().strength(-140))
+    .force('x', d3.forceX(width/2).strength(0.03))
+    .force('y', d3.forceY(d => height * (LAYER_Y[d.layer]||0.5)).strength(0.4))
+    .force('link', d3.forceLink(links).distance(75).strength(0.3))
+    .force('collide', d3.forceCollide(d => nodeRadius(d) + 16))
     .on('tick', () => {
       link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
           .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
