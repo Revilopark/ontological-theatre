@@ -574,7 +574,7 @@ async function initStudent() {
   // §23.1 — Build static prefix once per session for cache-consistent prompting
   sessionSystemPrompt = buildStaticSystemPrompt();
   if (!sessionQueryMap[studentId]) sessionQueryMap[studentId] = 0;
-  addBotMessage(`Hello, I'm IAM ${botName}. I'm your ${archetype} thinking partner for this semester.\n\nI'll help you explore entrepreneurial concepts through three lenses: Social, Knowledge, and Generative. Every 5 conversations, your Trinity Graph will evolve through a VOLVOX epoch.\n\nWhat's on your mind?`);
+  addBotMessage(`Hello, I'm IAM ${botName}. I'm your ${archetype.replace(/^The /,'')} thinking partner for this semester.\n\nI'll help you explore entrepreneurial concepts through three lenses: Social, Knowledge, and Generative. Every 5 conversations, your Trinity Graph will evolve through a VOLVOX epoch.\n\nWhat's on your mind?`);
   renderGraph();
 }
 
@@ -737,40 +737,27 @@ Session query #${sessionQueryMap[studentId]}
       };
     }
     
-    // ── FAST PATH: OpenRouter Haiku (primary, ~1s) → Gemini fallback ──────────
-    const OR_KEY_C='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';
-    const sys_c=apiBody?.system_instruction?.parts?.[0]?.text||'';
-    const msgs_c=[{role:'system',content:sys_c}];
-    (apiBody?.contents||[]).forEach(turn=>msgs_c.push({
-      role:turn.role==='model'?'assistant':'user',
-      content:(turn.parts||[]).map(p=>p.text||'').join('')
-    }));
+    // ── DIRECT GEMINI 2.5-flash (primary) → 2.0-flash → Proxy fallback ─────────
+    const hdr_c={'Content-Type':'application/json'};
+    const body_c=JSON.stringify(apiBody);
     let reply = null;
-    // Try Haiku first (fastest)
+    // 1. Direct Gemini 2.5-flash (fastest & most capable)
     try{
-      const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+OR_KEY_C,'HTTP-Referer':'https://revilopark.github.io'},
-        body:JSON.stringify({model:'anthropic/claude-3.5-haiku',messages:msgs_c,max_tokens:600})});
-      if(r.ok){const d=await r.json();reply=d?.choices?.[0]?.message?.content||null;}
+      const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyDmqhRDt2eJ-RO-gcRP3c1Sa85wk_E8KJ4',{method:'POST',headers:hdr_c,body:body_c});
+      if(r.ok){const d=await r.json();reply=d?.candidates?.[0]?.content?.parts?.[0]?.text||null;}
     }catch(e){}
-    // Fallback: Gemini proxy (2 attempts)
-    if(!reply){
-      for(let attempt=0;attempt<2;attempt++){
-        try{
-          const r=await fetch(AI_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(apiBody)});
-          if(r.ok){const d=await r.json();reply=d?.candidates?.[0]?.content?.parts?.[0]?.text||null;if(reply)break;}
-          if((r.status===503||r.status===429)&&attempt<1){await new Promise(res=>setTimeout(res,2000));continue;}
-          break;
-        }catch(e){if(attempt<1){await new Promise(res=>setTimeout(res,2000));continue;}}
-      }
-    }
-    // Last resort: gemini-2.5-flash via OpenRouter
+    // 2. Direct Gemini 2.0-flash (fallback)
     if(!reply){
       try{
-        const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',
-          headers:{'Content-Type':'application/json','Authorization':'Bearer '+OR_KEY_C,'HTTP-Referer':'https://revilopark.github.io'},
-          body:JSON.stringify({model:'google/gemini-2.5-flash-preview',messages:msgs_c,max_tokens:600})});
-        if(r.ok){const d=await r.json();reply=d?.choices?.[0]?.message?.content||null;}
+        const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyDmqhRDt2eJ-RO-gcRP3c1Sa85wk_E8KJ4',{method:'POST',headers:hdr_c,body:body_c});
+        if(r.ok){const d=await r.json();reply=d?.candidates?.[0]?.content?.parts?.[0]?.text||null;}
+      }catch(e){}
+    }
+    // 3. Awareness proxy (final fallback)
+    if(!reply){
+      try{
+        const r=await fetch(AI_PROXY,{method:'POST',headers:hdr_c,body:body_c});
+        if(r.ok){const d=await r.json();reply=d?.candidates?.[0]?.content?.parts?.[0]?.text||null;}
       }catch(e){}
     }
     const replyText = reply || 'I need a moment to reflect on that. Could you rephrase?';
