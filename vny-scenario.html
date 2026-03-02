@@ -110,6 +110,11 @@ footer{text-align:center;padding:30px 0;color:var(--muted);font-size:11px}
 <body>
 <div class="wrap">
 <header>
+<div style="display:flex;justify-content:flex-end;margin-bottom:10px;gap:8px;flex-wrap:wrap">
+  <a href="vny-gis.html" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.25);color:var(--cyan);font-size:11px;font-weight:600;text-decoration:none;letter-spacing:.04em" target="_blank">🗺 GIS Layers →</a>
+  <a href="vny-atlas.html" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.2);color:var(--gold);font-size:11px;font-weight:600;text-decoration:none;letter-spacing:.04em" target="_blank">⬡ Atlas →</a>
+  <a href="enginuity-scenario.html" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#aaa;font-size:11px;font-weight:600;text-decoration:none;letter-spacing:.04em">✈ TPA Tool →</a>
+</div>
 <div class="badge">ACTIVE RFP · Los Angeles World Airports · VNY 16425 Hart Street</div>
 <h1>Enginuity</h1>
 <div class="subtitle">Scenario Planning Intelligence — Van Nuys Airport Lease Redevelopment</div>
@@ -466,8 +471,26 @@ const PROXY='https://awareness-proxy-328246068140.us-central1.run.app/gemini/gen
 const SYS='You are Enginuity, an AI scenario planning intelligence for aviation infrastructure at Van Nuys Airport (VNY). You are analyzing the 16425 Hart Street 10-acre lease redevelopment RFP issued by LAWA (Los Angeles World Airports). Key context: current tenant Southwest Aviation has operated propeller/small aircraft for 30+ years; RFP targets GA aircraft over 12,500 lbs (jets) as Non-FBO; adjacent Hayvenhurst lot is legally contested; FAA Part 13/16 grant assurances require equal aeronautical access; 2006 VNY Specific Plan is under revision; community opposition from VNY CAC and neighborhood councils is strong; CEQA review required. Produce precise, data-grounded analysis with specific numbers and actionable recommendations. Format with section labels like "ANALYSIS —" in flowing professional paragraphs. No markdown bullets.';
 
 async function gemini(prompt){
-const r=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],system_instruction:{parts:[{text:SYS}]}})});
-const d=await r.json();return d?.candidates?.[0]?.content?.parts?.[0]?.text||'Analysis unavailable.';
+  const delays=[2000,4000,8000,12000,18000,25000];
+  for(let attempt=0;attempt<6;attempt++){
+    try{
+      const r=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],system_instruction:{parts:[{text:SYS}]}})});
+      if(r.status===503||r.status===429){
+        if(attempt<5){await new Promise(res=>setTimeout(res,delays[attempt]));continue;}
+        throw new Error('Service overloaded after 6 attempts. Please retry in a moment.');
+      }
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const d=await r.json();
+      return d?.candidates?.[0]?.content?.parts?.[0]?.text||'Analysis unavailable.';
+    }catch(e){
+      if(attempt<5&&(e.message?.includes('503')||e.message?.includes('429')||e.message?.includes('fetch'))){
+        await new Promise(res=>setTimeout(res,delays[attempt]));continue;
+      }
+      throw e;
+    }
+  }
+  throw new Error('Max retries exceeded.');
 }
 
 function toggle(id){document.getElementById(id).classList.toggle('open')}
@@ -475,9 +498,11 @@ function toggle(id){document.getElementById(id).classList.toggle('open')}
 async function run(btn,outId,prompt){
 const b=btn.closest('.mod-body').querySelector('.btn');
 const out=document.getElementById(outId);
-b.disabled=true;b.textContent='Analyzing...';
-out.className='output visible';out.innerHTML='<span class="loading">⟳ Enginuity processing scenario...</span>';
-try{const r=await gemini(prompt);out.textContent=r;}catch(e){out.textContent='Error: '+e.message;}
+b.disabled=true;b.textContent='Analyzing…';
+out.className='output visible';
+out.innerHTML='<span class="loading">⟳ Enginuity processing — retrying if needed…</span>';
+try{const r=await gemini(prompt);out.textContent=r;}
+catch(e){out.innerHTML='<span style="color:#ff4757">⚠ '+e.message+'</span>';}
 b.disabled=false;b.textContent='Run Analysis';
 }
 

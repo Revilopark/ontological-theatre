@@ -1,12 +1,607 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="0;url=enginuity-abitat.html">
-<title>Redirecting to IAM Abitat...</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enginuity — TPA Master Plan Scenario Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-body{margin:0;background:#0a0e1a;color:#e8f0ff;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;font-size:.85rem}
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#080c14;--panel:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);
+  --cyan:#00c8ff;--gold:#ffd700;--green:#00e676;--red:#ff4757;--orange:#ff9f43;
+  --text:#e8f0ff;--dim:#6b7a99;--font:'Inter',system-ui,sans-serif
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 80% 60% at 20% 10%,rgba(0,180,255,.05),transparent 60%),
+             radial-gradient(ellipse 60% 50% at 85% 80%,rgba(255,160,0,.04),transparent 60%)}
+.wrap{max-width:960px;margin:0 auto;padding:28px 20px 80px}
+
+/* header */
+.tool-nav{display:flex;justify-content:flex-end;margin-bottom:10px;gap:8px;flex-wrap:wrap}
+.tool-nav a{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;letter-spacing:.04em}
+.nav-cyan{background:rgba(0,200,255,.08);border:1px solid rgba(0,200,255,.25);color:var(--cyan)}
+.nav-gold{background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.2);color:var(--gold)}
+.nav-dim{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#aaa}
+header{text-align:center;margin-bottom:28px}
+.badge{display:inline-block;padding:5px 16px;border:1px solid rgba(0,200,255,.25);border-radius:20px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);margin-bottom:12px}
+h1{font-size:36px;font-weight:800;letter-spacing:-.02em;background:linear-gradient(135deg,#fff 30%,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+.subtitle{font-size:13px;color:var(--dim);margin-bottom:20px}
+.stats{display:flex;gap:0;justify-content:center;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:rgba(255,255,255,.02)}
+.stat{flex:1;padding:14px 10px;text-align:center;border-right:1px solid var(--border)}
+.stat:last-child{border-right:none}
+.stat-val{font-size:18px;font-weight:700;color:var(--cyan)}
+.stat-lbl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-top:3px}
+
+/* modules */
+.module{margin-top:18px;border:1px solid var(--border);border-radius:14px;background:var(--panel);backdrop-filter:blur(20px);overflow:hidden;transition:border-color .3s}
+.module:hover{border-color:rgba(0,200,255,.2)}
+.module.open{border-color:rgba(0,200,255,.25)}
+.mod-head{padding:16px 18px;cursor:pointer;display:flex;align-items:center;gap:14px}
+.mod-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.mod-title{font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--cyan)}
+.mod-sub{font-size:11px;color:var(--dim);margin-top:2px}
+.chevron{margin-left:auto;font-size:10px;color:var(--dim);transition:transform .2s}
+.module.open .chevron{transform:rotate(180deg)}
+.mod-body{display:none;padding:20px;border-top:1px solid var(--border)}
+.module.open .mod-body{display:block}
+
+/* form elements */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+@media(max-width:640px){.grid2,.grid3,.grid4{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr}}
+label{font-size:11px;color:var(--dim);display:block;margin-bottom:5px;letter-spacing:.04em;text-transform:uppercase}
+select,input[type=text],textarea{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:12px;padding:9px 11px;outline:none;transition:border-color .2s}
+select:focus,input[type=text]:focus,textarea:focus{border-color:rgba(0,200,255,.4)}
+textarea{resize:vertical;min-height:60px}
+option{background:#0d1220}
+
+/* data cards */
+.data-card{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:14px}
+.data-card h4{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cyan);margin-bottom:10px}
+.data-row{display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.data-row:last-child{border-bottom:none}
+.data-row span:first-child{color:var(--dim)}
+.tag{font-size:9px;padding:2px 7px;border-radius:4px;font-weight:700;letter-spacing:.05em}
+.tag-high{background:rgba(255,71,87,.15);color:var(--red)}
+.tag-med{background:rgba(255,159,67,.15);color:var(--orange)}
+.tag-low{background:rgba(0,230,118,.15);color:var(--green)}
+
+/* outputs */
+.output{display:none;margin-top:16px;background:rgba(0,0,0,.3);border:1px solid rgba(0,200,255,.15);border-radius:10px;padding:16px;font-size:12px;line-height:1.8;white-space:pre-wrap;color:#c8d8f0;max-height:480px;overflow-y:auto}
+.output.visible{display:block}
+.loading{color:var(--cyan);font-style:italic;animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+.retry-banner{font-size:10px;color:var(--orange);margin-top:8px;text-align:center;display:none}
+.retry-banner.visible{display:block}
+
+/* button */
+.btn{padding:10px 22px;border-radius:9px;border:1px solid rgba(0,200,255,.3);background:rgba(0,200,255,.1);color:var(--cyan);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:14px;letter-spacing:.04em}
+.btn:hover:not(:disabled){background:rgba(0,200,255,.18);transform:translateY(-1px)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* demand bars */
+.demand-bar-wrap{margin:6px 0}
+.demand-bar-label{font-size:10px;color:var(--dim);margin-bottom:3px;display:flex;justify-content:space-between}
+.demand-bar{height:6px;border-radius:3px;background:rgba(0,200,255,.15);overflow:hidden}
+.demand-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--cyan),rgba(0,200,255,.5));transition:.4s}
+
+/* section label */
+.section-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+
+/* mobile nav */
+.tpa-mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(8,12,20,.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:8px 0;z-index:100}
+.tpa-mn-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px;color:var(--dim);font-size:10px;text-decoration:none;transition:color .2s;font-family:var(--font);background:none;border:none;cursor:pointer}
+.tpa-mn-tab:hover,.tpa-mn-tab.active{color:var(--cyan)}
+.tpa-mn-tab svg{opacity:.5;transition:opacity .2s}
+.tpa-mn-tab:hover svg,.tpa-mn-tab.active svg{opacity:1}
+@media(max-width:768px){
+  .tpa-mobile-nav{display:flex}
+  .grid3{grid-template-columns:1fr}
+  .grid4{grid-template-columns:1fr 1fr}
+  .mod-head{padding:14px 14px;gap:10px}
+  .mod-body{padding:14px}
+  .data-card h4{font-size:10px}
+}
+@media(max-width:480px){
+  h1{font-size:22px}
+  .badge{font-size:9px}
+  .stats{flex-wrap:wrap}
+  .stat{min-width:50%}
+}
 </style>
 </head>
-<body>Loading Inkwell Enginuity IAM Abitat...</body>
+<body>
+<div class="wrap">
+
+<div class="tool-nav">
+  <a href="vny-scenario.html" class="nav-cyan">✈ VNY Tool →</a>
+  <a href="vny-gis.html" class="nav-dim" target="_blank">🗺 VNY GIS →</a>
+</div>
+
+<header>
+<div class="badge">RFQ DUE APR 1 2026 · Hillsborough County Aviation Authority · Tampa International Airport</div>
+<h1>Enginuity</h1>
+<div class="subtitle">Master Plan Scenario Intelligence — Tampa International Airport (TPA) 2024–2044</div>
+<div class="stats">
+  <div class="stat"><div class="stat-val">21.5M</div><div class="stat-lbl">2023 Pax</div></div>
+  <div class="stat"><div class="stat-val">34.8M</div><div class="stat-lbl">2044 Forecast</div></div>
+  <div class="stat"><div class="stat-val">20yr</div><div class="stat-lbl">Plan Horizon</div></div>
+  <div class="stat"><div class="stat-val">$2.1B</div><div class="stat-lbl">Cap Program</div></div>
+  <div class="stat"><div class="stat-val">3</div><div class="stat-lbl">Phases</div></div>
+</div>
+</header>
+
+<!-- MODULE 1: DEMAND ORACLE -->
+<div class="module" id="m1">
+<div class="mod-head" onclick="toggle('m1')">
+  <div class="mod-icon" style="background:linear-gradient(135deg,rgba(0,200,255,.18),rgba(0,100,255,.1))">📊</div>
+  <div><div class="mod-title">Demand Oracle</div><div class="mod-sub">Passenger forecasting, airline market analysis, capacity trigger thresholds</div></div>
+  <div class="chevron">▼</div>
+</div>
+<div class="mod-body">
+  <div class="grid3" style="margin-bottom:16px">
+    <div class="data-card">
+      <h4>Base Case</h4>
+      <div class="data-row"><span>2028 Forecast</span><span>24.2M pax</span></div>
+      <div class="data-row"><span>2034 Forecast</span><span>29.1M pax</span></div>
+      <div class="data-row"><span>2044 Forecast</span><span>34.8M pax</span></div>
+      <div class="data-row"><span>CAGR 2024–2034</span><span>2.9%</span></div>
+      <div class="data-row"><span>Capacity Threshold</span><span class="tag tag-med">2029</span></div>
+    </div>
+    <div class="data-card">
+      <h4>Low Demand</h4>
+      <div class="data-row"><span>2028 Forecast</span><span>22.1M pax</span></div>
+      <div class="data-row"><span>2034 Forecast</span><span>25.4M pax</span></div>
+      <div class="data-row"><span>2044 Forecast</span><span>28.0M pax</span></div>
+      <div class="data-row"><span>CAGR 2024–2034</span><span>1.5%</span></div>
+      <div class="data-row"><span>Capacity Threshold</span><span class="tag tag-low">2033</span></div>
+    </div>
+    <div class="data-card">
+      <h4>High Demand</h4>
+      <div class="data-row"><span>2028 Forecast</span><span>26.8M pax</span></div>
+      <div class="data-row"><span>2034 Forecast</span><span>33.5M pax</span></div>
+      <div class="data-row"><span>2044 Forecast</span><span>42.2M pax</span></div>
+      <div class="data-row"><span>CAGR 2024–2034</span><span>4.5%</span></div>
+      <div class="data-row"><span>Capacity Threshold</span><span class="tag tag-high">2027</span></div>
+    </div>
+  </div>
+
+  <div class="section-label">Airline Market Share (2023)</div>
+  <div class="grid2" style="margin-bottom:14px">
+    <div>
+      <div class="demand-bar-wrap"><div class="demand-bar-label"><span>Southwest Airlines</span><span>42%</span></div><div class="demand-bar"><div class="demand-bar-fill" style="width:42%"></div></div></div>
+      <div class="demand-bar-wrap"><div class="demand-bar-label"><span>United Airlines</span><span>18%</span></div><div class="demand-bar"><div class="demand-bar-fill" style="width:18%;background:linear-gradient(90deg,#3399ff,rgba(51,153,255,.5))"></div></div></div>
+      <div class="demand-bar-wrap"><div class="demand-bar-label"><span>American Airlines</span><span>16%</span></div><div class="demand-bar"><div class="demand-bar-fill" style="width:16%;background:linear-gradient(90deg,#cc0000,rgba(204,0,0,.5))"></div></div></div>
+    </div>
+    <div>
+      <div class="demand-bar-wrap"><div class="demand-bar-label"><span>Delta Air Lines</span><span>14%</span></div><div class="demand-bar"><div class="demand-bar-fill" style="width:14%;background:linear-gradient(90deg,#990099,rgba(153,0,153,.5))"></div></div></div>
+      <div class="demand-bar-wrap"><div class="demand-bar-label"><span>Spirit / Frontier</span><span>5%</span></div><div class="demand-bar"><div class="demand-bar-fill" style="width:5%;background:linear-gradient(90deg,#ffcc00,rgba(255,204,0,.5))"></div></div></div>
+      <div class="demand-bar-wrap"><div class="demand-bar-label"><span>Other / Charter</span><span>5%</span></div><div class="demand-bar"><div class="demand-bar-fill" style="width:5%;background:linear-gradient(90deg,#888,rgba(136,136,136,.5))"></div></div></div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div><label>Demand Scenario</label>
+      <select id="d-scenario">
+        <option value="base">Base Case (2.9% CAGR)</option>
+        <option value="low">Low Demand (1.5% CAGR) — post-consolidation</option>
+        <option value="high">High Demand (4.5% CAGR) — FL migration boom</option>
+        <option value="shock">Demand Shock — recession or pandemic -30%</option>
+      </select></div>
+    <div><label>Southwest Market Shift</label>
+      <select id="d-sw">
+        <option value="stable">Stable (42% share)</option>
+        <option value="grow">Growth (+5% share — hub expansion)</option>
+        <option value="decline">Decline (-10% — consolidation/route cuts)</option>
+        <option value="crisis">Crisis (-20% — acquisition disruption)</option>
+      </select></div>
+    <div><label>New Market Entry</label>
+      <select id="d-entry">
+        <option value="none">None</option>
+        <option value="intl">New international carrier (LATAM, transatlantic)</option>
+        <option value="ultra">ULCC expansion (Avelo, Breeze)</option>
+        <option value="cargo">Cargo carrier conversion (Amazon Air, UPS)</option>
+      </select></div>
+    <div><label>Cargo Growth Target</label>
+      <select id="d-cargo">
+        <option value="base">Base (170K→250K tons by 2044)</option>
+        <option value="high">High (170K→380K — logistics hub)</option>
+        <option value="flat">Flat (170K — no new facilities)</option>
+      </select></div>
+  </div>
+  <div style="margin-top:10px"><label>Additional Context / Constraints</label>
+    <textarea id="d-ctx" placeholder="e.g. Florida population growth projections, specific airline agreements, cruise terminal synergies…"></textarea></div>
+  <button class="btn" onclick="runDemand()">Run Demand Analysis</button>
+  <div class="retry-banner" id="d-retry">⟳ Gemini overloaded — retrying with backoff…</div>
+  <div class="output" id="d-out"></div>
+</div>
+</div>
+
+<!-- MODULE 2: MERIDIAN -->
+<div class="module" id="m2">
+<div class="mod-head" onclick="toggle('m2')">
+  <div class="mod-icon" style="background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(200,150,0,.08))">📅</div>
+  <div><div class="mod-title">Meridian</div><div class="mod-sub">Phased development schedule, critical path, milestones and gate triggers</div></div>
+  <div class="chevron">▼</div>
+</div>
+<div class="mod-body">
+  <div class="grid3" style="margin-bottom:16px">
+    <div class="data-card">
+      <h4>Phase 1 · 2024–2028</h4>
+      <div class="data-row"><span>Gate Expansion</span><span>+12 gates (C/D)</span></div>
+      <div class="data-row"><span>People Mover</span><span>Extension to new gates</span></div>
+      <div class="data-row"><span>Checkpoint</span><span>TSA checkpoint expansion</span></div>
+      <div class="data-row"><span>Budget</span><span>$680M</span></div>
+      <div class="data-row"><span>Risk</span><span class="tag tag-low">LOW</span></div>
+    </div>
+    <div class="data-card">
+      <h4>Phase 2 · 2029–2034</h4>
+      <div class="data-row"><span>CONRAC</span><span>Consolidated rental car facility</span></div>
+      <div class="data-row"><span>Cargo Hub Ph.1</span><span>New 300K sq ft facility</span></div>
+      <div class="data-row"><span>Ground Trans.</span><span>Multi-modal hub</span></div>
+      <div class="data-row"><span>Budget</span><span>$850M</span></div>
+      <div class="data-row"><span>Risk</span><span class="tag tag-med">MEDIUM</span></div>
+    </div>
+    <div class="data-card">
+      <h4>Phase 3 · 2035–2044</h4>
+      <div class="data-row"><span>Terminal D</span><span>New 30-gate terminal or satellite</span></div>
+      <div class="data-row"><span>Rail Link</span><span>SunRail/HART connection</span></div>
+      <div class="data-row"><span>Intl Gates</span><span>+6 international gates</span></div>
+      <div class="data-row"><span>Budget</span><span>$590M</span></div>
+      <div class="data-row"><span>Risk</span><span class="tag tag-high">HIGH</span></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div><label>Development Concept</label>
+      <select id="t-concept">
+        <option>Organic expansion — incremental gate adds, no new terminal</option>
+        <option>Satellite concourse — people mover extension, 20-gate island</option>
+        <option>New Terminal D — west-side landside 30 gates</option>
+        <option>Hybrid — satellite 2029 + Terminal D 2038</option>
+      </select></div>
+    <div><label>Phase 1 Start Trigger</label>
+      <select id="t-trigger">
+        <option>Demand-based (85% capacity utilization)</option>
+        <option>Fixed date (Q1 2026 groundbreaking)</option>
+        <option>Airline agreement (Southwest gate commitment)</option>
+        <option>Funding milestone (FAA AIP grant approval)</option>
+      </select></div>
+    <div><label>NEPA / Environmental Path</label>
+      <select id="t-nepa">
+        <option>Categorical Exclusion (CE) — minor works, fastest</option>
+        <option>Environmental Assessment (EA) — 18–24 months</option>
+        <option>Full EIS — 3–5 years, major expansion</option>
+      </select></div>
+    <div><label>Total Capital Budget ($M)</label>
+      <input type="text" id="t-budget" placeholder="e.g. 2100" value="2100"></div>
+  </div>
+  <div><label>Special Constraints or Milestones</label>
+    <textarea id="t-ctx" placeholder="e.g. Super Bowl 2027 Tampa, bond issuance timeline, FAA NextGen implementation, SunRail Phase 3 corridor…"></textarea></div>
+  <button class="btn" onclick="runTimeline()">Run Schedule Analysis</button>
+  <div class="retry-banner" id="t-retry">⟳ Gemini overloaded — retrying with backoff…</div>
+  <div class="output" id="t-out"></div>
+</div>
+</div>
+
+<!-- MODULE 3: CHORUS -->
+<div class="module" id="m3">
+<div class="mod-head" onclick="toggle('m3')">
+  <div class="mod-icon" style="background:linear-gradient(135deg,rgba(0,230,118,.15),rgba(0,150,80,.08))">🗣</div>
+  <div><div class="mod-title">Chorus</div><div class="mod-sub">Stakeholder simulation — HCAA, airlines, FAA, CBP, community, government</div></div>
+  <div class="chevron">▼</div>
+</div>
+<div class="mod-body">
+  <div class="grid4" style="margin-bottom:14px">
+    <div class="data-card"><h4>HCAA</h4><div class="data-row"><span>Priority</span><span>Revenue + capacity</span></div><div class="data-row"><span>Leverage</span><span class="tag tag-high">HIGH</span></div></div>
+    <div class="data-card"><h4>Southwest</h4><div class="data-row"><span>Priority</span><span>Hub dominance</span></div><div class="data-row"><span>Leverage</span><span class="tag tag-high">HIGH</span></div></div>
+    <div class="data-card"><h4>FAA / TSA</h4><div class="data-row"><span>Priority</span><span>Safety / grant</span></div><div class="data-row"><span>Leverage</span><span class="tag tag-high">HIGH</span></div></div>
+    <div class="data-card"><h4>Community</h4><div class="data-row"><span>Priority</span><span>Noise / jobs</span></div><div class="data-row"><span>Leverage</span><span class="tag tag-med">MEDIUM</span></div></div>
+  </div>
+  <div class="grid2">
+    <div><label>Focus Stakeholder</label>
+      <select id="c-stake">
+        <option value="hcaa">HCAA (Hillsborough County Aviation Authority)</option>
+        <option value="southwest">Southwest Airlines (42% market share — dominant carrier)</option>
+        <option value="united">United Airlines (18% share — international ambitions)</option>
+        <option value="american">American Airlines (16% share)</option>
+        <option value="delta">Delta Air Lines (14% share)</option>
+        <option value="faa">FAA / TSA (safety, grant assurances, checkpoint capacity)</option>
+        <option value="cbp">CBP (US Customs — international gate requirements)</option>
+        <option value="hillsborough">Hillsborough County / City of Tampa (economic development)</option>
+        <option value="fdot">Florida DOT (ground access, SunRail)</option>
+        <option value="community">Community Groups (noise, environment, Westshore Business District)</option>
+        <option value="concessions">Airport Concessionaires (F&amp;B, retail, parking)</option>
+      </select></div>
+    <div><label>Scenario Trigger</label>
+      <select id="c-scenario">
+        <option>Phase 1 gate expansion announcement</option>
+        <option>CONRAC construction displaces rental car operators (Phase 2)</option>
+        <option>Southwest requests preferential gate assignment</option>
+        <option>New international carrier awarded gates (United LATAM routes)</option>
+        <option>HCAA proposes $2.1B bond issuance</option>
+        <option>Terminal D approved — community noise hearing</option>
+        <option>TSA staffing crisis — checkpoint hours cut 30%</option>
+        <option>Southwest acquisition / consolidation rumor</option>
+        <option>SunRail corridor extension approved through airport</option>
+        <option>FAA NextGen procedure change reduces runway capacity</option>
+      </select></div>
+  </div>
+  <div style="margin-top:10px"><label>Additional Context</label>
+    <textarea id="c-ctx" placeholder="e.g. Westshore Alliance position, specific airline contract terms, Tampa Bay EDC economic study…"></textarea></div>
+  <button class="btn" onclick="runChorus()">Run Stakeholder Simulation</button>
+  <div class="retry-banner" id="c-retry">⟳ Gemini overloaded — retrying with backoff…</div>
+  <div class="output" id="c-out"></div>
+</div>
+</div>
+
+<!-- MODULE 4: ATLAS -->
+<div class="module" id="m4">
+<div class="mod-head" onclick="toggle('m4')">
+  <div class="mod-icon" style="background:linear-gradient(135deg,rgba(255,159,67,.15),rgba(200,100,0,.08))">🗺</div>
+  <div><div class="mod-title">Atlas</div><div class="mod-sub">Concept analysis — terminal, landside, cargo, multi-modal, sustainability</div></div>
+  <div class="chevron">▼</div>
+</div>
+<div class="mod-body">
+  <div class="grid3" style="margin-bottom:14px">
+    <div class="data-card">
+      <h4>Concept A — Organic</h4>
+      <div class="data-row"><span>Revenue</span><span class="tag tag-med">7/10</span></div>
+      <div class="data-row"><span>Community Impact</span><span class="tag tag-low">8/10</span></div>
+      <div class="data-row"><span>Regulatory Risk</span><span class="tag tag-low">LOW</span></div>
+      <div class="data-row"><span>Capex</span><span>$680M</span></div>
+    </div>
+    <div class="data-card">
+      <h4>Concept B — Satellite</h4>
+      <div class="data-row"><span>Revenue</span><span class="tag tag-med">8/10</span></div>
+      <div class="data-row"><span>Community Impact</span><span class="tag tag-med">6/10</span></div>
+      <div class="data-row"><span>Regulatory Risk</span><span class="tag tag-med">MEDIUM</span></div>
+      <div class="data-row"><span>Capex</span><span>$1.1B</span></div>
+    </div>
+    <div class="data-card">
+      <h4>Concept C — Terminal D</h4>
+      <div class="data-row"><span>Revenue</span><span class="tag tag-low">10/10</span></div>
+      <div class="data-row"><span>Community Impact</span><span class="tag tag-high">4/10</span></div>
+      <div class="data-row"><span>Regulatory Risk</span><span class="tag tag-high">HIGH</span></div>
+      <div class="data-row"><span>Capex</span><span>$1.6B</span></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div><label>Primary Concept</label>
+      <select id="a-concept">
+        <option>Concept A — Organic incremental expansion</option>
+        <option>Concept B — New satellite concourse (20 gates, people mover ext.)</option>
+        <option>Concept C — Terminal D (30 gates, new west landside)</option>
+        <option>Hybrid A+B — Organic Phase 1, Satellite Phase 2</option>
+        <option>Hybrid B+C — Satellite 2029, Terminal D 2038</option>
+      </select></div>
+    <div><label>Priority Weighting</label>
+      <select id="a-weight">
+        <option>Revenue optimization</option>
+        <option>Passenger experience / LOS</option>
+        <option>Community / noise mitigation</option>
+        <option>Sustainability / carbon neutral 2035</option>
+        <option>Cargo / logistics growth</option>
+        <option>Balanced (equal weight)</option>
+      </select></div>
+    <div><label>Multi-modal Integration</label>
+      <select id="a-modal">
+        <option>Road-only (status quo HOV/express lanes)</option>
+        <option>SunRail Phase 3 airport connector (2032)</option>
+        <option>BRT / Tampa Bay Connect bus rapid transit</option>
+        <option>Full intermodal hub (rail + bus + AV + rideshare)</option>
+      </select></div>
+    <div><label>Lease Term Horizon</label>
+      <select id="a-horizon">
+        <option>20-year master plan (2024–2044)</option>
+        <option>30-year long-range (2024–2054)</option>
+        <option>Phase 1 only (2024–2030)</option>
+      </select></div>
+  </div>
+  <div style="margin-top:10px"><label>Additional Parameters</label>
+    <textarea id="a-ctx" placeholder="e.g. LEED certification requirements, specific airline gate preferences, international pier requirements, APM technology selection…"></textarea></div>
+  <button class="btn" onclick="runAtlas()">Run Concept Analysis</button>
+  <div class="retry-banner" id="a-retry">⟳ Gemini overloaded — retrying with backoff…</div>
+  <div class="output" id="a-out"></div>
+</div>
+</div>
+
+<!-- MODULE 5: ORACLE -->
+<div class="module" id="m5">
+<div class="mod-head" onclick="toggle('m5')">
+  <div class="mod-icon" style="background:linear-gradient(135deg,rgba(255,71,87,.15),rgba(150,0,30,.08))">⚡</div>
+  <div><div class="mod-title">Oracle</div><div class="mod-sub">Robustness analysis — demand shocks, airline risk, climate, funding, regulation</div></div>
+  <div class="chevron">▼</div>
+</div>
+<div class="mod-body">
+  <div class="grid2">
+    <div><label>Demand Shock</label>
+      <select id="o-demand">
+        <option>None — base case growth</option>
+        <option>Mild recession (-15% demand, 18-month recovery)</option>
+        <option>Severe recession (-30%, 36-month recovery)</option>
+        <option>Pandemic-scale shock (-60%, 5-year recovery)</option>
+      </select></div>
+    <div><label>Airline Consolidation Scenario</label>
+      <select id="o-airline">
+        <option>Status quo — no consolidation</option>
+        <option>Southwest restructuring / Chapter 11 (Elliott acquisition)</option>
+        <option>Spirit collapse — mid-market gap opens</option>
+        <option>United/Delta code-share expansion — Southwest squeezed</option>
+        <option>Major carrier TPA hub upgrade (United or American)</option>
+      </select></div>
+    <div><label>Climate / Sea Level Risk</label>
+      <select id="o-climate">
+        <option>IPCC baseline (0.5m sea level rise by 2044)</option>
+        <option>Moderate (1.0m — Tampa Bay flood zone expansion)</option>
+        <option>Extreme (1.5m + Cat 4+ storm surge — runway flood scenario)</option>
+        <option>Thermal stress only (runway surface temp / operation limits)</option>
+      </select></div>
+    <div><label>Funding Risk</label>
+      <select id="o-funding">
+        <option>Full AIP grants secured — no gap</option>
+        <option>Partial AIP — 20% gap, bond financing required</option>
+        <option>Federal freeze — airport infrastructure bill delayed</option>
+        <option>Bond market disruption — rate spike delays Phase 2</option>
+      </select></div>
+    <div><label>Regulatory Risk</label>
+      <select id="o-reg">
+        <option>No material changes — FAA current rules apply</option>
+        <option>NextGen expansion — runway capacity changes ±10%</option>
+        <option>NEPA reform — EA/EIS accelerated by federal policy</option>
+        <option>CBP staffing cuts — international operations constrained</option>
+      </select></div>
+    <div><label>Risk Tolerance (1–10)</label>
+      <select id="o-risk">
+        <option value="3">3 — Conservative (minimize downside)</option>
+        <option value="5" selected>5 — Moderate (balanced risk/return)</option>
+        <option value="7">7 — Aggressive (maximize growth opportunity)</option>
+        <option value="9">9 — Speculative (high risk, transformational upside)</option>
+      </select></div>
+  </div>
+  <button class="btn" onclick="runOracle()">Run Robustness Analysis</button>
+  <div class="retry-banner" id="o-retry">⟳ Gemini overloaded — retrying with backoff…</div>
+  <div class="output" id="o-out"></div>
+</div>
+</div>
+
+</div>
+
+<nav class="tpa-mobile-nav">
+  <button class="tpa-mn-tab active" onclick="document.querySelector('.wrap').scrollTo({top:0,behavior:'smooth'})">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><span>Home</span>
+  </button>
+  <button class="tpa-mn-tab" onclick="openMod('m1')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Demand</span>
+  </button>
+  <button class="tpa-mn-tab" onclick="openMod('m3')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span>Chorus</span>
+  </button>
+  <button class="tpa-mn-tab" onclick="openMod('m5')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Oracle</span>
+  </button>
+</nav>
+
+<script>
+const PROXY='https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+const SYS=`You are Enginuity, an AI master planning intelligence for major commercial airports. You are analyzing the Tampa International Airport (TPA) 2024–2044 Master Plan RFQ issued by the Hillsborough County Aviation Authority (HCAA). Key context: TPA is a major hub serving 21.5M passengers (2023) with Southwest Airlines holding 42% market share; current capacity is 28M annually before terminal expansion is required; a $2.1B capital program is planned across 3 phases; Phase 1 (gate expansion +12, people mover extension, $680M) is shovel-ready pending master plan approval; Phase 2 (CONRAC, cargo hub Phase 1, $850M) triggers at 85% capacity utilization; Phase 3 (Terminal D or satellite concourse, $590M) is demand-contingent; climate risk is material — Tampa Bay sea level rise and hurricane frequency are factored into design criteria; FAA AIP grant assurances govern aeronautical use requirements. Produce precise, data-grounded analysis with specific numbers, NPV figures, and actionable recommendations. Format with section labels like "ANALYSIS —" in flowing professional paragraphs. No markdown bullets.`;
+
+async function gemini(prompt, retryBannerId){
+  const delays=[2000,4000,8000,12000,18000,25000];
+  for(let attempt=0;attempt<6;attempt++){
+    if(attempt>0){
+      const banner=document.getElementById(retryBannerId);
+      if(banner){banner.className='retry-banner visible';banner.textContent=`⟳ Retry ${attempt}/5 — Gemini overloaded, waiting ${delays[attempt-1]/1000}s…`;}
+    }
+    try{
+      const r=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],system_instruction:{parts:[{text:SYS}]}})});
+      if(r.status===503||r.status===429){
+        if(attempt<5){await new Promise(res=>setTimeout(res,delays[attempt]));continue;}
+        throw new Error('Service overloaded after 6 attempts. Please retry.');
+      }
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const d=await r.json();
+      const banner=document.getElementById(retryBannerId);
+      if(banner) banner.className='retry-banner';
+      return d?.candidates?.[0]?.content?.parts?.[0]?.text||'Analysis unavailable.';
+    }catch(e){
+      if(attempt<5&&(e.message?.includes('503')||e.message?.includes('429')||e.message?.includes('fetch'))){
+        await new Promise(res=>setTimeout(res,delays[attempt]));continue;
+      }
+      throw e;
+    }
+  }
+  throw new Error('Max retries exceeded.');
+}
+
+function toggle(id){document.getElementById(id).classList.toggle('open')}
+function openMod(id){const m=document.getElementById(id);m.classList.add('open');m.scrollIntoView({behavior:'smooth',block:'start'});}
+
+async function run(btn,outId,retryBannerId,prompt){
+  const b=btn.closest('.mod-body').querySelector('.btn');
+  const out=document.getElementById(outId);
+  b.disabled=true;b.textContent='Analyzing…';
+  out.className='output visible';
+  out.innerHTML='<span class="loading">⟳ Enginuity processing — retrying if needed…</span>';
+  try{const r=await gemini(prompt,retryBannerId);out.textContent=r;}
+  catch(e){out.innerHTML='<span style="color:#ff4757">⚠ '+e.message+'</span>';}
+  b.disabled=false;b.textContent='Run Analysis';
+}
+
+function runDemand(){
+  const scenario=document.getElementById('d-scenario').value;
+  const sw=document.getElementById('d-sw').value;
+  const entry=document.getElementById('d-entry').value;
+  const cargo=document.getElementById('d-cargo').value;
+  const ctx=document.getElementById('d-ctx').value;
+  const p=`DEMAND ORACLE ANALYSIS — Tampa International Airport Master Plan 2024–2044.
+Demand scenario: ${scenario}. Southwest Airlines market shift: ${sw}. New market entry: ${entry}. Cargo growth target: ${cargo}.
+Base data: 2023 actuals 21.5M passengers; Southwest 42%, United 18%, American 16%, Delta 14%; current cargo 170,000 tons/year; current capacity ceiling ~28M before major expansion required.
+Analyze: (1) Passenger demand forecast under this scenario — provide 5-year intervals to 2044 with confidence range, (2) Revenue per enplaned passenger implications — how does market mix shift affect aeronautical and non-aeronautical revenue, (3) Southwest concentration risk — at 42% share, what is TPA's vulnerability to a Southwest capacity reduction, (4) Capacity trigger analysis — when does Phase 1 expansion become unavoidable under this scenario, (5) Cargo/logistics opportunity — Tampa Bay distribution market, Amazon Air, UPS, e-commerce growth. ${ctx?'Additional context: '+ctx:''}
+Provide specific passenger numbers, revenue projections, and timing recommendations.`;
+  run(document.querySelector('#m1 .btn'),'d-out','d-retry',p);
+}
+
+function runTimeline(){
+  const concept=document.getElementById('t-concept').value;
+  const trigger=document.getElementById('t-trigger').value;
+  const nepa=document.getElementById('t-nepa').value;
+  const budget=document.getElementById('t-budget').value;
+  const ctx=document.getElementById('t-ctx').value;
+  const p=`MERIDIAN SCHEDULE ANALYSIS — Tampa International Airport Master Plan.
+Development concept: ${concept}. Phase 1 start trigger: ${trigger}. Environmental review path: ${nepa}. Total capital budget: $${budget}M.
+Current status: 21.5M passengers (2023), capacity ceiling ~28M; Phase 1 ($680M gate expansion + people mover) is design-ready; CONRAC Phase 2 ($850M) tied to rental car lease expirations 2028-2030; Terminal D/Satellite Phase 3 ($590M) demand-contingent.
+Analyze: (1) Critical path for Phase 1 — design, procurement, permitting, construction sequencing, (2) NEPA/environmental review timeline under selected path — Cat Ex vs EA vs EIS implications, (3) FAA AIP grant coordination — application cycles, matching fund requirements, reimbursement structure, (4) Phasing dependencies — what must be true before Phase 2 can begin, (5) Parallel workstreams — what can run simultaneously to compress schedule, (6) Tampa Bay Super Bowl / major event constraints. ${ctx?'Additional context: '+ctx:''}
+Produce a month-level critical path for Phase 1 and year-level for Phases 2–3. Quantify delay risks in months and dollars.`;
+  run(document.querySelector('#m2 .btn'),'t-out','t-retry',p);
+}
+
+function runChorus(){
+  const stake=document.getElementById('c-stake').value;
+  const scenario=document.getElementById('c-scenario').value;
+  const ctx=document.getElementById('c-ctx').value;
+  const names={hcaa:'HCAA (Hillsborough County Aviation Authority)',southwest:'Southwest Airlines (42% market share)',united:'United Airlines (18% share)',american:'American Airlines (16%)',delta:'Delta Air Lines (14%)',faa:'FAA and TSA (regulatory, grant, security)',cbp:'US Customs and Border Protection (CBP)',hillsborough:'Hillsborough County / City of Tampa',fdot:'Florida DOT (SunRail, ground access)',community:'Community groups (noise, Westshore Business District)',concessions:'Airport Concessionaires'};
+  const p=`CHORUS STAKEHOLDER SIMULATION — Tampa International Airport Master Plan.
+Focus stakeholder: ${names[stake]||stake}. Scenario trigger: ${scenario}.
+Full stakeholder ecosystem: HCAA (airport operator, revenue and service quality), Southwest Airlines (dominant carrier 42% share, hub protection), United/American/Delta (growth ambitions, gate preferences), FAA (AIP grant compliance, NextGen), TSA (checkpoint capacity), CBP (international gateway), Hillsborough County (economic development, tax base), City of Tampa (Westshore district, employment), Florida DOT (SunRail Phase 3, HART bus rapid transit), environmental groups (Tampa Bay watershed, Hillsborough River), Westshore Alliance (business district), rental car operators (CONRAC displacement), airport concessionaires (F&B, retail, parking).
+Simulate: (1) How ${names[stake]||stake} responds to this trigger, (2) Their specific actions and timeline, (3) Coalition dynamics — who are their allies and opponents, (4) Leverage points — what they control that HCAA needs, (5) Negotiation levers — what would shift their position.
+${ctx?'Additional context: '+ctx:''}
+Be specific about regulatory mechanisms, financial levers, and political dynamics.`;
+  run(document.querySelector('#m3 .btn'),'c-out','c-retry',p);
+}
+
+function runAtlas(){
+  const concept=document.getElementById('a-concept').value;
+  const weight=document.getElementById('a-weight').value;
+  const modal=document.getElementById('a-modal').value;
+  const horizon=document.getElementById('a-horizon').value;
+  const ctx=document.getElementById('a-ctx').value;
+  const p=`ATLAS CONCEPT ANALYSIS — Tampa International Airport Master Plan.
+Primary concept: ${concept}. Priority weighting: ${weight}. Multi-modal integration: ${modal}. Planning horizon: ${horizon}.
+Three concepts to evaluate: Concept A (Organic expansion — incremental, $680M, Revenue 7/10, Community 8/10, Regulatory LOW), Concept B (Satellite concourse 20 gates, people mover, $1.1B, Revenue 8/10, Community 6/10, Regulatory MEDIUM), Concept C (Terminal D 30 gates new west landside, $1.6B, Revenue 10/10, Community 4/10, Regulatory HIGH).
+Analyze: (1) NPV comparison — 20-year discounted cash flow for each concept under base demand scenario, (2) Passenger LOS (Level of Service) — gate utilization, dwell time, check-in wait time implications per concept, (3) Community and environmental impact — noise contours, emissions, Hillsborough Bay proximity, (4) Multi-modal integration feasibility — how does ${modal} change the landside access design, (5) Climate resilience — sea level rise adaptation for each concept's footprint, (6) Recommendation for ${weight} priority with specific design criteria.
+${ctx?'Additional context: '+ctx:''}
+Provide specific NPV figures, LOS grades, and square footage/gate count benchmarks.`;
+  run(document.querySelector('#m4 .btn'),'a-out','a-retry',p);
+}
+
+function runOracle(){
+  const demand=document.getElementById('o-demand').value;
+  const airline=document.getElementById('o-airline').value;
+  const climate=document.getElementById('o-climate').value;
+  const funding=document.getElementById('o-funding').value;
+  const reg=document.getElementById('o-reg').value;
+  const risk=document.getElementById('o-risk').value;
+  const p=`ORACLE ROBUSTNESS ANALYSIS — Tampa International Airport Master Plan.
+Scenario combination: Demand shock = ${demand}; Airline consolidation = ${airline}; Climate risk = ${climate}; Funding risk = ${funding}; Regulatory = ${reg}. Risk tolerance: ${risk}/10.
+Critical uncertainties for TPA 2024–2044 master plan: (1) Demand volatility — TPA is heavily dependent on Southwest (42%). Any restructuring creates an immediate revenue gap and potential terminal utilization collapse. (2) Climate risk — Tampa Bay is in a known sea level rise zone; Category 4+ hurricane storm surge reaches airport elevation; design standards must account for 1.0m+ SLR by 2044. (3) Funding — $2.1B program requires AIP grants, PFC revenue, airline use agreements, and potentially $800M+ in bonds. Any federal pause or rate spike threatens Phase 2. (4) Airline behavior — Southwest is pivoting toward profitability over growth. A capacity reduction at TPA of 15% would require HCAA to immediately recruit replacement carriers. (5) Technology disruption — autonomous vehicle uptake reduces rental car demand, threatening CONRAC Phase 2 business case; SAF requirements may strain cargo operations.
+Analyze: (1) Combined impact of this scenario combination on project viability — score each phase RED/YELLOW/GREEN, (2) Financial exposure — quantify worst-case NPV reduction vs base case, (3) Critical path fragility — which milestone is most vulnerable to this scenario, (4) Adaptive trigger points — at what demand level should HCAA pause/accelerate each phase, (5) Recommended hedge strategy for the highest-risk factor identified.
+Grade overall master plan robustness under this scenario. Be specific about dollars, timelines, and actionable contingencies.`;
+  run(document.querySelector('#m5 .btn'),'o-out','o-retry',p);
+}
+</script>
+</body>
 </html>
