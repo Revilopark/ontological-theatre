@@ -547,30 +547,47 @@ Session query #${sessionQueryMap[studentId]}
       };
     }
     
-    // Retry on 503/429 (Gemini overload)
-    let response, _attempt = 0;
-    const DELAYS = [2000,4000,8000,12000,18000];
+    // Retry on 503/429 (Gemini overload) → OpenRouter fallback
+    let response, _attempt = 0, reply = null;
+    const DELAYS = [2000,4000,8000];
     while (true) {
       response = await fetch(AI_PROXY, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(apiBody)
       });
-      if ((response.status===503||response.status===429) && _attempt<5) {
+      if ((response.status===503||response.status===429) && _attempt<3) {
         await new Promise(r=>setTimeout(r, DELAYS[_attempt++]));
         continue;
       }
       break;
     }
     
-    const data = await response.json();
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'I need a moment to reflect on that. Could you rephrase?';
+    if(response.status===503||response.status===429){
+      // Gemini exhausted — try OpenRouter
+      const OR_KEY='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';
+      const sys=apiBody?.system_instruction?.parts?.[0]?.text||'';
+      const msgs=[{role:'system',content:sys}];
+      (apiBody?.contents||[]).forEach(c=>msgs.push({role:'user',content:(c.parts||[]).map(p=>p.text||'').join('')}));
+      for(const model of ['google/gemini-2.5-flash-preview','anthropic/claude-3.5-haiku']){
+        try{
+          const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':'Bearer '+OR_KEY,'HTTP-Referer':'https://revilopark.github.io'},
+            body:JSON.stringify({model,messages:msgs})});
+          if(r.ok){const d=await r.json();reply=d?.choices?.[0]?.message?.content;if(reply)break;}
+        }catch(e){}
+      }
+    } else {
+      const data = await response.json();
+      reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    }
+    const replyText = reply || 'I need a moment to reflect on that. Could you rephrase?';
     
     document.getElementById('typing').style.display = 'none';
-    addBotMessage(reply);
+    addBotMessage(replyText);
     
     // Update node activations based on keywords
-    await updateActivations(text + ' ' + reply);
+    await updateActivations(text + ' ' + replyText);
     
     queryCount++;
     if (queryCount % 5 === 0) {

@@ -470,27 +470,47 @@ footer{text-align:center;padding:30px 0;color:var(--muted);font-size:11px}
 const PROXY='https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
 const SYS='You are Enginuity, an AI scenario planning intelligence for aviation infrastructure at Van Nuys Airport (VNY). You are analyzing the 16425 Hart Street 10-acre lease redevelopment RFP issued by LAWA (Los Angeles World Airports). Key context: current tenant Southwest Aviation has operated propeller/small aircraft for 30+ years; RFP targets GA aircraft over 12,500 lbs (jets) as Non-FBO; adjacent Hayvenhurst lot is legally contested; FAA Part 13/16 grant assurances require equal aeronautical access; 2006 VNY Specific Plan is under revision; community opposition from VNY CAC and neighborhood councils is strong; CEQA review required. Produce precise, data-grounded analysis with specific numbers and actionable recommendations. Format with section labels like "ANALYSIS —" in flowing professional paragraphs. No markdown bullets.';
 
-async function gemini(prompt){
-  const delays=[2000,4000,8000,12000,18000,25000];
-  for(let attempt=0;attempt<6;attempt++){
+
+// ── AI PROVIDER: Gemini primary → OpenRouter fallback ──────────────────────
+const GEMINI_PROXY='https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+const OR_KEY='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';
+const OR_MODELS=['google/gemini-2.5-flash-preview','anthropic/claude-3.5-haiku'];
+async function callAI(prompt,sys,onStatus){
+  const gDelays=[2000,4000,8000];
+  // 1. Try Gemini proxy (3 attempts)
+  for(let i=0;i<3;i++){
+    if(i>0&&onStatus)onStatus('⟳ Gemini retry '+i+'/2…');
     try{
-      const r=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],system_instruction:{parts:[{text:SYS}]}})});
-      if(r.status===503||r.status===429){
-        if(attempt<5){await new Promise(res=>setTimeout(res,delays[attempt]));continue;}
-        throw new Error('Service overloaded after 6 attempts. Please retry in a moment.');
-      }
-      if(!r.ok) throw new Error('HTTP '+r.status);
-      const d=await r.json();
-      return d?.candidates?.[0]?.content?.parts?.[0]?.text||'Analysis unavailable.';
-    }catch(e){
-      if(attempt<5&&(e.message?.includes('503')||e.message?.includes('429')||e.message?.includes('fetch'))){
-        await new Promise(res=>setTimeout(res,delays[attempt]));continue;
-      }
-      throw e;
+      const r=await fetch(GEMINI_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],system_instruction:{parts:[{text:sys}]}})});
+      if(r.ok){const d=await r.json();const t=d?.candidates?.[0]?.content?.parts?.[0]?.text;if(t)return t;}
+      if((r.status===503||r.status===429)&&i<2){await new Promise(res=>setTimeout(res,gDelays[i]));continue;}
+      break;
+    }catch(e){if(i<2){await new Promise(res=>setTimeout(res,gDelays[i]));continue;}}
+  }
+  // 2. OpenRouter fallback (2 models, 2 attempts each)
+  for(const model of OR_MODELS){
+    if(onStatus)onStatus('⟳ Switching to '+model.split('/')[1]+'…');
+    for(let i=0;i<2;i++){
+      try{
+        const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+OR_KEY,'HTTP-Referer':'https://revilopark.github.io'},
+          body:JSON.stringify({model,messages:[{role:'system',content:sys},{role:'user',content:prompt}]})});
+        if(r.ok){const d=await r.json();const t=d?.choices?.[0]?.message?.content;if(t)return t;}
+        if((r.status===503||r.status===429)&&i<1){await new Promise(res=>setTimeout(res,3000));continue;}
+        break;
+      }catch(e){if(i<1){await new Promise(res=>setTimeout(res,3000));continue;}}
     }
   }
-  throw new Error('Max retries exceeded.');
+  throw new Error('All AI providers unavailable — please retry in a moment.');
+}
+
+async function gemini(prompt){
+  const SYS_LOCAL=SYS;
+  return callAI(prompt,SYS_LOCAL,t=>{
+    const out=document.querySelector('.output.visible');
+    if(out)out.innerHTML='<span class="loading">'+t+'</span>';
+  });
 }
 
 function toggle(id){document.getElementById(id).classList.toggle('open')}

@@ -122,6 +122,38 @@ body{background:#080808;color:#e0e0e0;font-family:'Inter',sans-serif;overflow:hi
 </div>
 </div>
 <script>
+// ── AI: Gemini primary → OpenRouter fallback ───────────────────────────────
+const GEMINI_PROXY='https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+const OR_KEY='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';
+const OR_MODELS=['google/gemini-2.5-flash-preview','anthropic/claude-3.5-haiku'];
+async function callAI(prompt,sys,onStatus){
+  const gDelays=[2000,4000,8000];
+  for(let i=0;i<3;i++){
+    if(i>0&&onStatus)onStatus('⟳ Gemini retry '+i+'/2…');
+    try{
+      const r=await fetch(GEMINI_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],system_instruction:{parts:[{text:sys}]}})});
+      if(r.ok){const d=await r.json();const t=d?.candidates?.[0]?.content?.parts?.[0]?.text;if(t)return t;}
+      if((r.status===503||r.status===429)&&i<2){await new Promise(res=>setTimeout(res,gDelays[i]));continue;}
+      break;
+    }catch(e){if(i<2){await new Promise(res=>setTimeout(res,gDelays[i]));continue;}}
+  }
+  for(const model of OR_MODELS){
+    if(onStatus)onStatus('⟳ Switching to '+model.split('/')[1]+'…');
+    for(let i=0;i<2;i++){
+      try{
+        const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+OR_KEY,'HTTP-Referer':'https://revilopark.github.io'},
+          body:JSON.stringify({model,messages:[{role:'system',content:sys},{role:'user',content:prompt}]})});
+        if(r.ok){const d=await r.json();const t=d?.choices?.[0]?.message?.content;if(t)return t;}
+        if((r.status===503||r.status===429)&&i<1){await new Promise(res=>setTimeout(res,3000));continue;}
+        break;
+      }catch(e){if(i<1){await new Promise(res=>setTimeout(res,3000));continue;}}
+    }
+  }
+  throw new Error('All AI providers unavailable — please retry in a moment.');
+}
+
 // ═══════════ MAP INIT ═══════════
 const map = L.map('map',{zoomControl:true,attributionControl:true}).setView([34.2082,-118.4892],14);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
@@ -560,34 +592,13 @@ CONFIRMED: Known facts
 CITED: Public regulatory references  
 INFERRED: Approximate geographic boundaries
 ASSUMED: Site-specific interpretations`;
-  const STATIC_FALLBACK='TOP 3 RISK FACTORS [CONFIRMED]:\n1. FAA Grant Assurance (49 USC §47107) — Part 13/16 complaint risk from any party\n2. Southwest Aviation lease — 35-year term creates litigation exposure on early termination\n3. Specific Plan ambiguity — LAWA interpretation of boundaries is contested\n\nOPTIMAL CONFIG [INFERRED]:\nConcept B (Hybrid Aviation) balances aeronautical use mandate with revenue diversification.\n\nDUE DILIGENCE SEQUENCE [ASSUMED]:\n1. FAA Form 7460-1 + Grant Assurance determination\n2. Phase I/II ESA for fuel farm site\n3. Legal analysis of SP applicability\n4. Community engagement with Encino NC\n5. CEQA Initial Study';
-  const delays=[2000,4000,8000,12000,18000,25000];
-  let analysisResult=null;
-  for(let attempt=0;attempt<6;attempt++){
-    try{
-      if(attempt>0){content.textContent=`⟳ Retrying (attempt ${attempt}/5)…`;}
-      const resp=await fetch('https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate',{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          contents:[{parts:[{text:prompt}]}],
-          system_instruction:{parts:[{text:'You are Enginuity, an AI-powered scenario planning tool for airports and real estate. You analyze regulatory, environmental, and operational constraints for site development. Be precise, cite specific regulations, and give actionable due diligence recommendations. Use the provenance tags CONFIRMED, CITED, INFERRED, and ASSUMED on all factual claims.'}]}
-        })
-      });
-      if(resp.status===503||resp.status===429){
-        if(attempt<5){await new Promise(res=>setTimeout(res,delays[attempt]));continue;}
-        content.textContent='⚠ Enginuity AI is experiencing high demand. Static analysis:\n\n'+STATIC_FALLBACK;
-        break;
-      }
-      if(!resp.ok){content.textContent='⚠ Request failed (HTTP '+resp.status+'). Static analysis:\n\n'+STATIC_FALLBACK;break;}
-      const data=await resp.json();
-      analysisResult=data?.candidates?.[0]?.content?.parts?.[0]?.text||data?.text||null;
-      if(analysisResult){content.textContent=analysisResult;}
-      else{content.textContent='Static analysis (AI response empty):\n\n'+STATIC_FALLBACK;}
-      break;
-    }catch(e){
-      if(attempt<5){await new Promise(res=>setTimeout(res,delays[attempt]));continue;}
-      content.textContent='⚠ Connection error. Static analysis:\n\n'+STATIC_FALLBACK;
-    }
+  const GIS_SYS='You are Enginuity, an AI-powered scenario planning tool for airports and real estate. You analyze regulatory, environmental, and operational constraints for site development. Be precise, cite specific regulations, and give actionable due diligence recommendations. Use the provenance tags CONFIRMED, CITED, INFERRED, and ASSUMED on all factual claims.';
+  try{
+    const result=await callAI(prompt,GIS_SYS,t=>{content.textContent=t;});
+    content.textContent=result;
+  }catch(e){
+    const STATIC='TOP 3 RISK FACTORS [CONFIRMED]:\n1. FAA Grant Assurance (49 USC §47107) — Part 13/16 complaint risk from any party\n2. Southwest Aviation lease — 35-year term creates litigation exposure on early termination\n3. Specific Plan ambiguity — LAWA interpretation of boundaries is contested\n\nOPTIMAL CONFIG [INFERRED]:\nConcept B (Hybrid Aviation) balances aeronautical use mandate with revenue diversification.\n\nDUE DILIGENCE SEQUENCE [ASSUMED]:\n1. FAA Form 7460-1 + Grant Assurance determination\n2. Phase I/II ESA for fuel farm site\n3. Legal analysis of SP applicability\n4. Community engagement with Encino NC\n5. CEQA Initial Study';
+    content.textContent='⚠ '+e.message+'\n\nStatic analysis:\n\n'+STATIC;
   }
 });
 

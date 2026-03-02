@@ -358,7 +358,39 @@ footer a{color:var(--cyan);text-decoration:none}
 </footer>
 
 <script>
-const PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+// ── AI: Gemini primary → OpenRouter fallback ───────────────────────────────
+const GEMINI_PROXY='https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+const OR_KEY='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';
+const OR_MODELS=['google/gemini-2.5-flash-preview','anthropic/claude-3.5-haiku'];
+async function callAI(prompt,sys,onStatus){
+  const gDelays=[2000,4000,8000];
+  for(let i=0;i<3;i++){
+    if(i>0&&onStatus)onStatus('⟳ Gemini retry '+i+'/2…');
+    try{
+      const r=await fetch(GEMINI_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],system_instruction:{parts:[{text:sys}]}})});
+      if(r.ok){const d=await r.json();const t=d?.candidates?.[0]?.content?.parts?.[0]?.text;if(t)return t;}
+      if((r.status===503||r.status===429)&&i<2){await new Promise(res=>setTimeout(res,gDelays[i]));continue;}
+      break;
+    }catch(e){if(i<2){await new Promise(res=>setTimeout(res,gDelays[i]));continue;}}
+  }
+  for(const model of OR_MODELS){
+    if(onStatus)onStatus('⟳ Switching to '+model.split('/')[1]+'…');
+    for(let i=0;i<2;i++){
+      try{
+        const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+OR_KEY,'HTTP-Referer':'https://revilopark.github.io'},
+          body:JSON.stringify({model,messages:[{role:'system',content:sys},{role:'user',content:prompt}]})});
+        if(r.ok){const d=await r.json();const t=d?.choices?.[0]?.message?.content;if(t)return t;}
+        if((r.status===503||r.status===429)&&i<1){await new Promise(res=>setTimeout(res,3000));continue;}
+        break;
+      }catch(e){if(i<1){await new Promise(res=>setTimeout(res,3000));continue;}}
+    }
+  }
+  throw new Error('All AI providers unavailable — please retry in a moment.');
+}
+
+// Legacy reference:
 
 const RAW = {
   a:{rev:9.2,faa:3.2,com:1.8,pha:4.0,res:4.5},
@@ -441,29 +473,16 @@ COMMUNITY STRATEGY — for whichever concept scores highest, describe a specific
 LAWA'S ACTUAL INTEREST — separate from community preferences, what does LAWA most want from this lease? Which concept best serves LAWA's institutional goals?
 ENGINUITY PROVENANCE — tag key claims as CONFIRMED, CITED, INFERRED, or ASSUMED.`;
 
-  const delays=[2000,4000,8000,12000,18000,25000];
   const SYS_ATL='You are Enginuity, AI scenario planning intelligence for aviation infrastructure. Produce precise, data-grounded professional analysis with specific numbers and recommendations. Use section labels followed by em-dash. Write in flowing professional paragraphs, not bullet points.';
-  let result=null;
-  for(let attempt=0;attempt<6;attempt++){
-    try{
-      if(attempt>0){btn.textContent=`Retry ${attempt}/5…`;}
-      const r=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],system_instruction:{parts:[{text:SYS_ATL}]}})});
-      if(r.status===503||r.status===429){
-        if(attempt<5){await new Promise(res=>setTimeout(res,delays[attempt]));continue;}
-        result='Service overloaded after 6 attempts. Please retry.';break;
-      }
-      if(!r.ok){result='HTTP error '+r.status;break;}
-      const d=await r.json();
-      result=d?.candidates?.[0]?.content?.parts?.[0]?.text||'Analysis unavailable.';break;
-    }catch(e){
-      if(attempt<5){await new Promise(res=>setTimeout(res,delays[attempt]));continue;}
-      result='Error: '+e.message;
-    }
+  const el=document.getElementById('ai-text');
+  try{
+    const result=await callAI(prompt,SYS_ATL,t=>{btn.textContent=t;el.textContent=t;});
+    el.textContent=result;
+  }catch(e){
+    el.textContent='⚠ '+e.message;
   }
-  document.getElementById('ai-text').textContent=result||'Analysis unavailable.';
   document.getElementById('ai-out').classList.add('visible');
-  btn.disabled=false; btn.classList.remove('loading');
+  btn.disabled=false; btn.classList.remove('loading'); btn.textContent='Run Analysis';
 }
 
 // init weights on load
