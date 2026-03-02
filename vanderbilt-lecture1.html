@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 1 — Welcome to Convergent Intelligence | Vanderbilt Owen × Inkwell</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,600&family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#050508;--bg2:#09090e;--bg3:#0e0e16;
+  --gold:#cfb87c;--gold2:#a8914a;--gold3:rgba(207,184,124,.1);
+  --blue:#4a7bcc;--blue2:#7aa8e8;
+  --green:#4a9a6a;--green2:#7ac89a;
+  --purple:#8a6aac;--purple2:#b09ad0;
+  --red:#cc4a4a;--red2:#e87a7a;
+  --text:#e8e4dc;--muted:rgba(232,228,220,.6);--dim:rgba(232,228,220,.28);
+  --border:rgba(207,184,124,.1);--border2:rgba(207,184,124,.05);
+  --glass:rgba(255,255,255,.03);
+  --sans:'Inter',system-ui,sans-serif;
+  --serif:'Playfair Display',Georgia,serif;
+  --mono:'Roboto Mono',monospace;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--sans)}
+
+/* ── DECK SHELL ──────────────────────────────────────── */
+#deck{width:100%;height:100%;position:relative}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
+.slide.active{display:flex}
+
+/* ── BACKGROUNDS ─────────────────────────────────────── */
+.bg-base{background:var(--bg)}
+.bg-dark{background:#030306}
+.bg-blue{background:linear-gradient(135deg,#030610 0%,#050a18 100%)}
+.bg-gold{background:linear-gradient(135deg,#0a0804 0%,#110d04 100%)}
+.bg-purple{background:linear-gradient(135deg,#07050e 0%,#0e0818 100%)}
+.bg-green{background:linear-gradient(135deg,#040a06 0%,#070f09 100%)}
+.bg-split{background:linear-gradient(160deg,#06060c 55%,#0a0808 55%)}
+
+/* ── NAV BAR ─────────────────────────────────────────── */
+#nav{position:fixed;bottom:0;left:0;right:0;z-index:200;
+     background:rgba(5,5,8,.95);backdrop-filter:blur(20px);
+     border-top:1px solid var(--border2);
+     display:flex;align-items:center;justify-content:space-between;
+     padding:0 1.5rem;height:44px}
+#nav-left{display:flex;align-items:center;gap:1rem}
+#nav-center{display:flex;align-items:center;gap:.5rem}
+#nav-right{display:flex;align-items:center;gap.5rem}
+.nav-btn{background:none;border:1px solid var(--border);color:var(--muted);
+         padding:4px 12px;border-radius:5px;font-size:.6rem;font-weight:600;
+         letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:.15s;font-family:var(--sans)}
+.nav-btn:hover{border-color:rgba(207,184,124,.3);color:var(--gold)}
+.nav-btn.active-btn{border-color:rgba(207,184,124,.4);color:var(--gold);background:rgba(207,184,124,.06)}
+#slide-counter{font-family:var(--mono);font-size:.65rem;color:var(--dim)}
+.dot-nav{display:flex;gap:4px;align-items:center}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--border);cursor:pointer;transition:.2s;flex-shrink:0}
+.dot.active{background:var(--gold);box-shadow:0 0 6px rgba(207,184,124,.5)}
+
+/* ── PROGRESS BAR ────────────────────────────────────── */
+#progress{position:fixed;top:0;left:0;height:2px;background:var(--gold);transition:width .3s ease;z-index:300;box-shadow:0 0 8px rgba(207,184,124,.5)}
+
+/* ── SPEAKER NOTES ───────────────────────────────────── */
+#notes-panel{position:fixed;bottom:44px;left:0;right:0;z-index:190;
+             background:rgba(5,5,8,.97);backdrop-filter:blur(20px);
+             border-top:1px solid rgba(207,184,124,.15);
+             padding:1rem 2rem;max-height:200px;overflow-y:auto;
+             display:none;transition:.2s}
+#notes-panel.open{display:block}
+#notes-title{font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold2);margin-bottom:.5rem;font-weight:700}
+#notes-text{font-size:.75rem;color:var(--muted);line-height:1.8;white-space:pre-wrap}
+
+/* ── SLIDE INNER LAYOUTS ─────────────────────────────── */
+.slide-inner{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;
+             padding:3.5rem 4rem 3.5rem;position:relative;z-index:1;overflow:hidden}
+.slide-inner.left{align-items:flex-start;text-align:left}
+.slide-inner.split{flex-direction:row;gap:4rem;align-items:center}
+
+/* ── AMBIENT GLOW ────────────────────────────────────── */
+.glow-blue{position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(74,123,204,.08) 0%,transparent 70%);pointer-events:none}
+.glow-gold{position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(207,184,124,.07) 0%,transparent 70%);pointer-events:none}
+.glow-purple{position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(138,106,172,.08) 0%,transparent 70%);pointer-events:none}
+
+/* ── TYPOGRAPHY ──────────────────────────────────────── */
+.eyebrow{font-size:.58rem;letter-spacing:.3em;text-transform:uppercase;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.eyebrow::before,.eyebrow::after{content:'';height:1px;background:currentColor;opacity:.35}
+.eyebrow::before{width:20px}
+.eyebrow::after{width:20px}
+.eyebrow.center{justify-content:center}
+h1.display{font-family:var(--serif);font-size:clamp(2.5rem,5vw,4.5rem);font-weight:900;line-height:1.08;letter-spacing:-.01em}
+h1.display em{font-style:italic}
+h2.section-head{font-family:var(--serif);font-size:clamp(1.8rem,3.5vw,3rem);font-weight:700;line-height:1.15}
+h2.section-head em{font-style:italic}
+h3.slide-head{font-family:var(--serif);font-size:clamp(1.3rem,2.5vw,2rem);font-weight:700;line-height:1.2}
+.lead{font-size:clamp(.9rem,1.5vw,1.15rem);color:var(--muted);line-height:1.8;max-width:640px}
+.large-num{font-family:var(--serif);font-size:clamp(4rem,10vw,8rem);font-weight:900;line-height:1;opacity:.15;position:absolute}
+
+/* ── COMPONENTS ──────────────────────────────────────── */
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:.6rem;font-weight:700;padding:4px 11px;border-radius:12px;letter-spacing:.06em;text-transform:uppercase}
+.tag-gold{background:rgba(207,184,124,.1);border:1px solid rgba(207,184,124,.2);color:var(--gold)}
+.tag-blue{background:rgba(74,123,204,.1);border:1px solid rgba(74,123,204,.25);color:var(--blue2)}
+.tag-green{background:rgba(74,154,106,.1);border:1px solid rgba(74,154,106,.25);color:var(--green2)}
+.tag-purple{background:rgba(138,106,172,.1);border:1px solid rgba(138,106,172,.25);color:var(--purple2)}
+.tag-red{background:rgba(204,74,74,.1);border:1px solid rgba(204,74,74,.25);color:var(--red2)}
+.tag-dim{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:var(--muted)}
+
+.card{background:rgba(255,255,255,.03);border:1px solid var(--border2);border-radius:12px;padding:1.5rem}
+.card-blue{background:rgba(74,123,204,.06);border-color:rgba(74,123,204,.2)}
+.card-gold{background:rgba(207,184,124,.05);border-color:rgba(207,184,124,.15)}
+.card-purple{background:rgba(138,106,172,.07);border-color:rgba(138,106,172,.2)}
+.card-green{background:rgba(74,154,106,.07);border-color:rgba(74,154,106,.2)}
+.card-red{background:rgba(204,74,74,.06);border-color:rgba(204,74,74,.18)}
+
+.divider-line{width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:1.5rem 0}
+
+.cite{font-size:.6rem;color:var(--dim);font-style:italic;margin-top:1rem}
+
+.bullet-list{list-style:none;display:flex;flex-direction:column;gap:.75rem}
+.bullet-list li{display:flex;gap:.75rem;align-items:flex-start;font-size:.88rem;color:var(--muted);line-height:1.6}
+.bullet-list li::before{content:'—';color:var(--gold);opacity:.5;flex-shrink:0;margin-top:1px}
+.bullet-list li strong{color:var(--text)}
+
+.ity-grid{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:800px}
+.ity-word{font-size:.7rem;padding:4px 11px;border-radius:10px;background:rgba(207,184,124,.07);border:1px solid rgba(207,184,124,.12);color:var(--gold2);font-weight:500}
+
+/* ── SLIDE-SPECIFIC ──────────────────────────────────── */
+.trinity-three{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;width:100%;max-width:1000px}
+.tc{border-radius:10px;padding:1.5rem;border:1px solid}
+.tc-s{background:rgba(74,123,204,.08);border-color:rgba(74,123,204,.25)}
+.tc-k{background:rgba(207,184,124,.06);border-color:rgba(207,184,124,.2)}
+.tc-g{background:rgba(138,106,172,.08);border-color:rgba(138,106,172,.25)}
+.tc-icon{font-size:2rem;margin-bottom:.5rem}
+.tc-layer{font-size:.52rem;letter-spacing:.2em;text-transform:uppercase;font-weight:700;margin-bottom:.3rem}
+.tc-name{font-family:var(--serif);font-size:1.1rem;font-weight:700;margin-bottom:.35rem}
+.tc-q{font-size:.72rem;color:var(--muted);margin-bottom:.5rem;font-style:italic}
+.tc-desc{font-size:.68rem;color:var(--dim);line-height:1.6}
+.tc-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:.6rem}
+.tc-tag{font-size:.52rem;padding:2px 7px;border-radius:6px;font-weight:500}
+.tc-s .tc-layer{color:var(--blue2)} .tc-s .tc-tag{background:rgba(74,123,204,.1);color:#a8c8f8}
+.tc-k .tc-layer{color:var(--gold)} .tc-k .tc-tag{background:rgba(207,184,124,.1);color:var(--gold2)}
+.tc-g .tc-layer{color:var(--purple2)} .tc-g .tc-tag{background:rgba(138,106,172,.1);color:#c4b0e4}
+
+.omega-row{display:grid;grid-template-columns:repeat(5,1fr);gap:.75rem;width:100%;max-width:900px}
+.omega-c{background:var(--glass);border:1px solid var(--border2);border-radius:8px;padding:.85rem;text-align:center}
+.omega-rune{font-size:1.6rem;margin-bottom:.25rem}
+.omega-ity{font-size:.62rem;font-weight:700;color:var(--gold2);margin-bottom:.15rem}
+.omega-q{font-size:.52rem;color:var(--dim);line-height:1.4}
+
+.failure-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;width:100%;max-width:960px}
+.fail-card{border-radius:10px;padding:1.25rem;background:rgba(204,74,74,.05);border:1px solid rgba(204,74,74,.15)}
+.fail-icon{font-size:1.5rem;margin-bottom:.5rem}
+.fail-title{font-size:.75rem;font-weight:700;color:var(--red2);margin-bottom:.4rem}
+.fail-desc{font-size:.68rem;color:var(--muted);line-height:1.6}
+.fail-example{font-size:.62rem;color:var(--dim);font-style:italic;margin-top:.4rem;font-family:var(--mono)}
+
+.timeline-item{display:flex;gap:1.25rem;align-items:flex-start;padding:.75rem 0;border-bottom:1px solid var(--border2)}
+.timeline-item:last-child{border-bottom:none}
+.tl-week{font-family:var(--mono);font-size:.58rem;color:var(--gold2);font-weight:700;flex-shrink:0;width:60px;padding-top:2px}
+.tl-content{}
+.tl-title{font-size:.78rem;font-weight:700;margin-bottom:.2rem}
+.tl-desc{font-size:.65rem;color:var(--dim);line-height:1.5}
+
+.quote-big{font-family:var(--serif);font-size:clamp(1.4rem,3vw,2.4rem);font-style:italic;line-height:1.5;max-width:800px;text-align:center}
+.quote-big em{color:var(--gold)}
+.quote-attr{font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-top:1.25rem;text-align:center}
+
+.discovery-box{background:rgba(207,184,124,.04);border:1px solid rgba(207,184,124,.2);border-radius:14px;padding:2rem;max-width:680px;text-align:center}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start;width:100%;max-width:1000px}
+
+.moat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;width:100%;max-width:780px}
+.moat-card{border-radius:10px;padding:1.25rem}
+.moat-wrong{background:rgba(204,74,74,.05);border:1px solid rgba(204,74,74,.15)}
+.moat-right{background:rgba(74,154,106,.06);border:1px solid rgba(74,154,106,.2)}
+.moat-label{font-size:.52rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;margin-bottom:.4rem}
+.moat-wrong .moat-label{color:var(--red2)} .moat-right .moat-label{color:var(--green2)}
+.moat-text{font-size:.78rem;color:var(--muted);line-height:1.6}
+
+/* slide-specific art */
+.rune-hero{font-size:8rem;line-height:1;opacity:.08;position:absolute;pointer-events:none;user-select:none}
+.big-quote-mark{font-family:var(--serif);font-size:12rem;line-height:1;opacity:.06;position:absolute;font-weight:900;pointer-events:none;user-select:none}
+
+/* ── SLIDE 1 hero art ────────────────────────────────── */
+.s1-art{position:absolute;right:-60px;top:50%;transform:translateY(-50%);opacity:.06;font-size:28rem;line-height:1;pointer-events:none;user-select:none;font-family:var(--serif);font-weight:900;font-style:italic}
+
+/* ── TRANSITIONS ─────────────────────────────────────── */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.slide.active .slide-inner>*{animation:fadeIn .35s ease both}
+.slide.active .slide-inner>*:nth-child(2){animation-delay:.05s}
+.slide.active .slide-inner>*:nth-child(3){animation-delay:.1s}
+.slide.active .slide-inner>*:nth-child(4){animation-delay:.15s}
+.slide.active .slide-inner>*:nth-child(5){animation-delay:.2s}
+.slide.active .slide-inner>*:nth-child(6){animation-delay:.25s}
+.slide.active .slide-inner>*:nth-child(7){animation-delay:.3s}
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDES
+═══════════════════════════════════════════════════════ -->
+<div id="deck">
+
+<!-- ── S1: TITLE ───────────────────────────────────────── -->
+<div class="slide bg-dark active" data-notes="Welcome everyone. Take a breath. Look around this room. Every person here is going to build something real before this semester ends. Not a slide deck. Not a framework doc. A working AI system that a real organization or real customers will actually use. That's what we're doing for 14 weeks. Let's start.">
+  <div class="slide-inner" style="text-align:left;align-items:flex-start;padding-left:5rem">
+    <div class="s1-art">⬡</div>
+    <div class="eyebrow" style="color:var(--gold)">Vanderbilt Owen GSB · March 9, 2026 · Week 1 of 14</div>
+    <h1 class="display" style="margin-bottom:1.25rem">Welcome to<br><em>Convergent</em><br>Intelligence</h1>
+    <p class="lead" style="margin-bottom:2rem">You're about to build AI systems that most of Silicon Valley doesn't know how to build yet.</p>
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+      <span class="tag tag-gold">⬡ Trinity Graph Framework</span>
+      <span class="tag tag-blue">🧠 Social Graph</span>
+      <span class="tag tag-gold">📚 Knowledge Graph</span>
+      <span class="tag tag-purple">✨ Generative Graph</span>
+    </div>
+    <div style="margin-top:2.5rem;display:flex;gap:2rem;align-items:center">
+      <div>
+        <div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:.2rem">Professor</div>
+        <div style="font-size:.85rem;font-weight:700">Oliver Luckett</div>
+      </div>
+      <div style="width:1px;height:30px;background:var(--border2)"></div>
+      <div>
+        <div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:.2rem">Teaching Assistant</div>
+        <div style="font-size:.85rem;font-weight:700">Baxter Webb</div>
+      </div>
+      <div style="width:1px;height:30px;background:var(--border2)"></div>
+      <div>
+        <div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:.2rem">Duration</div>
+        <div style="font-size:.85rem;font-weight:700">3 hours · 20 slides</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── S2: WHO AM I ────────────────────────────────────── -->
+<div class="slide bg-base" data-notes="Quick bio — not to impress you, to show you the thread. Revver in 2005 was the first platform to monetize video content before YouTube. DigiSynd, acquired by Disney 2008. Ran the Toy Story 3 social campaign. theAudience — worked with Obama for America, Coachella, Pixar, American Express. Head of Innovation at Disney. Every company I've built has been about one thing: understanding how information flows through human systems. That's what the Trinity Graph is. It's 25 years compressed into an architecture.">
+  <div class="slide-inner left" style="max-width:900px;margin:0 auto">
+    <div class="eyebrow" style="color:var(--gold2)">Before we begin</div>
+    <h2 class="section-head" style="margin-bottom:1.5rem">25 Years Compressed<br>Into <em>One Architecture</em></h2>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;width:100%;margin-bottom:1.5rem">
+      <div class="card">
+        <div style="font-size:1.5rem;margin-bottom:.4rem">📹</div>
+        <div style="font-size:.7rem;font-weight:700;margin-bottom:.2rem">Revver · 2005</div>
+        <div style="font-size:.62rem;color:var(--dim)">First video monetization platform. Before YouTube.</div>
+      </div>
+      <div class="card">
+        <div style="font-size:1.5rem;margin-bottom:.4rem">🏰</div>
+        <div style="font-size:.7rem;font-weight:700;margin-bottom:.2rem">Disney · 2008</div>
+        <div style="font-size:.62rem;color:var(--dim)">DigiSynd acquired. Toy Story 3 social campaign.</div>
+      </div>
+      <div class="card">
+        <div style="font-size:1.5rem;margin-bottom:.4rem">🎪</div>
+        <div style="font-size:.7rem;font-weight:700;margin-bottom:.2rem">theAudience · 2015</div>
+        <div style="font-size:.62rem;color:var(--dim)">Obama, Coachella, Pixar, AmEx. Sold 2015.</div>
+      </div>
+      <div class="card card-gold">
+        <div style="font-size:1.5rem;margin-bottom:.4rem">⬡</div>
+        <div style="font-size:.7rem;font-weight:700;margin-bottom:.2rem;color:var(--gold)">Inkwell · Now</div>
+        <div style="font-size:.62rem;color:var(--dim)">Trinity Graph. IAM. Artiquity. Enginuity.</div>
+      </div>
+    </div>
+    <p class="lead" style="font-size:.88rem">I've co-authored <em>The Social Organism</em> (2016) with Michael J. Casey — the book that argues social networks are biological organisms, not software platforms. That metaphor is the foundation of everything we'll build together.</p>
+    <p style="font-size:.72rem;color:var(--dim);margin-top:.75rem;font-style:italic">Every company I've built has been about one question: how does information flow through human systems — and what happens when it does?</p>
+  </div>
+</div>
+
+<!-- ── S3: THE PROBLEM ─────────────────────────────────── -->
+<div class="slide bg-dark" data-notes="This is the core thesis of the course. Every AI system being built today — ChatGPT, Gemini, Claude, recommendation engines, autonomous agents — sees only one lens. They're either socially aware OR factually grounded OR creatively generative. Never all three at once. That's why ChatGPT hallucinates (no knowledge ground truth). That's why recommendation engines feel manipulative (no social layer). That's why generative AI feels hollow (no human substrate). The solution is convergence.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-blue" style="top:-200px;left:50%;transform:translateX(-50%)"></div>
+    <div class="eyebrow center" style="color:var(--red2)">The Core Problem</div>
+    <h2 class="section-head" style="margin-bottom:1rem">Every AI System Today<br>Sees Only <em>One Graph</em></h2>
+    <p class="lead" style="margin-bottom:2rem;text-align:center">That's why they hallucinate. That's why they feel hollow. That's why they miss the room.</p>
+    <div class="failure-grid">
+      <div class="fail-card">
+        <div class="fail-icon">🤖</div>
+        <div class="fail-title">ChatGPT / Claude</div>
+        <div class="fail-desc">Generative + some Knowledge. No Social layer. Gives the same answer to everyone regardless of who's asking, why they're asking, or what they actually need.</div>
+        <div class="fail-example">"Here's a recipe for pasta" (whether you're a chef or a 10-year-old)</div>
+      </div>
+      <div class="fail-card">
+        <div class="fail-icon">📊</div>
+        <div class="fail-title">Recommendation Engines</div>
+        <div class="fail-desc">Social behavior data + some Generative. No Knowledge layer. Optimizes for engagement, not truth. Sends you down rabbit holes with zero factual grounding.</div>
+        <div class="fail-example">"You might also like…" → 3 hours lost</div>
+      </div>
+      <div class="fail-card">
+        <div class="fail-icon">📚</div>
+        <div class="fail-title">Knowledge Bases / RAG</div>
+        <div class="fail-desc">Knowledge-heavy but no Social or Generative layers. Returns correct facts to the wrong person in the wrong context in the wrong format. Technically accurate. Practically useless.</div>
+        <div class="fail-example">"See page 47 of the manual." (when you're in crisis)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── S4: THE DISCOVERY ───────────────────────────────── -->
+<div class="slide bg-gold" data-notes="This is the origin story. July 9, 2025. I asked a simple question: what do all words ending in -ity have in common? The answer changed everything. Clarity. Possibility. Complexity. Serendipity. These aren't just words — they're the English language's built-in system for converting observable qualities into concepts that can be reasoned about as distinct entities. The language already did the hard work of abstracting human experience into structured concepts. We just had to see it.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-gold" style="top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+    <div class="eyebrow center" style="color:var(--gold2)">The Origin Story · July 9, 2025</div>
+    <div class="discovery-box" style="margin:0 auto">
+      <div style="font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold2);margin-bottom:1.25rem">The Question That Started Everything</div>
+      <div style="font-family:var(--serif);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;font-style:italic;line-height:1.4;margin-bottom:1.25rem;color:var(--text)">
+        "What do all words<br>ending in <em style="color:var(--gold)">-ity</em> have in common?"
+      </div>
+      <div style="width:60px;height:1px;background:rgba(207,184,124,.3);margin:.75rem auto"></div>
+      <div style="font-size:.82rem;color:var(--muted);line-height:1.8;max-width:520px;margin:0 auto">
+        The answer: <strong style="color:var(--text)">-ity words are abstract nouns that convert observable qualities into concepts that can be reasoned about as distinct entities.</strong><br><br>
+        <em>Clarity</em> turns "clear" into a thing you can measure. <em>Possibility</em> turns "possible" into a space you can navigate. <em>Serendipity</em> turns "lucky" into a system you can engineer.
+      </div>
+      <div style="margin-top:1.25rem;font-size:.7rem;color:var(--gold2);font-weight:600">The insight: English already built the ontology. We just had to see it.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── S5: ITY WORDS ──────────────────────────────────── -->
+<div class="slide bg-gold" data-notes="225+ core -ity terms across 7 meta-categories. Cognition: clarity, complexity, creativity, curiosity. Society: community, authority, equality. Chance/Temporal: serendipity, synchronicity. Existence: vitality, mortality, identity. Physical: gravity, fluidity. Emotion: anxiety, vulnerability, empathy (technically -pathy but same logic). Morality: integrity, dignity. These aren't random words. They're a complete vocabulary for reasoning about human experience as structured data.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="eyebrow center" style="color:var(--gold2)">The Vocabulary · 225+ Terms · 7 Categories</div>
+    <h2 class="section-head" style="margin-bottom:1.5rem;font-size:clamp(1.4rem,2.5vw,2rem)">Language Already Built the <em>Ontology</em></h2>
+    <div class="ity-grid" style="margin:0 auto">
+      <span class="ity-word">clarity</span><span class="ity-word">creativity</span><span class="ity-word">complexity</span>
+      <span class="ity-word">curiosity</span><span class="ity-word">serendipity</span><span class="ity-word">authenticity</span>
+      <span class="ity-word">possibility</span><span class="ity-word">synchronicity</span><span class="ity-word">vitality</span>
+      <span class="ity-word">integrity</span><span class="ity-word">vulnerability</span><span class="ity-word">community</span>
+      <span class="ity-word">connectivity</span><span class="ity-word">reciprocity</span><span class="ity-word">lucidity</span>
+      <span class="ity-word">necessity</span><span class="ity-word">totality</span><span class="ity-word">continuity</span>
+      <span class="ity-word">materiality</span><span class="ity-word">individuality</span><span class="ity-word">propensity</span>
+      <span class="ity-word">felicity</span><span class="ity-word">familiarity</span><span class="ity-word">ubiquity</span>
+      <span class="ity-word">dignity</span><span class="ity-word">equality</span><span class="ity-word">authority</span>
+      <span class="ity-word">gravity</span><span class="ity-word">fluidity</span><span class="ity-word">sensitivity</span>
+      <span class="ity-word" style="opacity:.5">+ 195 more…</span>
+    </div>
+    <p style="font-size:.72rem;color:var(--dim);margin-top:1.25rem;max-width:600px;line-height:1.8">Each term is an <strong style="color:var(--gold2)">ontological primitive</strong> — a concept that bridges human emotional experience and structured machine reasoning. They exist at the intersection of psychology, philosophy, and data science.</p>
+  </div>
+</div>
+
+<!-- ── S6: THE THREE GRAPHS ───────────────────────────── -->
+<div class="slide bg-base" data-notes="Now the architecture. Three graphs, operating simultaneously, connected by the -ity bridge layer. Social Graph: the human substrate — who cares, what they feel, their relationships, trust, belonging. This is the layer everyone ignores. Knowledge Graph: verified truth — what we actually know with confidence, with provenance. Generative Graph: what could exist — synthesis, creation, emergence. When all three operate together, you get something that didn't exist before: a system that knows who it's talking to, what's true, and what to create for them. That's convergent intelligence.">
+  <div class="slide-inner" style="text-align:center;justify-content:flex-start;padding-top:2.5rem">
+    <div class="eyebrow center" style="color:var(--gold)">The Architecture</div>
+    <h2 class="section-head" style="margin-bottom:1.5rem;font-size:clamp(1.3rem,2.2vw,1.8rem)">Three Graphs. One Convergent System.</h2>
+    <div class="trinity-three">
+      <div class="tc tc-s">
+        <div class="tc-icon">🧠</div>
+        <div class="tc-layer">Layer 1 · Social Graph</div>
+        <div class="tc-name">Who Cares</div>
+        <div class="tc-q">"Who is this for and why?"</div>
+        <div class="tc-desc">The human substrate. Emotions, psychology, relationships, trust, belonging, identity. Without this layer, your system is broadcasting into a void.</div>
+        <div class="tc-tags"><span class="tc-tag">authenticity</span><span class="tc-tag">vulnerability</span><span class="tc-tag">trust</span><span class="tc-tag">belonging</span></div>
+      </div>
+      <div class="tc tc-k">
+        <div class="tc-icon">📚</div>
+        <div class="tc-layer">Layer 2 · Knowledge Graph</div>
+        <div class="tc-name">What's True</div>
+        <div class="tc-q">"What do we actually know?"</div>
+        <div class="tc-desc">Verified facts, domain expertise, provenance, confidence scores. Without this layer, your system is hallucinating with confidence.</div>
+        <div class="tc-tags"><span class="tc-tag">clarity</span><span class="tc-tag">certainty</span><span class="tc-tag">integrity</span><span class="tc-tag">validity</span></div>
+      </div>
+      <div class="tc tc-g">
+        <div class="tc-icon">✨</div>
+        <div class="tc-layer">Layer 3 · Generative Graph</div>
+        <div class="tc-name">What Could Be</div>
+        <div class="tc-q">"What can we create?"</div>
+        <div class="tc-desc">Synthesis, transformation, emergence, serendipity. Without this layer, your system is a search engine that learned to type full sentences.</div>
+        <div class="tc-tags"><span class="tc-tag">creativity</span><span class="tc-tag">serendipity</span><span class="tc-tag">possibility</span><span class="tc-tag">novelty</span></div>
+      </div>
+    </div>
+    <div style="margin-top:1.25rem;padding:.85rem 2rem;background:rgba(207,184,124,.04);border:1px dashed rgba(207,184,124,.2);border-radius:8px;display:inline-flex;gap:1.5rem;align-items:center">
+      <span style="font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold2);font-weight:700">Bridge Layer</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <span style="font-size:.6rem;padding:2px 8px;border-radius:8px;background:rgba(207,184,124,.08);border:1px solid rgba(207,184,124,.18);color:var(--gold)">authenticity</span>
+        <span style="font-size:.6rem;padding:2px 8px;border-radius:8px;background:rgba(207,184,124,.08);border:1px solid rgba(207,184,124,.18);color:var(--gold)">clarity</span>
+        <span style="font-size:.6rem;padding:2px 8px;border-radius:8px;background:rgba(207,184,124,.08);border:1px solid rgba(207,184,124,.18);color:var(--gold)">connectivity</span>
+        <span style="font-size:.6rem;padding:2px 8px;border-radius:8px;background:rgba(207,184,124,.08);border:1px solid rgba(207,184,124,.18);color:var(--gold)">creativity</span>
+        <span style="font-size:.6rem;padding:2px 8px;border-radius:8px;background:rgba(207,184,124,.08);border:1px solid rgba(207,184,124,.18);color:var(--gold)">vitality</span>
+        <span style="font-size:.6rem;padding:2px 8px;border-radius:8px;background:rgba(207,184,124,.08);border:1px solid rgba(207,184,124,.18);color:var(--gold)">serendipity</span>
+        <span style="font-size:.6rem;padding:2px 8px;border-radius:8px;background:rgba(207,184,124,.08);border:1px solid rgba(207,184,124,.18);color:var(--gold)">integrity</span>
+        <span style="font-size:.6rem;padding:2px 8px;border-radius:8px;background:rgba(207,184,124,.08);border:1px solid rgba(207,184,124,.18);color:var(--gold)">possibility</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── S7: SOCIAL GRAPH DEEP DIVE ─────────────────────── -->
+<div class="slide bg-blue" data-notes="Spend time here. The Social Graph is where most technical founders fail. They understand databases and APIs but they've never sat with a user and listened. Really listened. Not for what they say they need — for what they actually feel. The Social Graph captures: Person nodes (attributes, history, identity), Relationship edges (trust scores, context, history), Community clusters (shared -ity states), Emotional properties (anxiety, curiosity, belonging). The question this graph answers is: who is this system for, and what do they need at a human level?">
+  <div class="slide-inner left" style="max-width:950px;margin:0 auto">
+    <div class="glow-blue" style="top:50%;right:-100px;transform:translateY(-50%)"></div>
+    <div class="eyebrow" style="color:var(--blue2)">Layer 1 Deep Dive</div>
+    <h2 class="section-head" style="margin-bottom:1rem">The Social Graph:<br><em>Who Cares?</em></h2>
+    <div class="two-col">
+      <div>
+        <p style="font-size:.82rem;color:var(--muted);line-height:1.8;margin-bottom:1.25rem">The Social Graph answers the most important question in any startup: <strong style="color:var(--text)">who are these people and what do they actually feel?</strong> Not what they say. Not what they click. What they feel.</p>
+        <ul class="bullet-list">
+          <li><strong>Person nodes</strong> — identity, history, role, context, needs</li>
+          <li><strong>Relationship edges</strong> — trust, context, shared experience</li>
+          <li><strong>Community clusters</strong> — groups bound by shared -ity states</li>
+          <li><strong>Emotional properties</strong> — anxiety, curiosity, vulnerability levels</li>
+          <li><strong>Temporal dynamics</strong> — relationships that evolve over time</li>
+        </ul>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.75rem">
+        <div class="card card-blue">
+          <div style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--blue2);margin-bottom:.4rem">Example</div>
+          <div style="font-family:var(--mono);font-size:.65rem;color:#a8c8f8;line-height:1.8">CREATE (p:Person {<br>&nbsp;&nbsp;name: "Maya Chen",<br>&nbsp;&nbsp;role: "First-year MBA",<br>&nbsp;&nbsp;anxiety: 0.7,<br>&nbsp;&nbsp;curiosity: 0.9,<br>&nbsp;&nbsp;belonging: 0.4<br>})</div>
+        </div>
+        <div class="card card-blue">
+          <div style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--blue2);margin-bottom:.4rem">Key Insight</div>
+          <div style="font-size:.72rem;color:var(--muted);line-height:1.7">Two people asking the same question need completely different answers if one has <em>high anxiety + low belonging</em> and the other has <em>high curiosity + high confidence</em>. A Social Graph knows the difference.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── S8: KNOWLEDGE GRAPH DEEP DIVE ──────────────────── -->
+<div class="slide bg-gold" data-notes="The Knowledge Graph is where technical founders feel at home — but usually build it wrong. A KG isn't just a database. It's a system of verified facts with provenance. Every node has a source. Every edge has a confidence score. Every fact knows where it came from and when it was last verified. This is what separates knowledge from hallucination. The question this graph answers: what do we actually know with confidence, and how do we know it?">
+  <div class="slide-inner left" style="max-width:950px;margin:0 auto">
+    <div class="glow-gold" style="top:50%;right:-100px;transform:translateY(-50%)"></div>
+    <div class="eyebrow" style="color:var(--gold2)">Layer 2 Deep Dive</div>
+    <h2 class="section-head" style="margin-bottom:1rem">The Knowledge Graph:<br><em>What's True?</em></h2>
+    <div class="two-col">
+      <div>
+        <p style="font-size:.82rem;color:var(--muted);line-height:1.8;margin-bottom:1.25rem">A Knowledge Graph is not a database. It's a <strong style="color:var(--text)">structured epistemology</strong> — a system where every fact knows where it came from, when it was verified, and how confident we should be in it.</p>
+        <ul class="bullet-list">
+          <li><strong>Entities</strong> — real-world objects with verified attributes</li>
+          <li><strong>Relationships</strong> — facts as edges with confidence scores</li>
+          <li><strong>Provenance</strong> — every fact has a source and timestamp</li>
+          <li><strong>Ontology</strong> — the rules that define what's valid</li>
+          <li><strong>CONFIRMED / CITED / INFERRED / ASSUMED</strong> — the IAM provenance doctrine</li>
+        </ul>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.75rem">
+        <div class="card card-gold">
+          <div style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);margin-bottom:.4rem">RDF Triple Pattern</div>
+          <div style="font-family:var(--mono);font-size:.65rem;color:var(--gold2);line-height:1.8">&lt;Subject&gt; &lt;Predicate&gt; &lt;Object&gt;<br><br>Mercury → orbitsAround → Sun<br>confidence: 1.0 · source: NASA</div>
+        </div>
+        <div class="card card-gold">
+          <div style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);margin-bottom:.4rem">Provenance States</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            <span class="tag tag-green" style="font-size:.52rem">✓ CONFIRMED</span>
+            <span class="tag tag-blue" style="font-size:.52rem">📄 CITED</span>
+            <span class="tag tag-purple" style="font-size:.52rem">~ INFERRED</span>
+            <span class="tag tag-red" style="font-size:.52rem">? ASSUMED</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── S9: GENERATIVE GRAPH DEEP DIVE ─────────────────── -->
+<div class="slide bg-purple" data-notes="The Generative Graph is the most misunderstood layer. Most people think it's just 'use GPT to generate text.' It's not. It's a structured map of what can be synthesized from what — the creative logic of a domain. Which ideas connect? Which combinations produce novelty? How does serendipity happen systematically, not randomly? The Generative Graph makes emergence engineerable. You're not just prompting an LLM — you're orchestrating a system where social context + verified knowledge + generative patterns converge into something genuinely new.">
+  <div class="slide-inner left" style="max-width:950px;margin:0 auto">
+    <div class="glow-purple" style="top:50%;right:-100px;transform:translateY(-50%)"></div>
+    <div class="eyebrow" style="color:var(--purple2)">Layer 3 Deep Dive</div>
+    <h2 class="section-head" style="margin-bottom:1rem">The Generative Graph:<br><em>What Could Be?</em></h2>
+    <div class="two-col">
+      <div>
+        <p style="font-size:.82rem;color:var(--muted);line-height:1.8;margin-bottom:1.25rem">The Generative Graph is not "use ChatGPT." It's a <strong style="color:var(--text)">structured map of creative possibility</strong> — the patterns that determine what can be synthesized, combined, or invented from existing knowledge.</p>
+        <ul class="bullet-list">
+          <li><strong>Pattern nodes</strong> — proven creative combinations in a domain</li>
+          <li><strong>Synthesis edges</strong> — which concepts produce novelty when combined</li>
+          <li><strong>Serendipity routing</strong> — engineered surprise vs. random generation</li>
+          <li><strong>Context-sensitive creation</strong> — Social + Knowledge informs what to generate</li>
+          <li><strong>HybridRAG</strong> — Retrieval-Augmented Generation from all 3 graphs simultaneously</li>
+        </ul>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.75rem">
+        <div class="card card-purple">
+          <div style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--purple2);margin-bottom:.4rem">The Difference</div>
+          <div style="font-size:.7rem;color:var(--muted);line-height:1.7">Standard LLM: "Generate a marketing email."<br><br>Trinity Graph: "Generate a marketing email for <em style="color:#c4b0e4">Maya (anxious, curious, first-year MBA)</em> about <em style="color:#c4b0e4">her client project</em> based on <em style="color:#c4b0e4">verified data about her partner organization</em>, using <em style="color:#c4b0e4">the tone that worked with similar users last quarter</em>."</div>
+        </div>
+        <div class="card card-purple">
+          <div style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--purple2);margin-bottom:.4rem">Serendipity Score</div>
+          <div style="font-size:.7rem;color:var(--dim);line-height:1.6">Every generated output gets a serendipity score: how surprising yet relevant is this? High serendipity = discovery. Low serendipity = expected. The Graph lets you tune the dial.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── S10: CONVERGENCE ────────────────────────────────── -->
+<div class="slide bg-dark" data-notes="This is the key insight. Each graph alone is powerful. Together they produce something that didn't exist before: a system that knows who it's talking to (Social), what's actually true (Knowledge), and what to create for them (Generative). The sum is greater than its parts. That's what convergent intelligence means. And this isn't just philosophical — it produces measurably better outputs. The same question answered by a converged Trinity Graph versus a single-graph system produces dramatically different results.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-gold" style="top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+    <div class="eyebrow center" style="color:var(--gold)">The Convergence</div>
+    <h2 class="section-head" style="margin-bottom:2rem">When All Three Converge,<br>You Get <em>Awareness</em></h2>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;max-width:900px;margin:0 auto">
+      <div style="text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:.5rem">🧠 + 📚</div>
+        <div style="font-size:.7rem;font-weight:700;margin-bottom:.4rem;color:var(--blue2)">Social + Knowledge</div>
+        <div style="font-size:.65rem;color:var(--dim);line-height:1.6">Contextually correct. Knows the facts <em>and</em> who's asking. But can't create anything new.</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:.5rem">📚 + ✨</div>
+        <div style="font-size:.7rem;font-weight:700;margin-bottom:.4rem;color:var(--gold)">Knowledge + Generative</div>
+        <div style="font-size:.65rem;color:var(--dim);line-height:1.6">Grounded creativity. Generates truthful content. But doesn't know who it's for.</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:.5rem">🧠 + ✨</div>
+        <div style="font-size:.7rem;font-weight:700;margin-bottom:.4rem;color:var(--purple2)">Social + Generative</div>
+        <div style="font-size:.65rem;color:var(--dim);line-height:1.6">Empathetically creative. Personal and imaginative. But may hallucinate facts.</div>
+      </div>
+    </div>
+    <div style="margin-top:1.75rem;padding:1.5rem 2.5rem;background:rgba(207,184,124,.06);border:1px solid rgba(207,184,124,.25);border-radius:12px;display:inline-block">
+      <div style="font-size:2rem;margin-bottom:.4rem">🧠 + 📚 + ✨</div>
+      <div style="font-size:.85rem;font-weight:700;color:var(--gold);margin-bottom:.3rem">All Three = Convergent Intelligence</div>
+      <div style="font-size:.72rem;color:var(--muted)">Knows who. Knows what's true. Creates what's needed. <strong style="color:var(--text)">That's awareness.</strong></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── S11: OMEGA PROTOCOL ────────────────────────────── -->
+<div class="slide bg-dark" data-notes="The Omega Protocol is how we force AI systems to reason in stages rather than just predict the next token. Ten runes, ten epistemic states. Each forces the system to answer a different question before moving to the next. Materiality: what exists? Vitality: what's alive? Interiority: what do people feel? Criticality: what's the core tension? Connectivity: what links these? Lucidity: what's the insight? Necessity: what must exist? Reciprocity: what's the value exchange? Totality: what's the whole picture? Continuity: what endures? Your projects will move through these states over the semester.">
+  <div class="slide-inner" style="text-align:center;justify-content:flex-start;padding-top:2rem">
+    <div class="eyebrow center" style="color:var(--gold)">The Omega Protocol</div>
+    <h2 class="section-head" style="margin-bottom:.5rem;font-size:clamp(1.2rem,2vw,1.7rem)">10 Runes · 10 Stages of Awareness</h2>
+    <p style="font-size:.75rem;color:var(--muted);margin-bottom:1.5rem;max-width:620px">Moves AI from linear prediction into System 2 reasoning. Each rune must be completed before moving to the next. Your projects advance through these states.</p>
+    <div class="omega-row">
+      <div class="omega-c"><div class="omega-rune">ᚢ</div><div class="omega-ity" style="color:var(--blue2)">Materiality</div><div class="omega-q">What exists?</div></div>
+      <div class="omega-c"><div class="omega-rune">ᛒ</div><div class="omega-ity" style="color:var(--green2)">Vitality</div><div class="omega-q">What's alive?</div></div>
+      <div class="omega-c"><div class="omega-rune">ᛗ</div><div class="omega-ity" style="color:var(--purple2)">Interiority</div><div class="omega-q">What's felt?</div></div>
+      <div class="omega-c"><div class="omega-rune">ᚦ</div><div class="omega-ity" style="color:var(--red2)">Criticality</div><div class="omega-q">What breaks?</div></div>
+      <div class="omega-c"><div class="omega-rune">ᛖ</div><div class="omega-ity" style="color:var(--blue2)">Connectivity</div><div class="omega-q">What links?</div></div>
+      <div class="omega-c"><div class="omega-rune">ᚲ</div><div class="omega-ity" style="color:var(--gold)">Lucidity</div><div class="omega-q">What's clear?</div></div>
+      <div class="omega-c"><div class="omega-rune">ᚾ</div><div class="omega-ity" style="color:var(--gold2)">Necessity</div><div class="omega-q">What must exist?</div></div>
+      <div class="omega-c"><div class="omega-rune">ᚷ</div><div class="omega-ity" style="color:var(--green2)">Reciprocity</div><div class="omega-q">What exchanges?</div></div>
+      <div class="omega-c"><div class="omega-rune">ᛞ</div><div class="omega-ity" style="color:var(--purple2)">Totality</div><div class="omega-q">What's whole?</div></div>
+      <div class="omega-c"><div class="omega-rune">ᛃ</div><div class="omega-ity" style="color:var(--gold)">Continuity</div><div class="omega-q">What endures?</div></div>
+    </div>
+    <p style="font-size:.68rem;color:var(--dim);margin-top:1.25rem">Your semester arc: Week 1 = Materiality (what exists in your domain). Week 14 = Continuity (what your system will sustain).</p>
+  </div>
+</div>
+
+<!-- ── S12: THE SOCIAL ORGANISM CONNECTION ────────────── -->
+<div class="slide bg-dark" data-notes="Most of you have the book. If you haven't read Chapter 1 yet, that's your homework. The core thesis: social networks are not software platforms — they're biological organisms. They have immune systems (community standards), metabolism (content velocity), reproduction (sharing), and death (when nobody cares anymore). The Social Graph layer in the Trinity Framework is the machine implementation of this biological reality. When you design a Social Graph, you're designing a living system, not a database schema.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="eyebrow center" style="color:var(--muted)">Required Reading · Connection</div>
+    <div class="quote-big" style="margin-bottom:1.5rem">
+      "Social networks are not <em>platforms</em>.<br>They are <em>organisms</em>."
+    </div>
+    <div class="quote-attr">The Social Organism · Luckett & Casey · 2016</div>
+    <div class="divider-line" style="margin:2rem auto;max-width:500px"></div>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;max-width:700px">
+      <div class="card" style="flex:1;min-width:180px;text-align:left">
+        <div style="font-size:1.2rem;margin-bottom:.35rem">🫀</div>
+        <div style="font-size:.7rem;font-weight:700;margin-bottom:.25rem">Metabolism</div>
+        <div style="font-size:.62rem;color:var(--dim)">Content velocity, energy flow, viral dynamics</div>
+      </div>
+      <div class="card" style="flex:1;min-width:180px;text-align:left">
+        <div style="font-size:1.2rem;margin-bottom:.35rem">🛡️</div>
+        <div style="font-size:.7rem;font-weight:700;margin-bottom:.25rem">Immune System</div>
+        <div style="font-size:.62rem;color:var(--dim)">Community standards, moderation, antibody response to misinformation</div>
+      </div>
+      <div class="card" style="flex:1;min-width:180px;text-align:left">
+        <div style="font-size:1.2rem;margin-bottom:.35rem">🌱</div>
+        <div style="font-size:.7rem;font-weight:700;margin-bottom:.25rem">Reproduction</div>
+        <div style="font-size:.62rem;color:var(--dim)">Sharing, memes, cultural propagation through the network</div>
+      </div>
+    </div>
+    <p style="font-size:.7rem;color:var(--dim);margin-top:1.25rem">Read Chapter 1 before Week 2. Come ready to draw your startup domain as a biological system.</p>
+  </div>
+</div>
+
+<!-- ── S13: DUAL TRACK ─────────────────────────────────── -->
+<div class="slide bg-base" data-notes="Two projects simultaneously. This sounds overwhelming. It's intentional. The Client Project teaches you to listen — to serve existing stakeholders with real constraints. The Entrepreneurial Venture teaches you to envision — to imagine something that doesn't exist yet. These skills usually develop in sequence over a career. You're going to develop them in parallel over 14 weeks. That's the accelerant. The Client Project will make you a better entrepreneur. The Venture will make you a better consultant. Trust the structure.">
+  <div class="slide-inner" style="text-align:center;justify-content:flex-start;padding-top:2.5rem">
+    <div class="eyebrow center" style="color:var(--gold)">The Dual-Track Model</div>
+    <h2 class="section-head" style="margin-bottom:.5rem;font-size:clamp(1.2rem,2vw,1.8rem)">Two Projects. Simultaneously.<br><em>By Design.</em></h2>
+    <p style="font-size:.78rem;color:var(--dim);max-width:580px;margin:.5rem auto 2rem">The skills develop in parallel. That's the accelerant.</p>
+    <div class="two-col" style="align-items:start">
+      <div class="card card-blue" style="text-align:left">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--blue2);margin-bottom:.6rem">Track 1 · 40% of Grade</div>
+        <div style="font-family:var(--serif);font-size:1.1rem;font-weight:700;margin-bottom:.6rem">Client Project</div>
+        <div style="font-size:.72rem;color:var(--muted);line-height:1.7;margin-bottom:.75rem">Assigned University partner. Real stakeholders. Real constraints. You're solving an actual problem for an institution that will actually use your output.</div>
+        <ul class="bullet-list" style="font-size:.72rem">
+          <li><strong>What you learn:</strong> deep listening, stakeholder management, iteration</li>
+          <li><strong>What you deliver:</strong> working Trinity Graph system + documentation + training</li>
+          <li><strong>What it teaches:</strong> empathy is not soft — it's your most powerful design tool</li>
+        </ul>
+        <div style="margin-top:.75rem;font-size:.65rem;color:var(--dim)">Partner examples: Library Services, Wellness Center, Career Development, Athletics</div>
+      </div>
+      <div class="card card-purple" style="text-align:left">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--purple2);margin-bottom:.6rem">Track 2 · 60% of Grade</div>
+        <div style="font-family:var(--serif);font-size:1.1rem;font-weight:700;margin-bottom:.6rem">Entrepreneurial Venture</div>
+        <div style="font-size:.72rem;color:var(--muted);line-height:1.7;margin-bottom:.75rem">Your startup. Your market. Your vision. You're building something you could actually raise money for and launch after graduation.</div>
+        <ul class="bullet-list" style="font-size:.72rem">
+          <li><strong>What you learn:</strong> market validation, unit economics, investor storytelling</li>
+          <li><strong>What you deliver:</strong> investor-ready MVP + pitch + business model</li>
+          <li><strong>What it teaches:</strong> the Trinity Graph as competitive moat, not just architecture</li>
+        </ul>
+        <div style="margin-top:.75rem;font-size:.65rem;color:var(--dim)">Demo Day: external investor panel. Real money on the table.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── S14: THE SEMESTER ARC ──────────────────────────── -->
+<div class="slide bg-base" data-notes="Five modules. The first three build competence (social graph, knowledge graph, generative AI). Module 4 builds the business case. Module 5 launches. Notice: you're building from Week 1, not from Week 8. By the time we hit Module 4, you'll have 9 weeks of real data from real users. Your business model won't be theoretical — it'll be grounded in actual usage patterns.">
+  <div class="slide-inner left" style="max-width:900px;margin:0 auto">
+    <div class="eyebrow" style="color:var(--gold)">The Semester Arc</div>
+    <h2 class="section-head" style="margin-bottom:1.5rem;font-size:clamp(1.2rem,2.2vw,1.8rem)">14 Weeks · 5 Modules · 2 Projects</h2>
+    <div style="display:flex;flex-direction:column">
+      <div class="timeline-item"><div class="tl-week">Wk 1–3</div><div class="tl-content"><div class="tl-title">Module 1 · Social Graph Foundations</div><div class="tl-desc">Map human relationships. Stakeholder interviews. Personal networks in Neo4j. -ity properties on edges. The Social Organism framework.</div></div></div>
+      <div class="timeline-item"><div class="tl-week">Wk 4–6</div><div class="tl-content"><div class="tl-title">Module 2 · Empirical Knowledge Graph</div><div class="tl-desc">Domain ontologies. 100+ RDF triples. Apache Jena Fuseki. Verification pipelines. CONFIRMED / CITED / INFERRED / ASSUMED states.</div></div></div>
+      <div class="timeline-item"><div class="tl-week">Wk 7–9</div><div class="tl-content"><div class="tl-title">Module 3 · Generative AI + Trinity Convergence ← <em style="color:var(--gold2)">Midterm at Week 7</em></div><div class="tl-desc">RAG with knowledge graph. Multi-graph fusion. AI agents across all three layers. The -ity ontology as semantic bridge. Measuring awareness.</div></div></div>
+      <div class="timeline-item"><div class="tl-week">Wk 10–12</div><div class="tl-content"><div class="tl-title">Module 4 · Business Model + Advanced Applications</div><div class="tl-desc">Revenue models. Unit economics. Scaling strategies. Digital twins. Healthcare (-pathy integration). Entertainment optimization.</div></div></div>
+      <div class="timeline-item" style="border-bottom:none"><div class="tl-week">Wk 13–14</div><div class="tl-content"><div class="tl-title">Module 5 · Launch — Client + Demo Day</div><div class="tl-desc">Client presentations Monday-Wednesday. Investor pitch competition Thursday-Friday with external panel. Real money on the table.</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── S15: THE COMPETITIVE MOAT ──────────────────────── -->
+<div class="slide bg-green" data-notes="This is the business case for everything we're building. The future of competitive AI advantage is not model size — it's architecture. Every company will have access to the same foundation models. The question is: what do you build on top of them? A Trinity Graph is a proprietary competitive moat. It captures your domain's social dynamics, your organization's verified knowledge, and your unique generative patterns. That's not something OpenAI can replicate by releasing GPT-6. That's something you own.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-blue" style="top:-200px;left:50%;transform:translateX(-50%)"></div>
+    <div class="eyebrow center" style="color:var(--green2)">The Business Case</div>
+    <h2 class="section-head" style="margin-bottom:1rem">The Future Competitive Moat<br>Is <em>Not Model Size</em></h2>
+    <div class="moat-grid" style="margin:1.5rem auto 0">
+      <div class="moat-card moat-wrong">
+        <div class="moat-label">❌ Wrong Bet</div>
+        <div class="moat-text">"We'll win because we use GPT-5." <br><br>Everyone uses GPT-5. The model is a commodity. You're building on rented land.</div>
+      </div>
+      <div class="moat-card moat-right">
+        <div class="moat-label">✓ Right Bet</div>
+        <div class="moat-text">"We'll win because our Trinity Graph captures 3 years of domain-specific social patterns + verified knowledge that no competitor can replicate."</div>
+      </div>
+      <div class="moat-card moat-wrong">
+        <div class="moat-label">❌ Wrong Bet</div>
+        <div class="moat-text">"We fine-tuned a model on our data." <br><br>Fine-tuning is erasable. Data can be replicated. There's no structural moat here.</div>
+      </div>
+      <div class="moat-card moat-right">
+        <div class="moat-label">✓ Right Bet</div>
+        <div class="moat-text">"Our Social Graph has 18 months of real user emotional data. Our Knowledge Graph has 50,000 verified domain facts with provenance. That's the moat."</div>
+      </div>
+    </div>
+    <p style="font-size:.75rem;color:var(--dim);margin-top:1.5rem;max-width:600px">"The future of AI will be defined not by the size of its models, but by the integrity of its architecture." — Oliver Luckett</p>
+  </div>
+</div>
+
+<!-- ── S16: TOOLS YOU'LL USE ───────────────────────────── -->
+<div class="slide bg-base" data-notes="Quick tools tour. Neo4j is your primary tool — it's the graph database that powers all three layers. You'll write Cypher queries from Day 1. The IAM Classroom is your AI partner — your personal bot that knows the Trinity framework. Claude and ChatGPT are your coding partners — use them daily for all work. Cursor Pro is a supercharged code editor with AI built in. Figma for design. Midjourney for visual concepts. You have Claude credits through the course. Everything else has a free tier that's sufficient for the first 4 weeks.">
+  <div class="slide-inner left" style="max-width:950px;margin:0 auto">
+    <div class="eyebrow" style="color:var(--gold)">AI-First Development</div>
+    <h2 class="section-head" style="margin-bottom:1.5rem;font-size:clamp(1.2rem,2vw,1.7rem)">Your Toolkit — <em>Use AI for Everything</em></h2>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.85rem;width:100%">
+      <div class="card card-blue">
+        <div style="font-size:1.25rem;margin-bottom:.35rem">🗄️</div>
+        <div style="font-size:.72rem;font-weight:700;margin-bottom:.25rem">Neo4j Aura</div>
+        <div style="font-size:.62rem;color:var(--dim)">Free tier · Your graph DB. Cypher from Day 1. Powers all three layers.</div>
+        <div style="margin-top:.5rem"><span class="tag tag-green" style="font-size:.5rem">Free</span></div>
+      </div>
+      <div class="card card-gold">
+        <div style="font-size:1.25rem;margin-bottom:.35rem">🤖</div>
+        <div style="font-size:.72rem;font-weight:700;margin-bottom:.25rem">IAM Classroom</div>
+        <div style="font-size:.62rem;color:var(--dim)">Your personal AI partner. Knows Trinity Graph. Evolves with you.</div>
+        <div style="margin-top:.5rem"><span class="tag tag-gold" style="font-size:.5rem">Provided</span></div>
+      </div>
+      <div class="card">
+        <div style="font-size:1.25rem;margin-bottom:.35rem">🧠</div>
+        <div style="font-size:.72rem;font-weight:700;margin-bottom:.25rem">Claude AI</div>
+        <div style="font-size:.62rem;color:var(--dim)">Your primary coding and analysis partner. Use it for everything.</div>
+        <div style="margin-top:.5rem"><span class="tag tag-gold" style="font-size:.5rem">Credits provided</span></div>
+      </div>
+      <div class="card">
+        <div style="font-size:1.25rem;margin-bottom:.35rem">⌨️</div>
+        <div style="font-size:.72rem;font-weight:700;margin-bottom:.25rem">Cursor Pro</div>
+        <div style="font-size:.62rem;color:var(--dim)">AI code editor. Write entire systems in natural language.</div>
+        <div style="margin-top:.5rem"><span class="tag tag-blue" style="font-size:.5rem">$20/mo optional</span></div>
+      </div>
+      <div class="card">
+        <div style="font-size:1.25rem;margin-bottom:.35rem">🎨</div>
+        <div style="font-size:.72rem;font-weight:700;margin-bottom:.25rem">Figma + Midjourney</div>
+        <div style="font-size:.62rem;color:var(--dim)">Design and visual concept generation. Your front-end foundation.</div>
+        <div style="margin-top:.5rem"><span class="tag tag-blue" style="font-size:.5rem">Free / $10/mo</span></div>
+      </div>
+      <div class="card">
+        <div style="font-size:1.25rem;margin-bottom:.35rem">⬡</div>
+        <div style="font-size:.72rem;font-weight:700;margin-bottom:.25rem">Trinity Graph Viewer</div>
+        <div style="font-size:.62rem;color:var(--dim)">Live visualization of the full Trinity Graph. 511+ term nodes.</div>
+        <div style="margin-top:.5rem"><span class="tag tag-green" style="font-size:.5rem">Free</span></div>
+      </div>
+    </div>
+    <p style="font-size:.68rem;color:var(--dim);margin-top:1rem">Rule: if you did something without AI assistance, you did it the hard way. Use AI for design, code, analysis, documentation, and presentation. Log your usage — it's 15% of your grade.</p>
+  </div>
+</div>
+
+<!-- ── S17: YOUR IAM BOT ───────────────────────────────── -->
+<div class="slide bg-purple" data-notes="Every student in this class has a personal AI assistant waiting for them. Login with your first name — the system already knows you're enrolled. Your bot is named after a constellation or element and starts at Kirk Step 0, UNDIFFERENTIATED. Every 5 queries it evolves — into a pattern recognizer, a knowledge builder, or a creative generator. Your interactions determine which direction it differentiates. By Week 14, your bot will be a reflection of your own intellectual journey through the Trinity Graph.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-purple" style="top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+    <div class="eyebrow center" style="color:var(--purple2)">Your Personal AI</div>
+    <h2 class="section-head" style="margin-bottom:1rem">Your IAM Bot Has Been<br><em>Waiting for You</em></h2>
+    <p class="lead" style="text-align:center;margin:0 auto 2rem">It knows the Trinity Graph. It knows your course context. It evolves with you for 14 weeks.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem">
+      <div class="card card-purple" style="text-align:left;max-width:220px">
+        <div style="font-size:1.5rem;margin-bottom:.4rem">🌿</div>
+        <div style="font-size:.68rem;font-weight:700;margin-bottom:.3rem">VOLVOX Lifecycle</div>
+        <div style="font-size:.6rem;color:var(--dim)">Starts UNDIFFERENTIATED. Every 5 queries: SOMATIC SENSOR → STRUCTURAL → GERMLINE. Your questions drive evolution.</div>
+      </div>
+      <div class="card card-purple" style="text-align:left;max-width:220px">
+        <div style="font-size:1.5rem;margin-bottom:.4rem">🎯</div>
+        <div style="font-size:.68rem;font-weight:700;margin-bottom:.3rem">Kirk Steps 0–12</div>
+        <div style="font-size:.6rem;color:var(--dim)">Your bot starts at Step 0. Engagement depth moves it forward. Step 12 = full collaborative partner.</div>
+      </div>
+      <div class="card card-purple" style="text-align:left;max-width:220px">
+        <div style="font-size:1.5rem;margin-bottom:.4rem">⬡</div>
+        <div style="font-size:.68rem;font-weight:700;margin-bottom:.3rem">Live Trinity Graph</div>
+        <div style="font-size:.6rem;color:var(--dim)">Neo4j Aura behind your bot. 210 Trinity nodes seeded. Your queries activate real graph traversals.</div>
+      </div>
+    </div>
+    <div style="padding:.85rem 1.5rem;background:rgba(207,184,124,.06);border:1px solid rgba(207,184,124,.2);border-radius:10px;display:inline-block;text-align:left">
+      <div style="font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold2);margin-bottom:.4rem;font-weight:700">Login</div>
+      <div style="font-family:var(--mono);font-size:.72rem;color:var(--gold)">Username: your first name (e.g. "ava")<br>Password: firstname + 2026 (e.g. "ava2026")</div>
+    </div>
+    <p style="font-size:.65rem;color:var(--dim);margin-top:1rem">URL: <a href="iam-classroom.html" style="color:var(--purple2)">revilopark.github.io/ontological-theatre/iam-classroom.html</a></p>
+  </div>
+</div>
+
+<!-- ── S18: TODAY'S EXERCISE ──────────────────────────── -->
+<div class="slide bg-base" data-notes="Right now. This is what we're doing for the next 90 minutes. Pod formation first — 10 minutes. Then Neo4j setup and first social graph. You'll write your first Cypher query before you leave this room today. The graph preview tool on the Day 1 site lets you try it in-browser before touching Neo4j — use that if you get stuck. Baxter is available for technical help. I'll be walking the room.">
+  <div class="slide-inner" style="text-align:center;justify-content:flex-start;padding-top:2.5rem">
+    <div class="eyebrow center" style="color:var(--gold)">Right Now · Hour 2</div>
+    <h2 class="section-head" style="margin-bottom:1.5rem;font-size:clamp(1.2rem,2vw,1.8rem)">What We're Doing<br><em>Next 90 Minutes</em></h2>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;max-width:900px;margin:0 auto">
+      <div class="card card-green" style="text-align:left">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:.6rem">
+          <div style="width:24px;height:24px;border-radius:50%;background:rgba(74,154,106,.2);border:1px solid rgba(74,154,106,.3);display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:800;color:var(--green2);flex-shrink:0">1</div>
+          <div style="font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--green2)">10 min</div>
+        </div>
+        <div style="font-size:.82rem;font-weight:700;margin-bottom:.4rem">Form Your Trinity Pod</div>
+        <div style="font-size:.68rem;color:var(--muted);line-height:1.7">Find 3 people. Choose your startup domain. Name your pod after an -ity word. Register with Baxter.</div>
+      </div>
+      <div class="card card-blue" style="text-align:left">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:.6rem">
+          <div style="width:24px;height:24px;border-radius:50%;background:rgba(74,123,204,.15);border:1px solid rgba(74,123,204,.25);display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:800;color:var(--blue2);flex-shrink:0">2</div>
+          <div style="font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--blue2)">45 min</div>
+        </div>
+        <div style="font-size:.82rem;font-weight:700;margin-bottom:.4rem">First Social Graph</div>
+        <div style="font-size:.68rem;color:var(--muted);line-height:1.7">Create a free Neo4j Aura account. Map yourself + 5 connections. Add -ity properties to edges. Run your first MATCH query.</div>
+      </div>
+      <div class="card card-purple" style="text-align:left">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:.6rem">
+          <div style="width:24px;height:24px;border-radius:50%;background:rgba(138,106,172,.12);border:1px solid rgba(138,106,172,.22);display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:800;color:var(--purple2);flex-shrink:0">3</div>
+          <div style="font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--purple2)">30 min</div>
+        </div>
+        <div style="font-size:.82rem;font-weight:700;margin-bottom:.4rem">Activate IAM Bot</div>
+        <div style="font-size:.68rem;color:var(--muted);line-height:1.7">Login to the classroom. Meet your bot. Ask it your first question. See the Trinity Graph respond in real time.</div>
+      </div>
+    </div>
+    <div style="margin-top:1.5rem;display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap">
+      <a href="vanderbilt-day1.html" target="_blank" style="padding:9px 20px;border-radius:7px;background:rgba(207,184,124,.08);border:1px solid rgba(207,184,124,.25);color:var(--gold);font-size:.65rem;font-weight:700;text-decoration:none;letter-spacing:.06em;text-transform:uppercase">Day 1 Student Guide →</a>
+      <a href="iam-classroom.html" target="_blank" style="padding:9px 20px;border-radius:7px;background:rgba(138,106,172,.08);border:1px solid rgba(138,106,172,.25);color:var(--purple2);font-size:.65rem;font-weight:700;text-decoration:none;letter-spacing:.06em;text-transform:uppercase">IAM Classroom →</a>
+      <a href="https://console.neo4j.io" target="_blank" style="padding:9px 20px;border-radius:7px;background:rgba(74,123,204,.08);border:1px solid rgba(74,123,204,.25);color:var(--blue2);font-size:.65rem;font-weight:700;text-decoration:none;letter-spacing:.06em;text-transform:uppercase">Neo4j Aura →</a>
+    </div>
+  </div>
+</div>
+
+<!-- ── S19: HOMEWORK ───────────────────────────────────── -->
+<div class="slide bg-dark" data-notes="Two deliverables before Week 2. First: interviews. Client track — 5 interviews with your University partner. Venture track — 10 customer discovery interviews. Not surveys. Not Typeforms. Actual conversations. Second: Neo4j. Add all your interview subjects as nodes with emotional properties. Screenshot the graph. Third: read Chapter 1. The point of the interviews is not to validate your idea — it's to destroy it and find the real problem. If you did 10 interviews and still believe exactly the same thing you believed before, you weren't listening.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="eyebrow center" style="color:var(--gold2)">Week 1 Deliverables · Due March 16</div>
+    <h2 class="section-head" style="margin-bottom:2rem;font-size:clamp(1.2rem,2vw,1.8rem)">Your Homework</h2>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;max-width:800px;margin:0 auto">
+      <div class="card card-blue" style="text-align:left">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--blue2);margin-bottom:.4rem">Track 1 · Client</div>
+        <div style="font-size:.82rem;font-weight:700;margin-bottom:.4rem">5 Stakeholder Interviews</div>
+        <div style="font-size:.68rem;color:var(--muted);line-height:1.7">Talk to 5 members of your University partner organization. Do <em>not</em> pitch anything. Just listen. Document as Trinity Graph input: feelings (Social), facts (Knowledge), imagined solutions (Generative).</div>
+      </div>
+      <div class="card card-purple" style="text-align:left">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--purple2);margin-bottom:.4rem">Track 2 · Venture</div>
+        <div style="font-size:.82rem;font-weight:700;margin-bottom:.4rem">10 Customer Discovery Interviews</div>
+        <div style="font-size:.68rem;color:var(--muted);line-height:1.7">Talk to 10 real potential customers. Use the Mom Test. Ask about past behavior, not hypothetical futures. Come back ready to say what you got <em>wrong</em>.</div>
+      </div>
+      <div class="card" style="text-align:left">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--gold2);margin-bottom:.4rem">Reading</div>
+        <div style="font-size:.82rem;font-weight:700;margin-bottom:.4rem">Social Organism · Chapter 1</div>
+        <div style="font-size:.68rem;color:var(--muted);line-height:1.7">Read it. Underline every biological metaphor. Come to Week 2 ready to draw your startup domain as an organism — not a flowchart.</div>
+      </div>
+      <div class="card card-green" style="text-align:left">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--green2);margin-bottom:.4rem">Neo4j</div>
+        <div style="font-size:.82rem;font-weight:700;margin-bottom:.4rem">Add Interviews to Graph</div>
+        <div style="font-size:.68rem;color:var(--muted);line-height:1.7">Every interview subject becomes a node. Add trust, curiosity, anxiety properties to each edge. Screenshot the graph visualization. Submit with your interview notes.</div>
+      </div>
+    </div>
+    <p style="font-size:.68rem;color:var(--dim);margin-top:1.25rem">If you still believe the exact same thing after your interviews that you believed before them, you weren't listening.</p>
+  </div>
+</div>
+
+<!-- ── S20: CLOSING ────────────────────────────────────── -->
+<div class="slide bg-dark" data-notes="That's the first lecture. Take a breath. I know it's a lot. But here's the thing: you're going to build all of this. Not in theory. Not in a slide deck. In code, in a database, with real users. In 14 weeks you will have built two AI systems that actually work. That's something most of Silicon Valley's engineers haven't done. One last thing: this course is a system. The two tracks reinforce each other. The exercises build on each other. The interviews you do this week will inform your graph in Week 2, your ontology in Week 4, your AI agent in Week 8, and your investor pitch in Week 14. Trust the architecture. Let's go.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-gold" style="top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+    <div class="eyebrow center" style="color:var(--gold)">End of Hour 1</div>
+    <div class="quote-big" style="margin-bottom:2rem">
+      "In 14 weeks you will have built<br><em>two AI systems that actually work.</em><br>That's not theory. That's the course."
+    </div>
+    <div class="divider-line" style="margin:0 auto 2rem;max-width:400px"></div>
+    <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap">
+      <a href="vanderbilt-day1.html" target="_blank" style="padding:10px 22px;border-radius:7px;background:rgba(207,184,124,.08);border:1px solid rgba(207,184,124,.25);color:var(--gold);font-size:.65rem;font-weight:700;text-decoration:none;letter-spacing:.06em;text-transform:uppercase">Day 1 Guide →</a>
+      <a href="iam-classroom.html" target="_blank" style="padding:10px 22px;border-radius:7px;background:rgba(138,106,172,.1);border:1px solid rgba(138,106,172,.3);color:var(--purple2);font-size:.65rem;font-weight:700;text-decoration:none;letter-spacing:.06em;text-transform:uppercase">Activate IAM Bot →</a>
+      <a href="trinity-graph-viewer.html" target="_blank" style="padding:10px 22px;border-radius:7px;background:rgba(74,123,204,.08);border:1px solid rgba(74,123,204,.25);color:var(--blue2);font-size:.65rem;font-weight:700;text-decoration:none;letter-spacing:.06em;text-transform:uppercase">View Trinity Graph →</a>
+      <a href="https://console.neo4j.io" target="_blank" style="padding:10px 22px;border-radius:7px;background:rgba(74,154,106,.08);border:1px solid rgba(74,154,106,.25);color:var(--green2);font-size:.65rem;font-weight:700;text-decoration:none;letter-spacing:.06em;text-transform:uppercase">Open Neo4j →</a>
+    </div>
+    <div style="margin-top:2.5rem;font-size:.65rem;color:var(--dim)">Week 2: Social Graph Architecture & Stakeholder Discovery · March 16, 2026</div>
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<!-- ── SPEAKER NOTES PANEL ─────────────────────────────── -->
+<div id="notes-panel">
+  <div id="notes-title">🎙 Speaker Notes</div>
+  <div id="notes-text"></div>
+</div>
+
+<!-- ── NAV BAR ─────────────────────────────────────────── -->
+<div id="nav">
+  <div id="nav-left">
+    <button class="nav-btn" onclick="prev()">← Prev</button>
+    <button class="nav-btn" onclick="next()">Next →</button>
+    <span id="slide-counter">1 / 20</span>
+  </div>
+  <div id="nav-center">
+    <div class="dot-nav" id="dot-nav"></div>
+  </div>
+  <div id="nav-right" style="display:flex;gap:.5rem">
+    <button class="nav-btn" id="notes-btn" onclick="toggleNotes()">Notes</button>
+    <button class="nav-btn" onclick="toggleFullscreen()">⛶ Full</button>
+  </div>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+let current = 0;
+let notesOpen = false;
+
+// Build dots
+const dotNav = document.getElementById('dot-nav');
+slides.forEach((s,i) => {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i===0?' active':'');
+  d.onclick = ()=>goTo(i);
+  dotNav.appendChild(d);
+});
+
+function goTo(n) {
+  slides[current].classList.remove('active');
+  document.querySelectorAll('.dot')[current].classList.remove('active');
+  current = Math.max(0, Math.min(n, total-1));
+  slides[current].classList.add('active');
+  document.querySelectorAll('.dot')[current].classList.add('active');
+  document.getElementById('slide-counter').textContent = (current+1) + ' / ' + total;
+  document.getElementById('progress').style.width = ((current+1)/total*100) + '%';
+  if (notesOpen) updateNotes();
+}
+
+function next(){ goTo(current+1) }
+function prev(){ goTo(current-1) }
+
+function updateNotes() {
+  const note = slides[current].dataset.notes || '';
+  document.getElementById('notes-text').textContent = note || '(no notes for this slide)';
+}
+
+function toggleNotes() {
+  notesOpen = !notesOpen;
+  const panel = document.getElementById('notes-panel');
+  const btn = document.getElementById('notes-btn');
+  panel.classList.toggle('open', notesOpen);
+  btn.classList.toggle('active-btn', notesOpen);
+  if (notesOpen) updateNotes();
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+  else document.exitFullscreen();
+}
+
+// Keyboard nav
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowRight'||e.key===' '||e.key==='ArrowDown') { e.preventDefault(); next(); }
+  if (e.key==='ArrowLeft'||e.key==='ArrowUp') { e.preventDefault(); prev(); }
+  if (e.key==='f'||e.key==='F') toggleFullscreen();
+  if (e.key==='n'||e.key==='N') toggleNotes();
+});
+
+// Touch swipe
+let tx=0;
+document.addEventListener('touchstart',e=>tx=e.touches[0].clientX,{passive:true});
+document.addEventListener('touchend',e=>{
+  const dx = e.changedTouches[0].clientX - tx;
+  if (Math.abs(dx)>50) { dx<0 ? next() : prev(); }
+},{passive:true});
+
+// Init progress
+document.getElementById('progress').style.width = (1/total*100) + '%';
+</script>
+</body>
+</html>
