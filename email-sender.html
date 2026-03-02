@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IAM Email Sender</title>
+<style>
+  :root {
+    --bg: #060E1A;
+    --mid: #0A1628;
+    --cyan: #00E5FF;
+    --teal: #00BCD4;
+    --text: #B0C4D8;
+    --dim: #7A9BB5;
+    --danger: #FF4757;
+    --gold: #C9A84C;
+    --glass: rgba(14,42,69,0.55);
+    --border: rgba(0,188,212,0.22);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% -20%, rgba(0,229,255,.07) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 40% at 80% 80%, rgba(0,188,212,.05) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .container { max-width: 760px; margin: 0 auto; position: relative; z-index: 1; }
+  .header { text-align: center; margin-bottom: 32px; }
+  .header h1 { font-size: 26px; font-weight: 700; color: var(--cyan); letter-spacing: -.02em; }
+  .header p { font-size: 13px; color: var(--dim); margin-top: 6px; }
+  .glass {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+  }
+  .card { padding: 24px; margin-bottom: 16px; }
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    margin-bottom: 12px;
+  }
+  input, textarea, select {
+    width: 100%;
+    background: rgba(0,0,0,.3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color .2s;
+    margin-bottom: 12px;
+  }
+  input:focus, textarea:focus { border-color: var(--cyan); }
+  textarea { resize: vertical; min-height: 140px; line-height: 1.6; }
+  .row { display: flex; gap: 10px; }
+  .row input { margin-bottom: 0; }
+  label { font-size: 12px; color: var(--dim); display: block; margin-bottom: 5px; }
+  .btn {
+    background: var(--cyan);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity .2s, transform .1s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn:active { transform: scale(.98); }
+  .btn-secondary {
+    background: rgba(0,229,255,.12);
+    color: var(--cyan);
+    border: 1px solid rgba(0,229,255,.3);
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  #status-bar {
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    display: none;
+    margin-bottom: 16px;
+  }
+  .status-ok { background: rgba(76,247,160,.12); border: 1px solid rgba(76,247,160,.3); color: #4cf7a0; }
+  .status-err { background: rgba(255,71,87,.12); border: 1px solid rgba(255,71,87,.3); color: var(--danger); }
+  .status-loading { background: rgba(0,229,255,.08); border: 1px solid rgba(0,229,255,.2); color: var(--cyan); }
+  .provider-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .provider-tab {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--dim);
+    transition: all .2s;
+  }
+  .provider-tab.active {
+    background: rgba(0,229,255,.15);
+    border-color: rgba(0,229,255,.4);
+    color: var(--cyan);
+  }
+  .provider-section { display: none; }
+  .provider-section.active { display: block; }
+  .templates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .template-btn {
+    background: rgba(0,229,255,.06);
+    border: 1px solid rgba(0,229,255,.18);
+    border-radius: 10px;
+    padding: 12px 10px;
+    cursor: pointer;
+    text-align: center;
+    transition: all .2s;
+    color: var(--text);
+    font-size: 12px;
+  }
+  .template-btn:hover { border-color: var(--cyan); background: rgba(0,229,255,.12); }
+  .template-btn .emoji { font-size: 20px; display: block; margin-bottom: 4px; }
+  .char-count { font-size: 11px; color: var(--dim); text-align: right; margin-top: -8px; margin-bottom: 12px; }
+  .key-hint { font-size: 11px; color: rgba(255,200,100,.7); padding: 8px 12px; background: rgba(255,200,100,.06); border: 1px solid rgba(255,200,100,.15); border-radius: 8px; margin-bottom: 12px; }
+  .history-item {
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.06);
+    margin-bottom: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .history-ok { border-color: rgba(76,247,160,.2); }
+  .history-err { border-color: rgba(255,71,87,.2); }
+  .to-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .chip {
+    background: rgba(0,229,255,.12);
+    border: 1px solid rgba(0,229,255,.25);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 12px;
+    color: var(--cyan);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .chip button { background: none; border: none; color: rgba(0,229,255,.6); cursor: pointer; font-size: 14px; line-height: 1; }
+  @media (max-width: 600px) {
+    .row { flex-direction: column; gap: 0; }
+    .actions { flex-direction: column; align-items: stretch; }
+    .actions .btn { width: 100%; text-align: center; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>✉️ IAM Email Sender</h1>
+    <p>Send emails via EmailJS (browser-based, no server needed) or your API key</p>
+  </div>
+
+  <!-- Status bar -->
+  <div id="status-bar"></div>
+
+  <!-- Provider Setup -->
+  <div class="glass card">
+    <div class="section-label">📡 Email Provider</div>
+    <div class="provider-tabs">
+      <button class="provider-tab active" onclick="switchProvider('emailjs')">EmailJS (free)</button>
+      <button class="provider-tab" onclick="switchProvider('sendgrid')">SendGrid</button>
+      <button class="provider-tab" onclick="switchProvider('smtp2go')">SMTP2Go</button>
+      <button class="provider-tab" onclick="switchProvider('mailto')">mailto: (fallback)</button>
+    </div>
+
+    <!-- EmailJS -->
+    <div class="provider-section active" id="provider-emailjs">
+      <div class="key-hint">⚡ EmailJS is free (200 emails/month). Get keys at <a href="https://emailjs.com" target="_blank" style="color:var(--cyan)">emailjs.com</a> → Email Services → API keys. No backend needed.</div>
+      <div class="row">
+        <div style="flex:1">
+          <label>Service ID</label>
+          <input type="text" id="ejs-service" placeholder="service_xxxxxxx" oninput="saveKeys()">
+        </div>
+        <div style="flex:1">
+          <label>Template ID</label>
+          <input type="text" id="ejs-template" placeholder="template_xxxxxxx" oninput="saveKeys()">
+        </div>
+      </div>
+      <label>Public Key</label>
+      <input type="text" id="ejs-pubkey" placeholder="your_public_key" oninput="saveKeys()">
+      <div style="font-size:11px;color:var(--dim)">⚠️ Your EmailJS template must include variables: <code style="color:var(--cyan)">to_email</code>, <code style="color:var(--cyan)">to_name</code>, <code style="color:var(--cyan)">from_name</code>, <code style="color:var(--cyan)">subject</code>, <code style="color:var(--cyan)">message</code>, <code style="color:var(--cyan)">reply_to</code></div>
+    </div>
+
+    <!-- SendGrid -->
+    <div class="provider-section" id="provider-sendgrid">
+      <div class="key-hint">⚡ SendGrid free tier: 100 emails/day. Get API key at <a href="https://app.sendgrid.com/settings/api_keys" target="_blank" style="color:var(--cyan)">sendgrid.com</a></div>
+      <label>SendGrid API Key</label>
+      <input type="password" id="sg-key" placeholder="SG.xxxxxxxxxxxxxxxx" oninput="saveKeys()">
+      <label>From Email (verified sender)</label>
+      <input type="email" id="sg-from-email" placeholder="you@yourdomain.com" oninput="saveKeys()">
+      <label>From Name</label>
+      <input type="text" id="sg-from-name" placeholder="IAM Classroom" oninput="saveKeys()">
+      <div style="font-size:11px;color:var(--dim)">SendGrid requires a verified sender domain or single sender verification. Uses awareness proxy to avoid CORS.</div>
+    </div>
+
+    <!-- SMTP2Go -->
+    <div class="provider-section" id="provider-smtp2go">
+      <div class="key-hint">⚡ SMTP2Go free: 1,000 emails/month. Get API key at <a href="https://app.smtp2go.com/settings/apikeys" target="_blank" style="color:var(--cyan)">smtp2go.com</a></div>
+      <label>API Key</label>
+      <input type="password" id="s2g-key" placeholder="api-xxxxxxxxxxxxxxxx" oninput="saveKeys()">
+      <label>From Email</label>
+      <input type="email" id="s2g-from-email" placeholder="you@yourdomain.com" oninput="saveKeys()">
+      <label>From Name</label>
+      <input type="text" id="s2g-from-name" placeholder="IAM Classroom" oninput="saveKeys()">
+    </div>
+
+    <!-- mailto fallback -->
+    <div class="provider-section" id="provider-mailto">
+      <div class="key-hint">📎 Opens your default email app (Gmail, Outlook, Apple Mail). No API keys needed — but requires user action.</div>
+      <div style="font-size:12px;color:var(--dim)">From name and sending are handled by your local email client. Use this as a fallback when no API key is available.</div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn-secondary" onclick="testEmail()">📨 Send Test Email to Self</button>
+      <button class="btn-secondary" onclick="clearKeys()">🗑 Clear Keys</button>
+    </div>
+  </div>
+
+  <!-- Compose -->
+  <div class="glass card">
+    <div class="section-label">✍️ Compose</div>
+
+    <!-- Templates -->
+    <div class="section-label" style="margin-top:0;margin-bottom:8px;color:var(--teal)">Quick Templates</div>
+    <div class="templates-grid">
+      <div class="template-btn" onclick="loadTemplate('welcome')"><span class="emoji">🎓</span>Student Welcome</div>
+      <div class="template-btn" onclick="loadTemplate('reset')"><span class="emoji">🔄</span>Account Reset</div>
+      <div class="template-btn" onclick="loadTemplate('reminder')"><span class="emoji">⏰</span>Class Reminder</div>
+      <div class="template-btn" onclick="loadTemplate('kirkaward')"><span class="emoji">🏆</span>Kirk Achievement</div>
+      <div class="template-btn" onclick="loadTemplate('venture')"><span class="emoji">🚀</span>Venture Update</div>
+      <div class="template-btn" onclick="loadTemplate('custom')"><span class="emoji">✏️</span>Blank</div>
+    </div>
+
+    <!-- To field -->
+    <label>To (press Enter or comma to add)</label>
+    <div class="to-chips" id="to-chips"></div>
+    <input type="text" id="to-input" placeholder="email@address.com" onkeydown="handleToKey(event)" style="margin-bottom:12px">
+
+    <!-- CC/BCC toggle -->
+    <div style="display:flex;gap:10px;margin-bottom:8px">
+      <button class="btn-secondary" style="padding:5px 12px;font-size:11px" onclick="toggleField('cc-row')">+ CC</button>
+      <button class="btn-secondary" style="padding:5px 12px;font-size:11px" onclick="toggleField('bcc-row')">+ BCC</button>
+      <button class="btn-secondary" style="padding:5px 12px;font-size:11px" onclick="toggleField('replyto-row')">+ Reply-To</button>
+    </div>
+    <div id="cc-row" style="display:none">
+      <label>CC</label>
+      <input type="text" id="cc-input" placeholder="cc@address.com">
+    </div>
+    <div id="bcc-row" style="display:none">
+      <label>BCC</label>
+      <input type="text" id="bcc-input" placeholder="bcc@address.com">
+    </div>
+    <div id="replyto-row" style="display:none">
+      <label>Reply-To</label>
+      <input type="text" id="replyto-input" placeholder="reply@address.com">
+    </div>
+
+    <label>Subject</label>
+    <input type="text" id="subject" placeholder="Your subject line" oninput="updateCharCount()">
+
+    <label>Message Body</label>
+    <textarea id="body" placeholder="Write your message..." oninput="updateCharCount()"></textarea>
+    <div class="char-count" id="char-count">0 chars</div>
+
+    <!-- Signature toggle -->
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:12px">
+      <input type="checkbox" id="use-sig" onchange="updateSig()" style="width:auto;margin:0"> Include signature
+    </label>
+    <div id="sig-editor" style="display:none">
+      <textarea id="sig-text" placeholder="-- &#10;Your signature here" style="min-height:80px;font-size:12px;font-family:monospace"></textarea>
+    </div>
+
+    <div class="actions">
+      <button class="btn" onclick="sendEmail()">📤 Send Email</button>
+      <button class="btn-secondary" onclick="bulkSendStudents()">👥 Bulk Send All Students</button>
+      <button class="btn-secondary" onclick="previewEmail()">👁 Preview</button>
+    </div>
+  </div>
+
+  <!-- Bulk Student Sender -->
+  <div class="glass card" id="bulk-panel" style="display:none">
+    <div class="section-label">👥 Bulk Student Sender</div>
+    <div style="font-size:12px;color:var(--dim);margin-bottom:12px">Send the current email to all students. Add their emails below (one per line: username=email@x.com)</div>
+    <textarea id="student-emails" style="min-height:200px;font-family:monospace;font-size:11px" placeholder="ava=ava@example.com&#10;ben=ben@example.com&#10;nezzy=nezzy@example.com&#10;six2tha9=six@example.com&#10;saiki=saiki@example.com&#10;spily=spily@example.com"></textarea>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn" onclick="executeBulkSend()">🚀 Send to All Listed</button>
+      <button class="btn-secondary" onclick="document.getElementById('bulk-panel').style.display='none'">Cancel</button>
+    </div>
+    <div id="bulk-progress" style="margin-top:12px;font-size:12px;color:var(--dim)"></div>
+  </div>
+
+  <!-- Send History -->
+  <div class="glass card" id="history-card">
+    <div class="section-label">📋 Send History</div>
+    <div id="history-list"><div style="color:var(--dim);font-size:13px">No sends yet this session.</div></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+// ============================================================
+// STORAGE
+// ============================================================
+let provider = 'emailjs';
+let toRecipients = [];
+
+function saveKeys() {
+  localStorage.setItem('iam_email_provider', provider);
+  if (provider === 'emailjs') {
+    localStorage.setItem('iam_ejs_service', document.getElementById('ejs-service').value);
+    localStorage.setItem('iam_ejs_template', document.getElementById('ejs-template').value);
+    localStorage.setItem('iam_ejs_pubkey', document.getElementById('ejs-pubkey').value);
+  } else if (provider === 'sendgrid') {
+    localStorage.setItem('iam_sg_key', document.getElementById('sg-key').value);
+    localStorage.setItem('iam_sg_from_email', document.getElementById('sg-from-email').value);
+    localStorage.setItem('iam_sg_from_name', document.getElementById('sg-from-name').value);
+  } else if (provider === 'smtp2go') {
+    localStorage.setItem('iam_s2g_key', document.getElementById('s2g-key').value);
+    localStorage.setItem('iam_s2g_from_email', document.getElementById('s2g-from-email').value);
+    localStorage.setItem('iam_s2g_from_name', document.getElementById('s2g-from-name').value);
+  }
+}
+
+function loadKeys() {
+  const savedProvider = localStorage.getItem('iam_email_provider') || 'emailjs';
+  switchProvider(savedProvider);
+  document.getElementById('ejs-service').value = localStorage.getItem('iam_ejs_service') || '';
+  document.getElementById('ejs-template').value = localStorage.getItem('iam_ejs_template') || '';
+  document.getElementById('ejs-pubkey').value = localStorage.getItem('iam_ejs_pubkey') || '';
+  document.getElementById('sg-key').value = localStorage.getItem('iam_sg_key') || '';
+  document.getElementById('sg-from-email').value = localStorage.getItem('iam_sg_from_email') || '';
+  document.getElementById('sg-from-name').value = localStorage.getItem('iam_sg_from_name') || '';
+  document.getElementById('s2g-key').value = localStorage.getItem('iam_s2g_key') || '';
+  document.getElementById('s2g-from-email').value = localStorage.getItem('iam_s2g_from_email') || '';
+  document.getElementById('s2g-from-name').value = localStorage.getItem('iam_s2g_from_name') || '';
+}
+
+function clearKeys() {
+  ['iam_email_provider','iam_ejs_service','iam_ejs_template','iam_ejs_pubkey','iam_sg_key','iam_sg_from_email','iam_sg_from_name','iam_s2g_key','iam_s2g_from_email','iam_s2g_from_name'].forEach(k => localStorage.removeItem(k));
+  location.reload();
+}
+
+// ============================================================
+// PROVIDER SWITCH
+// ============================================================
+function switchProvider(p) {
+  provider = p;
+  document.querySelectorAll('.provider-tab').forEach((t, i) => {
+    const names = ['emailjs','sendgrid','smtp2go','mailto'];
+    t.classList.toggle('active', names[i] === p);
+  });
+  document.querySelectorAll('.provider-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('provider-' + p).classList.add('active');
+  localStorage.setItem('iam_email_provider', p);
+}
+
+// ============================================================
+// TO RECIPIENTS
+// ============================================================
+function handleToKey(e) {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    addRecipient(e.target.value.trim().replace(/,$/, ''));
+    e.target.value = '';
+  }
+}
+
+function addRecipient(email) {
+  if (!email || !email.includes('@')) return;
+  if (toRecipients.includes(email)) return;
+  toRecipients.push(email);
+  renderChips();
+}
+
+function removeRecipient(email) {
+  toRecipients = toRecipients.filter(e => e !== email);
+  renderChips();
+}
+
+function renderChips() {
+  const c = document.getElementById('to-chips');
+  c.innerHTML = toRecipients.map(e =>
+    `<div class="chip">${e} <button onclick="removeRecipient('${e}')">×</button></div>`
+  ).join('');
+}
+
+// ============================================================
+// TEMPLATES
+// ============================================================
+const TEMPLATES = {
+  welcome: {
+    subject: '🎓 Welcome to IAM Classroom — Your Login is Ready',
+    body: `Hi {{name}},
+
+You've been set up in the IAM Classroom for the AI-Accelerated Entrepreneurship Practicum at Vanderbilt Owen.
+
+🔗 Portal: https://revilopark.github.io/ontological-theatre/iam-classroom.html
+
+🔑 Your login:
+• Username: {{username}}
+• Password: {{password}}
+
+When you log in, you'll take a 5-question personality quiz to receive your archetype, then meet your personal AI bot. Your Trinity Graph will start building automatically as you work.
+
+See you in class — Session 1 is March 9, 2026.
+
+Professor Oliver Luckett
+Vanderbilt Owen Graduate School of Management`
+  },
+  reset: {
+    subject: '🔄 Your IAM Classroom Account Has Been Reset',
+    body: `Hi {{name}},
+
+Your IAM Classroom account has been reset. Please use the link below to clear your browser cache and start fresh:
+
+🔗 Reset Link: https://revilopark.github.io/ontological-theatre/iam-classroom.html?reset={{username}}
+
+After visiting that link, log back in with your normal credentials:
+• Username: {{username}}
+• Password: {{password}}
+
+Your Trinity Graph will rebuild as you start chatting again.
+
+— IAM Classroom Team`
+  },
+  reminder: {
+    subject: '⏰ Class Reminder — Session This Week',
+    body: `Hi {{name}},
+
+Just a reminder that we have class this week. 
+
+📅 When: See your Vanderbilt calendar
+🔗 Classroom: https://revilopark.github.io/ontological-theatre/iam-classroom.html
+
+Before class, take 10 minutes to chat with your IAM bot and check your Trinity Graph — see what concepts you've built up since last session.
+
+See you there.
+
+Professor Luckett`
+  },
+  kirkaward: {
+    subject: '🏆 Trinity Graph Achievement Unlocked',
+    body: `Hi {{name}},
+
+Your IAM bot just hit a new Kirk milestone in your Trinity Graph. Your venture concept is crystallizing.
+
+Check your Journey tab to see the full map of your thinking — you're building something real.
+
+🔗 https://revilopark.github.io/ontological-theatre/iam-classroom.html
+
+Keep going.
+
+— IAM Classroom`
+  },
+  venture: {
+    subject: '🚀 Venture Update Request',
+    body: `Hi {{name}},
+
+Quick check-in on your venture progress. Please log into the IAM Classroom and share:
+
+1. Where are you on your venture concept?
+2. What's your biggest blocker right now?
+3. What do you need from the class?
+
+Your bot is ready to help you work through it.
+
+🔗 https://revilopark.github.io/ontological-theatre/iam-classroom.html
+
+— Professor Luckett`
+  },
+  custom: {
+    subject: '',
+    body: ''
+  }
+};
+
+function loadTemplate(name) {
+  const t = TEMPLATES[name];
+  document.getElementById('subject').value = t.subject;
+  document.getElementById('body').value = t.body;
+  updateCharCount();
+}
+
+function updateCharCount() {
+  const b = document.getElementById('body').value;
+  const s = document.getElementById('subject').value;
+  document.getElementById('char-count').textContent = `${b.length} chars · ${s.length} subject chars`;
+}
+
+function toggleField(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function updateSig() {
+  document.getElementById('sig-editor').style.display = document.getElementById('use-sig').checked ? 'block' : 'none';
+}
+
+// ============================================================
+// STATUS
+// ============================================================
+function showStatus(msg, type = 'loading') {
+  const el = document.getElementById('status-bar');
+  el.className = 'status-' + type;
+  el.textContent = msg;
+  el.style.display = 'block';
+  if (type !== 'loading') setTimeout(() => { el.style.display = 'none'; }, 6000);
+}
+
+function addHistory(to, subject, status, detail) {
+  const list = document.getElementById('history-list');
+  const existing = list.querySelector('.no-history');
+  if (existing) existing.remove();
+  const ts = new Date().toLocaleTimeString();
+  const div = document.createElement('div');
+  div.className = 'history-item history-' + (status === 'ok' ? 'ok' : 'err');
+  div.innerHTML = `<strong style="color:${status==='ok'?'#4cf7a0':'var(--danger)'}">${status === 'ok' ? '✅' : '❌'} ${to}</strong> · ${ts}<br><span style="color:var(--dim)">${subject}</span>${detail ? `<br><span style="font-size:11px;color:var(--dim)">${detail}</span>` : ''}`;
+  list.insertBefore(div, list.firstChild);
+}
+
+// ============================================================
+// SEND ENGINE
+// ============================================================
+async function sendEmail(toOverride, subjectOverride, bodyOverride) {
+  const toInput = document.getElementById('to-input').value.trim();
+  if (toInput) addRecipient(toInput);
+  document.getElementById('to-input').value = '';
+  renderChips();
+
+  const recipients = toOverride ? (Array.isArray(toOverride) ? toOverride : [toOverride]) : [...toRecipients];
+  if (!recipients.length) { showStatus('⚠️ Add at least one recipient', 'err'); return; }
+
+  const subject = subjectOverride || document.getElementById('subject').value.trim();
+  let body = bodyOverride || document.getElementById('body').value.trim();
+  const sig = document.getElementById('use-sig').checked ? '\n\n' + document.getElementById('sig-text').value : '';
+  if (sig) body += sig;
+
+  if (!subject) { showStatus('⚠️ Subject is required', 'err'); return; }
+  if (!body) { showStatus('⚠️ Body is required', 'err'); return; }
+
+  showStatus('📤 Sending...', 'loading');
+
+  for (const to of recipients) {
+    try {
+      if (provider === 'emailjs') {
+        await sendViaEmailJS(to, subject, body);
+      } else if (provider === 'sendgrid') {
+        await sendViaSendGrid(to, subject, body);
+      } else if (provider === 'smtp2go') {
+        await sendViaSMTP2Go(to, subject, body);
+      } else {
+        sendViaMailto(to, subject, body);
+      }
+      addHistory(to, subject, 'ok');
+    } catch(e) {
+      addHistory(to, subject, 'err', e.message);
+      showStatus(`❌ Failed to send to ${to}: ${e.message}`, 'err');
+      return;
+    }
+  }
+  showStatus(`✅ Sent to ${recipients.length} recipient${recipients.length > 1 ? 's' : ''}`, 'ok');
+}
+
+// ---- EmailJS ----
+async function sendViaEmailJS(to, subject, body) {
+  const serviceId = document.getElementById('ejs-service').value.trim();
+  const templateId = document.getElementById('ejs-template').value.trim();
+  const pubKey = document.getElementById('ejs-pubkey').value.trim();
+  if (!serviceId || !templateId || !pubKey) throw new Error('EmailJS keys not configured');
+  emailjs.init({ publicKey: pubKey });
+  await emailjs.send(serviceId, templateId, {
+    to_email: to,
+    to_name: to.split('@')[0],
+    from_name: 'IAM Classroom',
+    reply_to: 'Oliver.Luckett@vanderbilt.edu',
+    subject, message: body
+  });
+}
+
+// ---- SendGrid (via awareness proxy) ----
+async function sendViaSendGrid(to, subject, body) {
+  const key = document.getElementById('sg-key').value.trim();
+  const fromEmail = document.getElementById('sg-from-email').value.trim();
+  const fromName = document.getElementById('sg-from-name').value.trim() || 'IAM Classroom';
+  if (!key || !fromEmail) throw new Error('SendGrid key and from email required');
+  const PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app';
+  const r = await fetch(`${PROXY}/sendgrid/send`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-API-Key': key },
+    body: JSON.stringify({
+      personalizations: [{ to: [{ email: to }] }],
+      from: { email: fromEmail, name: fromName },
+      subject,
+      content: [{ type: 'text/plain', value: body }]
+    })
+  });
+  if (!r.ok) {
+    const err = await r.text();
+    throw new Error(`SendGrid error ${r.status}: ${err}`);
+  }
+}
+
+// ---- SMTP2Go ----
+async function sendViaSMTP2Go(to, subject, body) {
+  const key = document.getElementById('s2g-key').value.trim();
+  const fromEmail = document.getElementById('s2g-from-email').value.trim();
+  const fromName = document.getElementById('s2g-from-name').value.trim() || 'IAM Classroom';
+  if (!key || !fromEmail) throw new Error('SMTP2Go key and from email required');
+  const r = await fetch('https://api.smtp2go.com/v3/email/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      api_key: key,
+      to: [to],
+      sender: `${fromName} <${fromEmail}>`,
+      subject,
+      text_body: body
+    })
+  });
+  const j = await r.json();
+  if (!r.ok || !j.data?.succeeded) throw new Error(JSON.stringify(j.data?.failures || 'SMTP2Go error'));
+}
+
+// ---- mailto fallback ----
+function sendViaMailto(to, subject, body) {
+  window.location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+// ---- Test send ----
+async function testEmail() {
+  const toInput = prompt('Test recipient email:');
+  if (!toInput) return;
+  await sendEmail(toInput, '✅ IAM Email Sender — Test', 'This is a test email from your IAM Email Sender. If you got this, it\'s working! 🎉');
+}
+
+// ---- Preview ----
+function previewEmail() {
+  const subject = document.getElementById('subject').value;
+  const body = document.getElementById('body').value;
+  const win = window.open('', '_blank');
+  win.document.write(`<html><head><title>Preview: ${subject}</title><style>body{font-family:sans-serif;max-width:600px;margin:40px auto;padding:20px;color:#1a1a2e;line-height:1.7}pre{white-space:pre-wrap;font-family:inherit}</style></head><body><h2 style="color:#006688">Subject: ${subject}</h2><hr><pre>${body}</pre></body></html>`);
+}
+
+// ============================================================
+// BULK SEND
+// ============================================================
+function bulkSendStudents() {
+  document.getElementById('bulk-panel').style.display = 'block';
+  document.getElementById('bulk-panel').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function executeBulkSend() {
+  const lines = document.getElementById('student-emails').value.trim().split('\n').filter(l => l.includes('='));
+  if (!lines.length) { showStatus('No student emails found', 'err'); return; }
+  const progress = document.getElementById('bulk-progress');
+  let sent = 0, failed = 0;
+  for (const line of lines) {
+    const [username, email] = line.split('=').map(s => s.trim());
+    const subj = document.getElementById('subject').value.replace('{{username}}', username).replace('{{name}}', username.charAt(0).toUpperCase() + username.slice(1));
+    const body = document.getElementById('body').value
+      .replace(/{{name}}/g, username.charAt(0).toUpperCase() + username.slice(1))
+      .replace(/{{username}}/g, username)
+      .replace(/{{password}}/g, username + '2026');
+    try {
+      await sendEmail(email, subj, body);
+      sent++;
+      progress.textContent = `✅ Sent ${sent}/${lines.length}...`;
+      await new Promise(r => setTimeout(r, 800)); // rate limit
+    } catch(e) {
+      failed++;
+      progress.textContent = `⚠️ ${sent} sent, ${failed} failed`;
+    }
+  }
+  progress.innerHTML = `<strong style="color:#4cf7a0">Done — ${sent} sent, ${failed} failed</strong>`;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+loadKeys();
+updateCharCount();
+</script>
+</body>
+</html>
