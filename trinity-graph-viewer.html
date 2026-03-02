@@ -422,11 +422,15 @@ function initGraph() {
 
   const nodes = graphData.nodes.map(d => ({...d}));
   const nodeMap = new Map(nodes.map(n => [n.id, n]));
-  const links = (graphData.links || []).map(d => ({
-    ...d,
-    source: nodeMap.get(typeof d.source === 'object' ? d.source.id : d.source) || d.source,
-    target: nodeMap.get(typeof d.target === 'object' ? d.target.id : d.target) || d.target
-  }));
+  // Filter links — discard any where source or target node doesn't exist
+  const links = (graphData.links || []).reduce((acc, d) => {
+    const sid = typeof d.source === 'object' ? d.source.id : d.source;
+    const tid = typeof d.target === 'object' ? d.target.id : d.target;
+    const sNode = nodeMap.get(sid);
+    const tNode = nodeMap.get(tid);
+    if (sNode && tNode) acc.push({...d, source: sNode, target: tNode});
+    return acc;
+  }, []);
 
   const isBig = nodes.length > 100;
   const chargeStr = isBig ? -60 : -300;
@@ -491,10 +495,11 @@ function initGraph() {
     .text(d => isBig ? d.name.split(' ').slice(0,2).join(' ') : d.name);
 
   simulation.on('tick', () => {
-    linkSel.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
-           .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
-    nodeG.attr('transform', d => `translate(${d.x||0},${d.y||0})`);
-    labelSel.attr('x', d => d.x||0).attr('y', d => (d.y||0) + nodeRadius(d) + 4);
+    linkSel
+      .attr('x1', d => d.source?.x ?? 0).attr('y1', d => d.source?.y ?? 0)
+      .attr('x2', d => d.target?.x ?? 0).attr('y2', d => d.target?.y ?? 0);
+    nodeG.attr('transform', d => `translate(${d.x??0},${d.y??0})`);
+    labelSel.attr('x', d => d.x??0).attr('y', d => (d.y??0) + nodeRadius(d) + 4);
   });
 
   // Auto-stop big graphs sooner
@@ -585,6 +590,7 @@ function togglePhysics() {
 
 async function refreshData() {
   document.getElementById('loading').style.display = 'flex';
+  if (simulation) { simulation.stop(); simulation = null; }
   try {
     const res = await fetch('trinity-graph-data.json?v=' + Date.now());
     const data = await res.json();
