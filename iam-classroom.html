@@ -82,7 +82,25 @@ input:focus,textarea:focus{border-color:var(--cyan)}
 .top-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--glass-border)}
 .top-bar .logo{font-weight:700;font-size:16px;color:var(--cyan)}
 .top-bar .user-info{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--text-dim)}
-.top-bar .kirk-badge{background:linear-gradient(135deg,var(--gold),#cc9900);color:#000;padding:4px 10px;border-radius:8px;font-weight:600;font-size:11px}
+.top-bar .kirk-badge{background:linear-gradient(135deg,var(--gold),#cc9900);color:#000;padding:4px 10px;border-radius:8px;font-weight:600;font-size:11px;cursor:pointer;transition:opacity .2s}
+.top-bar .kirk-badge:hover{opacity:.85}
+/* KIRK EXPLAINER MODAL */
+#kirk-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:1300;align-items:flex-end;justify-content:center;padding:0}
+#kirk-modal.open{display:flex}
+.kirk-sheet{width:100%;max-width:480px;background:var(--bg-mid);border-top:1px solid var(--glass-border);border-radius:24px 24px 0 0;padding:24px 20px 40px;max-height:85vh;overflow-y:auto}
+.kirk-sheet h2{font-size:18px;font-weight:800;color:var(--text-bright);margin-bottom:4px}
+.kirk-sheet .kirk-sub{font-size:12px;color:var(--text-dim);margin-bottom:18px;line-height:1.5}
+.kirk-steps-list{display:flex;flex-direction:column;gap:8px}
+.kirk-step-row{display:flex;align-items:flex-start;gap:12px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06)}
+.kirk-step-row.reached{background:rgba(0,229,255,0.05);border-color:rgba(0,229,255,0.18)}
+.kirk-step-row.current{background:rgba(201,168,76,0.08);border-color:rgba(201,168,76,0.35)}
+.ks-num{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.08);color:var(--text-dim);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kirk-step-row.reached .ks-num{background:rgba(0,229,255,0.15);color:var(--cyan)}
+.kirk-step-row.current .ks-num{background:linear-gradient(135deg,var(--gold),#cc9900);color:#000}
+.ks-body{flex:1}
+.ks-label{font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px}
+.ks-desc{font-size:11px;color:var(--text-dim);line-height:1.45}
+.kirk-close-btn{width:100%;margin-top:20px;padding:13px;background:rgba(255,255,255,0.06);border:1px solid var(--glass-border);border-radius:12px;color:var(--text);font-size:14px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer}
 .top-bar .logout-btn{background:none;border:1px solid var(--glass-border);color:var(--text-dim);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px}
 .main-content{display:flex;flex:1;overflow:hidden;min-height:0}
 
@@ -300,6 +318,18 @@ input:focus,textarea:focus{border-color:var(--cyan)}
 </div>
 
 
+<!-- KIRK STEPS EXPLAINER MODAL -->
+<div id="kirk-modal">
+  <div class="kirk-sheet">
+    <h2>🧬 Kirk Steps — 0 to 12</h2>
+    <p class="kirk-sub">Kirk Steps measure how deeply you've built out your venture's knowledge graph. Every conversation, every concept explored, every node activated moves you forward. Here's what each level means:</p>
+    <div class="kirk-steps-list" id="kirk-steps-list">
+      <!-- populated by JS -->
+    </div>
+    <button class="kirk-close-btn" onclick="closeKirkModal()">Got it ✓</button>
+  </div>
+</div>
+
 <!-- PERSONALITY QUIZ -->
 <div id="quiz-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:900;display:none;align-items:center;justify-content:center;flex-direction:column;padding:20px">
   <div style="width:100%;max-width:480px">
@@ -341,7 +371,7 @@ input:focus,textarea:focus{border-color:var(--cyan)}
     <div class="logo">IAM Bot Classroom</div>
     <div class="user-info">
       <span id="bot-name-display"></span>
-      <span class="kirk-badge" id="kirk-display">Kirk 0/12</span>
+      <span class="kirk-badge" id="kirk-display" onclick="openKirkModal()" title="What is Kirk Steps?">Kirk 0/12 ⓘ</span>
       <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
   </div>
@@ -424,7 +454,10 @@ input:focus,textarea:focus{border-color:var(--cyan)}
     <div class="graph-panel" id="journey-panel" style="overflow-y:auto;background:rgba(0,0,0,.3)">
       <div class="graph-header">
         <h3>🗺️ Learning Journey</h3>
-        <button class="btn" style="font-size:10px;padding:5px 10px;background:rgba(255,255,255,0.08);color:var(--text-dim)" onclick="renderJourney()">Refresh</button>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button onclick="openKirkModal()" style="background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);color:var(--gold);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">What is Kirk? ⓘ</button>
+          <button class="btn" style="font-size:10px;padding:5px 10px;background:rgba(255,255,255,0.08);color:var(--text-dim)" onclick="renderJourney()">Refresh</button>
+        </div>
       </div>
       <div id="journey-container" style="padding:12px 16px;min-height:200px"></div>
     </div>
@@ -982,6 +1015,49 @@ function closeTour() {
   document.getElementById('welcome-tour').classList.remove('open');
   localStorage.setItem('iam_toured_' + studentId, '1');
 }
+
+// ===== KIRK STEPS EXPLAINER =====
+const KIRK_STEPS = [
+  {n:0,  label:'Embryonic',     desc:'You just arrived. Your graph has seed nodes but no conversation yet. Say hello to your bot.'},
+  {n:1,  label:'Named',         desc:'You\'ve described your venture in your own words. Your bot knows the rough shape of your idea.'},
+  {n:2,  label:'Grounded',      desc:'You\'ve identified a real problem with a real person who has it. Not theoretical — actual.'},
+  {n:3,  label:'Evidenced',     desc:'You\'ve brought data, a customer quote, or a real conversation into the graph. Something verifiable.'},
+  {n:4,  label:'Defined',       desc:'Your venture has a clear customer segment. You can describe them in one specific sentence.'},
+  {n:5,  label:'Structured',    desc:'You\'ve mapped relationships between ideas. Your graph has multiple connected nodes across layers.'},
+  {n:6,  label:'Triangulated',  desc:'You\'ve stress-tested your thesis. At least one assumption has been challenged and refined.'},
+  {n:7,  label:'Convergent',    desc:'Social + Knowledge + Generative layers are all active. You see how they connect.'},
+  {n:8,  label:'Investor-ready',desc:'You can tell the story as an insight, not just an opportunity. The "why now" is answered.'},
+  {n:9,  label:'Systematic',    desc:'You think in second-order effects. You\'ve mapped what changes if your core assumption is wrong.'},
+  {n:10, label:'Architectural', desc:'Your venture has a defensible system — not just a product. You\'ve identified the moat.'},
+  {n:11, label:'Teaching',      desc:'You\'re generating insights the bot didn\'t prompt. You\'re leading the conversation now.'},
+  {n:12, label:'Cornerstone',   desc:'🏆 You\'ve built something worth presenting at Demo Day. Your graph is a fully realized thesis.'}
+];
+
+function openKirkModal() {
+  const list = document.getElementById('kirk-steps-list');
+  list.innerHTML = KIRK_STEPS.map(s => {
+    const reached = kirkStep > s.n;
+    const current = kirkStep === s.n;
+    const cls = current ? 'current' : reached ? 'reached' : '';
+    const icon = current ? '▶' : reached ? '✓' : s.n;
+    return `<div class="kirk-step-row ${cls}">
+      <div class="ks-num">${icon}</div>
+      <div class="ks-body">
+        <div class="ks-label">Step ${s.n}: ${s.label}</div>
+        <div class="ks-desc">${s.desc}</div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('kirk-modal').classList.add('open');
+}
+
+function closeKirkModal() {
+  document.getElementById('kirk-modal').classList.remove('open');
+}
+// Close on backdrop tap
+document.getElementById('kirk-modal')?.addEventListener('click', e => {
+  if (e.target === document.getElementById('kirk-modal')) closeKirkModal();
+});
 
 
 const SEED_NODES = [
