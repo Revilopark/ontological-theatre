@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>J.Lo Universe — Content Engine</title>
+<style>
+:root {
+  --bg: #08060E;
+  --mid: #100D1A;
+  --gold: #C9943A;
+  --gold-bright: #F0C060;
+  --red: #C4143C;
+  --red-dim: #8a0e2a;
+  --cream: #F5ECD7;
+  --text: #EAE0D0;
+  --muted: #9A8E80;
+  --border: rgba(201,148,58,0.22);
+  --glass: rgba(20,14,30,0.65);
+  --glow: rgba(201,148,58,0.15);
+  --cyan: #00E5FF;
+  --purple: #9B5DE5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Georgia',serif;min-height:100vh;overflow-x:hidden}
+
+/* ===== HERO ===== */
+.hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 30%, rgba(196,20,60,0.18) 0%, rgba(201,148,58,0.10) 40%, transparent 70%);z-index:0}
+.hero-lines{position:absolute;inset:0;background-image:linear-gradient(rgba(201,148,58,0.04) 1px, transparent 1px),linear-gradient(90deg, rgba(201,148,58,0.04) 1px, transparent 1px);background-size:60px 60px;z-index:0}
+.hero-content{position:relative;z-index:2}
+.hero-eyebrow{font-size:11px;letter-spacing:6px;text-transform:uppercase;color:var(--gold);margin-bottom:20px;opacity:.8}
+.hero-title{font-size:clamp(56px,12vw,120px);font-weight:900;line-height:.9;letter-spacing:-2px;font-style:italic}
+.hero-title .jlo{background:linear-gradient(135deg, var(--gold-bright) 0%, var(--gold) 40%, var(--red) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:block}
+.hero-title .universe{color:var(--cream);font-size:.38em;font-style:normal;letter-spacing:12px;text-transform:uppercase;display:block;margin-top:8px}
+.hero-sub{font-size:16px;color:var(--muted);max-width:500px;margin:28px auto 0;line-height:1.6;font-style:italic}
+.hero-lyric{font-size:13px;color:var(--gold);margin-top:20px;letter-spacing:1px;opacity:.7}
+.scroll-cue{margin-top:48px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;opacity:.5;transition:.3s}
+.scroll-cue:hover{opacity:1}
+.scroll-cue span{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--gold)}
+.scroll-arrow{width:1px;height:40px;background:linear-gradient(to bottom, var(--gold), transparent)}
+
+/* ===== NAV ===== */
+.top-nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;background:rgba(8,6,14,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-brand{font-size:13px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);font-weight:700}
+.nav-tabs{display:flex;gap:4px}
+.nav-tab{padding:7px 14px;font-size:11px;letter-spacing:2px;text-transform:uppercase;border:1px solid transparent;border-radius:6px;cursor:pointer;background:none;color:var(--muted);transition:.2s}
+.nav-tab.active,.nav-tab:hover{color:var(--gold);border-color:var(--border);background:var(--glow)}
+
+/* ===== SECTION SHELL ===== */
+.section{padding:80px 24px;max-width:1100px;margin:0 auto}
+.section-label{font-size:10px;letter-spacing:6px;text-transform:uppercase;color:var(--gold);opacity:.7;margin-bottom:12px}
+.section-title{font-size:clamp(28px,5vw,48px);font-weight:900;font-style:italic;line-height:1;margin-bottom:8px}
+.section-title em{color:var(--gold)}
+.section-sub{font-size:15px;color:var(--muted);max-width:600px;line-height:1.6;margin-bottom:40px}
+.divider{width:60px;height:2px;background:linear-gradient(90deg,var(--gold),transparent);margin:16px 0 32px}
+
+/* ===== ERAS TIMELINE ===== */
+.eras-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.era-card{position:relative;padding:24px;border:1px solid var(--border);border-radius:14px;background:var(--glass);backdrop-filter:blur(12px);cursor:pointer;transition:.25s;overflow:hidden}
+.era-card::before{content:'';position:absolute;inset:0;background:var(--glow);opacity:0;transition:.25s}
+.era-card:hover::before,.era-card.selected::before{opacity:1}
+.era-card.selected{border-color:var(--gold)}
+.era-year{font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);opacity:.7;margin-bottom:8px}
+.era-name{font-size:19px;font-weight:700;font-style:italic;color:var(--cream);margin-bottom:6px}
+.era-anthem{font-size:12px;color:var(--gold);margin-bottom:10px;font-style:italic}
+.era-desc{font-size:12px;color:var(--muted);line-height:1.5}
+.era-color{position:absolute;top:0;right:0;width:4px;height:100%;border-radius:0 14px 14px 0}
+
+/* ===== LYRIC ENGINE ===== */
+.lyric-panel{background:var(--glass);border:1px solid var(--border);border-radius:16px;padding:28px;backdrop-filter:blur(12px);margin-bottom:24px}
+.lyric-panel h3{font-size:14px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:16px}
+.lyric-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.lyric-card{padding:14px 16px;border:1px solid rgba(201,148,58,0.15);border-radius:10px;cursor:pointer;transition:.2s;background:rgba(201,148,58,0.04)}
+.lyric-card:hover,.lyric-card.selected{border-color:var(--gold);background:var(--glow)}
+.lyric-title{font-size:12px;font-weight:700;color:var(--cream);margin-bottom:4px}
+.lyric-line{font-size:11px;color:var(--muted);font-style:italic;line-height:1.4}
+.lyric-theme{font-size:10px;color:var(--gold);margin-top:6px;letter-spacing:1px;text-transform:uppercase}
+
+/* ===== STYLE MODES ===== */
+.styles-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.style-card{padding:20px 16px;border:1px solid var(--border);border-radius:12px;cursor:pointer;text-align:center;transition:.25s;background:var(--glass)}
+.style-card:hover,.style-card.selected{border-color:var(--gold);background:var(--glow);transform:translateY(-2px)}
+.style-icon{font-size:28px;margin-bottom:8px}
+.style-name{font-size:12px;font-weight:700;color:var(--cream);margin-bottom:4px}
+.style-desc{font-size:10px;color:var(--muted)}
+
+/* ===== COMIC BUILDER ===== */
+.builder-panel{background:var(--glass);border:1px solid var(--border);border-radius:16px;overflow:hidden;backdrop-filter:blur(12px)}
+.builder-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.builder-header h3{font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--gold)}
+.builder-actions{display:flex;gap:8px}
+.btn{padding:10px 20px;border-radius:8px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:.2s;border:none}
+.btn-gold{background:linear-gradient(135deg,var(--gold-bright),var(--gold));color:#000}
+.btn-gold:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--gold)}
+.btn-outline:hover{border-color:var(--gold);background:var(--glow)}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover{background:var(--red-dim)}
+.builder-body{padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:680px){.builder-body{grid-template-columns:1fr}}
+
+/* ===== COMIC PANELS ===== */
+.comic-canvas{display:grid;gap:3px;border-radius:8px;overflow:hidden;background:#000}
+.comic-canvas.layout-1{grid-template-columns:1fr}
+.comic-canvas.layout-2{grid-template-columns:1fr 1fr}
+.comic-canvas.layout-3{grid-template-columns:2fr 1fr;grid-template-rows:1fr 1fr}
+.comic-canvas.layout-4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.comic-canvas.layout-cinematic{grid-template-columns:1fr;grid-template-rows:1fr 2fr 1fr}
+.comic-panel{position:relative;aspect-ratio:1;overflow:hidden;cursor:pointer;background:var(--mid)}
+.comic-panel.tall{aspect-ratio:auto;grid-row:span 2}
+.comic-panel.wide{aspect-ratio:auto}
+.comic-panel img{width:100%;height:100%;object-fit:cover;display:block}
+.panel-overlay{position:absolute;inset:0;background:linear-gradient(to top, rgba(0,0,0,.85) 0%, transparent 60%);pointer-events:none}
+.panel-caption{position:absolute;bottom:0;left:0;right:0;padding:12px;font-size:11px;color:#fff;line-height:1.4;font-style:italic}
+.panel-number{position:absolute;top:8px;left:8px;width:20px;height:20px;background:var(--gold);color:#000;font-size:10px;font-weight:900;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.panel-generating{display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:12px;color:var(--gold)}
+.panel-spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.panel-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;background:rgba(201,148,58,0.04);border:2px dashed rgba(201,148,58,0.2);border-radius:4px;min-height:180px;cursor:pointer;transition:.2s;text-align:center}
+.panel-placeholder:hover{background:var(--glow);border-color:var(--gold)}
+.panel-placeholder span{font-size:13px;color:var(--muted);margin-top:8px}
+
+/* ===== PROMPT PANEL ===== */
+.prompt-panel{display:flex;flex-direction:column;gap:12px}
+.prompt-label{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:4px}
+.prompt-textarea{width:100%;padding:14px;background:rgba(201,148,58,0.06);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;min-height:80px;outline:none;transition:.2s}
+.prompt-textarea:focus{border-color:var(--gold);background:var(--glow)}
+.panel-count-row{display:flex;gap:8px;flex-wrap:wrap}
+.count-btn{padding:8px 14px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--muted);cursor:pointer;transition:.2s}
+.count-btn.active,.count-btn:hover{border-color:var(--gold);color:var(--gold);background:var(--glow)}
+.layout-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.summary-box{padding:14px;background:rgba(196,20,60,0.08);border:1px solid rgba(196,20,60,0.2);border-radius:10px;font-size:12px;color:var(--text);line-height:1.6}
+.summary-box strong{color:var(--gold)}
+.generate-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--gold-bright),var(--gold),var(--red));color:#000;font-weight:900;font-size:14px;letter-spacing:2px;text-transform:uppercase;border:none;border-radius:10px;cursor:pointer;transition:.2s;margin-top:4px}
+.generate-btn:hover{filter:brightness(1.08);transform:translateY(-2px);box-shadow:0 8px 30px rgba(201,148,58,0.3)}
+.generate-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* ===== OUTPUT GALLERY ===== */
+.output-section{padding:80px 24px;max-width:1100px;margin:0 auto}
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;margin-top:24px}
+.gallery-item{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--glass);cursor:pointer;transition:.25s}
+.gallery-item:hover{border-color:var(--gold);transform:translateY(-3px);box-shadow:0 12px 40px rgba(201,148,58,0.15)}
+.gallery-canvas{display:grid;gap:2px}
+.gallery-meta{padding:14px 16px}
+.gallery-title{font-size:13px;font-weight:700;color:var(--cream);margin-bottom:4px}
+.gallery-tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:10px;padding:3px 8px;border-radius:20px;background:rgba(201,148,58,0.12);color:var(--gold);border:1px solid rgba(201,148,58,0.2)}
+.gallery-actions{display:flex;gap:8px;margin-top:10px}
+.ga-btn{flex:1;padding:7px;font-size:10px;letter-spacing:1px;text-transform:uppercase;border-radius:6px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;transition:.2s}
+.ga-btn:hover{color:var(--gold);border-color:var(--gold)}
+
+/* ===== PLATFORM FORMATS ===== */
+.formats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:24px}
+.format-card{padding:18px 14px;border:1px solid var(--border);border-radius:12px;text-align:center;cursor:pointer;transition:.2s;background:var(--glass)}
+.format-card:hover,.format-card.selected{border-color:var(--gold);background:var(--glow)}
+.format-icon{font-size:24px;margin-bottom:8px}
+.format-name{font-size:12px;font-weight:700;color:var(--cream);margin-bottom:3px}
+.format-dim{font-size:10px;color:var(--muted)}
+
+/* ===== LOADING OVERLAY ===== */
+.gen-overlay{position:fixed;inset:0;background:rgba(8,6,14,.9);z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+.gen-overlay.active{display:flex}
+.gen-status{font-size:14px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;text-align:center}
+.gen-progress{width:200px;height:2px;background:var(--border);border-radius:1px;overflow:hidden}
+.gen-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--red));width:0;transition:width .5s ease;border-radius:1px}
+.gen-lyric-flash{font-size:13px;color:var(--muted);font-style:italic;text-align:center;max-width:320px;animation:fadeInOut 2s ease infinite}
+@keyframes fadeInOut{0%,100%{opacity:.3}50%{opacity:.9}}
+
+/* ===== MISC ===== */
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-state .icon{font-size:48px;margin-bottom:16px;opacity:.4}
+.empty-state p{font-size:14px;font-style:italic}
+.config-bar{padding:16px 24px;background:rgba(201,148,58,0.06);border-bottom:1px solid var(--border);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.config-bar input{flex:1;min-width:200px;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;outline:none}
+.config-bar input:focus{border-color:var(--gold)}
+.config-bar .save-key{padding:8px 14px;font-size:11px;background:var(--glow);border:1px solid var(--border);color:var(--gold);border-radius:6px;cursor:pointer;white-space:nowrap}
+.config-bar .save-key:hover{border-color:var(--gold)}
+.key-status{font-size:10px;padding:3px 8px;border-radius:20px;background:rgba(0,229,255,0.1);color:var(--cyan);border:1px solid rgba(0,229,255,0.2)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="top-nav">
+  <div class="nav-brand">J.Lo Universe</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="scrollTo('#eras')">Eras</button>
+    <button class="nav-tab" onclick="scrollTo('#builder')">Builder</button>
+    <button class="nav-tab" onclick="scrollTo('#gallery')">Gallery</button>
+    <button class="nav-tab" onclick="scrollTo('#platforms')">Platforms</button>
+  </div>
+</nav>
+
+<!-- API CONFIG BAR -->
+<div class="config-bar" id="config-bar" style="margin-top:56px">
+  <span>🔑 Gemini API Key</span>
+  <input type="password" id="api-key-input" placeholder="AIzaSy... (required for image generation)">
+  <button class="save-key" onclick="saveKey()">Save Key</button>
+  <span class="key-status" id="key-status">No key</span>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-lines"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">Benny Medina × Inkwell</div>
+    <h1 class="hero-title">
+      <span class="jlo">J.Lo</span>
+      <span class="universe">Universe</span>
+    </h1>
+    <p class="hero-sub">Eight eras. One unstoppable force. Content that finally gives the fans what they deserve.</p>
+    <div class="hero-lyric">"Real love — I'm searching for a real love" — 1999</div>
+    <div class="scroll-cue" onclick="document.getElementById('eras').scrollIntoView({behavior:'smooth'})">
+      <span>Explore</span>
+      <div class="scroll-arrow"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ERAS -->
+<section class="section" id="eras">
+  <div class="section-label">The Story</div>
+  <h2 class="section-title">Eight <em>Eras</em></h2>
+  <p class="section-sub">Every phase of Jennifer Lopez is a complete universe — select an era to build from.</p>
+  <div class="divider"></div>
+  <div class="eras-grid" id="eras-grid"></div>
+</section>
+
+<!-- LYRICS -->
+<section class="section" id="lyrics">
+  <div class="section-label">The Words</div>
+  <h2 class="section-title">Lyric <em>Engine</em></h2>
+  <p class="section-sub">Her lyrics carry the whole story. Pick a line to anchor your panels.</p>
+  <div class="divider"></div>
+  <div class="lyric-panel">
+    <h3 id="lyric-era-label">Select an era above to load lyrics</h3>
+    <div class="lyric-grid" id="lyric-grid">
+      <div class="empty-state"><div class="icon">🎵</div><p>Choose an era to see lyric options</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- STYLE MODES -->
+<section class="section" id="styles">
+  <div class="section-label">The Aesthetic</div>
+  <h2 class="section-title">Visual <em>Style</em></h2>
+  <p class="section-sub">Each style unlocks a different visual language for her story.</p>
+  <div class="divider"></div>
+  <div class="styles-grid" id="styles-grid"></div>
+</section>
+
+<!-- BUILDER -->
+<section class="section" id="builder">
+  <div class="section-label">The Creation</div>
+  <h2 class="section-title">Comic <em>Builder</em></h2>
+  <p class="section-sub">Your selections come to life. Generate, rearrange, and caption every panel.</p>
+  <div class="divider"></div>
+  <div class="builder-panel">
+    <div class="builder-header">
+      <h3>Panel Builder</h3>
+      <div class="builder-actions">
+        <button class="btn btn-outline" onclick="clearBuilder()">Clear</button>
+        <button class="btn btn-gold" onclick="generateAll()">⚡ Generate All Panels</button>
+      </div>
+    </div>
+    <div class="builder-body">
+      <!-- LEFT: controls -->
+      <div class="prompt-panel">
+        <div class="prompt-label">Scene Direction</div>
+        <textarea class="prompt-textarea" id="scene-prompt" placeholder="Add your scene direction... (e.g. 'opening shot of the Bronx, early morning light, young Jennifer dancing on a rooftop')"></textarea>
+
+        <div class="prompt-label">Panel Count</div>
+        <div class="panel-count-row" id="panel-count-row">
+          <button class="count-btn active" data-n="1" onclick="setPanelCount(1)">1</button>
+          <button class="count-btn" data-n="2" onclick="setPanelCount(2)">2</button>
+          <button class="count-btn" data-n="3" onclick="setPanelCount(3)">3</button>
+          <button class="count-btn" data-n="4" onclick="setPanelCount(4)">4</button>
+          <button class="count-btn" data-n="6" onclick="setPanelCount(6)">6</button>
+        </div>
+
+        <div class="prompt-label">Layout</div>
+        <div class="layout-row" id="layout-row">
+          <button class="count-btn active" data-l="grid" onclick="setLayout('grid')">Grid</button>
+          <button class="count-btn" data-l="cinematic" onclick="setLayout('cinematic')">Cinematic</button>
+          <button class="count-btn" data-l="story" onclick="setLayout('story')">Story Strip</button>
+          <button class="count-btn" data-l="splash" onclick="setLayout('splash')">Splash Page</button>
+        </div>
+
+        <div class="summary-box" id="build-summary">
+          <strong>Selection:</strong> No era selected yet. Choose an era, a lyric, and a style above — then generate.
+        </div>
+
+        <button class="generate-btn" id="gen-btn" onclick="generateAll()" disabled>
+          ✨ Generate — Give Fans What They Deserve
+        </button>
+      </div>
+
+      <!-- RIGHT: preview canvas -->
+      <div id="comic-preview">
+        <div class="panel-placeholder" onclick="generateAll()">
+          <span style="font-size:32px">🎬</span>
+          <span>Your comic panels will appear here</span>
+          <span style="font-size:11px;margin-top:4px;color:rgba(255,255,255,.3)">Select era → lyric → style → generate</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PLATFORM FORMATS -->
+<section class="section" id="platforms">
+  <div class="section-label">The Reach</div>
+  <h2 class="section-title">Platform <em>Formats</em></h2>
+  <p class="section-sub">Every platform gets its own format. One story, infinite reach.</p>
+  <div class="divider"></div>
+  <div class="formats-grid" id="formats-grid"></div>
+</section>
+
+<!-- GALLERY -->
+<section class="output-section" id="gallery">
+  <div class="section-label">The Archive</div>
+  <h2 class="section-title" style="font-size:clamp(28px,5vw,48px);font-weight:900;font-style:italic">Generated <em style="color:var(--gold)">Content</em></h2>
+  <p class="section-sub" style="font-size:15px;color:var(--muted);max-width:600px;line-height:1.6">Every panel sequence you generate is saved here. Export, share, iterate.</p>
+  <div class="gallery-grid" id="gallery-grid">
+    <div class="empty-state" style="grid-column:1/-1">
+      <div class="icon">🎨</div>
+      <p>Generated panels will appear here</p>
+    </div>
+  </div>
+</section>
+
+<!-- GENERATE OVERLAY -->
+<div class="gen-overlay" id="gen-overlay">
+  <div style="font-size:48px">✨</div>
+  <div class="gen-status" id="gen-status">Generating Panel 1 of 3...</div>
+  <div class="gen-progress"><div class="gen-bar" id="gen-bar"></div></div>
+  <div class="gen-lyric-flash" id="gen-lyric-flash">"The real me is a woman who loves deeply."</div>
+</div>
+
+<script>
+// ===== DATA =====
+const ERAS = [
+  {
+    id:'bronx', year:'1969–1996', name:'La Chica del Bronx', color:'#8B4513',
+    anthem:'"Feelin\' So Good"',
+    desc:'Castle Hill Ave. In Living Color Fly Girl. The girl who said no to a law career and yes to the rooftop.',
+    palette:'earth tones, fire escape rust, bodega neon, chain-link gold',
+    visual_key:'Bronx streets, warm amber light, dance, raw energy, working-class beauty'
+  },
+  {
+    id:'selena', year:'1997', name:'The Resurrection', color:'#9B1B30',
+    anthem:'"I Could Fall in Love"',
+    desc:'She became Selena Quintanilla. A $1M fee that broke every record. The performance that proved she could do anything.',
+    palette:'red velvet, bejeweled purple, desert rose, stage gold',
+    visual_key:'biopic drama, rhinestones, stage lights, grief transformed to glory, iconic silhouette'
+  },
+  {
+    id:'on_the_6', year:'1999–2000', name:'On the 6', color:'#2E4A7A',
+    anthem:'"Waiting for Tonight"',
+    desc:'The 6 train to the Bronx. The debut. The Versace dress that literally created Google Image Search.',
+    palette:'midnight blue, flash silver, paparazzi white, subway steel',
+    visual_key:'New York midnight, Y2K aesthetic, flash photography, Versace green, rising star energy'
+  },
+  {
+    id:'jlo', year:'2001–2003', name:'Jenny from the Block', color:'#C9943A',
+    anthem:'"Jenny from the Block"',
+    desc:'#1 album AND #1 film simultaneously — first person ever. Bennifer 1.0. The fame paradox: staying real while becoming everything.',
+    palette:'champagne gold, paparazzi flashbulb, tabloid newsprint, bronze skin',
+    visual_key:'celebrity culture collision, luxury vs authenticity, paparazzi, Ben Affleck era, gold and shadow'
+  },
+  {
+    id:'marc', year:'2004–2011', name:'Amor Eterno', color:'#6B2D8B',
+    anthem:'"Que Hiciste"',
+    desc:'Marc Anthony. Max and Emme. Four albums. A decade of Latin soul, motherhood, and a marriage that broke hearts.',
+    palette:'deep purple, ivory, floral gold, candlelight amber',
+    visual_key:'Latin romance, domestic warmth, twin babies, passion and heartbreak, Spanish-language poetry'
+  },
+  {
+    id:'idol', year:'2011–2014', name:'The Return', color:'#1A6B3A',
+    anthem:'"Dance Again"',
+    desc:'American Idol judge. 60M viewers. The comeback nobody expected. Dance Again Tour. "On the Floor" becomes an anthem.',
+    palette:'stage emerald, spotlight white, electric green, prime-time gold',
+    visual_key:'TV studio glamour, comeback narrative, stadium energy, dancing in light, victorious return'
+  },
+  {
+    id:'hustlers', year:'2016–2020', name:'Ramona', color:'#1C1C2E',
+    anthem:'"Limitless"',
+    desc:'Las Vegas residency. Hustlers Oscar snub. Super Bowl LII halftime with Shakira. The pole. The flag. The daughters.',
+    palette:'noir black, strip club neon, pole chrome, American flag red/white/blue',
+    visual_key:'pole dancing as power, Vegas spectacle, Oscar-worthy acting, Super Bowl magnitude, daughters watching'
+  },
+  {
+    id:'timn', year:'2021–2024', name:'This Is Me…Now', color:'#C4143C',
+    anthem:'"This Is Me...Now"',
+    desc:'Bennifer 2.0 — the world watched them reunite. The album. The Amazon film. The most vulnerable Jennifer has ever been.',
+    palette:'bridal white, deep red, rose gold, soul-deep vulnerability',
+    visual_key:'wedding ceremony, romantic reunion, self-discovery, Ben Affleck, cinematic love story, Jennifer vs J.Lo duality'
+  }
+];
+
+const ERA_LYRICS = {
+  bronx: [
+    {title:'Feelin\' So Good', line:'"Woke up this morning with the world at my feet"', theme:'EMERGENCE'},
+    {title:'That\'s the Way Life Goes', line:'"We gotta go through what we go through"', theme:'ROOTS'},
+    {title:'No Me Ames', line:'"No me ames si no es verdad"', theme:'AUTHENTICITY'},
+    {title:'In the Beginning', line:'"She was just a girl from the Bronx"', theme:'ORIGIN'}
+  ],
+  selena: [
+    {title:'I Could Fall in Love', line:'"I could fall in love with you"', theme:'VULNERABILITY'},
+    {title:'Selena Tribute', line:'"She was a star who burned so bright"', theme:'LEGACY'},
+    {title:'No Me Queda Más', line:'"Quiero perderte más"', theme:'SACRIFICE'},
+    {title:'Como La Flor', line:'"Con tanto amor te dí la vida"', theme:'TRANSFORMATION'}
+  ],
+  on_the_6: [
+    {title:'Waiting for Tonight', line:'"Waited for the right time, for a night like this"', theme:'ANTICIPATION'},
+    {title:'If You Had My Love', line:'"If you had my love, and I gave you all my trust"', theme:'LONGING'},
+    {title:'Let\'s Get Loud', line:'"Let\'s get loud, turn the music up"', theme:'POWER'},
+    {title:'Feelin\' So Good', line:'"Nothing\'s gonna stop us, no"', theme:'UNSTOPPABLE'}
+  ],
+  jlo: [
+    {title:'Jenny from the Block', line:'"Don\'t be fooled by the rocks that I got — I\'m still Jenny from the block"', theme:'IDENTITY'},
+    {title:'Love Don\'t Cost a Thing', line:'"Think I wanna drive your fancy car, think I care about where you take me?"', theme:'AUTHENTICITY'},
+    {title:'I\'m Real', line:'"No matter what you\'ve heard, I know the truth"', theme:'TRUTH'},
+    {title:'All I Have', line:'"You are my life, my love, my one and only dream"', theme:'DEVOTION'}
+  ],
+  marc: [
+    {title:'Que Hiciste', line:'"¿Qué hiciste? My love, qué hiciste"', theme:'HEARTBREAK'},
+    {title:'Como Ama una Mujer', line:'"Como ama una mujer que vive para amar"', theme:'PASSION'},
+    {title:'Hold It Don\'t Drop It', line:'"Careful with my heart"', theme:'PROTECTION'},
+    {title:'Brave', line:'"Born under a sky so blue — a warrior heart in you"', theme:'COURAGE'}
+  ],
+  idol: [
+    {title:'Dance Again', line:'"Here I stand, a new day\'s dawning — sunny skies, goodbye to rain"', theme:'RESURRECTION'},
+    {title:'On the Floor', line:'"Tonight I\'m gonna dance for all that we\'ve been through"', theme:'CELEBRATION'},
+    {title:'Live It Up', line:'"Every second counts, every moment is a miracle"', theme:'JOY'},
+    {title:'I Luh Ya Papi', line:'"This is what a superstar looks like"', theme:'POWER'}
+  ],
+  hustlers: [
+    {title:'Limitless', line:'"I am unstoppable, I am invincible — I am limitless"', theme:'POWER'},
+    {title:'El Anillo', line:'"Entonces, ¿cuándo me vas a dar el anillo?"', theme:'DEMAND'},
+    {title:'Medicine', line:'"I got the medicine that makes you feel"', theme:'AGENCY'},
+    {title:'Dinero', line:'"All I want is the finer things"', theme:'AMBITION'}
+  ],
+  timn: [
+    {title:'This Is Me...Now', line:'"This is me...now, heart open"', theme:'ARRIVAL'},
+    {title:'Can\'t Get Enough', line:'"I can\'t get enough of your love"', theme:'ABUNDANCE'},
+    {title:'Dear Ben Pt. II', line:'"I see you standing there, and all I can think is — I never left"', theme:'REUNION'},
+    {title:'Greatest Love Story', line:'"We are each other\'s greatest love story"', theme:'DESTINY'}
+  ]
+};
+
+const STYLES = [
+  {id:'pop_art', icon:'🎨', name:'Pop Art Icon', desc:'Warhol × JLo. Silkscreen repetition. Bold primaries. Celebrity as mythology.', prompt_style:'Andy Warhol silkscreen pop art style, bold flat colors, halftone dots, iconic celebrity imagery, graphic and high contrast'},
+  {id:'bronx_grit', icon:'🏙️', name:'Bronx Grit', desc:'Street photography meets graphic novel. Raw, real, beautiful.', prompt_style:'gritty urban graphic novel style, warm amber street photography aesthetic, Bronx neighborhood textures, authentic and raw beauty, comic book realism'},
+  {id:'golden_goddess', icon:'✨', name:'Golden Goddess', desc:'High fashion editorial. Glossy. Monumental. Every panel a magazine cover.', prompt_style:'high fashion editorial illustration, golden hour lighting, luxury aesthetic, monumental beauty, glossy magazine cover composition'},
+  {id:'latin_soul', icon:'🌹', name:'Latin Soul', desc:'Magical realism. García Márquez energy. Color as emotion. Romance as revolution.', prompt_style:'Latin American magical realism illustration style, rich jewel tones, passionate color palette, romantic and lush, inspired by Botero and Kahlo'},
+  {id:'noir_power', icon:'🎬', name:'Noir Power', desc:'Hustlers energy. Film noir meets femme fatale. Chiaroscuro shadows.', prompt_style:'film noir comic style, dramatic chiaroscuro lighting, femme fatale power, deep shadows and stark highlights, cinematic and dangerous beauty'},
+  {id:'timn_dreamer', icon:'💫', name:'This Is Me...Now', desc:'Soft surrealism. Love as landscape. Vulnerability as visual language.', prompt_style:'soft surrealist illustration, dreamlike pastel and gold palette, emotional vulnerability visualized, romantic and cinematic, wedding imagery dissolving into stars'}
+];
+
+const PLATFORMS = [
+  {id:'ig_square', icon:'📷', name:'Instagram Post', dim:'1080×1080', ratio:'1:1'},
+  {id:'ig_story', icon:'📱', name:'Instagram Story', dim:'1080×1920', ratio:'9:16'},
+  {id:'twitter', icon:'🐦', name:'X / Twitter', dim:'1600×900', ratio:'16:9'},
+  {id:'tiktok', icon:'🎵', name:'TikTok Cover', dim:'1080×1920', ratio:'9:16'},
+  {id:'youtube', icon:'▶️', name:'YouTube Thumb', dim:'1280×720', ratio:'16:9'},
+  {id:'pinterest', icon:'📌', name:'Pinterest', dim:'1000×1500', ratio:'2:3'},
+  {id:'desktop', icon:'🖥️', name:'Desktop Art', dim:'2560×1440', ratio:'16:9'},
+  {id:'print', icon:'🖨️', name:'Print Ready', dim:'3000×3000', ratio:'1:1'}
+];
+
+// ===== STATE =====
+let selectedEra = null;
+let selectedLyric = null;
+let selectedStyle = null;
+let selectedFormat = 'ig_square';
+let panelCount = 1;
+let currentLayout = 'grid';
+let generatedPanels = [];
+let galleryItems = [];
+let apiKey = localStorage.getItem('jlo_gemini_key') || '';
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  renderEras();
+  renderStyles();
+  renderFormats();
+  if (apiKey) {
+    document.getElementById('api-key-input').value = apiKey;
+    document.getElementById('key-status').textContent = 'Key loaded';
+    document.getElementById('key-status').style.background = 'rgba(0,229,0,0.1)';
+    document.getElementById('key-status').style.color = '#00e676';
+  }
+});
+
+function saveKey() {
+  apiKey = document.getElementById('api-key-input').value.trim();
+  if (apiKey) {
+    localStorage.setItem('jlo_gemini_key', apiKey);
+    document.getElementById('key-status').textContent = '✓ Saved';
+    document.getElementById('key-status').style.background = 'rgba(0,229,0,0.1)';
+    document.getElementById('key-status').style.color = '#00e676';
+  }
+}
+
+function scrollTo(sel) {
+  document.querySelector(sel)?.scrollIntoView({behavior:'smooth'});
+}
+
+// ===== RENDER =====
+function renderEras() {
+  const g = document.getElementById('eras-grid');
+  g.innerHTML = ERAS.map(e => `
+    <div class="era-card" id="era-${e.id}" onclick="selectEra('${e.id}')">
+      <div class="era-color" style="background:${e.color}"></div>
+      <div class="era-year">${e.year}</div>
+      <div class="era-name">${e.name}</div>
+      <div class="era-anthem">${e.anthem}</div>
+      <div class="era-desc">${e.desc}</div>
+    </div>
+  `).join('');
+}
+
+function renderStyles() {
+  const g = document.getElementById('styles-grid');
+  g.innerHTML = STYLES.map(s => `
+    <div class="style-card" id="style-${s.id}" onclick="selectStyle('${s.id}')">
+      <div class="style-icon">${s.icon}</div>
+      <div class="style-name">${s.name}</div>
+      <div class="style-desc">${s.desc}</div>
+    </div>
+  `).join('');
+}
+
+function renderFormats() {
+  const g = document.getElementById('formats-grid');
+  g.innerHTML = PLATFORMS.map(p => `
+    <div class="format-card ${p.id===selectedFormat?'selected':''}" onclick="selectFormat('${p.id}')">
+      <div class="format-icon">${p.icon}</div>
+      <div class="format-name">${p.name}</div>
+      <div class="format-dim">${p.dim}</div>
+    </div>
+  `).join('');
+}
+
+// ===== SELECTION =====
+function selectEra(id) {
+  selectedEra = ERAS.find(e => e.id === id);
+  document.querySelectorAll('.era-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('era-' + id).classList.add('selected');
+  renderLyrics(id);
+  updateSummary();
+  document.getElementById('lyrics').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function renderLyrics(eraId) {
+  const lyrics = ERA_LYRICS[eraId] || [];
+  const era = ERAS.find(e => e.id === eraId);
+  document.getElementById('lyric-era-label').textContent = era ? era.name + ' — Select a lyric' : 'Lyrics';
+  const g = document.getElementById('lyric-grid');
+  if (!lyrics.length) { g.innerHTML = '<p style="color:var(--muted);font-style:italic">No lyrics available for this era</p>'; return; }
+  g.innerHTML = lyrics.map((l,i) => `
+    <div class="lyric-card" id="lyric-${eraId}-${i}" onclick="selectLyric('${eraId}', ${i})">
+      <div class="lyric-title">${l.title}</div>
+      <div class="lyric-line">${l.line}</div>
+      <div class="lyric-theme">${l.theme}</div>
+    </div>
+  `).join('');
+}
+
+function selectLyric(eraId, idx) {
+  selectedLyric = ERA_LYRICS[eraId]?.[idx];
+  document.querySelectorAll('.lyric-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById(`lyric-${eraId}-${idx}`)?.classList.add('selected');
+  updateSummary();
+}
+
+function selectStyle(id) {
+  selectedStyle = STYLES.find(s => s.id === id);
+  document.querySelectorAll('.style-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('style-' + id).classList.add('selected');
+  updateSummary();
+  document.getElementById('builder').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function selectFormat(id) {
+  selectedFormat = id;
+  renderFormats();
+}
+
+function setPanelCount(n) {
+  panelCount = n;
+  document.querySelectorAll('.count-btn[data-n]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.n) === n));
+  updateSummary();
+}
+
+function setLayout(l) {
+  currentLayout = l;
+  document.querySelectorAll('.count-btn[data-l]').forEach(b => b.classList.toggle('active', b.dataset.l === l));
+}
+
+function clearBuilder() {
+  selectedEra = null; selectedLyric = null; selectedStyle = null;
+  document.querySelectorAll('.era-card,.lyric-card,.style-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('comic-preview').innerHTML = `<div class="panel-placeholder" onclick="generateAll()"><span style="font-size:32px">🎬</span><span>Your panels will appear here</span></div>`;
+  document.getElementById('scene-prompt').value = '';
+  updateSummary();
+}
+
+function updateSummary() {
+  const ready = selectedEra && selectedStyle;
+  document.getElementById('gen-btn').disabled = !ready || !apiKey;
+  const sumBox = document.getElementById('build-summary');
+  if (!selectedEra) { sumBox.innerHTML = '<strong>Selection:</strong> No era selected yet. Choose an era, a lyric, and a style above.'; return; }
+  sumBox.innerHTML = `
+    <strong>Era:</strong> ${selectedEra.name} (${selectedEra.year})<br>
+    <strong>Lyric:</strong> ${selectedLyric ? `"${selectedLyric.line.substring(0,60)}…" — ${selectedLyric.theme}` : 'None selected (optional)'}<br>
+    <strong>Style:</strong> ${selectedStyle ? selectedStyle.name : '⚠️ Select a style'}<br>
+    <strong>Panels:</strong> ${panelCount} · <strong>Layout:</strong> ${currentLayout}
+    ${!apiKey ? '<br><span style="color:var(--red)">⚠️ Add your Gemini API key above to generate</span>' : ''}
+  `;
+}
+
+// ===== GENERATION =====
+async function generateImage(prompt) {
+  const apis = [
+    {
+      url: `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:predict?key=${apiKey}`,
+      body: JSON.stringify({instances:[{prompt}], parameters:{sampleCount:1, aspectRatio:'1:1'}}),
+      parse: d => { const p=d.predictions?.[0]; return p?.bytesBase64Encoded ? `data:${p.mimeType||'image/png'};base64,${p.bytesBase64Encoded}` : null; }
+    },
+    {
+      url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
+      body: JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseModalities:['TEXT','IMAGE']}}),
+      parse: d => { const parts=d.candidates?.[0]?.content?.parts||[]; const img=parts.find(p=>p.inlineData); return img?`data:${img.inlineData.mimeType};base64,${img.inlineData.data}`:null; }
+    }
+  ];
+  for (const api of apis) {
+    try {
+      const r = await fetch(api.url, {method:'POST', headers:{'Content-Type':'application/json'}, body:api.body});
+      if (r.ok) { const d=await r.json(); const result=api.parse(d); if(result) return result; }
+    } catch(e) {}
+  }
+  return null;
+}
+
+function buildPanelPrompt(panelIndex, total) {
+  if (!selectedEra) return '';
+  const era = selectedEra;
+  const style = selectedStyle?.prompt_style || 'cinematic comic book illustration';
+  const lyricLine = selectedLyric?.line || '';
+  const scene = document.getElementById('scene-prompt').value.trim();
+  const extra = scene ? `. Scene: ${scene}` : '';
+  const lyricNote = lyricLine ? `. Inspired by the lyric: ${lyricLine}` : '';
+
+  const panelDescriptions = getPanelDescriptions(era.id, panelIndex, total);
+
+  return `${style}. ${panelDescriptions}${extra}${lyricNote}. Visual context: ${era.visual_key}. Color palette: ${era.palette}. Jennifer Lopez, iconic and powerful, cinematic quality, no text or captions in image, high detail, dramatic lighting, 1:1 aspect ratio.`;
+}
+
+function getPanelDescriptions(eraId, idx, total) {
+  const panels = {
+    bronx: ['A young Latina girl dancing on a fire escape in the South Bronx, golden afternoon light, raw joy and determination','Close-up: her feet in worn sneakers on a New York sidewalk, graffiti wall behind her, reaching upward','Wide shot of Castle Hill Avenue with a figure walking confidently away from the camera toward a bright horizon'],
+    selena: ['A Latina performer in rhinestone costume on a stadium stage, arms outstretched, thousands of lights behind her','Close-up of a sequined outfit reflecting stage lights, tears of joy, transformation moment','The performer bowing on stage, flowers raining down, crowd roaring, history being made'],
+    on_the_6: ['A glamorous woman stepping out of a limousine onto a red carpet, paparazzi flashes creating a halo of light','The 6 train pulling into a Bronx station, a figure inside looking out with quiet power','New Year\'s eve New York City, a woman in an iconic green dress, the world watching'],
+    jlo: ['A celebrity walking through Times Square surrounded by her own image on billboards, remaining grounded','Close-up: a woman wearing simple jeans and a white tee among golden luxury, the paradox in her eyes','A woman at the crossroads of fame and home, one hand touching a Bronx stoop, the other holding a movie script'],
+    marc: ['A couple dancing salsa in a candlelit room, passion and intimacy, Latin romance','Two sleeping babies in a crib, a mother watching over them, soft golden light and overwhelming love','A woman singing with full emotional commitment, a man at a piano, partnership and heartbreak combined'],
+    idol: ['A woman standing at the center of a massive stage, thousands of fans with lights, triumphant return','Close-up of feet dancing, pure joy, comeback energy, lights and movement','A woman laughing backstage, the weight of years lifted, freedom in her body'],
+    hustlers: ['A woman in a fur coat at the top of a pole in a strip club, surveilling the room below with complete control','Film noir shadows on a woman\'s face, power and danger in her eyes, chrome and neon reflections','Super Bowl halftime stage, a woman in costume with a Puerto Rican flag, daughters watching from the front row'],
+    timn: ['A wedding moment: two figures in white, the whole world holding its breath, love overcoming everything','A woman sitting alone writing in a journal, golden morning light, finally at peace with her own story','A double exposure: the same woman as she was and as she is now, layered and whole, This Is Me...Now']
+  };
+  const arr = panels[eraId] || [`Jennifer Lopez in the ${eraId} era, powerful and iconic, ${idx + 1} of ${total}`];
+  return arr[Math.min(idx, arr.length - 1)];
+}
+
+function getLoadingLyric() {
+  const all = Object.values(ERA_LYRICS).flat().map(l => l.line);
+  return all[Math.floor(Math.random() * all.length)] || '"I am limitless"';
+}
+
+async function generateAll() {
+  if (!selectedEra || !selectedStyle) { alert('Select an era and a style first.'); return; }
+  if (!apiKey) { alert('Add your Gemini API key in the bar above.'); return; }
+
+  const overlay = document.getElementById('gen-overlay');
+  const bar = document.getElementById('gen-bar');
+  const statusEl = document.getElementById('gen-status');
+  const lyricEl = document.getElementById('gen-lyric-flash');
+  overlay.classList.add('active');
+  generatedPanels = [];
+
+  const preview = document.getElementById('comic-preview');
+  const layoutClass = currentLayout === 'cinematic' ? 'layout-cinematic' : panelCount === 1 ? 'layout-1' : panelCount === 2 ? 'layout-2' : panelCount <= 3 ? 'layout-3' : 'layout-4';
+  preview.innerHTML = `<div class="comic-canvas ${layoutClass}" id="live-canvas"></div>`;
+  const canvas = document.getElementById('live-canvas');
+
+  for (let i = 0; i < panelCount; i++) {
+    statusEl.textContent = `Generating Panel ${i+1} of ${panelCount}...`;
+    lyricEl.textContent = getLoadingLyric();
+    bar.style.width = `${((i) / panelCount) * 100}%`;
+
+    // Add placeholder
+    const ph = document.createElement('div');
+    ph.className = 'panel-generating' + (currentLayout==='cinematic' && i===1 ? ' tall' : '');
+    ph.id = `panel-ph-${i}`;
+    ph.innerHTML = `<div class="panel-spinner"></div><span style="font-size:11px;color:var(--muted)">Panel ${i+1}</span>`;
+    canvas.appendChild(ph);
+
+    const prompt = buildPanelPrompt(i, panelCount);
+    const imgData = await generateImage(prompt);
+
+    // Replace placeholder with image
+    const ph2 = document.getElementById(`panel-ph-${i}`);
+    if (imgData && ph2) {
+      const panelDiv = document.createElement('div');
+      panelDiv.className = 'comic-panel' + (currentLayout==='cinematic' && i===1 ? ' tall' : '');
+      const caption = selectedLyric ? selectedLyric.line.replace(/"/g,'') : selectedEra.name;
+      panelDiv.innerHTML = `
+        <img src="${imgData}" alt="Panel ${i+1}">
+        <div class="panel-overlay"></div>
+        <div class="panel-caption">${i===0 ? caption.substring(0, 80) : ''}</div>
+        <div class="panel-number">${i+1}</div>
+      `;
+      ph2.replaceWith(panelDiv);
+      generatedPanels.push({img: imgData, caption, index: i});
+    } else if (ph2) {
+      ph2.innerHTML = `<span style="color:var(--red);font-size:12px">Generation failed — check API key</span>`;
+    }
+
+    bar.style.width = `${((i+1) / panelCount) * 100}%`;
+  }
+
+  overlay.classList.remove('active');
+  if (generatedPanels.length > 0) saveToGallery();
+}
+
+function saveToGallery() {
+  const item = {
+    id: Date.now(),
+    era: selectedEra.name,
+    style: selectedStyle.name,
+    lyric: selectedLyric?.title || 'No lyric',
+    panels: [...generatedPanels],
+    panelCount,
+    layout: currentLayout
+  };
+  galleryItems.unshift(item);
+  renderGallery();
+}
+
+function renderGallery() {
+  const g = document.getElementById('gallery-grid');
+  if (!galleryItems.length) {
+    g.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="icon">🎨</div><p>Generated panels appear here</p></div>';
+    return;
+  }
+  g.innerHTML = galleryItems.map(item => `
+    <div class="gallery-item">
+      <div class="gallery-canvas" style="grid-template-columns:${item.panelCount === 1 ? '1fr' : item.panelCount === 2 ? '1fr 1fr' : 'repeat(3,1fr)'}">
+        ${item.panels.map(p => `<img src="${p.img}" style="width:100%;aspect-ratio:1;object-fit:cover;display:block">`).join('')}
+      </div>
+      <div class="gallery-meta">
+        <div class="gallery-title">${item.era} — ${item.lyric}</div>
+        <div class="gallery-tags">
+          <span class="tag">${item.style}</span>
+          <span class="tag">${item.panelCount} panels</span>
+          <span class="tag">${item.layout}</span>
+        </div>
+        <div class="gallery-actions">
+          <button class="ga-btn" onclick="downloadPanels(${item.id})">⬇ Download</button>
+          <button class="ga-btn" onclick="shareItem(${item.id})">↗ Share</button>
+          <button class="ga-btn" onclick="remixItem(${item.id})">🔄 Remix</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function downloadPanels(id) {
+  const item = galleryItems.find(i => i.id === id);
+  if (!item) return;
+  item.panels.forEach((p, i) => {
+    const a = document.createElement('a');
+    a.href = p.img;
+    a.download = `jlo-${item.era.toLowerCase().replace(/\s/g,'-')}-panel-${i+1}.png`;
+    a.click();
+  });
+}
+
+function shareItem(id) {
+  const item = galleryItems.find(i => i.id === id);
+  if (!item) return;
+  if (navigator.share && item.panels[0]) {
+    // Convert first panel to blob and share
+    fetch(item.panels[0].img).then(r=>r.blob()).then(blob => {
+      const file = new File([blob], 'jlo-panel.png', {type:'image/png'});
+      navigator.share({title:`J.Lo Universe — ${item.era}`, files:[file]}).catch(()=>{});
+    });
+  } else {
+    alert('Share: right-click → Save image as… or use the Download button');
+  }
+}
+
+function remixItem(id) {
+  const item = galleryItems.find(i => i.id === id);
+  if (!item) return;
+  const era = ERAS.find(e => e.name === item.era);
+  if (era) { selectEra(era.id); }
+  document.getElementById('builder').scrollIntoView({behavior:'smooth'});
+}
+</script>
+</body>
+</html>
