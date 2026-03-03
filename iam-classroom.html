@@ -1877,15 +1877,24 @@ FOCUS RULE: Stay on this student's specific venture. If the conversation drifts,
     }
     
     // ── AI PROVIDER CHAIN ─────────────────────────────────────────────────────
-    // Keys are NEVER hardcoded — set via ⚙️ Admin panel (stored in localStorage only)
+    // PRIORITY ORDER: Proxy first (server-managed, immune to GitHub scanning)
+    //                 → Stored key fallback (auto-synced from Neo4j, cross-device)
     const hdr_c={'Content-Type':'application/json'};
     const body_c=JSON.stringify(apiBody);
     let reply = null;
 
-    // 1. Emergency key (Anthropic Claude or Gemini)
+    // 1. Awareness proxy — PRIMARY (Greg manages server-side, never gets killed by GitHub scanner)
+    if(!reply){
+      try{
+        const r=await fetch(AI_PROXY,{method:'POST',headers:hdr_c,body:body_c,signal:AbortSignal.timeout(12000)});
+        if(r.ok){const d=await r.json();reply=d?.candidates?.[0]?.content?.parts?.[0]?.text||null;}
+      }catch(e){}
+    }
+
+    // 2. Stored key fallback (synced from Neo4j → localStorage via loadAdminConfig on login)
     const eKey = getEmergencyKey();
-    if(eKey && eKey.startsWith('sk-ant-')){
-      // Claude API — convert Gemini format to Anthropic messages format
+    if(!reply && eKey && eKey.startsWith('sk-ant-')){
+      // Claude Opus — richest reasoning
       try{
         const claudeBody={
           model:'claude-opus-4-6-20251001',
@@ -1905,8 +1914,8 @@ FOCUS RULE: Stay on this student's specific venture. If the conversation drifts,
         });
         if(r.ok){const d=await r.json();reply=d?.content?.[0]?.text||null;}
       }catch(e){}
-    } else if(eKey && eKey.startsWith('AIzaSy')){
-      // Gemini API
+    } else if(!reply && eKey && eKey.startsWith('AIzaSy')){
+      // Gemini fallback
       for(const model of ['gemini-2.5-flash','gemini-2.0-flash']){
         if(reply) break;
         try{
@@ -1914,14 +1923,6 @@ FOCUS RULE: Stay on this student's specific venture. If the conversation drifts,
           if(r.ok){const d=await r.json();reply=d?.candidates?.[0]?.content?.parts?.[0]?.text||null;}
         }catch(e){}
       }
-    }
-
-    // 2. Awareness proxy (fallback — Greg needs to update with fresh Gemini key)
-    if(!reply){
-      try{
-        const r=await fetch(AI_PROXY,{method:'POST',headers:hdr_c,body:body_c});
-        if(r.ok){const d=await r.json();reply=d?.candidates?.[0]?.content?.parts?.[0]?.text||null;}
-      }catch(e){}
     }
     const replyText = reply || null;
     
