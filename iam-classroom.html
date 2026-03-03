@@ -174,9 +174,33 @@ input:focus,textarea:focus{border-color:var(--cyan)}
 .q-option.selected { border-color:var(--gold); background:rgba(212,175,55,0.12); color:var(--gold); }
 .q-opt-emoji { font-size:1.2rem; min-width:24px; }
 
+/* Spirit animal bg aura */
+#app { position:relative; }
+.spirit-aura {
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  background: radial-gradient(ellipse 80% 60% at 20% 80%, var(--spirit-color, transparent) 0%, transparent 70%),
+              radial-gradient(ellipse 50% 40% at 80% 20%, var(--spirit-color2, transparent) 0%, transparent 60%);
+  opacity:0; transition:opacity 2s ease;
+  animation:spiritPulse 6s ease-in-out infinite;
+}
+.spirit-aura.visible { opacity:0.18; }
+@keyframes spiritPulse {
+  0%,100% { opacity:0.12; }
+  50% { opacity:0.22; }
+}
+@keyframes companionBob {
+  0%,100% { transform:translateY(0) rotate(-3deg); }
+  50% { transform:translateY(-8px) rotate(3deg); }
+}
+@keyframes bubblePop {
+  from { transform:scale(0.8) translateY(8px); opacity:0; }
+  to { transform:scale(1) translateY(0); opacity:1; }
+}
+
 </style>
 </head>
 <body>
+<div class="spirit-aura" id="spirit-aura"></div>
 
 <!-- LOGIN SCREEN -->
 <div id="login-screen">
@@ -997,6 +1021,8 @@ async function initStudent() {
     ? `${charG.e} ${charG.n}.\n\nI'm IAM ${botName} — your ${charG.a}-spirit thinking partner for this semester.\n\n*"${charG.m}"*\n\nThat's your doctrine. Your three forces: **${charG.i.join(' · ')}**.\n\nWe're going to build something real through three lenses:\n🔴 **Social** — WHO has the problem, who trusts you, who's in your formation\n🔵 **Knowledge** — WHAT you can prove, validate, and cite\n🟢 **Generative** — WHAT IF you build the AI-powered version\n\nYour Trinity Graph (right panel) grows with every conversation — every concept you own becomes a node.\n\n**Let's begin:** What's the venture idea you're bringing to this course? One sentence — what problem, and who has it right now?`
     : `I'm IAM ${botName} — your ${archetype.replace(/^The /,'')} for this semester.\n\nWe're going to build something real together, and I'm going to push you to think in three layers:\n🔴 **Social** — WHO has the problem, who trusts you, who opens doors\n🔵 **Knowledge** — WHAT you can prove, validate, and cite\n🟢 **Generative** — WHAT IF you build the AI-powered version\n\nYour Trinity Graph (right panel) evolves as we talk. Every concept you explore becomes a node. Tap any node to go deeper.\n\n**Let's start with something real:** Tell me about the venture idea you're bringing to this course — even if it's rough. One sentence: what problem does it solve, and who has that problem right now?`;
   addBotMessage(greeting);
+  applyAnimalBackground(currentUser);
+  initCompanion(currentUser);
   renderGraph();
 }
 
@@ -1123,6 +1149,155 @@ const CHARACTER_DATA = {
   rob:  {n:'The Precision Architect', a:'Lynx',            e:'🐈‍⬛', m:'Waits in silence until the moment is exact. Then moves once.',                    i:['Clarity','Precision','Serendipity'],    d:'Lynx intelligence: sees in total darkness, never wastes a step — every move is the right move at the right time.'},
   andrew:{n:'The Myth Engine',        a:'Raven',           e:'🪶', m:'Every story has a door. The Raven finds the one no one tried.',                   i:['Creativity','Connectivity','Totality'], d:'Raven intelligence: collector of stories, builder of myth — transforms what it touches into something that outlasts the telling.'},
 };
+
+// ===== §SPIRIT COLORS — Background Aura System =====
+const SPIRIT_COLORS = {
+  ava:      {c1:'#FF8C42', c2:'#CC5500', label:'Fox Amber'},
+  ben:      {c1:'#8B5E3C', c2:'#5C3317', label:'Bear Brown'},
+  cara:     {c1:'#CC77FF', c2:'#7B2FBE', label:'Butterfly Violet'},
+  dev:      {c1:'#4A4E6B', c2:'#1A1A2E', label:'Crow Midnight'},
+  elena:    {c1:'#C8E6FF', c2:'#7BB8E0', label:'Swan Silver'},
+  finn:     {c1:'#003366', c2:'#001833', label:'Orca Deep'},
+  grace:    {c1:'#8FBC8F', c2:'#2E6B2E', label:'Crane Sage'},
+  hugo:     {c1:'#D4A017', c2:'#6B4C00', label:'Jaguar Gold'},
+  iris:     {c1:'#00FF88', c2:'#FF00CC', label:'Hummingbird Iridescent'},
+  jake:     {c1:'#B0BEC5', c2:'#607D8B', label:'Mountain Goat Slate'},
+  kira:     {c1:'#7C4DFF', c2:'#00BCD4', label:'Octopus Purple-Teal'},
+  liam:     {c1:'#FFD700', c2:'#B8860B', label:'Lion Gold'},
+  maya:     {c1:'#6A0DAD', c2:'#2E0057', label:'Owl Violet'},
+  noah:     {c1:'#FF6B6B', c2:'#CC3333', label:'Salmon Coral'},
+  olive:    {c1:'#9E9E9E', c2:'#4A4A4A', label:'Elephant Grey'},
+  paul:     {c1:'#CC2200', c2:'#660000', label:'Ant Red'},
+  quinn:    {c1:'#00C853', c2:'#FF6D00', label:'Chameleon Shift'},
+  ravi:     {c1:'#1565C0', c2:'#0D2B6B', label:'Eagle Navy'},
+  sara:     {c1:'#00B4D8', c2:'#0077B6', label:'Dolphin Blue'},
+  troy:     {c1:'#757575', c2:'#333333', label:'Rhino Ash'},
+  uma:      {c1:'#00BCD4', c2:'#FFD700', label:'Peacock Teal-Gold'},
+  vince:    {c1:'#90A4AE', c2:'#37474F', label:'Wolf Silver'},
+  wren:     {c1:'#A0785A', c2:'#5D3A1A', label:'Wren Warm Brown'},
+  xena:     {c1:'#E0E0E0', c2:'#9E9E9E', label:'Snow Leopard Frost'},
+  yusuf:    {c1:'#558B2F', c2:'#1B5E20', label:'Tortoise Forest'},
+  zara:     {c1:'#00E5FF', c2:'#0050FF', label:'Electric Eel Cyan'},
+  amir:     {c1:'#1A237E', c2:'#4FC3F7', label:'Falcon Sky'},
+  blake:    {c1:'#6D4C41', c2:'#3E2723', label:'Grizzly Copper'},
+  cleo:     {c1:'#33691E', c2:'#1B5E20', label:'Crocodile Green'},
+  diego:    {c1:'#263238', c2:'#000000', label:'Condor Black'},
+  elise:    {c1:'#FF6F00', c2:'#1A1A00', label:'Monarch Flame'},
+  felix:    {c1:'#FFC107', c2:'#FF8F00', label:'Cat Gold'},
+  gaia:     {c1:'#5D4037', c2:'#BF360C', label:'Redwood Rust'},
+  hana:     {c1:'#F9A825', c2:'#004D00', label:'Firefly Glow'},
+  ines:     {c1:'#E91E63', c2:'#FFFFFF', label:'Ibis Rose'},
+  nezzy:    {c1:'#00E5FF', c2:'#7C4DFF', label:'Jellyfish Cyan'},
+  six2tha9: {c1:'#FF3D00', c2:'#FFD600', label:'Phoenix Flame'},
+  saiki:    {c1:'#FF4081', c2:'#00BCD4', label:'Mantis Spectrum'},
+  spily:    {c1:'#FFD54F', c2:'#8D6E63', label:'Nautilus Gold'},
+  waddles:  {c1:'#388E3C', c2:'#1565C0', label:'Mallard Iridescent'},
+  milly:    {c1:'#F48FB1', c2:'#F06292', label:'Flamingo Pink'},
+  rob:      {c1:'#B0BEC5', c2:'#37474F', label:'Lynx Silver'},
+  andrew:   {c1:'#4A148C', c2:'#212121', label:'Raven Midnight'},
+};
+
+function applyAnimalBackground(username) {
+  const sc = SPIRIT_COLORS[username];
+  if (!sc) return;
+  document.documentElement.style.setProperty('--spirit-color', sc.c1 + '22');
+  document.documentElement.style.setProperty('--spirit-color2', sc.c2 + '15');
+  setTimeout(() => document.getElementById('spirit-aura')?.classList.add('visible'), 500);
+}
+
+// ===== §JIMINY CRICKET — Spirit Companion =====
+const COMPANION_SAYINGS = {
+  ava: ["You already know the answer. You're just hoping I'll confirm it. 🦊","That's a fox move right there — sneaky and correct.","Sniff around the edges. The real answer is never in the center.","You're not lost. You're scouting.","Every good deal smells like opportunity before it looks like one."],
+  ben: ["Slow down. Not everything needs to be fast. 🐻","You're warmer than you think you are.","Sometimes the best strategy is just... showing up as a bear.","Hibernate on it. Big ideas need rest.","You don't need a plan. You need a territory."],
+  cara: ["You're not stuck. You're pupating. 🦋","Change direction — it looks better from this angle.","Most butterflies don't know they're beautiful. That's the secret.","Your pivot IS your strategy.","What you call confusion, I call metamorphosis."],
+  dev: ["Crows never ask for permission. Why are you? 🐦‍⬛","You've already spotted the pattern. Now trust it.","Bright objects are clues. Follow them.","Intelligence without movement is just observation. Move.","The answer was shiny. You walked past it."],
+  elena: ["Grace under pressure isn't accidental. It's practiced. 🦢","Still waters. Deep strategy.","The most elegant solution is always the simplest one you haven't tried.","You don't have to flap harder. You have to find the current.","Poise is a superpower disguised as personality."],
+  finn: ["Pod intelligence. Who's in yours right now? 🐋","You're not thinking big enough. Go bigger.","Orca doesn't ask if the ocean is ready. It shows up.","Strategy + community = unstoppable. You have both.","The deep water is where the interesting stuff lives."],
+  grace: ["One focused movement. Not ten scattered ones. 🦤","Precision is a form of respect.","Still waters, sharp beak.","You don't need more information. You need to commit.","The crane doesn't second-guess its landing spot."],
+  hugo: ["Jaguars don't second-guess. They commit. 🐆","You spotted the gap. Now move through it.","Patience isn't passive. It's loaded.","Your pattern recognition is your edge. Trust it.","The jungle rewards the one who goes first."],
+  iris: ["You visited three ideas in the time it took me to say hello. 🐦","Fast doesn't mean scattered — you know this.","The flower doesn't judge the hummingbird for moving on.","Your attention span IS your competitive advantage.","Precision hovering is harder than it looks. You make it look easy."],
+  jake: ["Other people see a wall. You see a route. 🐐","Impossible terrain is just unexplored terrain.","The view from up here changes everything, doesn't it?","You didn't take the easy path. Good. Easy paths are crowded.","Trust the hooves."],
+  kira: ["Eight arms. Which one's solving the real problem right now? 🐙","Distributed intelligence means no single point of failure. That's you.","Color shift: you're already three steps ahead.","You don't have a plan B. You have a plan B through H.","The octopus doesn't apologize for being smarter than everything else in the ocean."],
+  liam: ["Lions don't explain themselves. 🦁","Your territory. Your rules. Name them.","Roar is just compressed conviction.","The mane isn't vanity. It's a signal.","Own the space first. Fill the details in later."],
+  maya: ["You see what they don't. That's the whole game. 🦉","Wisdom isn't age. It's pattern density.","The owl doesn't explain its vision in the dark. It acts.","You already know what they're going to do next.","Your silence is not confusion. It's processing."],
+  noah: ["You always find your way back. 🐟","Trust the current, not the map.","The river changes. Your compass doesn't.","Every obstacle upstream is an obstacle you'll be stronger for.","Home isn't a place. It's a direction."],
+  olive: ["Never forget. Never forgive a bad hypothesis. 🐘","Your memory is your moat.","The herd moves together — who are you moving with?","You've held this landscape in your mind longer than anyone else in the room.","Elephants don't hurry. They arrive exactly when needed."],
+  paul: ["One grain. One step. Empire in progress. 🐜","You are thirty times stronger than you look.","The colony doesn't need a king. It needs everyone doing their part.","Small is underestimated. Good.","The ant never worries about the size of the food. It worries about the direction."],
+  quinn: ["You've already read the room. Show them what you see. 🦎","Adaptation isn't weakness. It's genius.","You fit every environment because you don't need to.","The chameleon doesn't change who it is. Just what it shows.","Blend in long enough to understand. Then stand out."],
+  ravi: ["From 10,000 feet, what does this actually look like? 🦅","You can see the whole field. Stop staring at the ground.","Eagles don't flap when they can soar.","The thermal is there. Find it.","Your edge is altitude. Maintain it."],
+  sara: ["You already know where the pod is going. 🐬","Sonar never lies. Trust your read on the room.","Joy is not a distraction from the mission. It IS the mission.","You communicate in frequencies others can't hear yet.","The dolphin plays because play is serious business."],
+  troy: ["You're a charging rhino with perfect aim. 🦏","Momentum is your best argument.","You don't pivot. You redirect with force.","The hide is thick for a reason — it's not arrogance, it's armor.","When you move, the market moves. Go."],
+  uma: ["The full display isn't vanity. It's vocabulary. 🦚","Every feather is a message. What are you saying?","Make the invisible undeniable.","Your distinctiveness is your distribution strategy.","The peacock doesn't explain the tail. It opens it."],
+  vince: ["Lone wolf is a myth. Even wolves need a pack. Who's yours? 🐺","Territory isn't claimed by size. It's claimed by presence.","You're three moves ahead. They just don't know it yet.","Howl when you have something to say.","The wolf doesn't hunt alone because it's independent. It hunts alone when it has to."],
+  wren: ["The smallest voice in the forest is often the loudest. 🐤","You don't need a big budget. You need a clear song.","Fearlessness has nothing to do with size.","Your niche IS your megaphone.","The wren builds a nest so perfect, it embarrasses the eagle."],
+  xena: ["You see the path. Now own it. 🐱","The snow leopard strikes once because it doesn't miss.","Your stealth is your strategy.","Most people don't even know you're playing.","The mountain doesn't argue with the snow leopard. It moves."],
+  yusuf: ["Patience is not the same as waiting. 🐢","The tortoise outlived the dinosaurs. Think about that.","Every slow step is a tested step.","You're playing a game with a longer time horizon than everyone else. Good.","Carry your home with you. Stability is internal."],
+  zara: ["You generate your own field. 🌊","Nobody touches you without feeling it.","The eel doesn't ask the ocean for permission.","Charge up. Then release.","Your energy is contagious. Make sure it's the energy you want to spread."],
+  amir: ["You're already at altitude. Stop apologizing for the view. 🦅","The fastest dive in nature. You know when to commit.","Strike once. Make it count.","Speed is a decision, not a gift.","The falcon doesn't hesitate at the top of the dive. Neither should you."],
+  blake: ["Grizzlies don't panic. They problem-solve with their entire body. 🐻","You're calmer than you look. That's the advantage.","Strength is patience made visible.","You don't have to be fast. You have to be inevitable.","The honey is worth the stings. Every time."],
+  cleo: ["You haven't changed in 80 million years because you work. 🐊","Patience is your sharpest weapon.","Still water. Waiting. Then — perfect.","Your stillness makes others nervous. Good.","Durable beats trendy every single time."],
+  diego: ["Higher altitude means longer vision. 🦅","You see dead ends before they happen.","Condor doesn't fight the updraft. It uses it.","The view from here changes everything.","Clean up what others leave behind. That's not weakness. That's service."],
+  elise: ["The monarch crosses entire continents on instinct. So can you. 🦋","Migration isn't running away. It's following the right season.","You know where you're going, even when you don't know how.","Your transformation is already complete. You just haven't landed yet.","Beautiful things endure because they have a reason to."],
+  felix: ["Nine lives means nine chances to get it right. 🐈","Land on your feet. Every time.","Your independence is not aloofness. It's strategy.","The cat doesn't apologize for knowing it's smarter than you.","Curiosity built the cat a better life. Keep asking questions."],
+  gaia: ["Your roots go deeper than anyone can see. 🌲","Patience in centuries. Results in millennia.","You outlast what tries to clear you.","Growth is quiet until it isn't.","The tallest tree didn't start taller. It just never stopped."],
+  hana: ["You make your own light. 🌟","Bioluminescence: the ocean is dark, so you glow.","Your presence in the room is noticed even when you're quiet.","The firefly doesn't explain why it lights up. It just does.","Magic is just chemistry with better timing."],
+  ines: ["Ancient symbol. Modern mission. 🦢","Wisdom looks graceful from the outside. You know how hard it works.","The ibis walks where others won't wade.","Your instincts are older than this market.","Carry the knowledge. Wade into the mess. Come out clean."],
+  nezzy: ["Minimum viable structure, maximum viability. 🪼","You don't need a spine to move the ocean.","Most creatures fight the current. You become it.","Your strategy IS the drift.","The jellyfish has survived every extinction event. Adapt."],
+  six2tha9: ["You don't die. You transform. 🔥","Every ending is just pre-launch.","The phoenix doesn't mourn the fire.","Burn it down if you have to. You already know how to rebuild.","Your comeback is always better than your origin story."],
+  saiki: ["You see sixteen colors. They see three. 🦐","Your perception IS your competitive moat.","Don't dumb it down to explain it. Make them see what you see.","The mantis shrimp doesn't apologize for its vision.","What's obvious to you is revolutionary to everyone else."],
+  spily: ["Golden ratio. Every chamber enables the next. 🐚","You don't start over. You spiral outward.","Each version of you contains the last one.","Your growth curve is exponential. Trust the pattern.","Perfect form doesn't require perfection. Just consistency."],
+  waddles: ["Still waters, Thomas. Deep strategy. 🦆","The duck's feet are moving. Nobody sees it. That's the point.","Calm surface. Absolute focus underneath.","You move smoothly. What's underneath that?","Late migration is still migration. And sometimes it's strategic."],
+  milly: ["Stand in the color. Own the room. 🦩","The flamingo doesn't shrink in a crowd of flamingos.","Your distinctiveness is not a liability. It's a location marker.","You are unmistakably, brilliantly yourself. Lead with that.","Visibility is a strategy. Be findable."],
+  rob: ["Wait. Look. Strike once. 🐈‍⬛","The lynx doesn't explain its process. It delivers results.","Precision is just patience made sharp.","You see the gap before it exists. That's the gift.","Architecture is invisible when it's done right. So is your best work."],
+  andrew: ["Every story has a door. You find the one no one tried. 🪶","The raven collects. The raven connects. The raven transforms.","What are you building that outlasts the telling?","Myth is just truth told loud enough to echo.","The raven doesn't make the magic. It shows you where to look."],
+};
+
+let companionVisible = false;
+let companionSayingIdx = {};
+
+function initCompanion(username) {
+  const char = CHARACTER_DATA[username];
+  if (!char) return;
+  const el = document.getElementById('spirit-companion');
+  const emoji = document.getElementById('companion-emoji');
+  const label = document.getElementById('companion-label');
+  if (!el || !emoji) return;
+  emoji.textContent = char.e || '✨';
+  if (label) label.textContent = `— IAM ${BOT_NAMES[STUDENTS.indexOf(username)] || 'Spirit'}`;
+  el.style.display = 'block';
+  // Auto-show first saying after 8s
+  setTimeout(() => showCompanionSaying(username), 8000);
+  // Rotate sayings every 90s
+  setInterval(() => { if (companionVisible) showCompanionSaying(username); }, 90000);
+}
+
+function showCompanionSaying(username) {
+  const sayings = COMPANION_SAYINGS[username] || ["Your Trinity Graph is growing. Keep going.","One more question. That's all it takes.","The graph doesn't lie. Trust it."];
+  if (!companionSayingIdx[username]) companionSayingIdx[username] = 0;
+  const idx = companionSayingIdx[username] % sayings.length;
+  companionSayingIdx[username]++;
+  const bubble = document.getElementById('companion-bubble');
+  const text = document.getElementById('companion-text');
+  if (!bubble || !text) return;
+  text.textContent = sayings[idx];
+  bubble.style.display = 'block';
+  companionVisible = true;
+  // Auto-hide after 7s
+  setTimeout(() => {
+    if (companionVisible) { bubble.style.display='none'; companionVisible=false; }
+  }, 7000);
+}
+
+function toggleCompanion() {
+  const bubble = document.getElementById('companion-bubble');
+  if (!bubble) return;
+  if (bubble.style.display === 'none' || !bubble.style.display) {
+    showCompanionSaying(currentUser);
+  } else {
+    bubble.style.display = 'none';
+    companionVisible = false;
+  }
+}
 
 function buildStaticSystemPrompt() {
   const session = getCurrentSession();
@@ -1473,6 +1648,7 @@ async function runVolvoxEpoch() {
   
   renderGraph();
   addBotMessage(`🧬 VOLVOX Epoch complete! Your Trinity Graph has evolved.\n\nKirk Step: ${kirkStep}/12\nAnchors & Cornerstones: ${graphNodes.filter(n => n.cell_type === 'STRUCTURAL' || n.cell_type === 'GERMLINE').length}/${graphNodes.length} nodes\nScouts active: ${graphNodes.filter(n => n.cell_type === 'SOMATIC_SENSOR').length}\n\nKeep exploring to unlock your next stage.`);
+  setTimeout(() => showCompanionSaying(currentUser), 3000);
 }
 
 async function contributeToCollective(node) {
@@ -2452,5 +2628,14 @@ async function saveWANumber(){
 }
 
 </script>
+
+<!-- SPIRIT COMPANION -->
+<div id="spirit-companion" style="display:none;position:fixed;bottom:80px;right:16px;z-index:900;cursor:pointer;user-select:none" onclick="toggleCompanion()">
+  <div id="companion-bubble" style="display:none;position:absolute;bottom:64px;right:0;background:rgba(6,14,26,0.95);border:1px solid rgba(0,229,255,0.3);border-radius:16px 16px 4px 16px;padding:12px 16px;max-width:220px;min-width:140px;font-size:12px;color:#B0C4D8;line-height:1.5;backdrop-filter:blur(12px);box-shadow:0 4px 20px rgba(0,0,0,.5);animation:bubblePop .2s ease">
+    <div id="companion-text">...</div>
+    <div style="font-size:10px;color:#7A9BB5;margin-top:6px;text-align:right" id="companion-label">— IAM Spirit</div>
+  </div>
+  <div id="companion-emoji" style="font-size:32px;animation:companionBob 2.5s ease-in-out infinite;display:block;filter:drop-shadow(0 2px 8px rgba(0,0,0,.4))">🦊</div>
+</div>
 </body>
 </html>
