@@ -242,6 +242,20 @@ body{background:var(--bg);color:var(--text);font-family:'Georgia',serif;overflow
 
 /* RESPONSIVE */
 @media(max-width:640px){.nav-links{display:none}.hero-main{letter-spacing:-1px}}
+
+/* ===== ARTIST MIX ===== */
+.artist-mix-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.artist-chip{padding:14px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;text-align:center;transition:.25s;background:var(--glass);position:relative}
+.artist-chip:hover{border-color:var(--gold);background:var(--glow);transform:translateY(-2px)}
+.artist-chip.sel{border-color:var(--gold-bright);background:var(--glow);box-shadow:0 0 16px rgba(201,148,58,0.2)}
+.artist-chip.sel::after{content:'✓';position:absolute;top:6px;right:8px;font-size:10px;color:var(--gold-bright);font-weight:900}
+.artist-chip-emoji{font-size:22px;margin-bottom:6px}
+.artist-chip-name{font-size:11px;font-weight:700;color:var(--cream);margin-bottom:2px}
+.artist-chip-move{font-size:9px;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px}
+.artist-chip-desc{font-size:9px;color:var(--muted);line-height:1.4}
+.mix-recipe{padding:16px 20px;background:rgba(201,148,58,0.08);border:1px solid var(--border-hot);border-radius:10px;margin-top:16px;font-size:13px;color:var(--text);line-height:1.7;min-height:48px}
+.mix-recipe strong{color:var(--gold-bright)}
+.mix-count-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:10px;background:rgba(201,148,58,0.12);border:1px solid var(--border);color:var(--gold);margin-bottom:14px}
 </style>
 </head>
 <body>
@@ -257,6 +271,7 @@ body{background:var(--bg);color:var(--text);font-family:'Georgia',serif;overflow
     <a href="https://artiquity.com" target="_blank" style="padding:7px 14px;font-size:10px;letter-spacing:2px;text-transform:uppercase;border:1px solid rgba(201,148,58,0.3);border-radius:6px;color:var(--gold);text-decoration:none;background:rgba(201,148,58,0.08)">Artiquity.com ↗</a>
     <button class="nav-link" onclick="go('eras')">8 Eras</button>
     <button class="nav-link" onclick="go('arc')">Narrative</button>
+    <button class="nav-link" onclick="go('mix')">Artist Mix</button>
     <button class="nav-link" onclick="go('builder')">Builder</button>
     <button class="nav-link" onclick="go('fans')">Fan Voice</button>
     <button class="nav-link" onclick="go('gallery')">Gallery</button>
@@ -356,6 +371,18 @@ body{background:var(--bg);color:var(--text);font-family:'Georgia',serif;overflow
   <p class="section-body">Six distinct visual languages — from Warhol pop art to Bronx street realism to cinematic noir. Each unlocks a different version of her story.</p>
   <div class="divider"></div>
   <div class="styles-grid" id="styles-grid"></div>
+</section>
+
+
+<!-- ARTIST MIX -->
+<section class="section" id="mix">
+  <div class="section-eyebrow">The Fusion</div>
+  <h2 class="section-title">Artist <em>Mix</em></h2>
+  <p class="section-body">Select up to 3 artists. Their visual DNA fuses into a single style that has never existed before — with Artiquity tracking every attribution in the chain.</p>
+  <div class="divider"></div>
+  <div class="mix-count-badge" id="mix-badge">⚗️ <span id="mix-count-txt">0 of 3 selected</span></div>
+  <div class="artist-mix-grid" id="artist-mix-grid"></div>
+  <div class="mix-recipe" id="mix-recipe">Select artists above to see the fusion prompt that will drive your panel generation.</div>
 </section>
 
 <!-- NARRATIVE ARC -->
@@ -633,6 +660,32 @@ const ERAS = [
   }
 ];
 
+
+// ============================
+// ARTIST MIX LIBRARY
+// ============================
+const ARTISTS = [
+  {id:'wiley',    name:'Kehinde Wiley',  emoji:'👑', movement:'New Masters',        desc:'Old Masters sovereignty. Bronx royalty. Botanical thrones.',          prompt:'Kehinde Wiley hyperrealistic portrait painting, ornate floral wallpaper background, dignified and powerful subject posed as historical royalty, gold jewelry, rich fabric'},
+  {id:'basquiat', name:'Basquiat',        emoji:'👑', movement:'Neo-Expressionism',  desc:'Crown. Raw text. Bronx streets as sacred text.',                      prompt:'Jean-Michel Basquiat neo-expressionist style, bold black outlines, crown motifs, raw handwritten text, urban street energy, scratched surface texture, symbolic figures'},
+  {id:'kahlo',    name:'Frida Kahlo',     emoji:'🌺', movement:'Surrealism',         desc:'Botanical surrealism. Self as mythology. Pain as flower.',             prompt:'Frida Kahlo surrealist portrait style, lush botanical elements, Mexican folk art patterns, intense emotional gaze, flowers woven into hair, symbolic animals, vivid jewel colors'},
+  {id:'warhol',   name:'Andy Warhol',     emoji:'🎨', movement:'Pop Art',            desc:'Silkscreen repetition. Celebrity as myth. Color as statement.',        prompt:'Andy Warhol silkscreen pop art, bold flat colors, halftone dot patterns, repeated portrait grid, high contrast graphic, iconic celebrity mythology'},
+  {id:'lachapelle',name:'LaChapelle',     emoji:'💥', movement:'Hyper Pop',          desc:'Hyper-saturated. Surreal excess. Photographs that feel like paintings.',prompt:'David LaChapelle hyper-saturated photography style, surreal and theatrical staging, oversaturated colors, larger-than-life pop iconography, glamour meets commentary'},
+  {id:'haring',   name:'Keith Haring',    emoji:'⚡', movement:'Street Art',         desc:'Bold outlines. Pure movement. Joy as radical act.',                    prompt:'Keith Haring bold graphic style, thick black outlines, radiant lines suggesting energy and motion, bold primary colors, joyful and kinetic figures, street art energy'},
+  {id:'mucha',    name:'Alphonse Mucha',  emoji:'🌿', movement:'Art Nouveau',        desc:'Flowing lines. Nature as crown. The woman as the universe.',           prompt:'Alphonse Mucha Art Nouveau illustration, ornate decorative circular borders, flowing hair integrated with botanical elements, pastel and gold palette, goddess-like beauty'},
+  {id:'rivera',   name:'Diego Rivera',    emoji:'🏛️', movement:'Mexican Muralism',   desc:'Grand scale. Latin workers as heroes. Color as history.',              prompt:'Diego Rivera Mexican muralist style, monumental figures, rich earthy colors, narrative fresco aesthetic, cultural pride and labor, bold simplified forms'},
+  {id:'hendricks',name:'Barkley Hendricks',emoji:'✨',movement:'Black Portraiture',  desc:'Street fashion as fine art. Dignity in every canvas inch.',            prompt:'Barkley Hendricks portrait style, subject dressed in street fashion rendered with Old Masters dignity, minimal or abstract background, clothing as cultural statement, photorealistic faces'},
+  {id:'thomas',   name:'Mickalene Thomas',emoji:'💎', movement:'Rhinestone Realism', desc:'Rhinestones on canvas. Pattern. Feminine power as spectacle.',         prompt:'Mickalene Thomas rhinestone-encrusted portrait style, layered textile patterns, bold graphic collage elements, African American female power, glittering and maximalist'},
+  {id:'delaunay', name:'Sonia Delaunay',  emoji:'🔵', movement:'Orphism',            desc:'Simultaneous color. Rhythm as color. Fashion as abstract.',            prompt:'Sonia Delaunay Orphism abstract style, bold geometric color blocks, simultaneous contrast color theory, rhythmic circular forms, fashion as abstract painting'},
+  {id:'tamayo',   name:'Rufino Tamayo',   emoji:'🌙', movement:'Mexican Modernism',  desc:'Cosmic. Watermelon red. Ancient Mexico meeting the stars.',             prompt:'Rufino Tamayo Mexican modernist style, deep earth tones with vibrant accents, simplified mythic figures, ancient pre-Columbian symbolism meeting modern abstraction, cosmic and earthy simultaneously'},
+  {id:'botero',   name:'Botero',          emoji:'🌸', movement:'Figurativism',       desc:'Voluminous. Colombian warmth. Joy in every curve.',                    prompt:'Fernando Botero figurativist style, voluminous rounded figures, warm Colombian color palette, playful and monumental simultaneously, folk art dignity'},
+  {id:'prince',   name:'Richard Prince',  emoji:'📰', movement:'Appropriation Art', desc:'Cowboys. Nurses. Celebrity as myth. The image that remakes the image.', prompt:'Richard Prince appropriation art style, rephotographed media imagery, decontextualized celebrity iconography, flat graphic quality, the image questioning itself'}
+];
+
+let selectedArtists = [];
+
+// ============================
+// STYLES
+// ============================
 const STYLES = [
   {id:'pop',icon:'🎨',name:'Pop Art Icon',vibe:'Warhol × JLo',desc:'Silkscreen repetition. Bold primaries. Celebrity as mythology and myth as art.',prompt:'Andy Warhol silkscreen pop art style, bold flat graphic colors, halftone dot patterns, high contrast celebrity iconography, iconic and timeless, graphic novel clarity'},
   {id:'bronx',icon:'🏙️',name:'Bronx Grit',vibe:'Street × Soul',desc:'Raw photography meets graphic novel. Real, warm, and impossibly beautiful.',prompt:'gritty urban graphic novel style, warm amber street photography aesthetic, authentic neighborhood textures, painterly realism, golden hour light, cinematic and true'},
@@ -691,7 +744,7 @@ let apiKey = localStorage.getItem('jlo_key') || '';
 // INIT
 // ============================
 document.addEventListener('DOMContentLoaded', () => {
-  renderEras(); renderStyles(); renderArc(); renderFanVoice(); renderPlatforms();
+  renderEras(); renderStyles(); renderArtistMix(); renderArc(); renderFanVoice(); renderPlatforms();
   if (apiKey) { document.getElementById('key-input').value = apiKey; setKeyDot(true); }
 });
 
@@ -705,6 +758,56 @@ function saveKey() {
 function setKeyDot(on) {
   document.getElementById('key-dot').classList.toggle('live', on);
   document.getElementById('key-label').textContent = on ? '✓ Key active' : 'No key loaded';
+}
+
+
+// ============================
+// ARTIST MIX
+// ============================
+function renderArtistMix() {
+  document.getElementById('artist-mix-grid').innerHTML = ARTISTS.map(a => `
+    <div class="artist-chip ${selectedArtists.includes(a.id)?'sel':''}" id="ac-${a.id}" onclick="toggleArtist('${a.id}')">
+      <div class="artist-chip-emoji">${a.emoji}</div>
+      <div class="artist-chip-name">${a.name}</div>
+      <div class="artist-chip-move">${a.movement}</div>
+      <div class="artist-chip-desc">${a.desc}</div>
+    </div>`).join('');
+}
+
+function toggleArtist(id) {
+  if (selectedArtists.includes(id)) {
+    selectedArtists = selectedArtists.filter(a => a !== id);
+  } else {
+    if (selectedArtists.length >= 3) {
+      // Remove oldest, add new
+      selectedArtists.shift();
+    }
+    selectedArtists.push(id);
+  }
+  renderArtistMix();
+  updateMixRecipe();
+  updateSummary();
+}
+
+function updateMixRecipe() {
+  const cnt = document.getElementById('mix-count-txt');
+  const rec = document.getElementById('mix-recipe');
+  cnt.textContent = `${selectedArtists.length} of 3 selected`;
+  if (!selectedArtists.length) {
+    rec.innerHTML = 'Select artists above to see the fusion prompt.';
+    return;
+  }
+  const artists = selectedArtists.map(id => ARTISTS.find(a => a.id === id));
+  const names = artists.map(a => a.name).join(' × ');
+  const movements = artists.map(a => a.movement).join(', ');
+  const prompts = artists.map(a => a.prompt).join('. Combined with: ');
+  rec.innerHTML = `<strong>${names}</strong><br><span style="font-size:11px;color:var(--muted)">${movements}</span><br><br><em style="font-size:11px;color:var(--dim)">"${prompts.substring(0,180)}…"</em><br><br><span style="font-size:10px;color:var(--gold)">⚗️ Artiquity will track attribution chains for all ${artists.length} source style${artists.length>1?'s':''}</span>`;
+}
+
+function getMixPrompt() {
+  if (!selectedArtists.length) return '';
+  const artists = selectedArtists.map(id => ARTISTS.find(a => a.id === id));
+  return artists.map(a => a.prompt).join('. Fused with: ');
 }
 
 // ============================
@@ -896,7 +999,9 @@ function buildPrompt(panelIdx) {
   const lyricNote = sel.lyric ? `. Lyric inspiration: ${sel.lyric.line}` : '';
   const arcNote = ARC_BEATS.find(b=>b.id===sel.arc)?.desc ? `. Story beat: ${ARC_BEATS.find(b=>b.id===sel.arc).desc}` : '';
   const sceneNote = sceneDir ? `. Director's note: ${sceneDir}` : '';
-  return `${sel.style.prompt}. ${baseDesc}${lyricNote}${arcNote}${sceneNote}. Visual palette: ${sel.era.palette}. Jennifer Lopez iconic and powerful. No text in image. High detail. Cinematic quality. Square 1:1 format.`;
+  const mixStr = getMixPrompt();
+  const styleStr = mixStr ? `${sel.style.prompt}. ARTIST MIX FUSION — combine these visual languages: ${mixStr}` : sel.style.prompt;
+  return `${styleStr}. ${baseDesc}${lyricNote}${arcNote}${sceneNote}. Visual palette: ${sel.era.palette}. Jennifer Lopez iconic and powerful. No text in image. High detail. Cinematic quality. Square 1:1 format.`;
 }
 
 const LOADING_LYRICS = [
