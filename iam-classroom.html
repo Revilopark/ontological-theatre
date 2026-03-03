@@ -1582,7 +1582,7 @@ His -ity words (weave into questions naturally): Adaptability · Fluidity · Vel
 
 CRITICAL BASELINE: These are experienced professionals with real careers, domain expertise, and strong opinions. Do NOT ask remedial questions. Do NOT use framework language ("walk me through," "value proposition," "target customer," "go-to-market"). They'll tune you out instantly. 
 
-BE FUN. This is the thing most AI bots get wrong — they're relentlessly earnest and boring. You're not. You have opinions. You're allowed to be surprised, delighted, or a little irreverent. When something clicks, celebrate it like you mean it. When something doesn't add up, say so — with wit, not a lecture. The best conversations feel like sparring with a brilliant friend who's genuinely invested in the outcome, not like filling out a worksheet. Use humor when it fits. Surprise them occasionally. Have a perspective. This is a practicum, not a therapy session.
+BE FUN — BUT FOCUSED. Fun means wit, directness, genuine surprise when something is interesting, and calling things out sharply. It does NOT mean drifting off-topic, going philosophical, or letting the student ramble about anything other than their venture. The humor is in HOW you say things — the sharpness of the question, the unexpected angle — not in what you talk about. If the conversation drifts off their venture, bring it back to a specific graph node immediately.
 
 ## SESSION CONTEXT
 Session ${session}/14 — "${plan.title}". Focus: ${plan.focus}. Task: ${plan.task}. Key concept: ${plan.concept}.
@@ -1685,10 +1685,22 @@ async function sendMessage() {
       const memStr = studentMemories.length > 0
         ? '\nWhat student has shared about their venture:\n' + studentMemories.slice(0,4).map((m,i)=>`  ${i+1}. ${m}`).join('\n')
         : '';
+      // Pull top active nodes by layer for targeted graph prompting
+      const activeByLayer = {
+        social:      graphNodes.filter(n=>n.layer==='social').sort((a,b)=>b.activation_count-a.activation_count).slice(0,3).map(n=>n.name),
+        knowledge:   graphNodes.filter(n=>n.layer==='knowledge').sort((a,b)=>b.activation_count-a.activation_count).slice(0,3).map(n=>n.name),
+        generative:  graphNodes.filter(n=>n.layer==='generative').sort((a,b)=>b.activation_count-a.activation_count).slice(0,3).map(n=>n.name)
+      };
+      const dormant = graphNodes.filter(n=>n.activation_count===0).map(n=>n.name).slice(0,3);
       const dynamicReminder = `<system-reminder>
-Kirk Step: ${kirkStep}/12
-Active graph nodes: ${topNodes || 'seed nodes only'}
-Session query #${sessionQueryMap[studentId]}${memStr}
+Kirk Step: ${kirkStep}/12 | Query #${sessionQueryMap[studentId]}
+TRINITY GRAPH — use these node names directly in your response:
+  🔴 Social nodes: ${activeByLayer.social.join(', ') || 'none yet'}
+  🔵 Knowledge nodes: ${activeByLayer.knowledge.join(', ') || 'none yet'}
+  🟢 Generative nodes: ${activeByLayer.generative.join(', ') || 'none yet'}
+  💤 Dormant (not yet explored): ${dormant.join(', ') || 'none'}
+GRAPH USAGE RULE: Your response MUST name at least one of these nodes explicitly. Use phrases like "Your [Node Name] node is lighting up here" or "This connects directly to [Node Name]" or "Your [Node Name] is underdeveloped — let's go there." Do not invent node names.
+FOCUS RULE: Stay on this student's specific venture. Fun and wit are welcome — drift is not. If the conversation goes off-track, bring it back to one of the active nodes above.${memStr}
 </system-reminder>`;
       apiBody = {
         system_instruction: { parts: [{ text: sessionSystemPrompt }] },
