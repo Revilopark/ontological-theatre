@@ -2098,11 +2098,13 @@ function populateStudentLoginsGrid() {
     const d = document.createElement('div');
     d.style.cssText = 'background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.12);border-radius:8px;padding:8px 10px;font-size:11px';
     const uCap = u.charAt(0).toUpperCase()+u.slice(1);
+    const oneClickUrl = `${location.origin}${location.pathname}?login=${u}`;
     d.innerHTML = `<div style="font-weight:600;color:var(--cyan)">${char ? char.emoji+' ' : ''}${sid} · ${char ? char.charName : uCap}</div>
       <div style="color:var(--text-dim);font-size:10px">${u} / ${u}2026${char ? ' · '+char.animal : ''}</div>
       <div style="display:flex;gap:4px;margin-top:5px;flex-wrap:wrap">
-        <button onclick="navigator.clipboard.writeText('${u}\n${u}2026');this.textContent='✅';setTimeout(()=>this.textContent='Copy',1500)" style="background:none;border:1px solid rgba(0,229,255,.2);color:var(--text-dim);font-size:10px;padding:2px 7px;border-radius:6px;cursor:pointer">Copy</button>
+        <button onclick="navigator.clipboard.writeText('${oneClickUrl}');this.textContent='✅';setTimeout(()=>this.textContent='🔗 Link',1500)" style="background:rgba(0,229,255,.12);border:1px solid rgba(0,229,255,.3);color:var(--cyan);font-size:10px;padding:2px 7px;border-radius:6px;cursor:pointer;font-weight:600">🔗 Link</button>
         <button onclick="draftWelcome('${u}')" style="background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.25);color:var(--cyan);font-size:10px;padding:2px 7px;border-radius:6px;cursor:pointer">📨 Draft</button>
+        <button onclick="openNudgeModal('${sid}','${char ? char.charName : uCap}')" style="background:none;border:1px solid rgba(0,229,255,.15);color:var(--text-dim);font-size:10px;padding:2px 7px;border-radius:6px;cursor:pointer">📡</button>
       </div>`;
     grid.appendChild(d);
   });
@@ -2180,8 +2182,9 @@ Your IAM bot is ready. See you March 9! 🚀`;
   document.getElementById(wid).value = waText;
 }
 function copyAllLogins() {
-  const lines = STUDENTS.map((u,i) => `s${String(i+1).padStart(2,'0')} ${u} / ${u}2026`).join('\n');
-  navigator.clipboard.writeText(lines).then(() => alert(`✅ Copied ${STUDENTS.length} student logins to clipboard`));
+  const base = `${location.origin}${location.pathname}`;
+  const lines = STUDENTS.map((u,i) => `s${String(i+1).padStart(2,'0')} ${u} / ${u}2026\n  🔗 ${base}?login=${u}`).join('\n\n');
+  navigator.clipboard.writeText(lines).then(() => alert(`✅ Copied ${STUDENTS.length} student logins + one-click links`));
 }
 
 // ===== PROFESSOR VIEW =====
@@ -2387,6 +2390,22 @@ function drawRadar() {
 // Enter key on login
 document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') handleLogin(); });
 document.getElementById('login-user').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-pass').focus(); });
+
+// ===== ONE-CLICK LOGIN — ?login=username =====
+(function() {
+  const autoUser = new URLSearchParams(window.location.search).get('login');
+  if (autoUser && autoUser !== 'professor') {
+    const u = autoUser.trim().toLowerCase();
+    document.getElementById('login-user').value = u;
+    document.getElementById('login-pass').value = u + '2026';
+    // Small delay to ensure DOM is ready, then auto-submit
+    setTimeout(() => {
+      handleLogin();
+      // Clean URL without reloading
+      window.history.replaceState({}, '', window.location.pathname);
+    }, 150);
+  }
+})();
 
 function toggleWAField(){
   const f=document.getElementById('wa-field');
