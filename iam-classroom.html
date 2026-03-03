@@ -550,11 +550,15 @@ input:focus,textarea:focus{border-color:var(--cyan)}
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
     <div id="admin-panel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;align-items:center;justify-content:center">
       <div class="glass" style="padding:28px;max-width:460px;width:90%;border-radius:16px">
-        <div style="font-size:16px;font-weight:700;color:var(--cyan);margin-bottom:16px">⚙️ Admin — Emergency Key Setup</div>
-        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;line-height:1.6">The Gemini API key was revoked (embedded in public GitHub repo).<br>Get a new free key at <a href="https://aistudio.google.com" target="_blank" style="color:var(--cyan)">aistudio.google.com</a> → API Keys → Create new key.</div>
-        <input type="text" id="emergency-key-input" placeholder="AIzaSy..." style="width:100%;margin-bottom:12px;font-family:monospace;font-size:12px">
-        <button onclick="saveEmergencyKey()" class="btn" style="width:100%;background:var(--cyan);color:#000;margin-bottom:8px">Save Key (stored locally only)</button>
-        <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:16px">Key is stored in your browser only — not sent to GitHub or any server.</div>
+        <div style="font-size:16px;font-weight:700;color:var(--cyan);margin-bottom:12px">⚙️ Admin — AI Key Pool</div>
+        <div id="key-pool-display" style="font-size:12px;color:var(--text-dim);margin-bottom:10px;padding:8px 12px;background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.15);border-radius:8px">🔑 Loading key pool…</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;line-height:1.5">Add Gemini (<a href="https://aistudio.google.com" target="_blank" style="color:var(--cyan)">aistudio.google.com</a>) or Claude (<a href="https://console.anthropic.com" target="_blank" style="color:var(--cyan)">console.anthropic.com</a>) keys. Bot round-robins — if one key dies, others keep running.</div>
+        <input type="text" id="emergency-key-input" placeholder="AIzaSy… or sk-ant-…" style="width:100%;margin-bottom:8px;font-family:monospace;font-size:12px">
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <button onclick="addKeyToPool()" class="btn" style="flex:1;background:var(--cyan);color:#000">➕ Add Key to Pool</button>
+          <button onclick="clearKeyPool()" style="background:rgba(255,71,87,.15);border:1px solid rgba(255,71,87,.3);color:var(--danger);padding:8px 14px;border-radius:10px;cursor:pointer;font-size:12px">🗑️ Clear</button>
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:16px">Keys sync to Neo4j — every student on every device auto-gets them on next login. Bot tries all keys in rotation.</div>
         <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:8px">Reset a Student — Double Verify</div>
         <div style="display:flex;gap:8px;margin-bottom:10px">
           <input type="text" id="reset-sid-input" placeholder="username (e.g. ava)" style="flex:1;font-size:12px">
@@ -569,7 +573,7 @@ input:focus,textarea:focus{border-color:var(--cyan)}
     </div>
     <h2 style="font-size:20px;font-weight:700">Professor Dashboard</h2>
     <div style="display:flex;gap:8px">
-      <button onclick="document.getElementById('admin-panel').style.display='flex'" style="background:rgba(255,71,87,.1);border:1px solid rgba(255,71,87,.25);color:var(--danger);padding:7px 14px;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600">⚙️ Admin</button>
+      <button onclick="document.getElementById('admin-panel').style.display='flex';updateKeyPoolDisplay()" style="background:rgba(255,71,87,.1);border:1px solid rgba(255,71,87,.25);color:var(--danger);padding:7px 14px;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600">⚙️ Admin</button>
       <button class="btn" style="background:rgba(255,255,255,0.1);color:var(--text-dim);font-size:12px" onclick="logout()">Logout</button>
     </div>
   </div>
@@ -796,7 +800,7 @@ input:focus,textarea:focus{border-color:var(--cyan)}
     <div style="font-size:13px;color:var(--text-dim);margin-bottom:20px">Professor-only tools and quick actions</div>
     <div class="demo-section-label">⚡ Quick Actions</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px">
-      <button onclick="document.getElementById('admin-panel').style.display='flex'" style="background:rgba(255,71,87,.12);border:1px solid rgba(255,71,87,.3);color:var(--danger);padding:10px 16px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600">⚙️ API Key + Student Reset</button>
+      <button onclick="document.getElementById('admin-panel').style.display='flex';updateKeyPoolDisplay()" style="background:rgba(255,71,87,.12);border:1px solid rgba(255,71,87,.3);color:var(--danger);padding:10px 16px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600">⚙️ API Key + Student Reset</button>
       <button onclick="loadProfessorView();showProfTab('students')" style="background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.25);color:var(--cyan);padding:10px 16px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600">🔄 Refresh Student Data</button>
       <button onclick="copyAllLogins()" style="background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.25);color:var(--cyan);padding:10px 16px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600">📋 Copy All Student Logins</button>
     </div>
@@ -820,7 +824,33 @@ const AI_PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app/gemin
 
 // Emergency key slot — professor can set via admin panel without a code deploy
 // NEVER embed API keys in public GitHub HTML. This reads from localStorage only.
-function getEmergencyKey() { return localStorage.getItem('iam_gemini_emergency_key')||''; }
+// ── KEY POOL — round-robin across multiple API keys ──────────────────────────
+function getKeyPool() {
+  try { return JSON.parse(localStorage.getItem('iam_key_pool')||'[]'); } catch { return []; }
+}
+function setKeyPool(pool) { localStorage.setItem('iam_key_pool', JSON.stringify(pool)); }
+function getEmergencyKey() {
+  // Legacy compat: return first key from pool, or old single-key slots
+  const pool = getKeyPool();
+  if (pool.length > 0) return pool[0];
+  return localStorage.getItem('iam_gemini_emergency_key') || localStorage.getItem('iam_anthropic_emergency_key') || '';
+}
+function updateKeyPoolDisplay() {
+  const pool = getKeyPool();
+  const el = document.getElementById('key-pool-display');
+  if (!el) return;
+  if (pool.length === 0) {
+    el.innerHTML = '🔑 No keys in pool — AI will use proxy only';
+    el.style.borderColor = 'rgba(255,71,87,.3)';
+  } else {
+    const summary = pool.map((k,i) => {
+      const type = k.startsWith('sk-ant-') ? '🟣 Claude' : '🔵 Gemini';
+      return `${type} …${k.slice(-8)}`;
+    }).join(' &nbsp;|&nbsp; ');
+    el.innerHTML = `🔑 <strong>${pool.length} key${pool.length>1?'s':''} active</strong> — ${summary}`;
+    el.style.borderColor = 'rgba(0,229,255,.3)';
+  }
+}
 
 // Session-to-date mapping (March 9 = S1, +2 days per session)
 function getCurrentSession() {
@@ -1147,17 +1177,29 @@ async function neo4j(cypher, params = {}) {
   }
 })();
 
-// ===== ADMIN CONFIG — cross-device key sync =====
+// ===== ADMIN CONFIG — cross-device key pool sync =====
 async function loadAdminConfig() {
   try {
-    const r = await neo4j(`MATCH (c:AdminConfig {config_id: 'iam_api_key'}) RETURN c.key_type, c.key_value`, {});
-    const vals = r.values || [];
-    if (vals.length > 0) {
-      const [kt, kv] = vals[0];
-      if (kt === 'anthropic' && kv) localStorage.setItem('iam_anthropic_emergency_key', kv);
-      else if (kv) localStorage.setItem('iam_gemini_emergency_key', kv);
+    // Load key pool (new format)
+    const pr = await neo4j(`MATCH (c:AdminConfig {config_id: 'iam_key_pool'}) RETURN c.key_pool`, {});
+    const pv = pr.values && pr.values[0] ? pr.values[0][0] : null;
+    if (pv) {
+      const parsed = JSON.parse(pv);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Merge with any local keys (keep unique)
+        const local = getKeyPool();
+        const merged = [...new Set([...parsed, ...local])];
+        setKeyPool(merged);
+      }
     }
-  } catch(e) { /* silent — use whatever's already in localStorage */ }
+    // Legacy single-key support (migrate into pool)
+    const lr = await neo4j(`MATCH (c:AdminConfig {config_id: 'iam_api_key'}) RETURN c.key_value`, {});
+    const lv = lr.values && lr.values[0] ? lr.values[0][0] : null;
+    if (lv) {
+      const pool = getKeyPool();
+      if (!pool.includes(lv)) { pool.push(lv); setKeyPool(pool); }
+    }
+  } catch(e) { /* silent — use whatever's in localStorage */ }
 }
 
 // ===== AUTH =====
@@ -1891,37 +1933,36 @@ FOCUS RULE: Stay on this student's specific venture. If the conversation drifts,
       }catch(e){}
     }
 
-    // 2. Stored key fallback (synced from Neo4j → localStorage via loadAdminConfig on login)
-    const eKey = getEmergencyKey();
-    if(!reply && eKey && eKey.startsWith('sk-ant-')){
-      // Claude Opus — richest reasoning
-      try{
-        const claudeBody={
-          model:'claude-opus-4-6-20251001',
-          max_tokens:1200,
-          system: apiBody.system_instruction?.parts?.[0]?.text || '',
-          messages:[{role:'user', content: apiBody.contents?.[0]?.parts?.[0]?.text || ''}]
-        };
-        const r=await fetch('https://api.anthropic.com/v1/messages',{
-          method:'POST',
-          headers:{
-            'x-api-key':eKey,
-            'anthropic-version':'2023-06-01',
-            'content-type':'application/json',
-            'anthropic-dangerous-allow-browser-key':'true'
-          },
-          body:JSON.stringify(claudeBody)
-        });
-        if(r.ok){const d=await r.json();reply=d?.content?.[0]?.text||null;}
-      }catch(e){}
-    } else if(!reply && eKey && eKey.startsWith('AIzaSy')){
-      // Gemini fallback
-      for(const model of ['gemini-2.5-flash','gemini-2.0-flash']){
-        if(reply) break;
-        try{
-          const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${eKey}`,{method:'POST',headers:hdr_c,body:body_c});
-          if(r.ok){const d=await r.json();reply=d?.candidates?.[0]?.content?.parts?.[0]?.text||null;}
-        }catch(e){}
+    // 2. Key pool — round-robin through all stored keys (synced from Neo4j, cross-device)
+    if(!reply){
+      const keyPool = getKeyPool();
+      // Random start index for load distribution
+      const startIdx = keyPool.length > 1 ? Math.floor(Math.random() * keyPool.length) : 0;
+      for(let ki=0; ki<keyPool.length && !reply; ki++){
+        const eKey = keyPool[(startIdx + ki) % keyPool.length];
+        if(eKey && eKey.startsWith('sk-ant-')){
+          try{
+            const claudeBody={
+              model:'claude-opus-4-6-20251001',max_tokens:1200,
+              system: apiBody.system_instruction?.parts?.[0]?.text||'',
+              messages:[{role:'user',content:apiBody.contents?.[0]?.parts?.[0]?.text||''}]
+            };
+            const r=await fetch('https://api.anthropic.com/v1/messages',{
+              method:'POST',
+              headers:{'x-api-key':eKey,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-allow-browser-key':'true'},
+              body:JSON.stringify(claudeBody)
+            });
+            if(r.ok){const d=await r.json();reply=d?.content?.[0]?.text||null;}
+          }catch(e){}
+        } else if(eKey && eKey.startsWith('AIzaSy')){
+          for(const model of ['gemini-2.5-flash','gemini-2.0-flash']){
+            if(reply) break;
+            try{
+              const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${eKey}`,{method:'POST',headers:hdr_c,body:body_c});
+              if(r.ok){const d=await r.json();reply=d?.candidates?.[0]?.content?.parts?.[0]?.text||null;}
+            }catch(e){}
+          }
+        }
       }
     }
     const replyText = reply || null;
@@ -2416,26 +2457,37 @@ function renderJourney() {
 }
 
 // ===== PROFESSOR HELPERS =====
-async function saveEmergencyKey() {
+async function addKeyToPool() {
   const key = document.getElementById('emergency-key-input').value.trim();
-  const isAnthropic = key.startsWith('sk-ant-');
-  const isGemini = key.startsWith('AIza');
-  if (!isAnthropic && !isGemini) {
-    alert('Invalid key format — should start with AIza (Gemini) or sk-ant- (Claude)'); return;
+  if (!key.startsWith('AIza') && !key.startsWith('sk-ant-')) {
+    alert('Key must start with AIzaSy (Gemini) or sk-ant- (Claude Anthropic)'); return;
   }
-  const keyType = isAnthropic ? 'anthropic' : 'gemini';
-  const lsKey = isAnthropic ? 'iam_anthropic_emergency_key' : 'iam_gemini_emergency_key';
-  localStorage.setItem(lsKey, key);
-  document.getElementById('admin-panel').style.display='none';
-  // Sync to Neo4j so ALL students on ALL devices auto-get this key on their next login
+  const pool = getKeyPool();
+  if (pool.includes(key)) { alert('This key is already in the pool.'); return; }
+  pool.push(key);
+  setKeyPool(pool);
+  document.getElementById('emergency-key-input').value = '';
+  updateKeyPoolDisplay();
+  // Sync pool to Neo4j — all students auto-get it on next login
   try {
-    await neo4j(`MERGE (c:AdminConfig {config_id: 'iam_api_key'}) SET c.key_type = $kt, c.key_value = $kv, c.updated = timestamp()`,
-      {kt: keyType, kv: key});
-    alert('✅ Key saved & synced to Neo4j. All students on all devices will automatically get AI on their next login. 🔄');
+    await neo4j(`MERGE (c:AdminConfig {config_id: 'iam_key_pool'}) SET c.key_pool = $kp, c.updated = timestamp()`,
+      {kp: JSON.stringify(pool)});
+    alert(`✅ Key added! Pool now has ${pool.length} key${pool.length>1?'s':''} — round-robin active. All devices sync on next login. 🔑`);
   } catch(e) {
-    alert('✅ Key saved locally. Neo4j sync failed — other devices need key pasted manually.');
+    alert(`✅ Key added locally (${pool.length} total). Neo4j sync failed — run on another device to sync.`);
   }
 }
+async function clearKeyPool() {
+  if (!confirm(`Clear all ${getKeyPool().length} key(s) from pool?`)) return;
+  setKeyPool([]);
+  updateKeyPoolDisplay();
+  try {
+    await neo4j(`MERGE (c:AdminConfig {config_id: 'iam_key_pool'}) SET c.key_pool = '[]', c.updated = timestamp()`, {});
+  } catch(e) {}
+  alert('Pool cleared. Bot will use awareness proxy only until new keys are added.');
+}
+// Legacy alias
+async function saveEmergencyKey() { return addKeyToPool(); }
 async function verifyStudentFromAdmin() {
   const username = document.getElementById('reset-sid-input').value.trim().toLowerCase();
   if (!username) { alert('Enter a student username first'); return; }
