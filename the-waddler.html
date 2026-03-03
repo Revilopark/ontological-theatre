@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Waddler — IAM Wads</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  min-height: 100vh;
+  background: #03080F;
+  color: #B0C4D8;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  overflow-x: hidden;
+}
+
+/* Ambient glow */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 0%, rgba(101,187,50,.09) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 80% 70%, rgba(0,188,212,.06) 0%, transparent 60%),
+    radial-gradient(ellipse 30% 30% at 20% 80%, rgba(201,168,76,.05) 0%, transparent 50%);
+  pointer-events: none; z-index: 0;
+}
+
+#canvas { position: fixed; inset: 0; z-index: 0; opacity: .5; }
+
+.container {
+  position: relative; z-index: 10;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 20px 60px;
+}
+
+/* ── Hero ── */
+.hero {
+  text-align: center;
+  margin-bottom: 40px;
+  animation: fadeUp .8s ease forwards;
+}
+
+.duck-stage {
+  width: 180px; height: 180px;
+  margin: 0 auto 24px;
+  position: relative;
+}
+
+.duck-svg {
+  width: 100%; height: 100%;
+  filter: drop-shadow(0 0 30px rgba(101,187,50,.5)) drop-shadow(0 0 60px rgba(101,187,50,.25));
+  animation: duckBob 3s ease-in-out infinite;
+}
+@keyframes duckBob {
+  0%,100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+
+.ripple {
+  position: absolute;
+  bottom: -10px; left: 50%; transform: translateX(-50%);
+  width: 100px; height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(101,187,50,.3);
+  animation: rippleOut 2s ease-out infinite;
+}
+.ripple:nth-child(2) { width: 140px; animation-delay: .5s; opacity: .6; }
+.ripple:nth-child(3) { width: 180px; animation-delay: 1s; opacity: .3; }
+@keyframes rippleOut {
+  0% { transform: translateX(-50%) scale(.7); opacity: .7; }
+  100% { transform: translateX(-50%) scale(1.3); opacity: 0; }
+}
+
+.hero-eyebrow {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .2em;
+  color: rgba(101,187,50,.9);
+  margin-bottom: 10px;
+}
+
+.hero-name {
+  font-size: 52px; font-weight: 900;
+  letter-spacing: -.03em; line-height: 1;
+  background: linear-gradient(135deg, #7fff3a 0%, #a3e635 40%, #65bb32 80%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 20px rgba(101,187,50,.4));
+  margin-bottom: 6px;
+}
+
+.hero-sub {
+  font-size: 16px; color: rgba(176,196,216,.7);
+  font-weight: 400; margin-bottom: 16px;
+}
+
+.iam-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(101,187,50,.1);
+  border: 1px solid rgba(101,187,50,.3);
+  border-radius: 50px;
+  padding: 8px 20px;
+  font-size: 14px; font-weight: 700;
+  color: #a3e635;
+}
+.iam-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: #7fff3a; animation: blink 1.5s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── Stat chips ── */
+.stat-row {
+  display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+  margin-top: 20px;
+}
+.stat-chip {
+  background: rgba(101,187,50,.08);
+  border: 1px solid rgba(101,187,50,.2);
+  border-radius: 20px; padding: 6px 14px;
+  font-size: 12px; font-weight: 600;
+  color: rgba(176,196,216,.8);
+}
+.stat-chip strong { color: #a3e635; }
+
+/* ── Glass card ── */
+.glass {
+  background: rgba(14,28,10,.55);
+  border: 1px solid rgba(101,187,50,.18);
+  border-radius: 18px;
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+}
+
+.card { padding: 26px; margin-bottom: 16px; }
+.card-label {
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .12em;
+  color: rgba(101,187,50,.7);
+  margin-bottom: 14px;
+}
+
+/* ── Doctrine block ── */
+.doctrine {
+  border-left: 3px solid rgba(101,187,50,.5);
+  padding-left: 16px;
+  margin-bottom: 12px;
+}
+.doctrine-title { font-size: 14px; font-weight: 700; color: #a3e635; margin-bottom: 4px; }
+.doctrine-body { font-size: 13px; color: rgba(176,196,216,.8); line-height: 1.7; }
+
+/* ── Trinity layer tags ── */
+.layer-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.layer-tag {
+  padding: 5px 12px; border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+}
+.tag-social { background: rgba(74,123,204,.15); border: 1px solid rgba(74,123,204,.3); color: #7ab3ff; }
+.tag-knowledge { background: rgba(201,168,76,.15); border: 1px solid rgba(201,168,76,.3); color: #D4AF37; }
+.tag-generative { background: rgba(138,106,172,.15); border: 1px solid rgba(138,106,172,.3); color: #c084fc; }
+
+/* ── Ity grid ── */
+.ity-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+.ity-pill {
+  background: rgba(101,187,50,.07);
+  border: 1px solid rgba(101,187,50,.2);
+  border-radius: 10px; padding: 10px 12px;
+  text-align: center;
+}
+.ity-word { font-size: 13px; font-weight: 700; color: #a3e635; }
+.ity-def { font-size: 10px; color: rgba(176,196,216,.6); margin-top: 2px; line-height: 1.4; }
+
+/* ── Quote ── */
+.big-quote {
+  font-size: clamp(18px, 4vw, 28px);
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.3;
+  text-align: center;
+  padding: 28px;
+  position: relative;
+}
+.big-quote::before {
+  content: '"';
+  font-size: 80px; color: rgba(101,187,50,.25);
+  position: absolute; top: -10px; left: 14px;
+  font-family: Georgia, serif; line-height: 1;
+}
+
+/* ── Duck rules ── */
+.rule-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.rule-row:last-child { border-bottom: none; }
+.rule-emoji { font-size: 22px; min-width: 32px; }
+.rule-text { font-size: 13px; color: rgba(176,196,216,.85); line-height: 1.6; }
+.rule-text strong { color: #a3e635; }
+
+/* ── CTA ── */
+.cta-section { text-align: center; margin-top: 32px; }
+.cta-btn {
+  background: linear-gradient(135deg, #7fff3a, #65bb32);
+  color: #03080F;
+  border: none; border-radius: 50px;
+  padding: 16px 44px; font-size: 15px; font-weight: 800;
+  cursor: pointer; transition: all .3s;
+  box-shadow: 0 0 30px rgba(101,187,50,.4);
+  text-decoration: none; display: inline-block;
+}
+.cta-btn:hover { transform: scale(1.05); box-shadow: 0 0 50px rgba(101,187,50,.6); }
+.cta-hint { font-size: 12px; color: rgba(176,196,216,.4); margin-top: 10px; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Staggered card anims */
+.card:nth-child(1) { animation: fadeUp .7s ease .1s both; }
+.card:nth-child(2) { animation: fadeUp .7s ease .2s both; }
+.card:nth-child(3) { animation: fadeUp .7s ease .3s both; }
+.card:nth-child(4) { animation: fadeUp .7s ease .4s both; }
+.card:nth-child(5) { animation: fadeUp .7s ease .5s both; }
+.card:nth-child(6) { animation: fadeUp .7s ease .6s both; }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div class="container">
+
+  <!-- ── HERO ── -->
+  <div class="hero">
+    <div class="duck-stage">
+      <svg class="duck-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Body -->
+        <ellipse cx="100" cy="130" rx="65" ry="45" fill="#4a9a1a" opacity=".9"/>
+        <ellipse cx="100" cy="130" rx="55" ry="37" fill="#5cb82a"/>
+        <!-- Wing sheen -->
+        <ellipse cx="88" cy="128" rx="35" ry="22" fill="#6ed93a" opacity=".5"/>
+        <!-- Head -->
+        <circle cx="148" cy="95" r="32" fill="#1a7a2a"/>
+        <circle cx="148" cy="95" r="26" fill="#22a835"/>
+        <!-- Iridescent head sheen -->
+        <ellipse cx="142" cy="88" rx="14" ry="9" fill="#40e060" opacity=".4"/>
+        <!-- White neck ring -->
+        <ellipse cx="137" cy="115" rx="16" ry="6" fill="white" opacity=".85"/>
+        <!-- Beak -->
+        <ellipse cx="178" cy="98" rx="14" ry="7" fill="#D4AF37"/>
+        <ellipse cx="178" cy="99" rx="14" ry="4" fill="#b8960a" opacity=".5"/>
+        <!-- Nostril -->
+        <circle cx="174" cy="95" r="2" fill="#8B6914" opacity=".6"/>
+        <!-- Eye -->
+        <circle cx="156" cy="88" r="6" fill="#1a1a1a"/>
+        <circle cx="156" cy="88" r="4" fill="#2d2d2d"/>
+        <circle cx="158" cy="86" r="1.5" fill="white" opacity=".9"/>
+        <!-- Tail feathers -->
+        <ellipse cx="45" cy="125" rx="18" ry="10" fill="#3a8015" transform="rotate(-20 45 125)"/>
+        <ellipse cx="38" cy="118" rx="12" ry="7" fill="#4a9a1a" transform="rotate(-35 38 118)"/>
+        <!-- Water line -->
+        <path d="M35 155 Q60 148 85 155 Q110 162 135 155 Q160 148 165 155" stroke="#00E5FF" stroke-width="2" opacity=".3" fill="none"/>
+        <!-- Hidden underwater feet (faint) -->
+        <ellipse cx="80" cy="165" rx="12" ry="5" fill="#D4AF37" opacity=".25"/>
+        <ellipse cx="115" cy="168" rx="12" ry="5" fill="#D4AF37" opacity=".2"/>
+        <!-- Speed lines under water -->
+        <line x1="55" y1="170" x2="75" y2="170" stroke="#00E5FF" stroke-width="1.5" opacity=".2"/>
+        <line x1="120" y1="172" x2="145" y2="172" stroke="#00E5FF" stroke-width="1.5" opacity=".2"/>
+      </svg>
+      <div class="ripple"></div>
+      <div class="ripple"></div>
+      <div class="ripple"></div>
+    </div>
+
+    <div class="hero-eyebrow">IAM Character Profile · Vanderbilt Owen 2026</div>
+    <div class="hero-name">The Waddler</div>
+    <div class="hero-sub">Thomas Wadsworth · Spirit Animal: Mallard</div>
+    <div class="iam-badge">
+      <div class="dot"></div>
+      IAM Wads — Active
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-chip">🦆 <strong>Mallard</strong> lineage</div>
+      <div class="stat-chip">⚡ Student ID <strong>s40</strong></div>
+      <div class="stat-chip">🎓 Vanderbilt Owen <strong>2026</strong></div>
+      <div class="stat-chip">✦ Trinity Node <strong>Waddler</strong></div>
+    </div>
+  </div>
+
+  <!-- ── THE DOCTRINE ── -->
+  <div class="glass card">
+    <div class="card-label">🦆 The Waddler Doctrine</div>
+    <div class="doctrine">
+      <div class="doctrine-title">Surface Calm. Underwater Fury.</div>
+      <div class="doctrine-body">The mallard appears to glide effortlessly. But beneath the waterline? Those feet are moving at an extraordinary pace. The Waddler is the entrepreneur who never lets them see you sweat — while running circles around the competition below the surface.</div>
+    </div>
+    <div class="doctrine">
+      <div class="doctrine-title">Waddle With Purpose</div>
+      <div class="doctrine-body">Don't confuse the gait for the speed. Waddles moves differently than the others. That's not a bug — it's the whole point. The best entrepreneurs have a signature way of moving through the world that others can't replicate.</div>
+    </div>
+    <div class="doctrine">
+      <div class="doctrine-title">Migration Intelligence</div>
+      <div class="doctrine-body">Mallards have navigated 3,000-mile migrations using magnetic fields, star patterns, and flock memory — for 10 million years. The Waddler reads markets the way ducks read magnetic north: instinctively, accurately, and ahead of the flock.</div>
+    </div>
+  </div>
+
+  <!-- ── BIG QUOTE ── -->
+  <div class="glass card">
+    <div class="big-quote">
+      I may waddle. But I never wobble.
+    </div>
+    <div style="text-align:center;font-size:12px;color:rgba(176,196,216,.4);margin-top:-8px">— The Waddler's Code</div>
+  </div>
+
+  <!-- ── TRINITY PROFILE ── -->
+  <div class="glass card">
+    <div class="card-label">✦ Trinity Layer Profile</div>
+    <div style="display:grid;gap:12px">
+      <div style="padding:14px;background:rgba(74,123,204,.08);border:1px solid rgba(74,123,204,.2);border-radius:12px">
+        <div style="font-size:11px;font-weight:700;color:#7ab3ff;margin-bottom:6px">🧠 SOCIAL LAYER — WHO</div>
+        <div style="font-size:13px;color:rgba(176,196,216,.85);line-height:1.6"><strong style="color:#a3e635">Flock Dynamics.</strong> Ducks don't lead with ego — they fly in formation, rotating the front position to share the load. The Waddler understands distributed leadership and how to build teams where everyone drafts off each other's energy.</div>
+      </div>
+      <div style="padding:14px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:12px">
+        <div style="font-size:11px;font-weight:700;color:#D4AF37;margin-bottom:6px">📚 KNOWLEDGE LAYER — WHAT</div>
+        <div style="font-size:13px;color:rgba(176,196,216,.85);line-height:1.6"><strong style="color:#a3e635">Wetland Intelligence.</strong> Mallards thrive in every ecosystem — freshwater, saltwater, urban parks, wild marshes. The Waddler maps markets the same way: adaptive to terrain, operating in multiple environments simultaneously, knowing which waters to fish.</div>
+      </div>
+      <div style="padding:14px;background:rgba(138,106,172,.08);border:1px solid rgba(138,106,172,.2);border-radius:12px">
+        <div style="font-size:11px;font-weight:700;color:#c084fc;margin-bottom:6px">✨ GENERATIVE LAYER — WHAT IF</div>
+        <div style="font-size:13px;color:rgba(176,196,216,.85);line-height:1.6"><strong style="color:#a3e635">Iridescent Thinking.</strong> A mallard's head isn't just green — it's structurally iridescent, shifting blue-green-purple depending on the angle. The Waddler sees ideas the same way: the same concept looks completely different depending on where you're standing.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── -ITY WORDS ── -->
+  <div class="glass card">
+    <div class="card-label">🌿 The Waddler's -ity Constellation</div>
+    <div class="ity-grid">
+      <div class="ity-pill"><div class="ity-word">Adaptability</div><div class="ity-def">Thrives in any terrain, any market</div></div>
+      <div class="ity-pill"><div class="ity-word">Fluidity</div><div class="ity-def">Moves between worlds effortlessly</div></div>
+      <div class="ity-pill"><div class="ity-word">Velocity</div><div class="ity-def">Unseen speed below the waterline</div></div>
+      <div class="ity-pill"><div class="ity-word">Serenity</div><div class="ity-def">Surface calm under pressure</div></div>
+      <div class="ity-pill"><div class="ity-word">Tenacity</div><div class="ity-def">10M years of migration — never lost</div></div>
+      <div class="ity-pill"><div class="ity-word">Ingenuity</div><div class="ity-def">Magnetic navigation built-in</div></div>
+    </div>
+  </div>
+
+  <!-- ── THE DUCK RULES ── -->
+  <div class="glass card">
+    <div class="card-label">📜 The Waddler's Rules of Business</div>
+    <div class="rule-row">
+      <div class="rule-emoji">🦆</div>
+      <div class="rule-text"><strong>Paddle harder than you look.</strong> The customer sees the product. They don't see the 3am sprint, the tenth pivot, the seven failed approaches that got you here. Keep it that way.</div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-emoji">🧲</div>
+      <div class="rule-text"><strong>Navigate by magnetic north.</strong> You have a compass inside that knows where the market is going before the data does. Trust it. Validate it. Then follow it.</div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-emoji">🪶</div>
+      <div class="rule-text"><strong>Let water roll off your back.</strong> Rejection, bad feedback, pivots, failed experiments — feathers repel water. Shake it off. You were waterproofed for this.</div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-emoji">🌊</div>
+      <div class="rule-text"><strong>Own the pond before the ocean.</strong> Mallards don't start with the Atlantic. They master the pond. Then the river. Then the estuary. Find your pond, dominate it, then migrate.</div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-emoji">✈️</div>
+      <div class="rule-text"><strong>Lead from the V.</strong> In formation, the lead duck breaks the air resistance for everyone behind. When it's your turn at the front, pull hard. When it's someone else's, draft their energy.</div>
+    </div>
+  </div>
+
+  <!-- ── IAM WADS BOT INTRO ── -->
+  <div class="glass card" style="border-color:rgba(101,187,50,.35);background:rgba(10,24,10,.7)">
+    <div class="card-label">🤖 IAM Wads — Your Bot</div>
+    <div style="font-size:15px;font-weight:700;color:#a3e635;margin-bottom:10px">IAM Wads speaks mallard.</div>
+    <div style="font-size:13px;color:rgba(176,196,216,.85);line-height:1.8;margin-bottom:16px">
+      Your IAM bot has been initialized with The Waddler personality. It knows about flock dynamics, migration intelligence, wetland markets, and iridescent thinking. Every time you ask it something, it's connecting your venture to the deeper logic of what it means to move through the world like a mallard: deliberately, fluidly, and faster than anyone suspects.
+    </div>
+    <div style="background:rgba(101,187,50,.08);border:1px solid rgba(101,187,50,.2);border-radius:12px;padding:14px;font-size:13px;color:rgba(176,196,216,.8);line-height:1.7;font-style:italic">
+      "Hey Thomas — I'm IAM Wads, your Trinity Graph navigator. I've been loaded with The Waddler doctrine. You're s40 in the class, and I'm tracking your venture across all three layers: Social (your flock), Knowledge (your wetland), and Generative (your iridescence). What are we building today?"
+    </div>
+    <div style="margin-top:16px;text-align:center">
+      <a href="iam-classroom.html" class="cta-btn">🦆 Enter as Waddles →</a>
+    </div>
+  </div>
+
+  <div class="cta-hint" style="text-align:center;margin-top:20px">Login: waddles / waddles2026</div>
+
+</div>
+
+<script>
+// Ripple/water particle canvas
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W, H;
+function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+window.addEventListener('resize', resize); resize();
+
+const drops = [];
+for (let i = 0; i < 60; i++) {
+  drops.push({
+    x: Math.random()*100, y: Math.random()*100,
+    vx: (Math.random()-.5)*.3, vy: -.3-Math.random()*.4,
+    r: .8+Math.random()*1.5, life: 0,
+    maxLife: 200+Math.random()*300,
+    hue: 120+Math.random()*30
+  });
+}
+
+function animateBg() {
+  ctx.fillStyle = 'rgba(3,8,15,.12)'; ctx.fillRect(0,0,W,H);
+  drops.forEach(d => {
+    d.x += d.vx; d.y += d.vy; d.life++;
+    if (d.life > d.maxLife) {
+      d.x=Math.random()*100; d.y=100+Math.random()*20;
+      d.life=0; d.vx=(Math.random()-.5)*.3; d.vy=-.3-Math.random()*.4;
+    }
+    const px = d.x/100*W, py = d.y/100*H;
+    const prog = d.life/d.maxLife;
+    const alpha = prog<.1?prog*10:prog>.8?(1-prog)*5:1;
+    ctx.beginPath(); ctx.arc(px,py,d.r,0,Math.PI*2);
+    ctx.fillStyle = `hsla(${d.hue},80%,60%,${alpha*.4})`;
+    ctx.fill();
+  });
+  // Subtle connection lines
+  for (let i = 0; i < drops.length; i++) {
+    for (let j = i+1; j < drops.length; j++) {
+      const dx = (drops[i].x-drops[j].x)/100*W;
+      const dy = (drops[i].y-drops[j].y)/100*H;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      if (dist < 80) {
+        ctx.beginPath();
+        ctx.moveTo(drops[i].x/100*W, drops[i].y/100*H);
+        ctx.lineTo(drops[j].x/100*W, drops[j].y/100*H);
+        ctx.strokeStyle = `rgba(101,187,50,${(1-dist/80)*.08})`;
+        ctx.lineWidth = .5; ctx.stroke();
+      }
+    }
+  }
+  requestAnimationFrame(animateBg);
+}
+animateBg();
+</script>
+</body>
+</html>
