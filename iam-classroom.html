@@ -386,6 +386,7 @@ input:focus,textarea:focus{border-color:var(--cyan)}
       <div class="typing-indicator" id="typing" style="display:none">IAM is thinking...</div>
       <div class="chat-input-area">
         <input type="text" id="chat-input" placeholder="Ask your IAM Bot..." onkeydown="if(event.key==='Enter')sendMessage()">
+        <button class="btn" id="research-btn" onclick="sendMessage(true)" title="Research live web data first, then respond" style="padding:12px 14px;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.25);color:var(--cyan);font-size:15px;flex-shrink:0;border-radius:10px">🔍</button>
         <button class="btn btn-primary" onclick="sendMessage()">Send</button>
       </div>
     </div>
@@ -1850,7 +1851,52 @@ function sendElicitOption(btn) {
   sendMessage();
 }
 
-async function sendMessage() {
+// ===== WEB RESEARCH ENGINE =====
+// Uses Gemini 2.0 Flash with Google Search grounding — real-time web data, no extra key
+const RESEARCH_TRIGGERS = /labubu|popmart|pop mart|temu|shein|tiktok|trend|viral|phenomenon|craze|startup|company|brand|series [ab]|funding|ipo|valuation|acquisition|market size|how big|revenue|growth rate|what is.*company|who is.*founder|latest|recent|2024|2025|2026/i;
+
+async function researchWithSearch(query) {
+  const keyPool = getKeyPool();
+  // Try each Gemini key with search grounding
+  for (const eKey of keyPool) {
+    if (!eKey || !eKey.startsWith('AIzaSy')) continue;
+    try {
+      const searchBody = {
+        contents: [{ parts: [{ text: `Research this for an MBA student entrepreneur: ${query}\n\nProvide: (1) What it is, (2) Market size/scale, (3) Why it matters for entrepreneurs/business strategy, (4) Key numbers/facts. Be concise — 3-4 sentences max per section.` }] }],
+        tools: [{ google_search: {} }],
+        generationConfig: { maxOutputTokens: 600 }
+      };
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${eKey}`, {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(searchBody)
+      });
+      if (r.ok) {
+        const d = await r.json();
+        const text = d?.candidates?.[0]?.content?.parts?.[0]?.text;
+        const sources = d?.candidates?.[0]?.groundingMetadata?.groundingChunks?.map(c => c.web?.uri).filter(Boolean).slice(0,3) || [];
+        if (text) return { text, sources };
+      }
+    } catch(e) {}
+  }
+  // Fallback: try awareness proxy with search context prefix
+  try {
+    const proxyBody = {
+      contents: [{ parts: [{ text: `You are a research assistant. Provide factual, up-to-date information about: ${query}. Focus on business relevance, market scale, and why entrepreneurs should understand this.` }] }]
+    };
+    const r = await fetch(AI_PROXY, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(proxyBody), signal:AbortSignal.timeout(10000) });
+    if (r.ok) {
+      const d = await r.json();
+      const text = d?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) return { text, sources: [] };
+    }
+  } catch(e) {}
+  return null;
+}
+
+function isResearchWorthy(text) {
+  return RESEARCH_TRIGGERS.test(text) || text.includes('?') && text.split(' ').length < 15;
+}
+
+async function sendMessage(forceResearch = false) {
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
   if (!text) return;
@@ -1858,9 +1904,23 @@ async function sendMessage() {
   addUserMessage(text);
   
   document.getElementById('typing').style.display = 'block';
+  document.getElementById('typing').textContent = 'IAM is thinking...';
   
   // Check for noosphere query
   const isNoosphere = /what.*class.*learn|noosphere|collective/i.test(text);
+  
+  // Research mode: explicit 🔍 button OR auto-detect current events/trends
+  const useResearch = forceResearch || isResearchWorthy(text);
+  let researchContext = '';
+  if (useResearch && !isNoosphere) {
+    document.getElementById('typing').textContent = '🔍 Researching live data...';
+    const research = await researchWithSearch(text);
+    if (research) {
+      const sourceStr = research.sources.length > 0 ? `\nSources: ${research.sources.join(' | ')}` : '';
+      researchContext = `\n\n[LIVE RESEARCH RESULTS for "${text}"]\n${research.text}${sourceStr}\n[END RESEARCH — use this to inform your response, cite specific facts]`;
+      document.getElementById('typing').textContent = '🧠 Synthesizing with your Trinity Graph...';
+    }
+  }
   
   // §23.1 Cache tracking — record query for cache health metrics
   if (!sessionQueryMap[studentId]) sessionQueryMap[studentId] = 0;
@@ -1914,7 +1974,7 @@ FOCUS RULE: Stay on this student's specific venture. If the conversation drifts,
 </system-reminder>`;
       apiBody = {
         system_instruction: { parts: [{ text: sessionSystemPrompt }] },
-        contents: [{ parts: [{ text: dynamicReminder + '\n\nStudent says: ' + text }] }]
+        contents: [{ parts: [{ text: dynamicReminder + (researchContext ? researchContext : '') + '\n\nStudent says: ' + text }] }]
       };
     }
     
