@@ -965,9 +965,14 @@ function showReveal() {
   // Find dominant dimension
   const dom = Object.keys(quizScores).reduce((a,b) => quizScores[a]>=quizScores[b]?a:b);
   const map = ARCHETYPE_MAP[dom];
-  // Assign archetype override + persist
+  // Assign archetype override + persist locally and to Neo4j (cross-device)
   archetype = map.archetype;
-  if (studentId) localStorage.setItem('iam_archetype_' + studentId, archetype);
+  if (studentId) {
+    localStorage.setItem('iam_archetype_' + studentId, archetype);
+    // Sync to Neo4j so all devices get this instantly
+    neo4j(`MERGE (s:IAMStudent {student_id: $sid}) SET s.archetype = $a, s.username = $u, s.bot_name = $bn, s.updated = timestamp()`,
+      {sid: studentId, a: archetype, u: currentUser, bn: botName}).catch(()=>{});
+  }
   document.getElementById('quiz-screen').style.display = 'none';
   const rev = document.getElementById('reveal-screen');
   rev.style.display = 'flex';
@@ -1142,8 +1147,21 @@ async function neo4j(cypher, params = {}) {
   }
 })();
 
+// ===== ADMIN CONFIG — cross-device key sync =====
+async function loadAdminConfig() {
+  try {
+    const r = await neo4j(`MATCH (c:AdminConfig {config_id: 'iam_api_key'}) RETURN c.key_type, c.key_value`, {});
+    const vals = r.values || [];
+    if (vals.length > 0) {
+      const [kt, kv] = vals[0];
+      if (kt === 'anthropic' && kv) localStorage.setItem('iam_anthropic_emergency_key', kv);
+      else if (kv) localStorage.setItem('iam_gemini_emergency_key', kv);
+    }
+  } catch(e) { /* silent — use whatever's already in localStorage */ }
+}
+
 // ===== AUTH =====
-function handleLogin() {
+async function handleLogin() {
   const user = document.getElementById('login-user').value.trim().toLowerCase();
   const pass = document.getElementById('login-pass').value.trim();
   const err = document.getElementById('login-error');
@@ -1171,9 +1189,41 @@ function handleLogin() {
   currentUser = user;
   studentId = 's' + String(idx + 1).padStart(2, '0');
   botName = BOT_NAMES[idx];
-  
-  // Check if student has already taken the quiz (localStorage)
-  const savedArchetype = localStorage.getItem('iam_archetype_' + studentId);
+
+  // Show loading while we sync from Neo4j (cross-device persistence)
+  err.style.color = 'var(--cyan)';
+  err.textContent = '⏳ Loading your profile…';
+
+  // Sync API key from Neo4j (fires async, populates localStorage for this session)
+  loadAdminConfig();
+
+  // Cross-device archetype lookup: localStorage first (fast), then Neo4j
+  let savedArchetype = localStorage.getItem('iam_archetype_' + studentId);
+  if (!savedArchetype) {
+    try {
+      const ar = await neo4j(`MATCH (s:IAMStudent {student_id: $sid}) RETURN s.archetype`, {sid: studentId});
+      const av = ar.values && ar.values[0] ? ar.values[0][0] : null;
+      if (av) {
+        savedArchetype = av;
+        localStorage.setItem('iam_archetype_' + studentId, av);
+      }
+    } catch(e) { /* silent */ }
+  }
+
+  // If they have real chat history but no archetype, skip quiz (returning student on new device)
+  if (!savedArchetype) {
+    try {
+      const hc = await neo4j(`MATCH (n:TrinityNode {student_id: $sid}) WHERE n.activation_count > 0 RETURN count(n) as c`, {sid: studentId});
+      const hasHistory = hc.values && hc.values[0] && hc.values[0][0] > 0;
+      if (hasHistory) {
+        savedArchetype = ARCHETYPES[idx % ARCHETYPES.length];
+        localStorage.setItem('iam_archetype_' + studentId, savedArchetype);
+      }
+    } catch(e) { /* silent */ }
+  }
+
+  err.textContent = '';
+  err.style.color = '';
   archetype = savedArchetype || ARCHETYPES[idx % ARCHETYPES.length];
   
   document.getElementById('login-screen').style.display = 'none';
@@ -1181,7 +1231,7 @@ function handleLogin() {
   document.getElementById('bot-name-display').textContent = `IAM ${botName} · ${archetype}`;
   
   if (!savedArchetype) {
-    // First time — show personality quiz
+    // First time on any device — show personality quiz
     showQuizScreen();
   } else {
     initStudent();
@@ -2365,12 +2415,25 @@ function renderJourney() {
 }
 
 // ===== PROFESSOR HELPERS =====
-function saveEmergencyKey() {
+async function saveEmergencyKey() {
   const key = document.getElementById('emergency-key-input').value.trim();
-  if (!key.startsWith('AIza')) { alert('Invalid key format — should start with AIza'); return; }
-  localStorage.setItem('iam_gemini_emergency_key', key);
+  const isAnthropic = key.startsWith('sk-ant-');
+  const isGemini = key.startsWith('AIza');
+  if (!isAnthropic && !isGemini) {
+    alert('Invalid key format — should start with AIza (Gemini) or sk-ant- (Claude)'); return;
+  }
+  const keyType = isAnthropic ? 'anthropic' : 'gemini';
+  const lsKey = isAnthropic ? 'iam_anthropic_emergency_key' : 'iam_gemini_emergency_key';
+  localStorage.setItem(lsKey, key);
   document.getElementById('admin-panel').style.display='none';
-  alert('✅ Key saved. The AI should work now — try sending a message.');
+  // Sync to Neo4j so ALL students on ALL devices auto-get this key on their next login
+  try {
+    await neo4j(`MERGE (c:AdminConfig {config_id: 'iam_api_key'}) SET c.key_type = $kt, c.key_value = $kv, c.updated = timestamp()`,
+      {kt: keyType, kv: key});
+    alert('✅ Key saved & synced to Neo4j. All students on all devices will automatically get AI on their next login. 🔄');
+  } catch(e) {
+    alert('✅ Key saved locally. Neo4j sync failed — other devices need key pasted manually.');
+  }
 }
 async function verifyStudentFromAdmin() {
   const username = document.getElementById('reset-sid-input').value.trim().toLowerCase();
@@ -2949,12 +3012,14 @@ document.getElementById('login-user').addEventListener('keydown', e => { if(e.ke
     const u = autoUser.trim().toLowerCase();
     document.getElementById('login-user').value = u;
     document.getElementById('login-pass').value = u + '2026';
-    // Small delay to ensure DOM is ready, then auto-submit
+    // Delay to ensure DOM + scripts fully loaded on slow mobile connections
     setTimeout(() => {
-      handleLogin();
-      // Clean URL without reloading
-      window.history.replaceState({}, '', window.location.pathname);
-    }, 150);
+      handleLogin().then(() => {
+        window.history.replaceState({}, '', window.location.pathname);
+      }).catch(() => {
+        window.history.replaceState({}, '', window.location.pathname);
+      });
+    }, 800);
     return; // skip remember-me autofill if one-click login
   }
   // ===== REMEMBER ME — auto-fill saved credentials =====
