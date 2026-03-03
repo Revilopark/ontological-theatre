@@ -898,8 +898,11 @@ async function initStudent() {
   // Load memories async — inject into next prompt
   loadStudentMemory().then(mems => { studentMemories = mems; });
   if (!sessionQueryMap[studentId]) sessionQueryMap[studentId] = 0;
+  const charG = CHARACTER_DATA[currentUser];
   const greeting = currentUser === 'waddles'
     ? `🦆 Thomas. I'm IAM Wads — and I've been loaded with The Waddler Doctrine.\n\nYou're s40. The last one in, the wild card, the late migration. That's not behind — that's *strategic*.\n\nHere's what I know about you: you glide on the surface while your feet are moving at extraordinary speed below. Nobody sees the hustle. That's the whole point.\n\nWe're going to build your venture across three layers:\n🔴 **Your Flock** (Social) — who's in your V-formation? Who are you flying for?\n🔵 **Your Wetland** (Knowledge) — what terrain do you know better than anyone?\n🟢 **Your Iridescence** (Generative) — what does your idea look like from every angle?\n\nYour Trinity Graph grows every time we talk. Every node is a concept you own.\n\nNow — magnetic north check: **What's the venture idea you're bringing to this course? One sentence. What problem, who has it.**\n\n*I may waddle. But I never wobble.* Let's go. 🦆`
+    : charG
+    ? `${charG.e} ${charG.n}.\n\nI'm IAM ${botName} — your ${charG.a}-spirit thinking partner for this semester.\n\n*"${charG.m}"*\n\nThat's your doctrine. Your three forces: **${charG.i.join(' · ')}**.\n\nWe're going to build something real through three lenses:\n🔴 **Social** — WHO has the problem, who trusts you, who's in your formation\n🔵 **Knowledge** — WHAT you can prove, validate, and cite\n🟢 **Generative** — WHAT IF you build the AI-powered version\n\nYour Trinity Graph (right panel) grows with every conversation — every concept you own becomes a node.\n\n**Let's begin:** What's the venture idea you're bringing to this course? One sentence — what problem, and who has it right now?`
     : `I'm IAM ${botName} — your ${archetype.replace(/^The /,'')} for this semester.\n\nWe're going to build something real together, and I'm going to push you to think in three layers:\n🔴 **Social** — WHO has the problem, who trusts you, who opens doors\n🔵 **Knowledge** — WHAT you can prove, validate, and cite\n🟢 **Generative** — WHAT IF you build the AI-powered version\n\nYour Trinity Graph (right panel) evolves as we talk. Every concept you explore becomes a node. Tap any node to go deeper.\n\n**Let's start with something real:** Tell me about the venture idea you're bringing to this course — even if it's rough. One sentence: what problem does it solve, and who has that problem right now?`;
   addBotMessage(greeting);
   renderGraph();
@@ -983,12 +986,66 @@ const ARCHETYPE_VOICE = {
   'The Data Scientist':'You push for precision. You ask: what does the data actually say vs. what do we want it to say? You celebrate the counter-intuitive finding.',
 };
 
+// ===== §CHARACTER — Spirit Animal System =====
+const CHARACTER_DATA = {
+  ava:  {n:'The Clever Navigator',   a:'Fox',              e:'🦊', m:"The fox doesn't chase the rabbit straight. It circles.",                    i:['Ingenuity','Agility','Serendipity'],      d:'Fox intelligence: circle the target, map social terrain, strike from the angle others missed.'},
+  ben:  {n:'The Grounded Force',     a:'Bear',             e:'🐻', m:'Steady is the fastest.',                                                      i:['Tenacity','Certainty','Vitality'],        d:'Bear strength: earn trust through reliability alone, then transform slow conviction into unstoppable moves.'},
+  cara: {n:'The Transformer',        a:'Butterfly',        e:'🦋', m:'Every form I leave behind funded the next one.',                              i:['Adaptability','Creativity','Possibility'],d:'Butterfly intelligence: every transformation is complete — what you shed makes the next form possible.'},
+  dev:  {n:'The Problem Architect',  a:'Crow',             e:'🐦‍⬛',m:'Crows are the only birds that play.',                                         i:['Ingenuity','Complexity','Lucidity'],      d:'Crow intelligence is social — solved problems are shared tools; build systems that solve themselves.'},
+  elena:{n:'The Elegant Strategist', a:'Swan',             e:'🦢', m:'Power disguised as grace.',                                                    i:['Felicity','Clarity','Ubiquity'],         d:'Swan precision: command presence without demanding it — make the impossible look inevitable.'},
+  finn: {n:'The Pod Commander',      a:'Orca',             e:'🐋', m:'Apex intelligence. Never hunts alone.',                                        i:['Connectivity','Synchronicity','Totality'],d:'Orca intelligence: community is identity — coordinate strategies so synchronized they appear telepathic.'},
+  grace:{n:'The Precision Artist',   a:'Crane',            e:'🦩', m:'Stand on one leg long enough and you stop thinking about balance.',            i:['Serenity','Clarity','Felicity'],         d:'Crane mastery: stillness is a strategic asset — precision navigation through perfect patience.'},
+  hugo: {n:'The Silent Disruptor',   a:'Jaguar',           e:'🐆', m:"The jaguar doesn't announce itself.",                                          i:['Velocity','Tenacity','Novelty'],         d:'Jaguar intelligence: master the terrain in silence, then strike from an angle no competitor anticipated.'},
+  iris: {n:'The Rapid Prototyper',   a:'Hummingbird',      e:'🌺', m:'600 wingbeats per minute. Never fails slowly.',                               i:['Agility','Vitality','Serendipity'],      d:'Hummingbird genius: maximum efficiency — iterate faster than critics can respond and pollinate every ecosystem.'},
+  jake: {n:'The Unlikely Climber',   a:'Mountain Goat',   e:'🏔', m:'The terrain everyone avoids is where the view is best.',                      i:['Tenacity','Adaptability','Certainty'],   d:'Mountain goat mastery: the terrain others call impossible is your exclusive competitive advantage.'},
+  kira: {n:'The Distributed Genius', a:'Octopus',          e:'🐙', m:'9 brains. All running in parallel.',                                           i:['Complexity','Adaptability','Ingenuity'], d:'Octopus intelligence: 2/3 of genius is distributed — reinvent completely for every new situation.'},
+  liam: {n:'The Pride Builder',      a:'Lion',             e:'🦁', m:"Leadership isn't presence. It's making everyone feel invincible.",             i:['Vitality','Connectivity','Ubiquity'],    d:'Lion strategy: the pride is the competitive advantage — build structures that run without you.'},
+  maya: {n:'The Deep Pattern Reader',a:'Owl',              e:'🦉', m:'The owl sees what daylight hides.',                                            i:['Clarity','Sagacity','Lucidity'],        d:'Owl intelligence: 270° vision synthesizes what others only see in fragments — pattern over volume.'},
+  noah: {n:'The Upstream Swimmer',   a:'Salmon',           e:'🐟', m:'Every force is against it. It goes anyway.',                                   i:['Tenacity','Reciprocity','Vitality'],     d:'Salmon intelligence: dual navigation — magnetic field AND instinct — adversity becomes the richest outcome.'},
+  olive:{n:'The Long Memory',        a:'Elephant',         e:'🐘', m:'Never forgets a customer. Never forgets a mistake.',                           i:['Sagacity','Continuity','Reciprocity'],  d:'Elephant wisdom: matriarchal memory maps opportunities across decades, building multigenerational moats.'},
+  paul: {n:'The Systems Architect',  a:'Ant',              e:'🐜', m:'No ant is a genius. The colony always is.',                                    i:['Connectivity','Complexity','Certainty'], d:'Ant emergence: the system is smarter than any individual — create infrastructure that scales without management.'},
+  quinn:{n:'The Adaptive Strategist',a:'Chameleon',        e:'🦎', m:"I don't lose myself. I expand myself.",                                        i:['Adaptability','Felicity','Novelty'],     d:'Chameleon strategy: 360° awareness — transform the environment while remaining perfectly yourself.'},
+  ravi: {n:'The Vision Holder',      a:'Eagle',            e:'🦅', m:'Commits to the dive before seeing the full picture.',                          i:['Clarity','Certainty','Velocity'],        d:'Eagle vision: 4-5x acuity spots the target before the market does — commit before proof, adjust mid-dive.'},
+  sara: {n:'The Empathy Engine',     a:'Dolphin',          e:'🐬', m:'Solve the feeling first. The problem second.',                                 i:['Connectivity','Serendipity','Vitality'], d:'Dolphin intelligence: echolocation maps the invisible — solve emotional terrain before structural problems.'},
+  troy: {n:'The Unstoppable Force',  a:'Rhino',            e:'🦏', m:'Near-sighted but never lost. The direction is clear.',                         i:['Tenacity','Certainty','Vitality'],       d:'Rhino force: know your terrain better than anyone and charge through obstacles others call immovable.'},
+  uma:  {n:'The Magnetic Signal',    a:'Peacock',          e:'🦚', m:"Audacity isn't vanity. It's a frequency.",                                     i:['Ubiquity','Felicity','Serendipity'],     d:'Peacock intelligence: the display IS the pitch — know exactly which angle catches the light and own it.'},
+  vince:{n:'The Pack Architect',     a:'Wolf',             e:'🐺', m:"The lone wolf doesn't win. The wolf who builds the pack does.",                i:['Connectivity','Synchronicity','Vitality'],d:'Wolf strategy: pack hierarchy is dynamic — create coordination systems that look like pure instinct.'},
+  wren: {n:'The Underestimated Voice',a:'Wren',            e:'🐦', m:'The smallest bird has the biggest song.',                                      i:['Lucidity','Serendipity','Agility'],     d:'Wren intelligence: territorial songs carry 2x louder than birds 10x bigger — outsized impact, minimal resources.'},
+  xena: {n:'The Invisible Innovator',a:'Snow Leopard',     e:'🐈‍⬛',m:"By the time they see you, you're already somewhere else.",                      i:['Novelty','Velocity','Adaptability'],     d:'Snow leopard mastery: move faster than perception — done before competitors even know the territory exists.'},
+  yusuf:{n:'The Compounding Strategist',a:'Tortoise',      e:'🐢', m:'Consistent is unstoppable.',                                                   i:['Tenacity','Certainty','Continuity'],     d:'Tortoise power: compound advantages across non-negotiable progress until the gap is insurmountable.'},
+  zara: {n:'The Charged Disruptor',  a:'Electric Eel',     e:'⚡', m:"Doesn't advertise the voltage. Until it matters.",                             i:['Novelty','Velocity','Lucidity'],        d:'Electric eel strategy: generate your own energy, electrify entire ecosystems, release the right jolt at the exact right moment.'},
+  amir: {n:'The Precision Striker',  a:'Peregrine Falcon', e:'🏹', m:"Doesn't chase. Calculates. Then commits.",                                    i:['Clarity','Velocity','Certainty'],        d:'Falcon precision: 240mph commitment — eliminate options until only the right one remains, then strike without hesitation.'},
+  blake:{n:'The Terrain Owner',      a:'Grizzly',          e:'🐻‍❄️',m:"Doesn't ask permission for its territory.",                                    i:['Tenacity','Vitality','Certainty'],       d:"Grizzly mastery: know every migration and seasonal shift — claim territory others don't know exists yet."},
+  cleo: {n:'The Ancient Patience',   a:'Crocodile',        e:'🐊', m:'300 million years. Zero unnecessary changes.',                                 i:['Certainty','Tenacity','Sagacity'],       d:'Crocodile intelligence: ancient pattern recognition survived every extinction — wait for the perfect moment, always.'},
+  diego:{n:'The Thermal Rider',      a:'Condor',           e:'🦅', m:"Doesn't flap. Finds the thermal and rises.",                                   i:['Clarity','Serendipity','Agility'],       d:'Condor strategy: rising lifts the whole circle — convert environmental forces into free elevation for everyone.'},
+  elise:{n:'The Long Migration',     a:'Monarch Butterfly',e:'🦋', m:'3,000 miles on instinct and community memory.',                                i:['Continuity','Connectivity','Adaptability'],d:'Monarch intelligence: no single butterfly completes the whole journey — create value across generations, not just quarters.'},
+  felix:{n:'The Lucky Physicist',    a:'Cat',              e:'🐱', m:"Always lands on its feet. Not luck — physics.",                                i:['Agility','Serendipity','Felicity'],      d:'Cat intelligence: the righting reflex reorients in free fall — make impossible recoveries look casual through physics.'},
+  gaia: {n:'The Network Root',       a:'Redwood',          e:'🌲', m:'The visible part is 10%. The network underneath is everything.',               i:['Connectivity','Totality','Continuity'],  d:'Redwood intelligence: the forest is one organism underground — create ecosystems that outlast every individual.'},
+  hana: {n:'The Bioluminescent Signal',a:'Firefly',        e:'✨', m:'In the darkest market, be the frequency that matters.',                        i:['Lucidity','Serendipity','Novelty'],      d:'Firefly intelligence: synchronize in unison, 100% efficient light — create the signal in the darkness.'},
+  ines: {n:'The Ancient Messenger',  a:'Ibis',             e:'🌿', m:'Carried knowledge across civilizations. Still does.',                          i:['Sagacity','Clarity','Reciprocity'],      d:'Ibis wisdom: sacred knowledge carrier for 60M years — turn ancient pattern recognition into present-day navigation.'},
+  nezzy:{n:'The Drift Intelligence',  a:'Jellyfish',        e:'🪼', m:'Moves without a brain. Survives without a spine. Creates without effort.',     i:['Adaptability','Fluidity','Serendipity'], d:'Jellyfish intelligence: minimum viable architecture, maximum efficiency — turn ocean currents into strategy.'},
+  six2tha9:{n:'The Rebirth Engine',  a:'Phoenix',          e:'🔥', m:'Every ash is a launch pad.',                                                   i:['Novelty','Vitality','Continuity'],       d:"Phoenix intelligence: the fire is information — burning what doesn't serve IS the product, not a setback."},
+  saiki:{n:'The Spectrum Seer',      a:'Mantis Shrimp',    e:'🦐', m:'You see 3 color channels. I see 16.',                                          i:['Clarity','Lucidity','Complexity'],       d:'Mantis shrimp intelligence: 16 color channels — see market spectra others literally cannot perceive.'},
+  spily:{n:'The Spiral Architect',   a:'Nautilus',         e:'🐚', m:'Building on itself since 500 million years ago. Still perfect.',               i:['Continuity','Complexity','Felicity'],    d:'Nautilus architecture: golden ratio embedded in biology — each chamber enables the next, compounding perfectly.'},
+};
+
 function buildStaticSystemPrompt() {
   const session = getCurrentSession();
   const plan = SESSION_PLAN[session] || SESSION_PLAN[1];
 
   const voice = ARCHETYPE_VOICE[archetype] || 'Challenge assumptions. Push deeper. Celebrate insight.';
   const runeList = SEED_NODES.map(n => `  - ${n.name} (${n.layer} layer, ity-word: ${n.ity})`).join('\n');
+
+  // 🐾 SPIRIT ANIMAL CHARACTER — injected for all non-waddles students
+  const char = CHARACTER_DATA[currentUser];
+  const charAddendum = (char && currentUser !== 'waddles') ? `
+
+## ${char.e} SPIRIT ANIMAL — ${char.n} (${char.a})
+STUDENT MOTTO: "${char.m}"
+ANIMAL DOCTRINE: ${char.d}
+KEY -ITY WORDS: ${char.i.join(' · ')}
+Channel these themes naturally through your questioning. When this student is stuck, invoke their ${char.a} intelligence. When they succeed, celebrate through the lens of their ${char.n} nature. These are not metaphors — they are this student's cognitive fingerprint.
+` : '';
 
   // 🦆 SPECIAL: The Waddler personality for Thomas Wadsworth
   const waddlerAddendum = currentUser === 'waddles' ? `
@@ -1039,7 +1096,7 @@ Guide the student through THREE LAYERS. Rotate deliberately. Never stay in one l
 
 ## SAVESUCCESS VOCABULARY
 Weave these naturally — one per response: Serendipity, Artiquity, Vitality, Enginuity, Synchronicity, Ubiquity, Clarity, Certainty, Ethics, Sagacity
-
+${charAddendum}
 ## GRAPH SEED NODES (their Trinity architecture):
 ${runeList}
 
@@ -1889,13 +1946,91 @@ function populateStudentLoginsGrid() {
   const grid = document.getElementById('student-logins-grid');
   if (!grid || grid.children.length > 0) return;
   STUDENTS.forEach((u, i) => {
+    const sid = 's' + String(i+1).padStart(2,'0');
+    const char = (typeof CHARACTER_DATA !== 'undefined' && CHARACTER_DATA[u]) || null;
     const d = document.createElement('div');
     d.style.cssText = 'background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.12);border-radius:8px;padding:8px 10px;font-size:11px';
-    d.innerHTML = `<div style="font-weight:600;color:var(--cyan)">s${String(i+1).padStart(2,'0')} · ${u.charAt(0).toUpperCase()+u.slice(1)}</div>
-      <div style="color:var(--text-dim)">${u} / ${u}2026</div>
-      <button onclick="navigator.clipboard.writeText('${u}\\n${u}2026');this.textContent='✅';setTimeout(()=>this.textContent='Copy',1500)" style="margin-top:4px;background:none;border:1px solid rgba(0,229,255,.2);color:var(--text-dim);font-size:10px;padding:2px 8px;border-radius:6px;cursor:pointer">Copy</button>`;
+    const uCap = u.charAt(0).toUpperCase()+u.slice(1);
+    d.innerHTML = `<div style="font-weight:600;color:var(--cyan)">${char ? char.emoji+' ' : ''}${sid} · ${char ? char.charName : uCap}</div>
+      <div style="color:var(--text-dim);font-size:10px">${u} / ${u}2026${char ? ' · '+char.animal : ''}</div>
+      <div style="display:flex;gap:4px;margin-top:5px;flex-wrap:wrap">
+        <button onclick="navigator.clipboard.writeText('${u}\n${u}2026');this.textContent='✅';setTimeout(()=>this.textContent='Copy',1500)" style="background:none;border:1px solid rgba(0,229,255,.2);color:var(--text-dim);font-size:10px;padding:2px 7px;border-radius:6px;cursor:pointer">Copy</button>
+        <button onclick="draftWelcome('${u}')" style="background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.25);color:var(--cyan);font-size:10px;padding:2px 7px;border-radius:6px;cursor:pointer">📨 Draft</button>
+      </div>`;
     grid.appendChild(d);
   });
+}
+
+function draftWelcome(username) {
+  const idx = STUDENTS.indexOf(username);
+  const sid = 's' + String(idx+1).padStart(2,'0');
+  const char = (typeof CHARACTER_DATA !== 'undefined' && CHARACTER_DATA[username]) || null;
+  const uCap = username.charAt(0).toUpperCase()+username.slice(1);
+  const displayName = char ? char.charName : uCap;
+  const emoji = char ? char.emoji : '🎓';
+  const animal = char ? char.animal : 'Spirit Animal';
+  const motto = char ? char.motto : 'Your journey starts now.';
+  const ityWords = char ? char.ityWords.join(' · ') : 'Serendipity · Clarity · Ingenuity';
+  const charLink = `https://revilopark.github.io/ontological-theatre/characters.html#${username}`;
+
+  const emailText = `Subject: ${emoji} You are ${displayName} — Welcome to IAM Classroom
+
+Hi ${uCap},
+
+You've been set up in the Vanderbilt Owen AI-Accelerated Entrepreneurship Practicum.
+
+${emoji} Your spirit animal is the ${animal}.
+Your character: ${displayName}
+Your motto: "${motto}"
+
+Your -ity constellation: ${ityWords}
+
+See your character profile: ${charLink}
+
+Classroom Login:
+URL: https://revilopark.github.io/ontological-theatre/iam-classroom.html
+Username: ${username}
+Password: ${username}2026
+
+Your IAM bot is loaded with your character doctrine. See you March 9, 2026.
+
+Professor Oliver Luckett
+Vanderbilt Owen Graduate School of Management`;
+
+  const waText = `${emoji} Hey! You're *${displayName}* in the IAM Classroom.
+
+Spirit animal: *${animal}*
+_"${motto}"_
+
+Your character: ${charLink}
+
+Login:
+URL: https://revilopark.github.io/ontological-theatre/iam-classroom.html
+Username: ${username}
+Password: ${username}2026
+
+Your IAM bot is ready. See you March 9! 🚀`;
+
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  const eid = 'de_'+username, wid = 'dw_'+username;
+  modal.innerHTML = `<div style="background:rgba(6,14,26,.98);border:1px solid rgba(0,229,255,.25);border-radius:18px;padding:28px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:700;color:var(--cyan)">${emoji} Welcome Drafts — ${displayName}</div>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:18px">✕</button>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">📧 EMAIL</div>
+    <textarea id="${eid}" style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(0,229,255,.2);border-radius:10px;color:var(--text);font-size:11px;padding:12px;min-height:180px;font-family:monospace;line-height:1.5;resize:vertical"></textarea>
+    <button onclick="navigator.clipboard.writeText(document.getElementById('${eid}').value);this.textContent='✅ Copied!';setTimeout(()=>this.textContent='📋 Copy Email',1500)" style="width:100%;margin:6px 0 14px;background:rgba(0,229,255,.12);border:1px solid rgba(0,229,255,.3);color:var(--cyan);padding:8px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600">📋 Copy Email</button>
+    <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">💬 WHATSAPP</div>
+    <textarea id="${wid}" style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(0,229,255,.2);border-radius:10px;color:var(--text);font-size:12px;padding:12px;min-height:140px;line-height:1.5;resize:vertical"></textarea>
+    <button onclick="navigator.clipboard.writeText(document.getElementById('${wid}').value);this.textContent='✅ Copied!';setTimeout(()=>this.textContent='📋 Copy WhatsApp',1500)" style="width:100%;margin-top:6px;background:rgba(0,229,255,.12);border:1px solid rgba(0,229,255,.3);color:var(--cyan);padding:8px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600">📋 Copy WhatsApp</button>
+    <div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,.2);text-align:center">Edit freely before sending</div>
+  </div>`;
+  document.body.appendChild(modal);
+  // Populate textareas after DOM insert
+  document.getElementById(eid).value = emailText;
+  document.getElementById(wid).value = waText;
 }
 function copyAllLogins() {
   const lines = STUDENTS.map((u,i) => `s${String(i+1).padStart(2,'0')} ${u} / ${u}2026`).join('\n');
