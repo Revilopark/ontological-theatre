@@ -258,6 +258,7 @@ input:focus,textarea:focus{border-color:var(--cyan)}
 }
 
 
+@keyframes fadeOut{0%{opacity:1;transform:translateX(-50%) translateY(0)}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-8px)}}
 /* ===== PWA INSTALL BANNER ===== */
 #install-banner{position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,rgba(6,14,26,0.98),rgba(10,22,40,0.98));border-top:1px solid rgba(0,229,255,0.3);padding:14px 20px 18px;display:none;align-items:center;gap:12px;backdrop-filter:blur(16px);box-shadow:0 -4px 24px rgba(0,0,0,.5)}
 #install-banner .ib-icon{font-size:24px;flex-shrink:0}
@@ -1323,6 +1324,7 @@ async function initStudent() {
   sessionSystemPrompt = buildStaticSystemPrompt();
   // Load memories async — inject into next prompt
   loadStudentMemory().then(mems => { studentMemories = mems; });
+  if (BYO_COHORT.includes(currentUser)) loadBYOUpdates(); // BYO: load team collective brain
   checkForNudges();
   if (!sessionQueryMap[studentId]) sessionQueryMap[studentId] = 0;
   const charG = CHARACTER_DATA[currentUser];
@@ -1868,6 +1870,78 @@ function sendElicitOption(btn) {
   sendMessage();
 }
 
+
+// ===== BYO COLLECTIVE BRAIN — real-time shared product model =====
+// Any BYO team member's insight → written to Neo4j → injected into all team members' context
+const BYO_COHORT = ['naveed','idan','alec','ross','natali'];
+let byoTeamUpdates = []; // cached for current session
+
+async function loadBYOUpdates() {
+  if (!BYO_COHORT.includes(currentUser)) return [];
+  try {
+    const r = await neo4j(
+      `MATCH (u:BYOUpdate) RETURN u.author, u.category, u.content, u.ts ORDER BY u.ts DESC LIMIT 12`,
+      {}
+    );
+    byoTeamUpdates = (r.values || []).map(v => ({
+      author: v[0], category: v[1], content: v[2], ts: v[3]
+    }));
+    return byoTeamUpdates;
+  } catch(e) { return []; }
+}
+
+async function writeBYOUpdate(category, content) {
+  if (!BYO_COHORT.includes(currentUser)) return;
+  const update = {author: currentUser, cat: category, content: content, ts: Date.now()};
+  try {
+    await neo4j(
+      `CREATE (u:BYOUpdate {author:$author, category:$cat, content:$content, ts:$ts, team:'byo'})`,
+      update
+    );
+    // Prepend to local cache
+    byoTeamUpdates.unshift({author: currentUser, category, content, ts: Date.now()});
+    byoTeamUpdates = byoTeamUpdates.slice(0, 12);
+    // Flash indicator
+    showBYOFlash(category, content);
+  } catch(e) {}
+}
+
+function showBYOFlash(category, content) {
+  const flash = document.createElement('div');
+  flash.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);background:rgba(0,229,255,0.15);border:1px solid rgba(0,229,255,0.4);border-radius:10px;padding:10px 16px;font-size:12px;color:#00E5FF;z-index:9999;animation:fadeOut 3s ease forwards;max-width:90%;text-align:center';
+  flash.textContent = `📡 Team update logged: [${category}] — syncing to all BYO members`;
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 3200);
+}
+
+function getBYOContextStr() {
+  if (!byoTeamUpdates || byoTeamUpdates.length === 0) return '';
+  const lines = byoTeamUpdates.slice(0, 8).map(u =>
+    `• [${u.category}] ${u.author}: ${u.content}`
+  ).join('\n');
+  return `\n\n[BYO TEAM UPDATES — live shared product model]\n${lines}\n[Use these to ground your response in the team's actual current thinking. Reference specific teammates by name when relevant.]`;
+}
+
+// Auto-detect product decisions in bot responses and offer to log them
+function detectBYOUpdate(botText) {
+  if (!BYO_COHORT.includes(currentUser)) return null;
+  const decisionPatterns = [
+    /we('re| are) (going to|building|focusing|targeting|deciding)/i,
+    /the (product|feature|ICP|launch|next step) (is|will be|should be)/i,
+    /decided to|key insight:|the real problem is|the blocker is/i,
+    /PMF signal|users (want|need|are asking)/i
+  ];
+  for (const p of decisionPatterns) {
+    if (p.test(botText)) {
+      // Extract the most decision-like sentence
+      const sentences = botText.split(/[.!?]/);
+      const hit = sentences.find(s => p.test(s));
+      if (hit && hit.trim().length > 20) return hit.trim().slice(0, 200);
+    }
+  }
+  return null;
+}
+
 // ===== WEB RESEARCH ENGINE =====
 // Uses Gemini 2.0 Flash with Google Search grounding — real-time web data, no extra key
 const RESEARCH_TRIGGERS = /labubu|popmart|pop mart|temu|shein|tiktok|trend|viral|phenomenon|craze|startup|company|brand|series [ab]|funding|ipo|valuation|acquisition|market size|how big|revenue|growth rate|what is.*company|who is.*founder|latest|recent|2024|2025|2026/i;
@@ -1915,8 +1989,18 @@ function isResearchWorthy(text) {
 
 async function sendMessage(forceResearch = false) {
   const input = document.getElementById('chat-input');
-  const text = input.value.trim();
+  let text = input.value.trim();
   if (!text) return;
+
+  // BYO explicit team push: prefix "team:" or "!byo " → log as DECISION + strip prefix
+  if (BYO_COHORT.includes(currentUser) && /^(team:|!byo\s)/i.test(text)) {
+    const decision = text.replace(/^(team:|!byo\s)/i, '').trim();
+    await writeBYOUpdate('DECISION', `${currentUser}: ${decision}`);
+    addBotMessage(`📡 **Team update logged.** All BYO members will see this in their next session:\n\n*"${decision}"*\n\nThe whole team can build on this.`);
+    input.value = '';
+    return;
+  }
+
   input.value = '';
   addUserMessage(text);
   
@@ -1990,7 +2074,7 @@ Weakest Trinity layer (underdeveloped): ${omega.weakestLayer} — pull toward th
 
 GRAPH RULE: Name at least one real node from the list above in your response. Reference it naturally: "Your [Node] is lighting up" / "Your [Node] is sitting dormant — let's go there." Never invent node names.
 OMEGA RULE: Your question this turn should draw from the ${omega.phase} phase awareness. Use the signature question as inspiration, adapted to what the student just said.
-FOCUS RULE: Stay on this student's specific venture. If the conversation drifts, anchor back to a named node.${memStr}
+FOCUS RULE: Stay on this student's specific venture. If the conversation drifts, anchor back to a named node.${memStr}${getBYOContextStr()}
 </system-reminder>`;
       apiBody = {
         system_instruction: { parts: [{ text: sessionSystemPrompt }] },
@@ -2052,6 +2136,14 @@ FOCUS RULE: Stay on this student's specific venture. If the conversation drifts,
     if (replyText) {
       addBotMessage(replyText);
       extractAndSaveMemory(text, replyText);
+      // BYO: detect product decisions in the exchange and auto-log to collective
+      if (BYO_COHORT.includes(currentUser)) {
+        const decision = detectBYOUpdate(text + ' ' + replyText);
+        if (decision) {
+          // Silently log as INSIGHT — non-intrusive
+          writeBYOUpdate('INSIGHT', `${currentUser}: ${decision.slice(0,180)}`);
+        }
+      }
     } else {
       // All providers failed — queue for retry + give honest status
       queueMessageRetry(text);
