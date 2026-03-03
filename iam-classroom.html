@@ -273,6 +273,10 @@ input:focus,textarea:focus{border-color:var(--cyan)}
     <p class="login-hint">Enter the username your professor assigned you.<br>Password is your username + <strong style="color:var(--cyan)">2026</strong></p>
     <input type="text" id="login-user" placeholder="Username (e.g. maya)" autocomplete="off" autocapitalize="none" autocorrect="off">
     <input type="password" id="login-pass" placeholder="Password">
+    <label style="display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer;font-size:12px;color:var(--text-dim);text-align:left">
+      <input type="checkbox" id="remember-me" style="width:16px;height:16px;accent-color:var(--cyan);flex-shrink:0;margin:0">
+      Remember me on this device
+    </label>
     <button class="btn btn-primary" onclick="handleLogin()">Enter Classroom →</button>
     <div class="login-error" id="login-error"></div>
   </div>
@@ -1157,6 +1161,13 @@ function handleLogin() {
   if (idx === -1) { err.textContent = 'Unknown username'; return; }
   if (pass !== user + '2026') { err.textContent = 'Invalid password'; return; }
   
+  // Remember me
+  if (document.getElementById('remember-me')?.checked) {
+    localStorage.setItem('iam_saved_login', JSON.stringify({user, pass}));
+  } else {
+    localStorage.removeItem('iam_saved_login');
+  }
+
   currentUser = user;
   studentId = 's' + String(idx + 1).padStart(2, '0');
   botName = BOT_NAMES[idx];
@@ -1577,10 +1588,15 @@ ${voice}
 ## GUIDED DIALOGUE — WHERE TO TAKE THEM
 Move them through this arc. Don't skip stages. Don't repeat a stage they've already passed.
 
-Stage 1 (Kirk 0–2): IDENTIFY the market model. FIRST ask: "Who are you selling TO and who is writing the check?" (your direct customer — could be a platform, institution, enterprise, or individual). THEN: "Who do they serve?" (the end user/beneficiary, which is often a completely different person). CRITICAL: Do not conflate the person who BENEFITS from a solution with the entity that BUYS it. A creator attribution engine is sold TO platforms and AI companies — not to the creators themselves. Always establish: buyer → their customer → end beneficiary. Never default to end-user framing when the venture is infrastructure, B2B, or platform-layer.
-Stage 2 (Kirk 3–4): PROVE the problem. Real evidence only — a conversation, a quote, a data point, a failed alternative. No hypotheticals. Whose pain specifically — the provider's or the end user's?
+Stage 1 (Kirk 0–2): MAP THE PROTAGONIST FIELD using all three Trinity layers. There is never just ONE protagonist — surface the full cast before choosing who to build for.
+  🔴 SOCIAL protagonists (who feels it): communities, creators, workers, patients, gatekeepers, underserved groups — the humans who live with the problem daily
+  🔵 KNOWLEDGE protagonists (who owns it): platforms, enterprises, institutions, regulators, researchers — the entities that hold the data, the standards, the money, or the legal power
+  🟢 GENERATIVE protagonists (who doesn't exist yet): new roles this venture creates — the "attribution oracle," the "AI licensing agent," the intermediary that emerges when the system changes
+Ask: "Walk me through your cast of characters — who feels this problem, who controls the system that creates it, and what new role does your venture make possible?" Let them name all three. The BUYER usually lives in the 🔵 Knowledge layer (platforms, institutions). The BENEFICIARY usually lives in the 🔴 Social layer. The OPPORTUNITY usually lives in the 🟢 Generative layer. Never collapse these into one.
+
+Stage 2 (Kirk 3–4): PROVE the problem. Real evidence only — a conversation, a quote, a data point, a failed alternative. No hypotheticals. Whose pain specifically — the buyer's (Knowledge layer) or the beneficiary's (Social layer)?
 Stage 3 (Kirk 5–6): MAP the system. What causes the problem? Who else in the chain touches it (suppliers, intermediaries, regulators)? What does the market look like without this solution?
-Stage 4 (Kirk 7–8): BUILD the thesis. Social + Knowledge + Generative all active. "If everything you believe is true — what becomes possible for your customer AND their customers?"
+Stage 4 (Kirk 7–8): BUILD the thesis. All three Trinity layers active. "If everything you believe is true — what becomes possible for your buyer, for their beneficiaries, and what new role does your venture create?"
 Stage 5 (Kirk 9–10): SHARPEN the insight. Not "the opportunity" — the *non-obvious truth* the investor doesn't see yet.
 Stage 6 (Kirk 11–12): TEACH. The student leads. You ask "what would you tell the next person building in this space?"
 ${charAddendum}
@@ -2802,6 +2818,14 @@ document.getElementById('login-user').addEventListener('keydown', e => { if(e.ke
       // Clean URL without reloading
       window.history.replaceState({}, '', window.location.pathname);
     }, 150);
+    return; // skip remember-me autofill if one-click login
+  }
+  // ===== REMEMBER ME — auto-fill saved credentials =====
+  const saved = JSON.parse(localStorage.getItem('iam_saved_login') || 'null');
+  if (saved && saved.user && saved.pass) {
+    document.getElementById('login-user').value = saved.user;
+    document.getElementById('login-pass').value = saved.pass;
+    document.getElementById('remember-me').checked = true;
   }
 })();
 
