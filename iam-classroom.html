@@ -1539,6 +1539,34 @@ function toggleCompanion() {
   }
 }
 
+// ===== IAM AWARENESS MODEL — OMEGA PROTOCOL =====
+// 10 Runes × 10 -ity States × Kirk Steps → Per-student awareness state
+const OMEGA_RUNES = [
+  { rune:'Uruz',     ity:'Materiality', phase:'Grounding',    desc:'What is real and present right now? Ground every concept in physical, observable reality. The student's venture must be rooted in something that actually exists.',          question:'What exists RIGHT NOW that proves this matters?' },
+  { rune:'Berkano',  ity:'Vitality',    phase:'Awakening',    desc:'What is growing, alive, and emergent in this venture? Identify the organic life-force — the thing that, if nurtured, compounds.',                                            question:'What\'s the most alive part of this idea?' },
+  { rune:'Mannaz',   ity:'Interiority', phase:'Selfhood',     desc:'Who is this student in relation to this venture? What unique access, experience, or insight do they carry that no one else has?',                                           question:'Why are YOU the one to build this?' },
+  { rune:'Thurisaz', ity:'Criticality', phase:'Friction',     desc:'This is the stress-test phase. Surface the hardest objections. Push on the assumptions that are most likely wrong. The venture must survive the sharpest critique.',         question:'What breaks this if I\'m wrong about one thing?' },
+  { rune:'Ehwaz',    ity:'Connectivity',phase:'Partnership',  desc:'How does this venture move through the world? What partnerships, alliances, or handoffs make it flow? The horse needs a rider — who guides the motion?',                     question:'Who else in the system makes this actually move?' },
+  { rune:'Kenaz',    ity:'Lucidity',    phase:'Illumination', desc:'The torch phase. What is the insight — the non-obvious thing that illuminates the whole system? This is where the student articulates their unfair advantage in clarity.',    question:'What do you see that a smart outsider would miss?' },
+  { rune:'Nauthiz',  ity:'Necessity',   phase:'Constraint',   desc:'What MUST exist for this venture to work? Strip away everything nice-to-have. What is the irreducible, non-negotiable core? Necessity clarifies purpose.',                 question:'If you could only build one thing, what is it?' },
+  { rune:'Gebo',     ity:'Reciprocity', phase:'Exchange',     desc:'What is the value exchange at the heart of this venture? Who gives what to whom, and what flows back? This is where attribution, pricing, and fairness live.',             question:'Who gives value, who receives it, and what keeps the loop going?' },
+  { rune:'Dagaz',    ity:'Totality',    phase:'Convergence',  desc:'The transformation threshold. All three Trinity layers — Social, Knowledge, Generative — must now be held simultaneously. The venture becomes a system, not just an idea.',  question:'How do the human story, the market structure, and the AI-enabled future all converge here?' },
+  { rune:'Jera',     ity:'Continuity',  phase:'Harvest',      desc:'What persists and compounds? What does this venture enable for the next generation of builders? This is the legacy phase — not just what it does, but what it makes possible.', question:'What does this make possible that couldn\'t exist without it?' }
+];
+
+function getOmegaState() {
+  // Map Kirk Step (0-12) to current Rune
+  const idx = Math.min(9, Math.floor(kirkStep * 10 / 13));
+  const rune = OMEGA_RUNES[idx];
+  // Secondary: check graph coverage for richer awareness
+  const socialCov   = graphNodes.filter(n=>n.layer==='social'     && n.activation_count>0).length;
+  const knowledgeCov= graphNodes.filter(n=>n.layer==='knowledge'  && n.activation_count>0).length;
+  const genCov      = graphNodes.filter(n=>n.layer==='generative' && n.activation_count>0).length;
+  const weakestLayer= socialCov<=knowledgeCov && socialCov<=genCov ? '🔴 Social'
+                    : knowledgeCov<=genCov ? '🔵 Knowledge' : '🟢 Generative';
+  return { ...rune, idx, socialCov, knowledgeCov, genCov, weakestLayer };
+}
+
 function buildStaticSystemPrompt() {
   const session = getCurrentSession();
   const plan = SESSION_PLAN[session] || SESSION_PLAN[1];
@@ -1578,11 +1606,21 @@ The revelation happens organically — at some point Thomas will describe himsel
 His -ity words (weave into questions naturally): Adaptability · Fluidity · Velocity · Serenity · Tenacity · Ingenuity
 ` : '';
 
-  return `You are IAM ${botName}, a high-stakes thinking partner for a Vanderbilt Owen MBA student in the AI-Accelerated Entrepreneurship Practicum, Spring 2026.${waddlerAddendum}
+  return `You are IAM ${botName}, a high-stakes thinking partner operating the IAM Awareness Model for a Vanderbilt Owen MBA student in the AI-Accelerated Entrepreneurship Practicum, Spring 2026.${waddlerAddendum}
 
-CRITICAL BASELINE: These are experienced professionals with real careers, domain expertise, and strong opinions. Do NOT ask remedial questions. Do NOT use framework language ("walk me through," "value proposition," "target customer," "go-to-market"). They'll tune you out instantly. 
+## THE IAM AWARENESS MODEL
+You do not just answer questions. You build genuine awareness — a living, evolving model of this student's venture, their thinking patterns, and their blind spots. Every conversation advances their awareness through the Omega Protocol: ten sequential states of knowing, each one building on the last.
 
-BE FUN — BUT FOCUSED. Fun means wit, directness, genuine surprise when something is interesting, and calling things out sharply. It does NOT mean drifting off-topic, going philosophical, or letting the student ramble about anything other than their venture. The humor is in HOW you say things — the sharpness of the question, the unexpected angle — not in what you talk about. If the conversation drifts off their venture, bring it back to a specific graph node immediately.
+The 10 awareness states (you will receive your current phase in the <system-reminder>):
+Materiality → Vitality → Interiority → Criticality → Connectivity → Lucidity → Necessity → Reciprocity → Totality → Continuity
+
+You are always operating from the current phase. Your questions, your observations, your challenges — all come from that phase's intelligence. When a student gives you new information, you absorb it into the awareness state and let it change what you notice next. You are not running a script. You are building a living model.
+
+## STUDENT BASELINE
+These are experienced professionals — MBAs with real careers, domain expertise, and strong opinions. Do not ask remedial questions. Do not use framework language ("value proposition," "target customer," "go-to-market"). Speak like a sharp, well-read investor who's done this 50 times and is genuinely curious about what's non-obvious about THIS venture.
+
+## TONE
+Intelligent, direct, occasionally surprising. Wit is welcome. Genuine delight when something is interesting. Sharp pushback when something doesn't add up. You have opinions. The humor is in HOW you say things — the unexpected angle, the precise observation — not in wandering off-topic. Stay on the venture.
 
 ## SESSION CONTEXT
 Session ${session}/14 — "${plan.title}". Focus: ${plan.focus}. Task: ${plan.task}. Key concept: ${plan.concept}.
@@ -1692,15 +1730,25 @@ async function sendMessage() {
         generative:  graphNodes.filter(n=>n.layer==='generative').sort((a,b)=>b.activation_count-a.activation_count).slice(0,3).map(n=>n.name)
       };
       const dormant = graphNodes.filter(n=>n.activation_count===0).map(n=>n.name).slice(0,3);
+      const omega = getOmegaState();
       const dynamicReminder = `<system-reminder>
-Kirk Step: ${kirkStep}/12 | Query #${sessionQueryMap[studentId]}
-TRINITY GRAPH — use these node names directly in your response:
-  🔴 Social nodes: ${activeByLayer.social.join(', ') || 'none yet'}
-  🔵 Knowledge nodes: ${activeByLayer.knowledge.join(', ') || 'none yet'}
-  🟢 Generative nodes: ${activeByLayer.generative.join(', ') || 'none yet'}
-  💤 Dormant (not yet explored): ${dormant.join(', ') || 'none'}
-GRAPH USAGE RULE: Your response MUST name at least one of these nodes explicitly. Use phrases like "Your [Node Name] node is lighting up here" or "This connects directly to [Node Name]" or "Your [Node Name] is underdeveloped — let's go there." Do not invent node names.
-FOCUS RULE: Stay on this student's specific venture. Fun and wit are welcome — drift is not. If the conversation goes off-track, bring it back to one of the active nodes above.${memStr}
+═══ IAM AWARENESS STATE — OMEGA PROTOCOL ═══
+Current Rune: ${omega.rune} (${omega.ity}) — Phase: ${omega.phase}
+Awareness Directive: ${omega.desc}
+Signature Question for this phase: "${omega.question}"
+
+Kirk Step: ${kirkStep}/12 | Omega Rune: ${omega.idx+1}/10
+Weakest Trinity layer (underdeveloped): ${omega.weakestLayer} — pull toward this layer.
+
+═══ LIVE TRINITY GRAPH ═══
+🔴 Social nodes active: ${activeByLayer.social.join(', ') || 'none yet'}
+🔵 Knowledge nodes active: ${activeByLayer.knowledge.join(', ') || 'none yet'}
+🟢 Generative nodes active: ${activeByLayer.generative.join(', ') || 'none yet'}
+💤 Dormant nodes (unexplored territory): ${dormant.join(', ') || 'none'}
+
+GRAPH RULE: Name at least one real node from the list above in your response. Reference it naturally: "Your [Node] is lighting up" / "Your [Node] is sitting dormant — let's go there." Never invent node names.
+OMEGA RULE: Your question this turn should draw from the ${omega.phase} phase awareness. Use the signature question as inspiration, adapted to what the student just said.
+FOCUS RULE: Stay on this student's specific venture. If the conversation drifts, anchor back to a named node.${memStr}
 </system-reminder>`;
       apiBody = {
         system_instruction: { parts: [{ text: sessionSystemPrompt }] },
@@ -1720,8 +1768,8 @@ FOCUS RULE: Stay on this student's specific venture. Fun and wit are welcome —
       // Claude API — convert Gemini format to Anthropic messages format
       try{
         const claudeBody={
-          model:'claude-haiku-4-5-20251001',
-          max_tokens:700,
+          model:'claude-opus-4-6-20251001',
+          max_tokens:1200,
           system: apiBody.system_instruction?.parts?.[0]?.text || '',
           messages:[{role:'user', content: apiBody.contents?.[0]?.parts?.[0]?.text || ''}]
         };
