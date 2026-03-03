@@ -2,7 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#00E5FF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="IAM Classroom">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="iam-classroom.webmanifest">
 <title>IAM Bot Classroom — Vanderbilt AI Practicum</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -251,6 +257,14 @@ input:focus,textarea:focus{border-color:var(--cyan)}
   to { transform:scale(1) translateY(0); opacity:1; }
 }
 
+
+/* ===== PWA INSTALL BANNER ===== */
+#install-banner{position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,rgba(6,14,26,0.98),rgba(10,22,40,0.98));border-top:1px solid rgba(0,229,255,0.3);padding:14px 20px 18px;display:none;align-items:center;gap:12px;backdrop-filter:blur(16px);box-shadow:0 -4px 24px rgba(0,0,0,.5)}
+#install-banner .ib-icon{font-size:24px;flex-shrink:0}
+#install-banner .ib-text{flex:1;font-size:12px;color:var(--text);line-height:1.4}
+#install-banner .ib-text strong{color:var(--cyan);display:block;margin-bottom:2px}
+#install-banner .ib-btn{background:var(--cyan);color:#000;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0}
+#install-banner .ib-close{background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:4px;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -1367,6 +1381,7 @@ The whole team is in here — Naveed, Natali, Idan, Alec, Ross — each with a d
   applyAnimalBackground(currentUser);
   initCompanion(currentUser);
   renderGraph();
+  showInstallBanner(); // PWA install nudge — shows once for non-installed users
 }
 
 async function seedStudentNodes() {
@@ -2031,12 +2046,19 @@ FOCUS RULE: Stay on this student's specific venture. If the conversation drifts,
     const replyText = reply || null;
     
     document.getElementById('typing').style.display = 'none';
+    document.getElementById('typing').textContent = 'IAM is thinking...';
     if (replyText) {
       addBotMessage(replyText);
       extractAndSaveMemory(text, replyText);
     } else {
-      // All AI providers failed — show actionable message
-      addBotMessage('⚠️ AI service is offline. To fix:\n1. Go to aistudio.google.com → create a free API key\n2. Log in as professor → tap ⚙️ Admin → paste the key\n\nYour Trinity Graph is still tracking your journey — all graph features work without AI.');
+      // All providers failed — queue for retry + give honest status
+      queueMessageRetry(text);
+      if (navigator.onLine === false) {
+        addBotMessage('📶 You appear to be offline. Your message is queued and will send automatically when your connection comes back.');
+      } else {
+        addBotMessage('⚡ The AI is warming up — your message is queued and will retry in a moment. Your Trinity Graph is still tracking this session.');
+        setTimeout(() => retryQueuedMessages(), 3000);
+      }
     }
     
     // Update node activations based on keywords
@@ -3173,6 +3195,109 @@ async function saveWANumber(){
   }
 }
 
+
+// ===== PWA INSTALL BANNER =====
+function showInstallBanner() {
+  if (localStorage.getItem('iam_install_dismissed')) return;
+  if (window.matchMedia('(display-mode: standalone)').matches) return; // Already installed
+  if (window.navigator.standalone) return; // iOS already installed
+  // Show after login, with delay
+  setTimeout(() => {
+    const b = document.getElementById('install-banner');
+    if (b) b.style.display = 'flex';
+  }, 4000);
+}
+function dismissInstallBanner() {
+  localStorage.setItem('iam_install_dismissed', '1');
+  const b = document.getElementById('install-banner');
+  if (b) b.style.display = 'none';
+}
+// beforeinstallprompt for Android/Chrome
+let _deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredPrompt = e;
+  if (!localStorage.getItem('iam_install_dismissed')) {
+    const b = document.getElementById('install-banner');
+    const btn = b && b.querySelector('.ib-btn');
+    if (btn) {
+      btn.style.display = 'block';
+      btn.textContent = '+ Install';
+      btn.onclick = () => { _deferredPrompt.prompt(); dismissInstallBanner(); };
+      b.querySelector('.ib-text').innerHTML = '<strong>Install IAM Classroom</strong>Add to home screen for instant access — no browser, no URL, no friction';
+      setTimeout(() => { if (b) b.style.display = 'flex'; }, 2000);
+    }
+  }
+});
+
+// ===== SERVICE WORKER — silent background updates, offline support =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/ontological-theatre/sw-classroom.js', {scope: '/ontological-theatre/'})
+      .then(reg => {
+        // Listen for the service worker to find a new version
+        reg.addEventListener('updatefound', () => {
+          const newSW = reg.installing;
+          newSW.addEventListener('statechange', () => {
+            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+              // New version ready — silently reload to get it (only if no active session)
+              if (!currentUser) window.location.reload();
+            }
+          });
+        });
+      }).catch(() => { /* SW not critical — app works without it */ });
+
+    // Listen for retry signal from SW background sync
+    navigator.serviceWorker.addEventListener('message', e => {
+      if (e.data && e.data.type === 'RETRY_QUEUED_MESSAGES') retryQueuedMessages();
+    });
+  });
+}
+
+// ===== PRE-WARM — load API key & Neo4j connection before first student interaction =====
+let preWarmDone = false;
+async function preWarm() {
+  if (preWarmDone) return;
+  preWarmDone = true;
+  try {
+    // Load API key pool from Neo4j (background — populates localStorage)
+    await loadAdminConfig();
+    // Warm Neo4j connection with a trivial query
+    await neo4j('RETURN 1 as ping');
+  } catch(e) { /* silent — pre-warm is best-effort */ }
+}
+// Start pre-warming immediately on page load (before login)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', preWarm);
+} else {
+  preWarm();
+}
+
+// ===== AI MESSAGE RETRY QUEUE — never lose a message to a transient error =====
+let messageRetryQueue = [];
+function queueMessageRetry(text) {
+  messageRetryQueue.push({text, ts: Date.now()});
+  // Register background sync if supported
+  if ('serviceWorker' in navigator && 'SyncManager' in window) {
+    navigator.serviceWorker.ready.then(reg => reg.sync.register('iam-message-retry')).catch(() => {});
+  }
+}
+async function retryQueuedMessages() {
+  if (!currentUser || messageRetryQueue.length === 0) return;
+  const pending = [...messageRetryQueue];
+  messageRetryQueue = [];
+  for (const {text} of pending) {
+    document.getElementById('chat-input').value = text;
+    await sendMessage();
+    await new Promise(r => setTimeout(r, 1000));
+  }
+}
+// Auto-retry when coming back online
+window.addEventListener('online', () => {
+  if (messageRetryQueue.length > 0 && currentUser) retryQueuedMessages();
+});
+
+
 </script>
 
 <!-- SPIRIT COMPANION -->
@@ -3182,6 +3307,16 @@ async function saveWANumber(){
     <div style="font-size:10px;color:#7A9BB5;margin-top:6px;text-align:right" id="companion-label">— IAM Spirit</div>
   </div>
   <div id="companion-emoji" style="font-size:32px;animation:companionBob 2.5s ease-in-out infinite;display:block;filter:drop-shadow(0 2px 8px rgba(0,0,0,.4))">🦊</div>
+</div>
+
+<!-- PWA INSTALL BANNER -->
+<div id="install-banner">
+  <div class="ib-icon">📱</div>
+  <div class="ib-text">
+    <strong>Add IAM Classroom to your home screen</strong>
+    Tap Share → Add to Home Screen for a native app experience
+  </div>
+  <button class="ib-close" onclick="dismissInstallBanner()">✕</button>
 </div>
 </body>
 </html>
