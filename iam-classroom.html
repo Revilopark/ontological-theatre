@@ -1882,7 +1882,7 @@ async function researchWithSearch(query) {
     const proxyBody = {
       contents: [{ parts: [{ text: `You are a research assistant. Provide factual, up-to-date information about: ${query}. Focus on business relevance, market scale, and why entrepreneurs should understand this.` }] }]
     };
-    const r = await fetch(AI_PROXY, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(proxyBody), signal:AbortSignal.timeout(10000) });
+    const r = await fetch(AI_PROXY, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(proxyBody), signal:(typeof AbortSignal.timeout==='function' ? AbortSignal.timeout(10000) : undefined) });
     if (r.ok) {
       const d = await r.json();
       const text = d?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -1912,15 +1912,18 @@ async function sendMessage(forceResearch = false) {
   // Research mode: explicit 🔍 button OR auto-detect current events/trends
   const useResearch = forceResearch || isResearchWorthy(text);
   let researchContext = '';
-  if (useResearch && !isNoosphere) {
-    document.getElementById('typing').textContent = '🔍 Researching live data...';
-    const research = await researchWithSearch(text);
-    if (research) {
-      const sourceStr = research.sources.length > 0 ? `\nSources: ${research.sources.join(' | ')}` : '';
-      researchContext = `\n\n[LIVE RESEARCH RESULTS for "${text}"]\n${research.text}${sourceStr}\n[END RESEARCH — use this to inform your response, cite specific facts]`;
-      document.getElementById('typing').textContent = '🧠 Synthesizing with your Trinity Graph...';
+  try {
+    if (useResearch && !isNoosphere) {
+      const _tp = document.getElementById('typing');
+      if (_tp) _tp.textContent = '🔍 Researching live data...';
+      const research = await researchWithSearch(text);
+      if (research) {
+        const sourceStr = research.sources && research.sources.length > 0 ? `\nSources: ${research.sources.join(' | ')}` : '';
+        researchContext = `\n\n[LIVE RESEARCH RESULTS for "${text}"]\n${research.text}${sourceStr}\n[END RESEARCH — use this to inform your response, cite specific facts]`;
+        if (_tp) _tp.textContent = '🧠 Synthesizing...';
+      }
     }
-  }
+  } catch(_re) { researchContext = ''; }
   
   // §23.1 Cache tracking — record query for cache health metrics
   if (!sessionQueryMap[studentId]) sessionQueryMap[studentId] = 0;
@@ -1988,7 +1991,7 @@ FOCUS RULE: Stay on this student's specific venture. If the conversation drifts,
     // 1. Awareness proxy — PRIMARY (Greg manages server-side, never gets killed by GitHub scanner)
     if(!reply){
       try{
-        const r=await fetch(AI_PROXY,{method:'POST',headers:hdr_c,body:body_c,signal:AbortSignal.timeout(12000)});
+        const r=await fetch(AI_PROXY,{method:'POST',headers:hdr_c,body:body_c,signal:(typeof AbortSignal.timeout==='function' ? AbortSignal.timeout(12000) : undefined)});
         if(r.ok){const d=await r.json();reply=d?.candidates?.[0]?.content?.parts?.[0]?.text||null;}
       }catch(e){}
     }
