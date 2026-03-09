@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 1: The Graph Is Everything | AI-Accelerated Entrepreneurship Practicum · Vanderbilt Owen</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,600&family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#050508;--bg2:#09090e;--bg3:#0e0e16;
+  --gold:#cfb87c;--gold2:#a8914a;--gold3:rgba(207,184,124,.1);
+  --blue:#4a7bcc;--blue2:#7aa8e8;
+  --green:#4a9a6a;--green2:#7ac89a;
+  --purple:#8a6aac;--purple2:#b09ad0;
+  --red:#cc4a4a;--red2:#e87a7a;
+  --text:#e8e4dc;--muted:rgba(232,228,220,.6);--dim:rgba(232,228,220,.28);
+  --border:rgba(207,184,124,.1);--border2:rgba(207,184,124,.05);
+  --glass:rgba(255,255,255,.03);
+  --sans:'Inter',system-ui,sans-serif;
+  --serif:'Playfair Display',Georgia,serif;
+  --mono:'Roboto Mono',monospace;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--sans)}
+
+/* ── DECK SHELL ──────────────────────────────────────── */
+#deck{width:100%;height:100%;position:relative}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
+.slide.active{display:flex}
+
+/* ── BACKGROUNDS ─────────────────────────────────────── */
+.bg-base{background:var(--bg)}
+.bg-dark{background:#030306}
+.bg-blue{background:linear-gradient(135deg,#030610 0%,#050a18 100%)}
+.bg-gold{background:linear-gradient(135deg,#0a0804 0%,#110d04 100%)}
+.bg-purple{background:linear-gradient(135deg,#07050e 0%,#0e0818 100%)}
+.bg-green{background:linear-gradient(135deg,#040a06 0%,#070f09 100%)}
+
+/* ── NAV BAR ─────────────────────────────────────────── */
+#nav{position:fixed;bottom:0;left:0;right:0;z-index:200;
+     background:rgba(5,5,8,.95);backdrop-filter:blur(20px);
+     border-top:1px solid var(--border2);
+     display:flex;align-items:center;justify-content:space-between;
+     padding:0 1.5rem;height:44px}
+#nav-left{display:flex;align-items:center;gap:1rem}
+#nav-center{display:flex;align-items:center;gap:.5rem}
+.nav-btn{background:none;border:1px solid var(--border);color:var(--muted);
+         padding:4px 12px;border-radius:5px;font-size:.6rem;font-weight:600;
+         letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:.15s;font-family:var(--sans)}
+.nav-btn:hover{border-color:rgba(207,184,124,.3);color:var(--gold)}
+.nav-btn.active-btn{border-color:rgba(207,184,124,.4);color:var(--gold);background:rgba(207,184,124,.06)}
+#slide-counter{font-family:var(--mono);font-size:.65rem;color:var(--dim)}
+.dot-nav{display:flex;gap:4px;align-items:center;flex-wrap:wrap;max-width:500px;justify-content:center}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--border);cursor:pointer;transition:.2s;flex-shrink:0}
+.dot.active{background:var(--gold);box-shadow:0 0 6px rgba(207,184,124,.5)}
+
+/* ── PROGRESS BAR ────────────────────────────────────── */
+#progress{position:fixed;top:0;left:0;height:2px;background:var(--gold);transition:width .3s ease;z-index:300;box-shadow:0 0 8px rgba(207,184,124,.5)}
+
+/* ── SPEAKER NOTES ───────────────────────────────────── */
+#notes-panel{position:fixed;bottom:44px;left:0;right:0;z-index:190;
+             background:rgba(5,5,8,.97);backdrop-filter:blur(20px);
+             border-top:1px solid rgba(207,184,124,.15);
+             padding:1rem 2rem;max-height:220px;overflow-y:auto;
+             display:none;transition:.2s}
+#notes-panel.open{display:block}
+#notes-title{font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold2);margin-bottom:.5rem;font-weight:700}
+#notes-text{font-size:.75rem;color:var(--muted);line-height:1.8;white-space:pre-wrap}
+
+/* ── SLIDE INNER LAYOUTS ─────────────────────────────── */
+.slide-inner{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;
+             padding:3.5rem 4rem 3.5rem;position:relative;z-index:1;overflow:hidden}
+.slide-inner.left{align-items:flex-start;text-align:left}
+.slide-inner.split{flex-direction:row;gap:4rem;align-items:center}
+
+/* ── AMBIENT GLOWS ───────────────────────────────────── */
+.glow-blue{position:absolute;width:600px;height:600px;border-radius:50%;
+           background:radial-gradient(circle,rgba(74,123,204,.1) 0%,transparent 70%);pointer-events:none}
+.glow-gold{position:absolute;width:600px;height:600px;border-radius:50%;
+           background:radial-gradient(circle,rgba(207,184,124,.08) 0%,transparent 70%);pointer-events:none}
+.glow-purple{position:absolute;width:600px;height:600px;border-radius:50%;
+             background:radial-gradient(circle,rgba(138,106,172,.1) 0%,transparent 70%);pointer-events:none}
+.glow-green{position:absolute;width:600px;height:600px;border-radius:50%;
+            background:radial-gradient(circle,rgba(74,154,106,.09) 0%,transparent 70%);pointer-events:none}
+
+/* ── TYPOGRAPHY ──────────────────────────────────────── */
+.eyebrow{font-size:.58rem;letter-spacing:.3em;text-transform:uppercase;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.eyebrow::before,.eyebrow::after{content:'';height:1px;background:currentColor;opacity:.35}
+.eyebrow::before{width:20px}
+.eyebrow::after{width:20px}
+.eyebrow.center{justify-content:center}
+h1.display{font-family:var(--serif);font-size:clamp(2.5rem,5vw,4.5rem);font-weight:900;line-height:1.08;letter-spacing:-.01em}
+h1.display em{font-style:italic}
+h2.section-head{font-family:var(--serif);font-size:clamp(1.8rem,3.5vw,3rem);font-weight:700;line-height:1.15}
+h2.section-head em{font-style:italic}
+h3.slide-head{font-family:var(--serif);font-size:clamp(1.3rem,2.5vw,2rem);font-weight:700;line-height:1.2}
+.lead{font-size:clamp(.9rem,1.5vw,1.15rem);color:var(--muted);line-height:1.8;max-width:640px}
+.large-num{font-family:var(--serif);font-size:clamp(4rem,10vw,8rem);font-weight:900;line-height:1;opacity:.12;position:absolute}
+
+/* ── TAGS ────────────────────────────────────────────── */
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:.6rem;font-weight:700;padding:4px 11px;border-radius:12px;letter-spacing:.06em;text-transform:uppercase}
+.tag-gold{background:rgba(207,184,124,.1);border:1px solid rgba(207,184,124,.2);color:var(--gold)}
+.tag-blue{background:rgba(74,123,204,.1);border:1px solid rgba(74,123,204,.25);color:var(--blue2)}
+.tag-green{background:rgba(74,154,106,.1);border:1px solid rgba(74,154,106,.25);color:var(--green2)}
+.tag-purple{background:rgba(138,106,172,.1);border:1px solid rgba(138,106,172,.25);color:var(--purple2)}
+.tag-red{background:rgba(204,74,74,.1);border:1px solid rgba(204,74,74,.25);color:var(--red2)}
+.tag-dim{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:var(--muted)}
+
+/* ── CARDS ───────────────────────────────────────────── */
+.card{background:rgba(255,255,255,.03);border:1px solid var(--border2);border-radius:12px;padding:1.5rem}
+.card-blue{background:rgba(74,123,204,.06);border-color:rgba(74,123,204,.2)}
+.card-gold{background:rgba(207,184,124,.05);border-color:rgba(207,184,124,.15)}
+.card-purple{background:rgba(138,106,172,.07);border-color:rgba(138,106,172,.2)}
+.card-green{background:rgba(74,154,106,.07);border-color:rgba(74,154,106,.2)}
+
+.divider-line{width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:1.5rem 0}
+
+.bullet-list{list-style:none;display:flex;flex-direction:column;gap:.75rem}
+.bullet-list li{display:flex;gap:.75rem;align-items:flex-start;font-size:.88rem;color:var(--muted);line-height:1.6}
+.bullet-list li::before{content:'—';color:var(--gold);opacity:.5;flex-shrink:0;margin-top:1px}
+.bullet-list li strong{color:var(--text)}
+
+.quote-big{font-family:var(--serif);font-size:clamp(1.4rem,3vw,2.4rem);font-style:italic;line-height:1.5;max-width:800px;text-align:center}
+.quote-big em{color:var(--gold)}
+.quote-attr{font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-top:1.25rem;text-align:center}
+
+.mono-label{font-family:var(--mono);font-size:.7rem;color:var(--gold2);padding:3px 8px;border:1px solid var(--border);border-radius:4px;display:inline-block}
+
+/* ── GRAPH VISUALIZATIONS (CSS-only) ────────────────── */
+.graph-canvas{position:relative;width:360px;height:260px;flex-shrink:0}
+.gnode{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;transition:.3s}
+.gnode-gold{background:rgba(207,184,124,.15);border:2px solid rgba(207,184,124,.5);color:var(--gold);box-shadow:0 0 16px rgba(207,184,124,.2)}
+.gnode-blue{background:rgba(74,123,204,.15);border:2px solid rgba(74,123,204,.4);color:var(--blue2);box-shadow:0 0 16px rgba(74,123,204,.2)}
+.gnode-purple{background:rgba(138,106,172,.15);border:2px solid rgba(138,106,172,.4);color:var(--purple2);box-shadow:0 0 14px rgba(138,106,172,.18)}
+.gnode-green{background:rgba(74,154,106,.15);border:2px solid rgba(74,154,106,.4);color:var(--green2);box-shadow:0 0 14px rgba(74,154,106,.18)}
+.gnode-dim{background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.1);color:var(--dim)}
+/* edges via pseudo elements / SVG inline */
+.gedge{position:absolute;background:rgba(207,184,124,.18);transform-origin:0 50%;height:1px;pointer-events:none}
+.gedge-blue{background:rgba(74,123,204,.25)}
+.gedge-purple{background:rgba(138,106,172,.25)}
+
+/* ── CHAPTER HEADER BAR ──────────────────────────────── */
+.chapter-bar{display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem}
+.chapter-num{font-family:var(--mono);font-size:.6rem;color:var(--dim)}
+.chapter-title{font-size:.58rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+
+/* ── CONCEPT BOX ─────────────────────────────────────── */
+.concept-box{border-radius:10px;padding:1rem 1.25rem;display:inline-flex;gap:.75rem;align-items:flex-start;max-width:600px;margin-top:.75rem}
+.concept-box-blue{background:rgba(74,123,204,.08);border:1px solid rgba(74,123,204,.2)}
+.concept-box-gold{background:rgba(207,184,124,.06);border:1px solid rgba(207,184,124,.2)}
+.concept-box-purple{background:rgba(138,106,172,.08);border:1px solid rgba(138,106,172,.2)}
+.concept-box-green{background:rgba(74,154,106,.07);border:1px solid rgba(74,154,106,.2)}
+.concept-icon{font-size:1.25rem;flex-shrink:0;margin-top:2px}
+.concept-label{font-size:.5rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;margin-bottom:.25rem}
+.concept-text{font-size:.72rem;color:var(--muted);line-height:1.7}
+
+/* ── VENTURES GRID ───────────────────────────────────── */
+.venture-card{border-radius:10px;padding:1.1rem 1.25rem;border:1px solid}
+.vc-era{font-family:var(--mono);font-size:.52rem;color:var(--dim);margin-bottom:.2rem}
+.vc-name{font-size:.9rem;font-weight:800;margin-bottom:.25rem;letter-spacing:.02em}
+.vc-tagline{font-size:.65rem;color:var(--muted);line-height:1.5;margin-bottom:.5rem}
+.vc-concept{font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+
+/* ── TRINITY GRID ────────────────────────────────────── */
+.trinity-three{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;width:100%;max-width:960px}
+.tc{border-radius:10px;padding:1.5rem;border:1px solid}
+.tc-s{background:rgba(74,123,204,.08);border-color:rgba(74,123,204,.25)}
+.tc-k{background:rgba(207,184,124,.06);border-color:rgba(207,184,124,.2)}
+.tc-g{background:rgba(138,106,172,.08);border-color:rgba(138,106,172,.25)}
+.tc-icon{font-size:1.8rem;margin-bottom:.5rem}
+.tc-layer{font-size:.52rem;letter-spacing:.2em;text-transform:uppercase;font-weight:700;margin-bottom:.3rem}
+.tc-name{font-family:var(--serif);font-size:1.05rem;font-weight:700;margin-bottom:.3rem}
+.tc-q{font-size:.7rem;color:var(--muted);margin-bottom:.5rem;font-style:italic}
+.tc-desc{font-size:.66rem;color:var(--dim);line-height:1.6}
+.tc-s .tc-layer{color:var(--blue2)}
+.tc-k .tc-layer{color:var(--gold)}
+.tc-g .tc-layer{color:var(--purple2)}
+
+/* ── IAM ROW ─────────────────────────────────────────── */
+.iam-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;max-width:860px;width:100%}
+.iam-cell{border-radius:10px;padding:1.25rem;text-align:center}
+.iam-letter{font-family:var(--serif);font-size:2.5rem;font-weight:900;margin-bottom:.25rem;line-height:1}
+.iam-word{font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:.5rem}
+.iam-eq{font-size:.68rem;color:var(--muted);margin-bottom:.35rem;font-family:var(--mono)}
+.iam-desc{font-size:.65rem;color:var(--dim);line-height:1.6}
+
+/* ── FORMULAE ────────────────────────────────────────── */
+.formula-bar{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:.75rem 1.25rem;font-family:var(--mono);font-size:.8rem;text-align:center;max-width:500px}
+.formula-bar em{color:var(--gold);font-style:normal}
+
+/* ── TRANSITIONS ─────────────────────────────────────── */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.slide.active .slide-inner>*{animation:fadeIn .35s ease both}
+.slide.active .slide-inner>*:nth-child(2){animation-delay:.05s}
+.slide.active .slide-inner>*:nth-child(3){animation-delay:.1s}
+.slide.active .slide-inner>*:nth-child(4){animation-delay:.15s}
+.slide.active .slide-inner>*:nth-child(5){animation-delay:.2s}
+.slide.active .slide-inner>*:nth-child(6){animation-delay:.25s}
+.slide.active .slide-inner>*:nth-child(7){animation-delay:.3s}
+.slide.active .slide-inner>*:nth-child(8){animation-delay:.35s}
+
+/* ── DECORATIVE ARTS ─────────────────────────────────── */
+.big-char{font-family:var(--serif);font-size:14rem;line-height:1;opacity:.05;position:absolute;font-weight:900;pointer-events:none;user-select:none}
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SLIDES
+═══════════════════════════════════════════════════════ -->
+<div id="deck">
+
+<!-- ══════════════════════════════════════════════════════
+     OPENING — 3 SLIDES
+══════════════════════════════════════════════════════ -->
+
+<!-- S1: TITLE ──────────────────────────────────────────── -->
+<div class="slide bg-dark active" data-notes="Good morning. Sit down wherever you like — the seating arrangements here don't matter yet. What matters is that you showed up on Day 1 of something that's going to move very fast. I'm Oliver Luckett. Vanderbilt class of '96. I've been building companies in information systems for 30 years, and I want to tell you something I wish someone had told me on Day 1 of my career: everything is a graph. That sentence sounds simple. By the end of today, it will mean something entirely different to you. Let's get started.">
+  <div class="slide-inner left" style="padding-left:5rem">
+    <!-- background art -->
+    <div class="big-char" style="right:-80px;top:50%;transform:translateY(-50%);font-style:italic">G</div>
+    <div class="glow-gold" style="left:-100px;top:50%;transform:translateY(-50%)"></div>
+
+    <div class="eyebrow" style="color:var(--gold)">Vanderbilt Owen GSB · AI-Accelerated Entrepreneurship Practicum · Spring 2026</div>
+    <h1 class="display" style="margin-bottom:.6rem">Day 1:<br><em>The Graph Is</em><br>Everything</h1>
+    <p style="font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold2);margin-bottom:1.5rem;font-weight:600">AI-Accelerated Entrepreneurship Practicum</p>
+    <p class="lead" style="margin-bottom:2rem;font-size:1rem">30 years. 8 companies. One pattern.<br>Today we find it.</p>
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:2.5rem">
+      <span class="tag tag-gold">📡 Networks shape everything</span>
+      <span class="tag tag-blue">🔗 Graph theory is strategy</span>
+      <span class="tag tag-purple">🤖 AI as graph traversal engine</span>
+    </div>
+    <div style="display:flex;gap:2rem;align-items:center;flex-wrap:wrap">
+      <div>
+        <div style="font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:.2rem">Instructor</div>
+        <div style="font-size:.88rem;font-weight:700">Oliver Luckett <span style="color:var(--gold2);font-size:.65rem">BA '96</span></div>
+      </div>
+      <div style="width:1px;height:28px;background:var(--border2)"></div>
+      <div>
+        <div style="font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:.2rem">Program</div>
+        <div style="font-size:.88rem;font-weight:700">Vanderbilt Owen MBA</div>
+      </div>
+      <div style="width:1px;height:28px;background:var(--border2)"></div>
+      <div>
+        <div style="font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:.2rem">Term</div>
+        <div style="font-size:.88rem;font-weight:700">Spring 2026</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S2: THE QUESTION ──────────────────────────────────── -->
+<div class="slide bg-dark" data-notes="I'm going to make a claim right now, and I want you to hold it loosely and then squeeze it tighter over the next few hours. The claim is this: every business I've built, every product I've shipped, and every insight I've had — from my first job at Qwest in 1994 to the AI platforms I'm building today — comes down to one idea. One idea. Not 'hustle harder.' Not 'find product-market fit.' Not 'hire great people.' Those are all real, but they're downstream of this. The upstream idea is: everything is a graph. Your job for the rest of today is to figure out what I mean.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-gold" style="top:40%;left:50%;transform:translate(-50%,-50%)"></div>
+    <div class="big-char" style="top:-30px;left:50%;transform:translateX(-50%)">"</div>
+    <div class="eyebrow center" style="color:var(--gold2)">The Question That Runs Every Slide Today</div>
+    <div class="quote-big" style="font-size:clamp(1.6rem,3.5vw,2.8rem);margin-bottom:1.5rem">
+      What if I told you that <em>every business I've built,</em><br>every product I've shipped,<br>and every insight I've had<br>comes down to <em>one idea</em>?
+    </div>
+    <div class="divider-line" style="max-width:300px;margin:0 auto 1.25rem"></div>
+    <div class="formula-bar" style="margin:0 auto">
+      <em>Everything is a graph.</em>
+    </div>
+    <p style="font-size:.72rem;color:var(--dim);margin-top:1.5rem;max-width:500px">Not a metaphor. A mathematical structure with real predictive power.<br>Your job today: find out what that means for your career.</p>
+  </div>
+</div>
+
+<!-- S3: WHAT IS A GRAPH ────────────────────────────────── -->
+<div class="slide bg-base" data-notes="Before I show you my career, let me show you the lens. A graph is the most fundamental structure in mathematics. Nodes and edges. That's it. But here's the thing — the same mathematical object describes your neurons firing, your friends on Instagram, supply chain logistics, power grid failures, and how ideas spread. The math doesn't care what the nodes ARE. It only cares how they're connected. Edges. Relationships. Flows. That's where all the action is. Once you have this lens, you can't unsee it. You'll walk into any boardroom, any market, any social system and immediately ask: what's the graph? Who are the nodes? What are the edges? Where does value flow? And most importantly: where are the edges that don't exist yet? That gap — the missing edge — is the business opportunity.">
+  <div class="slide-inner split" style="gap:3rem;max-width:1100px;margin:0 auto">
+    <div style="flex:1;min-width:0">
+      <div class="eyebrow" style="color:var(--gold2)">The Foundational Lens</div>
+      <h2 class="section-head" style="margin-bottom:1rem">Not just nodes<br>and edges —<br><em>it's how reality<br>organizes itself.</em></h2>
+      <ul class="bullet-list" style="margin-bottom:1.25rem">
+        <li><strong>Neurons</strong> — Your brain is a graph. 86 billion nodes, 100 trillion edges.</li>
+        <li><strong>People</strong> — Social networks are graphs. Influence follows the edges.</li>
+        <li><strong>Ideas</strong> — Knowledge is a graph. Concepts connect through edges of meaning.</li>
+        <li><strong>Markets</strong> — Economies are graphs. Value flows through relationship edges.</li>
+      </ul>
+      <div class="concept-box concept-box-gold">
+        <div class="concept-icon">💡</div>
+        <div>
+          <div class="concept-label" style="color:var(--gold)">The Key Insight</div>
+          <div class="concept-text">The same math describes <strong>all of them</strong>. When you understand graph structure, you understand everything that flows, connects, or propagates.</div>
+        </div>
+      </div>
+    </div>
+    <!-- CSS-only graph viz -->
+    <div class="graph-canvas" style="width:320px;height:280px;flex-shrink:0">
+      <!-- Neuron cluster (top-left) -->
+      <div class="gnode gnode-blue" style="width:54px;height:54px;left:20px;top:20px;font-size:.45rem">Neurons</div>
+      <!-- People cluster (top-right) -->
+      <div class="gnode gnode-gold" style="width:58px;height:58px;right:20px;top:10px;font-size:.45rem">People</div>
+      <!-- Ideas cluster (bottom-left) -->
+      <div class="gnode gnode-purple" style="width:52px;height:52px;left:30px;bottom:30px;font-size:.45rem">Ideas</div>
+      <!-- Markets cluster (bottom-right) -->
+      <div class="gnode gnode-green" style="width:56px;height:56px;right:25px;bottom:25px;font-size:.45rem">Markets</div>
+      <!-- Central node -->
+      <div class="gnode gnode-gold" style="width:72px;height:72px;left:50%;top:50%;transform:translate(-50%,-50%);font-size:.5rem;z-index:2">GRAPH<br>THEORY</div>
+      <!-- Edges (SVG) -->
+      <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none">
+        <!-- to center from each corner -->
+        <line x1="74" y1="47" x2="160" y2="140" stroke="rgba(207,184,124,.25)" stroke-width="1.5"/>
+        <line x1="271" y1="39" x2="196" y2="130" stroke="rgba(207,184,124,.2)" stroke-width="1.5"/>
+        <line x1="56" y1="234" x2="148" y2="168" stroke="rgba(207,184,124,.2)" stroke-width="1.5"/>
+        <line x1="267" y1="242" x2="200" y2="168" stroke="rgba(207,184,124,.2)" stroke-width="1.5"/>
+        <!-- cross-edges -->
+        <line x1="74" y1="47" x2="271" y2="39" stroke="rgba(255,255,255,.05)" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="56" y1="234" x2="267" y2="242" stroke="rgba(255,255,255,.05)" stroke-width="1" stroke-dasharray="4,4"/>
+      </svg>
+      <!-- Edge labels -->
+      <div style="position:absolute;font-size:.45rem;color:var(--dim);top:80px;left:95px;transform:rotate(-35deg)">flows</div>
+      <div style="position:absolute;font-size:.45rem;color:var(--dim);top:75px;right:60px;transform:rotate(35deg)">connects</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     CHAPTER 1: THE NETWORK LAYER — 4 SLIDES
+══════════════════════════════════════════════════════ -->
+
+<!-- S4: 1984 AT&T DIVESTITURE ──────────────────────────── -->
+<div class="slide bg-blue" data-notes="Let me start in 1984. I was 11 years old. The US Department of Justice just did something extraordinary: they broke up AT&T. The largest corporation in American history — $150 billion in assets — was forced to split into 8 pieces. One parent company plus 7 regional Bell Operating Companies. The Baby Bells. Now. Most people see this as antitrust law. A regulatory event. A business story about monopoly power. I want you to see something else. The US government took a network with one central hub — a star topology, AT&T at the center of everything — and restructured it into a more distributed graph. They literally edited the topology of America's communication network. That's not just law. That's graph theory applied by legislation. The structure of the network determines who has power, who controls flow, and who gets to charge rent. The government understood this, even if they didn't call it that. You need to understand this before you build anything.">
+  <div class="slide-inner left" style="max-width:1000px;margin:0 auto">
+    <div class="glow-blue" style="left:-150px;top:50%;transform:translateY(-50%)"></div>
+    <div class="chapter-bar">
+      <span class="chapter-num">Chapter 1</span>
+      <span class="chapter-title" style="color:var(--blue2)">The Network Layer</span>
+    </div>
+    <div class="eyebrow" style="color:var(--blue2)">1984 · AT&amp;T Divestiture</div>
+    <h2 class="section-head" style="margin-bottom:.75rem">The Government<br><em>Restructured a Graph.</em></h2>
+    <p class="lead" style="margin-bottom:1.25rem;max-width:600px">January 1, 1984. Ma Bell dissolves. One monolithic node becomes 7 Baby Bells. The largest company in history was taken apart — not by the market, but by graph edit.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:700px">
+      <div class="concept-box concept-box-blue" style="margin-top:0;display:flex">
+        <div class="concept-icon">🌐</div>
+        <div>
+          <div class="concept-label" style="color:var(--blue2)">Before: Star Topology</div>
+          <div class="concept-text">AT&amp;T at center. Every edge flows through one node. Total control of information flow. Maximum rent-extraction.</div>
+        </div>
+      </div>
+      <div class="concept-box concept-box-gold" style="margin-top:0;display:flex">
+        <div class="concept-icon">🔀</div>
+        <div>
+          <div class="concept-label" style="color:var(--gold)">After: Distributed Graph</div>
+          <div class="concept-text">7 regional nodes with peer edges. No single point of control. Competition can now enter via any node.</div>
+        </div>
+      </div>
+    </div>
+    <div class="concept-box concept-box-blue" style="margin-top:1rem">
+      <div class="concept-icon">⚖️</div>
+      <div>
+        <div class="concept-label" style="color:var(--blue2)">The Foundational Lesson</div>
+        <div class="concept-text"><strong>Legal architecture shapes network topology.</strong> Before you build anything, find out who controls the edges. The legal layer IS the graph layer.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S5: 1996 TELECOM ACT & QWEST ────────────────────────── -->
+<div class="slide bg-blue" data-notes="I was at Qwest in 1996. I was two years out of Vanderbilt, working on a project called Qtalk — Voice over IP. And the 1996 Telecommunications Act just passed. Now, here's what that act did that nobody in the building fully grasped at the time: it deregulated the network layer. It said: you don't have to own the physical infrastructure to be a telecommunications company. You can LEASE the edges. You can ride someone else's graph. And VOIP — what I was working on — this was the technical consequence. If voice is just data packets, if a phone call is just nodes talking to each other through any available path, then the old routing hierarchy — the tree that AT&T had built — becomes irrelevant. The network goes from a tree to a mesh. Every node can potentially reach every other node through multiple paths. That's a topological revolution. Not just a business model change. The physical structure of the network fundamentally changed. And that change created a window — a moment where someone who understood the new graph could build something impossible before. That's always the opportunity. The graph changes. Most people don't notice. You notice. You build.">
+  <div class="slide-inner left" style="max-width:1000px;margin:0 auto">
+    <div class="glow-blue" style="right:-150px;top:30%;transform:translateY(-50%)"></div>
+    <div class="chapter-bar">
+      <span class="chapter-num">Chapter 1</span>
+      <span class="chapter-title" style="color:var(--blue2)">The Network Layer</span>
+    </div>
+    <div class="eyebrow" style="color:var(--blue2)">1996 · Telecom Act · Qwest · VOIP</div>
+    <h2 class="section-head" style="margin-bottom:.75rem">I was at Qwest<br>when voice became<br><em>data.</em></h2>
+    <p class="lead" style="margin-bottom:1.25rem;max-width:620px">The 1996 Telecom Act didn't just deregulate. It changed the topology of the entire US communications network from a <strong>tree</strong> (hierarchical) to a <strong>mesh</strong> (distributed). That's graph theory written into law.</p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;max-width:720px">
+      <div class="card card-blue" style="padding:1rem">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--blue2);margin-bottom:.3rem">The Technical Change</div>
+        <div style="font-size:.72rem;color:var(--muted);line-height:1.6">Voice becomes packets. Packets route through any path. The hierarchical tree collapses into a mesh.</div>
+      </div>
+      <div class="card card-blue" style="padding:1rem">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--blue2);margin-bottom:.3rem">The Business Change</div>
+        <div style="font-size:.72rem;color:var(--muted);line-height:1.6">You no longer need to own the infrastructure. You can be a carrier on leased edges. Incumbents can't stop you.</div>
+      </div>
+      <div class="card card-blue" style="padding:1rem">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--blue2);margin-bottom:.3rem">The Graph Insight</div>
+        <div style="font-size:.72rem;color:var(--muted);line-height:1.6">Legal change → topology change → business opportunity. The sequence is always the same. Watch for it.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S6: WHOEVER CONTROLS THE EDGES ────────────────────── -->
+<div class="slide bg-blue" data-notes="Here's the sentence I want you to write down. Not take a photo of. Write down. With your hand. Muscle memory matters. 'Whoever controls the edges of the graph controls the flow.' AT&T controlled the edges of the US phone network. That's why they could charge whatever they wanted for a long-distance call. The 1996 Act created new edges — lease lines, VOIP routes, competitive local exchange carriers. And suddenly AT&T's edge control was diluted. Now the question became: in this new mesh, what's flowing? Voice is just one signal. There are others. Data. Video. Social signals. Attention. Commerce. Each of those flows requires edges. Each of those edges is a business. The entrepreneur's question isn't 'what do I want to build?' It's 'which graph am I in, and which edges don't exist yet?' I spent my career answering that question.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-blue" style="top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+    <div class="chapter-bar" style="justify-content:center">
+      <span class="chapter-num">Chapter 1</span>
+      <span class="chapter-title" style="color:var(--blue2)">The Network Layer</span>
+    </div>
+    <div class="eyebrow center" style="color:var(--blue2)">The Governing Principle</div>
+    <div class="quote-big" style="font-size:clamp(1.8rem,4vw,3rem);margin-bottom:1.5rem">
+      "Whoever controls the<br><em>edges of the graph</em><br>controls the flow."
+    </div>
+    <div class="divider-line" style="max-width:300px;margin:0 auto 1.25rem"></div>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+      <div style="text-align:center;padding:.75rem 1.5rem;background:rgba(74,123,204,.08);border:1px solid rgba(74,123,204,.2);border-radius:8px">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--blue2);margin-bottom:.2rem">AT&amp;T (pre-1984)</div>
+        <div style="font-size:.75rem;color:var(--muted)">Controlled every long-distance edge.<br>Charged monopoly rents.</div>
+      </div>
+      <div style="text-align:center;padding:.75rem 1.5rem;background:rgba(207,184,124,.05);border:1px solid rgba(207,184,124,.15);border-radius:8px">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.2rem">1996 Telecom Act</div>
+        <div style="font-size:.75rem;color:var(--muted)">Created new edges.<br>Diluted edge control.</div>
+      </div>
+      <div style="text-align:center;padding:.75rem 1.5rem;background:rgba(138,106,172,.07);border:1px solid rgba(138,106,172,.2);border-radius:8px">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--purple2);margin-bottom:.2rem">The Next Question</div>
+        <div style="font-size:.75rem;color:var(--muted)">What flows through<br>the new mesh?</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S7: NETWORK TOPOLOGY ────────────────────────────────── -->
+<div class="slide bg-blue" data-notes="Let me give you the vocabulary you're going to use for the rest of this course. Three topologies. Three fundamentally different shapes a graph can take — and each shape has different power dynamics. The tree is hierarchical. One root node, branches down, leaves at the bottom. Information flows up and commands flow down. AT&T before 1984. Every org chart ever drawn. The person at the top controls everything. The mesh is distributed. Every node can potentially connect to every other node through multiple paths. The internet. VOIP. Resilient, hard to censor, no single point of failure. Power distributes. The small-world network is the most interesting one. Most real social networks have this property. You're mostly connected to people near you — but a few high-degree nodes (hubs) are connected to everyone. Think: the 'six degrees of separation' effect. Power concentrates at the hubs. This is the Barabási-Albert model. It's why influencers exist. It's why some VC firms see all the deals and most see none. It's an emergent property of how networks grow. The physical layer always shapes the social layer above it. When the physical topology changes — by law, by technology, by catastrophe — everything above it reorganizes. Watch the topology, and you'll see the reorganization coming before everyone else.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-blue" style="top:30%;left:30%;transform:translate(-50%,-50%)"></div>
+    <div class="chapter-bar" style="justify-content:center">
+      <span class="chapter-num">Chapter 1 · Key Concept</span>
+      <span class="chapter-title" style="color:var(--blue2)">Network Topology</span>
+    </div>
+    <div class="eyebrow center" style="color:var(--blue2)">The Three Shapes That Determine Power</div>
+    <h2 class="section-head" style="margin-bottom:1.5rem;font-size:clamp(1.2rem,2vw,1.8rem)">The physical layer shapes <em>everything above it.</em></h2>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;max-width:900px">
+      <div class="card card-blue" style="text-align:left">
+        <div style="font-size:.58rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--blue2);margin-bottom:.5rem">🌲 Tree Topology</div>
+        <!-- mini tree viz -->
+        <svg width="100%" height="80" style="display:block;margin-bottom:.6rem">
+          <circle cx="80" cy="12" r="8" fill="rgba(74,123,204,.3)" stroke="rgba(74,123,204,.5)" stroke-width="1.5"/>
+          <line x1="80" y1="20" x2="48" y2="44" stroke="rgba(74,123,204,.3)" stroke-width="1.5"/>
+          <line x1="80" y1="20" x2="112" y2="44" stroke="rgba(74,123,204,.3)" stroke-width="1.5"/>
+          <circle cx="48" cy="52" r="7" fill="rgba(74,123,204,.2)" stroke="rgba(74,123,204,.4)" stroke-width="1"/>
+          <circle cx="112" cy="52" r="7" fill="rgba(74,123,204,.2)" stroke="rgba(74,123,204,.4)" stroke-width="1"/>
+          <line x1="48" y1="59" x2="28" y2="74" stroke="rgba(74,123,204,.2)" stroke-width="1"/>
+          <line x1="48" y1="59" x2="68" y2="74" stroke="rgba(74,123,204,.2)" stroke-width="1"/>
+          <line x1="112" y1="59" x2="92" y2="74" stroke="rgba(74,123,204,.2)" stroke-width="1"/>
+          <line x1="112" y1="59" x2="132" y2="74" stroke="rgba(74,123,204,.2)" stroke-width="1"/>
+          <circle cx="28" cy="76" r="5" fill="rgba(74,123,204,.15)" stroke="rgba(74,123,204,.3)" stroke-width="1"/>
+          <circle cx="68" cy="76" r="5" fill="rgba(74,123,204,.15)" stroke="rgba(74,123,204,.3)" stroke-width="1"/>
+          <circle cx="92" cy="76" r="5" fill="rgba(74,123,204,.15)" stroke="rgba(74,123,204,.3)" stroke-width="1"/>
+          <circle cx="132" cy="76" r="5" fill="rgba(74,123,204,.15)" stroke="rgba(74,123,204,.3)" stroke-width="1"/>
+        </svg>
+        <div style="font-size:.68rem;color:var(--muted);line-height:1.6">Hierarchical. Top node controls all flow. Efficient for command-and-control. Fragile — remove root, whole network fails.</div>
+        <div style="font-size:.6rem;color:var(--dim);margin-top:.5rem;font-style:italic">e.g. AT&amp;T pre-1984, org charts, broadcast TV</div>
+      </div>
+      <div class="card card-blue" style="text-align:left">
+        <div style="font-size:.58rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--blue2);margin-bottom:.5rem">🔗 Mesh Topology</div>
+        <svg width="100%" height="80" style="display:block;margin-bottom:.6rem">
+          <line x1="40" y1="40" x2="100" y2="15" stroke="rgba(74,123,204,.25)" stroke-width="1.5"/>
+          <line x1="40" y1="40" x2="120" y2="55" stroke="rgba(74,123,204,.25)" stroke-width="1.5"/>
+          <line x1="40" y1="40" x2="75" y2="75" stroke="rgba(74,123,204,.25)" stroke-width="1.5"/>
+          <line x1="100" y1="15" x2="120" y2="55" stroke="rgba(74,123,204,.25)" stroke-width="1.5"/>
+          <line x1="100" y1="15" x2="75" y2="75" stroke="rgba(74,123,204,.25)" stroke-width="1.5"/>
+          <line x1="120" y1="55" x2="75" y2="75" stroke="rgba(74,123,204,.25)" stroke-width="1.5"/>
+          <circle cx="40" cy="40" r="9" fill="rgba(74,123,204,.25)" stroke="rgba(74,123,204,.6)" stroke-width="1.5"/>
+          <circle cx="100" cy="15" r="9" fill="rgba(74,123,204,.25)" stroke="rgba(74,123,204,.6)" stroke-width="1.5"/>
+          <circle cx="120" cy="55" r="9" fill="rgba(74,123,204,.25)" stroke="rgba(74,123,204,.6)" stroke-width="1.5"/>
+          <circle cx="75" cy="75" r="9" fill="rgba(74,123,204,.25)" stroke="rgba(74,123,204,.6)" stroke-width="1.5"/>
+        </svg>
+        <div style="font-size:.68rem;color:var(--muted);line-height:1.6">Distributed. Every node connects to many others. Resilient — no single point of failure. Power distributes.</div>
+        <div style="font-size:.6rem;color:var(--dim);margin-top:.5rem;font-style:italic">e.g. The internet, VOIP, peer-to-peer networks</div>
+      </div>
+      <div class="card card-blue" style="text-align:left">
+        <div style="font-size:.58rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--blue2);margin-bottom:.5rem">⭐ Small-World / Scale-Free</div>
+        <svg width="100%" height="80" style="display:block;margin-bottom:.6rem">
+          <!-- hub node -->
+          <circle cx="80" cy="42" r="16" fill="rgba(207,184,124,.2)" stroke="rgba(207,184,124,.6)" stroke-width="2"/>
+          <!-- spokes -->
+          <line x1="80" y1="42" x2="25" y2="15" stroke="rgba(207,184,124,.2)" stroke-width="1.5"/>
+          <line x1="80" y1="42" x2="135" y2="12" stroke="rgba(207,184,124,.2)" stroke-width="1.5"/>
+          <line x1="80" y1="42" x2="145" y2="55" stroke="rgba(207,184,124,.2)" stroke-width="1.5"/>
+          <line x1="80" y1="42" x2="30" y2="72" stroke="rgba(207,184,124,.2)" stroke-width="1.5"/>
+          <line x1="80" y1="42" x2="85" y2="78" stroke="rgba(207,184,124,.2)" stroke-width="1.5"/>
+          <circle cx="25" cy="15" r="6" fill="rgba(74,123,204,.2)" stroke="rgba(74,123,204,.4)" stroke-width="1"/>
+          <circle cx="135" cy="12" r="6" fill="rgba(74,123,204,.2)" stroke="rgba(74,123,204,.4)" stroke-width="1"/>
+          <circle cx="145" cy="55" r="6" fill="rgba(74,123,204,.2)" stroke="rgba(74,123,204,.4)" stroke-width="1"/>
+          <circle cx="30" cy="72" r="6" fill="rgba(74,123,204,.2)" stroke="rgba(74,123,204,.4)" stroke-width="1"/>
+          <circle cx="85" cy="78" r="6" fill="rgba(74,123,204,.2)" stroke="rgba(74,123,204,.4)" stroke-width="1"/>
+          <!-- small connections between leaves -->
+          <line x1="25" y1="15" x2="135" y2="12" stroke="rgba(255,255,255,.06)" stroke-width="1" stroke-dasharray="3,4"/>
+        </svg>
+        <div style="font-size:.68rem;color:var(--muted);line-height:1.6">High-degree hubs dominate. Power-law distribution. Most nodes have few edges; a few have thousands.</div>
+        <div style="font-size:.6rem;color:var(--dim);margin-top:.5rem;font-style:italic">e.g. Twitter, Instagram influencers, VC networks</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     CHAPTER 2: THE SOCIAL ORGANISM — 5 SLIDES
+══════════════════════════════════════════════════════ -->
+
+<!-- S8: THE BOOK ───────────────────────────────────────── -->
+<div class="slide bg-green" data-notes="In 2016, Michael Casey and I published The Social Organism. Mike was a senior columnist at the Wall Street Journal. I had been building social media infrastructure for a decade at that point. The thesis came from something I kept seeing: social networks don't behave like machines. They don't behave like markets. They behave like living things. They grow. They adapt. They get sick. They develop defenses. They evolve. And I realized this wasn't a metaphor. It was the actual structure. A graph that grows and adapts and develops emergent properties IS, functionally, an organism. The math of complex adaptive systems — the mathematics of living systems — is the same math as graph theory applied to dynamic networks. When you model Facebook not as 'a website with 3 billion users' but as 'a living organism with 3 billion cells,' you can suddenly make predictions. You can see pathologies coming. You can design interventions. This book changed how I thought about every platform I built after it.">
+  <div class="slide-inner split" style="max-width:1000px;margin:0 auto;gap:3rem">
+    <div class="glow-green" style="left:-150px;top:50%;transform:translateY(-50%)"></div>
+    <div style="flex:1;min-width:0">
+      <div class="chapter-bar">
+        <span class="chapter-num">Chapter 2</span>
+        <span class="chapter-title" style="color:var(--green2)">The Social Organism</span>
+      </div>
+      <div class="eyebrow" style="color:var(--green2)">2016 · Luckett &amp; Casey</div>
+      <h2 class="section-head" style="margin-bottom:.75rem">Social networks aren't<br>networks of people.<br><em>They're living organisms.</em></h2>
+      <p class="lead" style="margin-bottom:1.25rem;max-width:520px">The core thesis: the graph IS the organism. It grows, adapts, develops immune systems, and evolves — just like biology. Same math. Different substrate.</p>
+      <div class="concept-box concept-box-green" style="margin-top:0">
+        <div class="concept-icon">🧬</div>
+        <div>
+          <div class="concept-label" style="color:var(--green2)">The Biological Claim</div>
+          <div class="concept-text">This isn't a metaphor for storytelling. It's a <strong>predictive framework</strong>. Model the network as an organism and you can diagnose pathologies, design interventions, and predict evolution.</div>
+        </div>
+      </div>
+    </div>
+    <!-- book card -->
+    <div style="flex-shrink:0;width:260px">
+      <div style="background:rgba(74,154,106,.08);border:1px solid rgba(74,154,106,.25);border-radius:14px;padding:1.5rem;text-align:center">
+        <div style="font-size:3.5rem;margin-bottom:.75rem">🧬</div>
+        <div style="font-family:var(--serif);font-size:1.2rem;font-weight:700;margin-bottom:.3rem;line-height:1.3">The Social Organism</div>
+        <div style="font-size:.65rem;color:var(--dim);margin-bottom:.75rem">Oliver Luckett &amp; Michael J. Casey<br>Hachette Books · 2016</div>
+        <div class="divider-line" style="margin:.75rem 0"></div>
+        <div style="font-size:.65rem;color:var(--muted);line-height:1.6;font-style:italic">"Social networks are alive. They breathe, grow, get sick, and evolve. Treat them like organisms and you'll understand them. Treat them like machines and you'll keep getting surprised."</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S9: SEVEN PROPERTIES ────────────────────────────────── -->
+<div class="slide bg-green" data-notes="Here are the seven properties of the Social Organism. I want you to internalize these because you're going to use them to diagnose every platform you build on. Cells — users. Every user is a living cell. They have behavior, they have metabolism, they can be healthy or sick, they can die and new ones form. Nervous System — the feed algorithm. This is the organism's central nervous system. It decides which signals get amplified to which cells. EdgeRank, the TikTok For You Page, the Twitter algorithm — all nervous systems deciding what the organism 'feels.' Immune System — moderation, blocking, spam filters. The organism has evolved defenses against pathogens — trolls, spam, harassment. These immune responses are often slow, expensive, and create side effects. Circulatory System — sharing and distribution. This is how content moves through the organism. A retweet is blood flowing to a new part of the body. Reproduction — virality. Content that replicates itself across the graph, spawning copies that carry the original's genetic information (attribution, links, framing). Evolution — platform changes. The organism evolves over time as its environment (legal, competitive, technological) changes. Metabolism — engagement rate. How much energy is flowing through the system right now? A platform with high engagement has a fast metabolism.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-green" style="top:50%;right:-150px;transform:translateY(-50%)"></div>
+    <div class="chapter-bar" style="justify-content:center">
+      <span class="chapter-num">Chapter 2</span>
+      <span class="chapter-title" style="color:var(--green2)">The Social Organism</span>
+    </div>
+    <div class="eyebrow center" style="color:var(--green2)">Seven Properties of Living Networks</div>
+    <h2 class="section-head" style="margin-bottom:1.25rem;font-size:clamp(1.1rem,2vw,1.6rem)">Every social platform has these. <em>Most builders ignore them.</em></h2>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;max-width:1000px">
+      <div class="card card-green" style="padding:.85rem;text-align:left">
+        <div style="font-size:1.2rem;margin-bottom:.3rem">🦠</div>
+        <div style="font-size:.6rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--green2);margin-bottom:.2rem">Cells</div>
+        <div style="font-size:.65rem;color:var(--muted);line-height:1.5">Users. Individual, living nodes with behavior, metabolism, lifecycle.</div>
+      </div>
+      <div class="card card-green" style="padding:.85rem;text-align:left">
+        <div style="font-size:1.2rem;margin-bottom:.3rem">⚡</div>
+        <div style="font-size:.6rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--green2);margin-bottom:.2rem">Nervous System</div>
+        <div style="font-size:.65rem;color:var(--muted);line-height:1.5">Feed algorithms. Which signals get amplified, when, to whom.</div>
+      </div>
+      <div class="card card-green" style="padding:.85rem;text-align:left">
+        <div style="font-size:1.2rem;margin-bottom:.3rem">🛡️</div>
+        <div style="font-size:.6rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--green2);margin-bottom:.2rem">Immune System</div>
+        <div style="font-size:.65rem;color:var(--muted);line-height:1.5">Moderation, blocking. Defends against pathogens (trolls, spam).</div>
+      </div>
+      <div class="card card-green" style="padding:.85rem;text-align:left">
+        <div style="font-size:1.2rem;margin-bottom:.3rem">🩸</div>
+        <div style="font-size:.6rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--green2);margin-bottom:.2rem">Circulatory</div>
+        <div style="font-size:.65rem;color:var(--muted);line-height:1.5">Sharing, distribution. How content moves through the organism.</div>
+      </div>
+      <div class="card card-green" style="padding:.85rem;text-align:left">
+        <div style="font-size:1.2rem;margin-bottom:.3rem">🔄</div>
+        <div style="font-size:.6rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--green2);margin-bottom:.2rem">Reproduction</div>
+        <div style="font-size:.65rem;color:var(--muted);line-height:1.5">Virality, memes. Content that replicates and carries genetic info.</div>
+      </div>
+      <div class="card card-green" style="padding:.85rem;text-align:left">
+        <div style="font-size:1.2rem;margin-bottom:.3rem">🧬</div>
+        <div style="font-size:.6rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--green2);margin-bottom:.2rem">Evolution</div>
+        <div style="font-size:.65rem;color:var(--muted);line-height:1.5">Platform changes over time in response to competitive environment.</div>
+      </div>
+      <div class="card card-green" style="padding:.85rem;text-align:left;grid-column:span 2">
+        <div style="font-size:1.2rem;margin-bottom:.3rem">⚡</div>
+        <div style="font-size:.6rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--green2);margin-bottom:.2rem">Metabolism</div>
+        <div style="font-size:.65rem;color:var(--muted);line-height:1.5">Engagement rate. How much energy is flowing through the system right now? High engagement = fast metabolism. Platform health = metabolic health.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S10: THE FRAMEWORK ──────────────────────────────────── -->
+<div class="slide bg-green" data-notes="I want to be very clear about something: the biological metaphor in this book is NOT decorative. It's not there to make the writing more vivid. It's a predictive framework. When you model a platform as a living organism, things that seemed random start to look like biology. The Facebook feed algorithm amplifies outrage not because Zuckerberg is evil — but because outrage has the highest engagement, and the nervous system has evolved to seek high-engagement signals. That's not a design decision. That's an organism behaving in its own interest. The trolls that invaded early Reddit communities? Those are pathogens. The moderators who fought them? That's the immune response. The immune response to trolls — banning, muting, de-platforming — created new pressures that selected for more sophisticated trolls. Evolution. This framework predicted Twitter's collapse years before it happened. It predicted the emergence of TikTok as a metabolic shift in the organism. When you have the right model, the future becomes visible. The biological framework is the right model for social networks. And the graph is the biological framework's foundation.">
+  <div class="slide-inner split" style="max-width:1000px;margin:0 auto;gap:3rem">
+    <div style="flex:1;min-width:0">
+      <div class="chapter-bar">
+        <span class="chapter-num">Chapter 2</span>
+        <span class="chapter-title" style="color:var(--green2)">The Social Organism</span>
+      </div>
+      <div class="eyebrow" style="color:var(--green2)">The Framework, Not The Metaphor</div>
+      <h2 class="section-head" style="margin-bottom:.75rem">The biology isn't decoration.<br><em>It's prediction.</em></h2>
+      <ul class="bullet-list" style="margin-bottom:1.25rem">
+        <li><strong>Facebook outrage loops</strong> — Not evil design. Organism optimizing for metabolic rate (engagement). The nervous system amplifies whatever feeds fastest.</li>
+        <li><strong>Troll invasions</strong> — Pathogens exploiting immune gaps. Moderation is the immune response. Heavy moderation selects for more sophisticated pathogens. This is evolution.</li>
+        <li><strong>TikTok's rise</strong> — A metabolic shift. An organism with a faster metabolism (shorter content, faster dopamine loops) outcompeting slower organisms for attention energy.</li>
+        <li><strong>Twitter's collapse</strong> — Autoimmune disorder. The organism began attacking its own healthy cells (verified users, trusted accounts) while pathogens multiplied.</li>
+      </ul>
+    </div>
+    <div style="flex-shrink:0;width:300px">
+      <div class="concept-box concept-box-green" style="margin-bottom:1rem;display:flex">
+        <div class="concept-icon">🔮</div>
+        <div>
+          <div class="concept-label" style="color:var(--green2)">Why It Matters</div>
+          <div class="concept-text">Right model → visible future. Wrong model → constant surprise. The organism framework is the right model for social platforms.</div>
+        </div>
+      </div>
+      <div class="concept-box concept-box-gold" style="display:flex">
+        <div class="concept-icon">⚠️</div>
+        <div>
+          <div class="concept-label" style="color:var(--gold)">The Builder's Trap</div>
+          <div class="concept-text">Most founders treat platforms as distribution channels. They're building on an organism they don't understand. That's why they keep getting surprised.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S11: ORGANISM → GRAPH ───────────────────────────────── -->
+<div class="slide bg-green" data-notes="Now let me make the translation explicit. Every property of the Social Organism maps directly onto a graph property. And once you have that mapping, you can use graph theory to make predictions about social platforms. Cells equal nodes. Every user is a node with attributes — follower count, engagement history, posting frequency, topic affinity. These attributes determine what kind of node you are in the graph. The nervous system equals edge weights. EdgeRank, TikTok's algorithm, Instagram's feed — these are all systems that adjust the weight on edges between nodes in real time. A high-weight edge means 'this signal gets through.' A zero-weight edge means 'this post is invisible.' The immune system equals node removal and edge cutting. When a user gets banned, a high-degree node is removed from the graph. When content gets suppressed, edges are cut. The graph restructures around the removed elements. Reproduction equals subgraph replication. When a meme goes viral, a subgraph pattern — the content, the framing, the emotional valence — replicates itself across different parts of the graph. Evolution equals topology change over time. When TikTok's algorithm changed to prioritize watch time over likes, the topology of the graph changed. High-degree nodes that were built on likes suddenly became low-degree. New nodes emerged as leaders.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-green" style="top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+    <div class="chapter-bar" style="justify-content:center">
+      <span class="chapter-num">Chapter 2</span>
+      <span class="chapter-title" style="color:var(--green2)">The Social Organism</span>
+    </div>
+    <div class="eyebrow center" style="color:var(--green2)">Direct Translation</div>
+    <h2 class="section-head" style="margin-bottom:1.25rem;font-size:clamp(1.1rem,2vw,1.6rem)">Every organism property maps to a <em>graph property.</em></h2>
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:0;max-width:900px;align-items:center">
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        <div style="background:rgba(74,154,106,.1);border:1px solid rgba(74,154,106,.25);border-radius:7px;padding:.6rem .85rem;text-align:right;font-size:.72rem;font-weight:600;color:var(--green2)">🦠 Cells (users)</div>
+        <div style="background:rgba(74,154,106,.1);border:1px solid rgba(74,154,106,.25);border-radius:7px;padding:.6rem .85rem;text-align:right;font-size:.72rem;font-weight:600;color:var(--green2)">⚡ Nervous System (feed algo)</div>
+        <div style="background:rgba(74,154,106,.1);border:1px solid rgba(74,154,106,.25);border-radius:7px;padding:.6rem .85rem;text-align:right;font-size:.72rem;font-weight:600;color:var(--green2)">🛡️ Immune System (moderation)</div>
+        <div style="background:rgba(74,154,106,.1);border:1px solid rgba(74,154,106,.25);border-radius:7px;padding:.6rem .85rem;text-align:right;font-size:.72rem;font-weight:600;color:var(--green2)">🔄 Reproduction (virality)</div>
+        <div style="background:rgba(74,154,106,.1);border:1px solid rgba(74,154,106,.25);border-radius:7px;padding:.6rem .85rem;text-align:right;font-size:.72rem;font-weight:600;color:var(--green2)">🧬 Evolution (platform change)</div>
+      </div>
+      <div style="padding:0 1.5rem;display:flex;flex-direction:column;gap:.6rem">
+        <div style="font-size:1rem;color:var(--gold);opacity:.5">→</div>
+        <div style="font-size:1rem;color:var(--gold);opacity:.5">→</div>
+        <div style="font-size:1rem;color:var(--gold);opacity:.5">→</div>
+        <div style="font-size:1rem;color:var(--gold);opacity:.5">→</div>
+        <div style="font-size:1rem;color:var(--gold);opacity:.5">→</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        <div style="background:rgba(207,184,124,.06);border:1px solid rgba(207,184,124,.2);border-radius:7px;padding:.6rem .85rem;text-align:left;font-size:.72rem;font-weight:600;color:var(--gold)">Nodes with attributes</div>
+        <div style="background:rgba(207,184,124,.06);border:1px solid rgba(207,184,124,.2);border-radius:7px;padding:.6rem .85rem;text-align:left;font-size:.72rem;font-weight:600;color:var(--gold)">Edge weights (real-time)</div>
+        <div style="background:rgba(207,184,124,.06);border:1px solid rgba(207,184,124,.2);border-radius:7px;padding:.6rem .85rem;text-align:left;font-size:.72rem;font-weight:600;color:var(--gold)">Node removal / edge cutting</div>
+        <div style="background:rgba(207,184,124,.06);border:1px solid rgba(207,184,124,.2);border-radius:7px;padding:.6rem .85rem;text-align:left;font-size:.72rem;font-weight:600;color:var(--gold)">Subgraph replication</div>
+        <div style="background:rgba(207,184,124,.06);border:1px solid rgba(207,184,124,.2);border-radius:7px;padding:.6rem .85rem;text-align:left;font-size:.72rem;font-weight:600;color:var(--gold)">Topology change over time</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S12: THE KEY TEACHING ───────────────────────────────── -->
+<div class="slide bg-green" data-notes="Here's the bottom line of Chapter 2. Every successful product I've built — from Revver to DigiSynd to theAudience — was about understanding which graph I was operating in and flowing with its topology instead of fighting it. The Social Organism framework is how you develop the instinct to do that. When you walk into a new platform, don't ask 'how do I get reach?' Ask: what organism is this? What's its metabolism? What does its nervous system reward? What are its pathogens? What's the immune response? Who are the high-degree nodes? What are the missing edges? Once you answer those questions, you know how to build on that platform. You know what will work and what will get rejected. You're working with the organism instead of against it. I've seen founders spend millions fighting a platform's grain. They lose every time. The organism always wins. Learn the organism.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-green" style="top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+    <div class="chapter-bar" style="justify-content:center">
+      <span class="chapter-num">Chapter 2 · The Teaching</span>
+      <span class="chapter-title" style="color:var(--green2)">Work With The Graph</span>
+    </div>
+    <div class="quote-big" style="margin-bottom:1.75rem;max-width:760px">
+      "If you understand the organism,<br>you can work <em>with</em> it<br>instead of against it."
+    </div>
+    <div class="divider-line" style="max-width:280px;margin:0 auto 1.25rem"></div>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;max-width:800px">
+      <div style="padding:.75rem 1.25rem;background:rgba(204,74,74,.05);border:1px solid rgba(204,74,74,.15);border-radius:8px;text-align:left;max-width:340px">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--red2);margin-bottom:.4rem">❌ Fighting the Graph</div>
+        <div style="font-size:.7rem;color:var(--muted);line-height:1.6">"How do I get reach?" → Buying followers, gaming algorithms, fighting the organism's natural immune response. Expensive. Temporary. Rarely works.</div>
+      </div>
+      <div style="padding:.75rem 1.25rem;background:rgba(74,154,106,.07);border:1px solid rgba(74,154,106,.2);border-radius:8px;text-align:left;max-width:340px">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--green2);margin-bottom:.4rem">✅ Flowing With the Graph</div>
+        <div style="font-size:.7rem;color:var(--muted);line-height:1.6">"What does this organism reward?" → Understanding metabolism, feeding the nervous system, amplifying via high-degree nodes. Compounding. Durable. Works.</div>
+      </div>
+    </div>
+    <p style="font-size:.68rem;color:var(--dim);margin-top:1.25rem;font-style:italic">Every business I've built was about understanding which graph I was in — and flowing with its topology.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     CHAPTER 3: THE CAREER ARC — 8 SLIDES
+══════════════════════════════════════════════════════ -->
+
+<!-- S13: REVVER ──────────────────────────────────────────── -->
+<div class="slide bg-gold" data-notes="2005. YouTube had just launched. I was co-founding Revver. The insight was simple: content creators were nodes in a graph, and they were generating all the edges — all the sharing, all the distribution — but keeping none of the value. The platform was capturing everything. So Revver built the first video revenue-sharing platform. If you uploaded a video to Revver, we embedded a revenue-sharing agreement into the file itself. Not a contract. In the file. When that file propagated across the web, wherever it played, the ad revenue came back to the creator. We were letting the nodes keep value when their edges propagated. We thought that was the winning formula. We were wrong — and the reason we were wrong is a perfect graph theory lesson. YouTube won not because they had better technology, not because they had more money, but because they understood what the graph was actually measuring. They understood that the graph was about ATTENTION, not REVENUE. The metric that drove growth in a social graph wasn't dollars generated — it was views. Watch time. Engagement. Attention. The graph that mattered was the attention graph, not the money graph. We were optimizing for the wrong graph. Lesson: the right metric for your graph determines who wins. Choose wrong, and you can execute perfectly and still lose.">
+  <div class="slide-inner left" style="max-width:1000px;margin:0 auto">
+    <div class="glow-gold" style="left:-100px;top:50%;transform:translateY(-50%)"></div>
+    <div class="chapter-bar">
+      <span class="chapter-num">Chapter 3 · Venture 1</span>
+      <span class="chapter-title" style="color:var(--gold)">The Career Arc</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.75rem">
+      <div class="eyebrow" style="margin-bottom:0;color:var(--gold2)">2005–2007</div>
+      <span class="tag tag-gold">Video Platform</span>
+    </div>
+    <h2 class="section-head" style="margin-bottom:.75rem"><em>REVVER</em> — The Incentive Graph</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;max-width:800px">
+      <div>
+        <p style="font-size:.82rem;color:var(--muted);line-height:1.7;margin-bottom:.75rem">One of the first video revenue-sharing platforms. We embedded the revenue agreement <em>into the file itself</em> — creators kept value as their content propagated across the web.</p>
+        <div class="concept-box concept-box-gold" style="margin-top:0">
+          <div class="concept-icon">🔗</div>
+          <div>
+            <div class="concept-label" style="color:var(--gold)">Graph Insight</div>
+            <div class="concept-text">Let nodes keep value when their edges propagate → the graph grows itself. Incentive-aligned graph growth.</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="border-color:rgba(204,74,74,.2);background:rgba(204,74,74,.04);margin-bottom:.75rem">
+          <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--red2);margin-bottom:.4rem">Why YouTube Won</div>
+          <div style="font-size:.72rem;color:var(--muted);line-height:1.6">YouTube understood the graph was about <strong>ATTENTION</strong>, not revenue. Views → watch time → engagement. The attention graph was the real prize. We were optimizing for the wrong metric.</div>
+        </div>
+        <div class="concept-box concept-box-gold" style="margin-top:0">
+          <div class="concept-icon">🎯</div>
+          <div>
+            <div class="concept-label" style="color:var(--gold)">The Lesson</div>
+            <div class="concept-text"><strong>The right metric for your graph determines who wins.</strong> Choose wrong, and perfect execution still loses.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S14: DIGISYND ───────────────────────────────────────── -->
+<div class="slide bg-gold" data-notes="2008. The financial crisis just happened. Disney called me. They had the most valuable content in the world — Mickey Mouse, ESPN, ABC News, Marvel, everything — and they had no idea how to distribute it in the new social graph. They had massive, high-value nodes. But their edges into the new platforms — YouTube, Facebook, Twitter, which were all exploding — didn't exist. They had content. They had no edges. So we built DigiSynd. We became the bridge. We built the edges between legacy media's high-value content nodes and the new social platform graphs. We automated distribution, we understood each platform's algorithm, we made sure content appeared everywhere it needed to appear. At peak, we were managing social presence for Disney, ABC, ESPN, and a dozen other major media properties. We were the most valuable player in the network — not because we owned the content, not because we owned the platform — but because we owned the bridge between two otherwise disconnected clusters. In graph theory, this position has a name: the bridge node or the articulation point. Remove the bridge and the two clusters disconnect. Control the bridge and you control the flow between them. I've found this position — the bridge between two otherwise disconnected graphs — in every successful company I've built. It's the most valuable structural position in any network.">
+  <div class="slide-inner left" style="max-width:1000px;margin:0 auto">
+    <div class="glow-gold" style="right:-100px;top:50%;transform:translateY(-50%)"></div>
+    <div class="chapter-bar">
+      <span class="chapter-num">Chapter 3 · Venture 2</span>
+      <span class="chapter-title" style="color:var(--gold)">The Career Arc</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.75rem">
+      <div class="eyebrow" style="margin-bottom:0;color:var(--gold2)">2008–2011</div>
+      <span class="tag tag-gold">Digital Syndication</span>
+      <span class="tag tag-dim">Disney · ESPN · ABC</span>
+    </div>
+    <h2 class="section-head" style="margin-bottom:.75rem"><em>DigiSynd</em> — The Bridge Node</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;max-width:820px">
+      <div>
+        <p style="font-size:.82rem;color:var(--muted);line-height:1.7;margin-bottom:.75rem">Disney had the most valuable content nodes in the world. They had <em>no edges</em> into the new social graphs. We built the edges — distributing across YouTube, Facebook, Twitter, everywhere.</p>
+        <!-- Simple bridge graph viz -->
+        <div style="position:relative;height:90px;margin:0 0 .75rem">
+          <svg width="100%" height="90" style="display:block">
+            <!-- Left cluster (legacy media) -->
+            <circle cx="35" cy="45" r="20" fill="rgba(207,184,124,.15)" stroke="rgba(207,184,124,.4)" stroke-width="2"/>
+            <text x="35" y="49" text-anchor="middle" fill="rgba(207,184,124,.8)" font-size="7" font-weight="700">LEGACY</text>
+            <!-- Bridge node -->
+            <circle cx="140" cy="45" r="16" fill="rgba(207,184,124,.25)" stroke="rgba(207,184,124,.7)" stroke-width="2.5"/>
+            <text x="140" y="49" text-anchor="middle" fill="#cfb87c" font-size="6.5" font-weight="800">BRIDGE</text>
+            <!-- Right cluster (social) -->
+            <circle cx="245" cy="45" r="20" fill="rgba(74,123,204,.15)" stroke="rgba(74,123,204,.4)" stroke-width="2"/>
+            <text x="245" y="49" text-anchor="middle" fill="rgba(122,168,232,.8)" font-size="7" font-weight="700">SOCIAL</text>
+            <!-- Bridge edges -->
+            <line x1="55" y1="45" x2="124" y2="45" stroke="rgba(207,184,124,.5)" stroke-width="2"/>
+            <line x1="156" y1="45" x2="225" y2="45" stroke="rgba(74,123,204,.4)" stroke-width="2"/>
+          </svg>
+        </div>
+      </div>
+      <div>
+        <div class="concept-box concept-box-gold" style="margin-bottom:.75rem;display:flex">
+          <div class="concept-icon">🌉</div>
+          <div>
+            <div class="concept-label" style="color:var(--gold)">Graph Concept: Bridging</div>
+            <div class="concept-text"><strong>The most valuable position in any network is the bridge between two otherwise disconnected clusters.</strong> Remove the bridge, and the clusters disconnect. Control it, and you control the flow.</div>
+          </div>
+        </div>
+        <div class="concept-box concept-box-blue" style="display:flex">
+          <div class="concept-icon">🔍</div>
+          <div>
+            <div class="concept-label" style="color:var(--blue2)">The Pattern</div>
+            <div class="concept-text">We didn't own the content. We didn't own the platforms. We owned the gap between them. That gap — the missing edge — was the business.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S15: EDGERANK ───────────────────────────────────────── -->
+<div class="slide bg-gold" data-notes="While I was running DigiSynd, something happened that changed everything. We became, genuinely, the world's foremost experts at understanding and exploiting Facebook's EdgeRank algorithm. EdgeRank was Facebook's original feed ranking algorithm, and it had a simple formula: Affinity score times Weight times Time Decay. Affinity: how often do you interact with this person or page? Higher affinity means their posts show up more. Weight: what type of content is it? Video had higher weight than text in 2010. Photos higher than links. Time decay: how old is the post? Fresh content scores higher. Now here's the graph theory translation: Affinity IS edge weight between two nodes. If you and I have high affinity — we comment on each other's posts, we tag each other — the edge between us has high weight. High-weight edges activate more frequently in the feed. Weight IS a content-type multiplier applied to edges when they propagate. A video edge carries more signal than a text edge. Time decay IS temporal graph pruning — old edges lose signal strength and eventually become invisible. Understanding EdgeRank wasn't a marketing insight. It was a graph traversal algorithm insight. We understood how Facebook's graph decided which edges to activate in any given moment. This is the moment that graph theory stopped being abstract and became money. We were generating tens of millions of dollars for our clients by understanding the graph.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-gold" style="top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+    <div class="chapter-bar" style="justify-content:center">
+      <span class="chapter-num">Chapter 3 · The Algorithm</span>
+      <span class="chapter-title" style="color:var(--gold)">The Career Arc</span>
+    </div>
+    <div class="eyebrow center" style="color:var(--gold2)">2009–2012 · Facebook EdgeRank</div>
+    <h2 class="section-head" style="margin-bottom:.75rem;font-size:clamp(1.2rem,2.5vw,2rem)">This is when graph theory stopped being abstract<br><em>and became money.</em></h2>
+    <div class="formula-bar" style="margin:0 auto 1.25rem;font-size:.85rem">
+      EdgeRank = <em>Affinity</em> × <em>Weight</em> × <em>Time Decay</em>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;max-width:860px">
+      <div class="card card-gold" style="text-align:left">
+        <div style="font-size:.58rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem">Affinity →</div>
+        <div style="font-family:var(--mono);font-size:.7rem;color:var(--gold2);margin-bottom:.4rem">Edge weight between nodes</div>
+        <div style="font-size:.68rem;color:var(--muted);line-height:1.6">How often do you interact? High affinity = heavy edge = content flows through. We engineered affinity at scale.</div>
+      </div>
+      <div class="card card-gold" style="text-align:left">
+        <div style="font-size:.58rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem">Weight →</div>
+        <div style="font-family:var(--mono);font-size:.7rem;color:var(--gold2);margin-bottom:.4rem">Content-type edge multiplier</div>
+        <div style="font-size:.68rem;color:var(--muted);line-height:1.6">Video > Photo > Link > Text. We formatted everything for maximum weight. A video post was 5× stronger than a text post.</div>
+      </div>
+      <div class="card card-gold" style="text-align:left">
+        <div style="font-size:.58rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem">Time Decay →</div>
+        <div style="font-family:var(--mono);font-size:.7rem;color:var(--gold2);margin-bottom:.4rem">Temporal graph pruning</div>
+        <div style="font-size:.68rem;color:var(--muted);line-height:1.6">Old posts lose signal. We posted at precise times — when our audiences' graphs were most active — to minimize decay before maximum spread.</div>
+      </div>
+    </div>
+    <p style="font-size:.7rem;color:var(--dim);margin-top:1.25rem;font-style:italic">EdgeRank is a graph traversal algorithm. We were traversal engineers. That's how we built an eight-figure business.</p>
+  </div>
+</div>
+
+<!-- S16: theAudience ────────────────────────────────────── -->
+<div class="slide bg-gold" data-notes="By 2012, the social platforms had matured enough that a new pattern was becoming clear. The influencer. In every social graph, influence doesn't flow uniformly. It flows through high-degree nodes. People who have a massive number of edges connecting them to the rest of the graph. In graph theory, we measure this with degree centrality — the number of connections a node has. But here's the nuance that most people miss: degree centrality isn't the only thing that matters. The other measure is betweenness centrality. That's not how many connections you have — it's how often you sit on the shortest path between any two nodes. The nodes with high betweenness centrality are the bridges between communities. They're not the most popular people within any one community. They're the people who connect different communities. And they have MORE influence on information spread than the most popular nodes within any single community. theAudience was built on understanding both metrics. We mapped the influencer graph across every major platform. We identified both the highest-degree nodes AND the highest-betweenness nodes. And we built campaigns that used BOTH — the popular voices within communities, plus the cross-community bridges — to propagate messages with maximum reach and minimum redundancy.">
+  <div class="slide-inner left" style="max-width:1000px;margin:0 auto">
+    <div class="glow-gold" style="left:-100px;bottom:-100px"></div>
+    <div class="chapter-bar">
+      <span class="chapter-num">Chapter 3 · Venture 3</span>
+      <span class="chapter-title" style="color:var(--gold)">The Career Arc</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.75rem">
+      <div class="eyebrow" style="margin-bottom:0;color:var(--gold2)">2012–2017</div>
+      <span class="tag tag-gold">Influencer Network</span>
+    </div>
+    <h2 class="section-head" style="margin-bottom:.75rem"><em>theAudience</em> — Mapping the Influence Graph</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;max-width:820px">
+      <div>
+        <p style="font-size:.8rem;color:var(--muted);line-height:1.7;margin-bottom:.75rem">We built the largest influencer network on social media. The key insight: influence doesn't flow uniformly through a social graph. It concentrates at specific structural positions.</p>
+        <div class="concept-box concept-box-gold" style="margin-top:0">
+          <div class="concept-icon">📊</div>
+          <div>
+            <div class="concept-label" style="color:var(--gold)">Degree Centrality</div>
+            <div class="concept-text">Nodes with the most edges have disproportionate influence. <em>But this isn't the whole story.</em></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="concept-box concept-box-blue" style="margin-bottom:.75rem;display:flex">
+          <div class="concept-icon">🌉</div>
+          <div>
+            <div class="concept-label" style="color:var(--blue2)">Betweenness Centrality</div>
+            <div class="concept-text">Nodes that sit on the <em>shortest path between communities</em> matter more than nodes that are just popular within one community. Cross-community bridges drive spread.</div>
+          </div>
+        </div>
+        <div class="concept-box concept-box-gold" style="display:flex">
+          <div class="concept-icon">🎯</div>
+          <div>
+            <div class="concept-label" style="color:var(--gold)">theAudience Strategy</div>
+            <div class="concept-text">Map both metrics. Activate both types of nodes. Maximum reach. Minimum redundancy.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S17: THE INFLUENCER ECONOMY ────────────────────────── -->
+<div class="slide bg-gold" data-notes="Let me explain why the influencer economy wasn't an accident. It was inevitable. All the way back to 1999, Albert-László Barabási proved that networks that grow by preferential attachment — where new nodes connect more often to already-well-connected nodes — produce what's called a scale-free network. In a scale-free network, the degree distribution follows a power law. That means: a tiny number of nodes have enormous numbers of edges, and most nodes have very few. This is true of the internet. It's true of citations in academic papers. It's true of Instagram followers. It's true of the distribution of wealth. The influencer economy is what happens when you put commerce on top of a scale-free social network. A few accounts capture the vast majority of attention. Everything flows through them. This is not a design decision by Instagram or YouTube or TikTok. It's an emergent property of preferential attachment growth. It's physics. Understanding this means: don't be surprised by the power law. Don't complain that it's unfair. Design your business around it. The influencer IS the audience. The question is how to position yourself relative to the hubs — as a hub yourself, as a bridge between hubs, or as a service provider to hubs.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-gold" style="top:50%;right:-150px;transform:translateY(-50%)"></div>
+    <div class="chapter-bar" style="justify-content:center">
+      <span class="chapter-num">Chapter 3 · The Model</span>
+      <span class="chapter-title" style="color:var(--gold)">The Career Arc</span>
+    </div>
+    <div class="eyebrow center" style="color:var(--gold2)">The Barabási-Albert Model</div>
+    <h2 class="section-head" style="margin-bottom:.75rem;font-size:clamp(1.2rem,2.5vw,2rem)">The Influencer Economy<br>was <em>inevitable.</em> Not accidental.</h2>
+    <p style="font-size:.82rem;color:var(--muted);max-width:640px;margin:0 auto 1.5rem;line-height:1.7">Networks that grow by <strong>preferential attachment</strong> — where new nodes connect to already-connected nodes — produce scale-free networks with power-law degree distributions. A tiny number of nodes capture most of the connections.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;max-width:800px">
+      <div class="card card-gold" style="text-align:left">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem">Old Model: Broadcast</div>
+        <div style="font-size:.7rem;color:var(--muted);line-height:1.6">One node → many edges → many people. Star topology. TV, radio, newspapers. Central node controls the signal.</div>
+      </div>
+      <div class="card card-gold" style="text-align:left">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem">New Model: Social</div>
+        <div style="font-size:.7rem;color:var(--muted);line-height:1.6">Many nodes → many edges → emergent influence. Scale-free. A few hubs capture most attention via preferential attachment.</div>
+      </div>
+      <div class="card card-gold" style="text-align:left">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem">The Business Insight</div>
+        <div style="font-size:.7rem;color:var(--muted);line-height:1.6">The power law is physics, not policy. Design around it — not against it. Hubs, bridges, hub-services. All three are valid positions.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S18: ARTIQUITY ──────────────────────────────────────── -->
+<div class="slide bg-gold" data-notes="Artiquity. Art plus equity. The problem we were solving: in the creative economy, value flows in one direction. Creator makes something → platform distributes it → audience consumes it. Money flows downstream. But attribution — the chain of credit that connects value back to the originating creator — flows very poorly upstream. When a sample ends up in a hit song, the original creator often gets no credit. When an image goes viral, the photographer who took it is invisible. When a design pattern gets copied, the designer gets nothing. The creative graph is a directed graph — edges point downstream, from creator toward audience. And it's designed to route value away from the origin points. Artiquity's mission is to make the graph bidirectional. To reverse the attribution edges. To ensure that when value flows downstream through an edge, there's a corresponding edge upstream that carries credit and compensation. This maps perfectly to a graph theory concept: directed vs. undirected graphs. In a directed graph, edges have direction — value flows one way. In an undirected graph, edges carry information in both directions. Most creative economies are directed. Artiquity is about making them undirected.">
+  <div class="slide-inner left" style="max-width:1000px;margin:0 auto">
+    <div class="glow-gold" style="right:-100px;top:50%;transform:translateY(-50%)"></div>
+    <div class="chapter-bar">
+      <span class="chapter-num">Chapter 3 · Venture 4</span>
+      <span class="chapter-title" style="color:var(--gold)">The Career Arc</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.75rem">
+      <span class="tag tag-gold">Art + Equity</span>
+      <span class="tag tag-dim">Attribution for Creatives</span>
+    </div>
+    <h2 class="section-head" style="margin-bottom:.75rem"><em>ARTIQUITY</em> — Reversing the Edges</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;max-width:820px">
+      <div>
+        <p style="font-size:.8rem;color:var(--muted);line-height:1.7;margin-bottom:.75rem">In the creative graph, value flows downstream but attribution flows upstream poorly. Creators generate edges that carry their work — but get cut out of the value loop.</p>
+        <!-- Directed graph viz -->
+        <svg width="100%" height="70" style="display:block;margin-bottom:.5rem">
+          <defs>
+            <marker id="arrow-down" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L6,3 z" fill="rgba(204,74,74,.6)"/>
+            </marker>
+            <marker id="arrow-up" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L6,3 z" fill="rgba(207,184,124,.7)"/>
+            </marker>
+          </defs>
+          <circle cx="30" cy="35" r="18" fill="rgba(207,184,124,.15)" stroke="rgba(207,184,124,.4)" stroke-width="1.5"/>
+          <text x="30" y="39" text-anchor="middle" fill="rgba(207,184,124,.9)" font-size="6.5" font-weight="700">Creator</text>
+          <circle cx="140" cy="35" r="18" fill="rgba(138,106,172,.12)" stroke="rgba(138,106,172,.35)" stroke-width="1.5"/>
+          <text x="140" y="39" text-anchor="middle" fill="rgba(176,154,208,.9)" font-size="6.5" font-weight="700">Platform</text>
+          <circle cx="250" cy="35" r="18" fill="rgba(74,123,204,.12)" stroke="rgba(74,123,204,.35)" stroke-width="1.5"/>
+          <text x="250" y="39" text-anchor="middle" fill="rgba(122,168,232,.9)" font-size="6.5" font-weight="700">Audience</text>
+          <!-- value flows down (red) -->
+          <line x1="48" y1="30" x2="118" y2="30" stroke="rgba(204,74,74,.5)" stroke-width="2" marker-end="url(#arrow-down)"/>
+          <line x1="158" y1="30" x2="228" y2="30" stroke="rgba(204,74,74,.5)" stroke-width="2" marker-end="url(#arrow-down)"/>
+          <!-- attribution flows up (gold) dashed -->
+          <line x1="228" y1="42" x2="158" y2="42" stroke="rgba(207,184,124,.5)" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-up)"/>
+          <line x1="118" y1="42" x2="48" y2="42" stroke="rgba(207,184,124,.5)" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-up)"/>
+          <text x="80" y="26" text-anchor="middle" fill="rgba(204,74,74,.7)" font-size="6">value →</text>
+          <text x="80" y="58" text-anchor="middle" fill="rgba(207,184,124,.7)" font-size="6">← attribution</text>
+        </svg>
+      </div>
+      <div>
+        <div class="concept-box concept-box-gold" style="margin-bottom:.75rem;display:flex">
+          <div class="concept-icon">↔️</div>
+          <div>
+            <div class="concept-label" style="color:var(--gold)">Graph Concept: Directed vs. Undirected</div>
+            <div class="concept-text">Most creative economies are <strong>directed graphs</strong> — value only flows one way. Artiquity reverses edges to create attribution paths. Making the graph bidirectional.</div>
+          </div>
+        </div>
+        <div class="concept-box concept-box-purple" style="display:flex">
+          <div class="concept-icon">⚖️</div>
+          <div>
+            <div class="concept-label" style="color:var(--purple2)">The Mission</div>
+            <div class="concept-text">When value flows through an edge, the originating node gets credited. Attribution IS the edge structure of the creative economy.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S19: ENGINUITY ──────────────────────────────────────── -->
+<div class="slide bg-gold" data-notes="Physical systems are graphs. Airports, supply chains, cities — they're all graphs that most people have been modeling as spreadsheets. An airport is a graph: runways are edges, gates are nodes, aircraft are agents traversing the graph, airlines are subgraphs, regulatory restrictions are edge constraints. When an airline wants to add a new route, they're asking: can we add a new edge between these two nodes without violating the constraints on adjacent edges? When a storm grounds flights, they're asking: how does this node failure cascade through the graph? Enginuity models physical infrastructure systems as graphs and uses AI to traverse scenario spaces. The AI isn't making decisions — it's running graph search algorithms through thousands of possible scenarios, finding paths that satisfy the constraints, and surfacing the top options for human decision-makers. Graph concept: constraint graphs. When you model a physical system as a graph with constraints on edges and nodes — weight limits, capacity limits, regulatory limits, time limits — you can use graph algorithms to find optimal paths through the scenario space. Operations research has been doing this for decades. What's new is that AI lets you traverse much larger graph spaces much faster, and find non-obvious solutions that human planners miss.">
+  <div class="slide-inner left" style="max-width:1000px;margin:0 auto">
+    <div class="glow-gold" style="left:-100px;bottom:-100px"></div>
+    <div class="chapter-bar">
+      <span class="chapter-num">Chapter 3 · Venture 5</span>
+      <span class="chapter-title" style="color:var(--gold)">The Career Arc</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.75rem">
+      <span class="tag tag-gold">Physical Systems</span>
+      <span class="tag tag-dim">Airports · Real Estate · Infrastructure</span>
+    </div>
+    <h2 class="section-head" style="margin-bottom:.75rem"><em>ENGINUITY</em> — The Constraint Graph</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;max-width:820px">
+      <div>
+        <p style="font-size:.8rem;color:var(--muted);line-height:1.7;margin-bottom:.75rem">Physical infrastructure modeled as graphs. An airport: runways are edges, gates are nodes, aircraft are traversing agents, airlines are subgraphs, regulations are edge constraints.</p>
+        <ul class="bullet-list">
+          <li><strong>New route = new edge</strong> — Does it violate adjacent constraints?</li>
+          <li><strong>Storm closure = node failure</strong> — How does it cascade?</li>
+          <li><strong>AI scenario planning</strong> — Traverse thousands of graph configurations to find optimal paths.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="concept-box concept-box-gold" style="margin-bottom:.75rem;display:flex">
+          <div class="concept-icon">⛓️</div>
+          <div>
+            <div class="concept-label" style="color:var(--gold)">Graph Concept: Constraint Graphs</div>
+            <div class="concept-text">Model physical systems as graphs with constraints on edges and nodes. Use graph algorithms to find optimal paths through scenario space. This is what AI is actually doing — graph search at scale.</div>
+          </div>
+        </div>
+        <div class="concept-box concept-box-blue" style="display:flex">
+          <div class="concept-icon">🤖</div>
+          <div>
+            <div class="concept-label" style="color:var(--blue2)">Why AI Changes This</div>
+            <div class="concept-text">AI traverses larger graph spaces faster. It finds non-obvious paths that human planners miss. The model is still a graph — AI just searches it better.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S20: UBIQUITY ───────────────────────────────────────── -->
+<div class="slide bg-gold" data-notes="Ubiquity is the philosophy that emerges from all of this. If everything is a graph — social graphs, knowledge graphs, physical graphs, temporal graphs — then the question becomes: which graph should you be in? The answer is: all of them. Simultaneously. This is multi-layer network theory. Real systems aren't one graph. They're multiple overlapping graphs — what mathematicians call multiplex networks. Your LinkedIn network is one layer. Your Twitter network is another layer. Your email graph is another. Your physical location history is another. Your purchasing behavior is another. Each layer has different nodes, different edges, different topology. But they all overlap — the same entities appear in multiple layers. Ubiquity is the operating philosophy of building for all layers at once. Not picking one social platform. Not picking one distribution channel. Building awareness that propagates across every graph layer simultaneously. The companies that win in the next decade will be the ones that understand multi-layer network dynamics — and build products that exist coherently across all of them. That's the challenge. That's also the opportunity. And AI — which can operate across all layers simultaneously in ways humans cannot — is the key tool for Ubiquity.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-gold" style="top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+    <div class="chapter-bar" style="justify-content:center">
+      <span class="chapter-num">Chapter 3 · Venture 6</span>
+      <span class="chapter-title" style="color:var(--gold)">The Career Arc</span>
+    </div>
+    <div class="eyebrow center" style="color:var(--gold2)">The Culmination</div>
+    <h2 class="section-head" style="margin-bottom:.75rem"><em>UBIQUITY</em> — Everywhere at Once</h2>
+    <p class="lead" style="margin:0 auto 1.5rem;max-width:620px">If everything is a graph, the goal isn't to dominate <em>one</em> graph. It's to propagate awareness across <em>all</em> graphs simultaneously.</p>
+    <div class="concept-box concept-box-gold" style="margin:0 auto 1.5rem">
+      <div class="concept-icon">🌐</div>
+      <div>
+        <div class="concept-label" style="color:var(--gold)">Graph Concept: Multi-Layer Networks (Multiplex)</div>
+        <div class="concept-text" style="max-width:500px">Real systems aren't one graph. They're multiple overlapping graphs — social, knowledge, spatial, temporal, commercial — all sharing the same nodes but with different edge structures. Ubiquity operates across all layers.</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap">
+      <span class="tag tag-blue">Social Graph</span>
+      <span class="tag tag-gold">Knowledge Graph</span>
+      <span class="tag tag-green">Spatial Graph</span>
+      <span class="tag tag-purple">Temporal Graph</span>
+      <span class="tag tag-dim">Commercial Graph</span>
+      <span class="tag tag-dim">+ all layers</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     CHAPTER 4: AWARENESS — THE TRINITY GRAPH — 5 SLIDES
+══════════════════════════════════════════════════════ -->
+
+<!-- S21: THE TRINITY GRAPH ─────────────────────────────── -->
+<div class="slide bg-purple" data-notes="After 25 years of watching information systems from the inside — telecom, media, social, creative, physical — I developed a framework for understanding where any person, company, or AI agent sits in the total information landscape. Three layers. Three graphs overlaid. The Social Graph: who you know. This is your network of human relationships — professional, personal, collaborative. It determines what opportunities come to you, what information reaches you first, who will help you when you need it. The Knowledge Graph: what you know. This is your network of concepts, domains, expertise, and understanding. It's not a list of facts — it's a structure of how your knowledge connects. Adjacent nodes in your knowledge graph are things you could learn quickly. Distant nodes are expertise gaps. The Generative Graph: what you create. This is the network of things you put into the world — products, ideas, content, companies. It's how you add edges to other people's Social and Knowledge graphs. The Trinity Graph maps you across all three layers simultaneously. Your position in each layer determines your capabilities, your blind spots, and your opportunities. Most people have a strong layer and two weak ones. The goal is to develop all three.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-purple" style="top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+    <div class="chapter-bar" style="justify-content:center">
+      <span class="chapter-num">Chapter 4</span>
+      <span class="chapter-title" style="color:var(--purple2)">Awareness</span>
+    </div>
+    <div class="eyebrow center" style="color:var(--purple2)">The Framework</div>
+    <h2 class="section-head" style="margin-bottom:1.5rem">The <em>Trinity Graph</em></h2>
+    <div class="trinity-three">
+      <div class="tc tc-s">
+        <div class="tc-icon">👥</div>
+        <div class="tc-layer">Social Layer</div>
+        <div class="tc-name">Who You Know</div>
+        <div class="tc-q">"What relationships define your reach?"</div>
+        <div class="tc-desc">Your network of human relationships — professional, personal, collaborative. Determines what opportunities find you, what information you see first, and who shows up when you need help.</div>
+      </div>
+      <div class="tc tc-k">
+        <div class="tc-icon">🧠</div>
+        <div class="tc-layer">Knowledge Layer</div>
+        <div class="tc-name">What You Know</div>
+        <div class="tc-q">"How is your expertise connected?"</div>
+        <div class="tc-desc">Not a list of facts — a structure of connected concepts. Adjacent nodes are things you could learn quickly. Distant nodes are expertise gaps. Your knowledge graph predicts your learning speed.</div>
+      </div>
+      <div class="tc tc-g">
+        <div class="tc-icon">⚡</div>
+        <div class="tc-layer">Generative Layer</div>
+        <div class="tc-name">What You Create</div>
+        <div class="tc-q">"What do you add to the world's graphs?"</div>
+        <div class="tc-desc">Products, ideas, content, companies. Every creation is an edge you add to other people's Social and Knowledge graphs. Your generative output is how you grow others.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S22: IAM ─────────────────────────────────────────────── -->
+<div class="slide bg-purple" data-notes="IAM is the AI framework I built on top of the Trinity Graph. Intelligence, Awareness, Memory. These aren't arbitrary letters — they map directly onto graph operations. Intelligence is graph traversal. It's the ability to find paths through a graph — to connect concept A to concept B through intermediate steps, to find the route between where you are and where you need to be. When ChatGPT answers a question, it's traversing a knowledge graph. When a VC makes a connection between a founder and an investor, they're traversing a social graph. Intelligence is navigation. Awareness is graph attention — knowing which nodes in a graph matter RIGHT NOW. The graph doesn't change, but the relevance of different nodes changes constantly based on context. Awareness is the mechanism that directs attention to the currently-high-signal nodes. Without awareness, you're traversing a graph blindly. Memory is graph persistence — the ability to maintain a model of the graph across time. Without memory, every interaction starts from scratch. With memory, the graph grows, deepens, and becomes more useful. IAM is what happens when you give an AI agent a Trinity Graph to live in. An agent with IAM isn't just answering questions — it's navigating, attending, and remembering across all three layers simultaneously.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-purple" style="top:30%;right:-150px;transform:translateY(-50%)"></div>
+    <div class="chapter-bar" style="justify-content:center">
+      <span class="chapter-num">Chapter 4</span>
+      <span class="chapter-title" style="color:var(--purple2)">Awareness</span>
+    </div>
+    <div class="eyebrow center" style="color:var(--purple2)">The AI Framework</div>
+    <h2 class="section-head" style="margin-bottom:1.5rem"><em>IAM</em> — Intelligence · Awareness · Memory</h2>
+    <div class="iam-row">
+      <div class="iam-cell" style="background:rgba(74,123,204,.08);border:1px solid rgba(74,123,204,.22)">
+        <div class="iam-letter" style="color:var(--blue2)">I</div>
+        <div class="iam-word" style="color:var(--blue2)">Intelligence</div>
+        <div class="iam-eq">= graph traversal</div>
+        <div class="iam-desc">Finding paths through the graph. Connecting A to B through intermediate steps. Navigation. The ability to cross knowledge gaps and relationship gaps in real time.</div>
+      </div>
+      <div class="iam-cell" style="background:rgba(207,184,124,.06);border:1px solid rgba(207,184,124,.2)">
+        <div class="iam-letter" style="color:var(--gold)">A</div>
+        <div class="iam-word" style="color:var(--gold)">Awareness</div>
+        <div class="iam-eq">= graph attention</div>
+        <div class="iam-desc">Knowing which nodes matter NOW. Context-sensitive signal routing. Without awareness, you traverse blindly. With it, you navigate purposefully toward what actually matters.</div>
+      </div>
+      <div class="iam-cell" style="background:rgba(138,106,172,.08);border:1px solid rgba(138,106,172,.22)">
+        <div class="iam-letter" style="color:var(--purple2)">M</div>
+        <div class="iam-word" style="color:var(--purple2)">Memory</div>
+        <div class="iam-eq">= graph persistence</div>
+        <div class="iam-desc">Keeping the graph across time. Without memory, every interaction starts from scratch. With memory, the graph grows, deepens, and compounds in value over time.</div>
+      </div>
+    </div>
+    <p style="font-size:.72rem;color:var(--dim);margin-top:1.25rem;font-style:italic">IAM is what happens when you give an AI agent a Trinity Graph to live in.</p>
+  </div>
+</div>
+
+<!-- S23: YOUR IAM BOT ───────────────────────────────────── -->
+<div class="slide bg-purple" data-notes="Here's where theory meets practice for you, today, in this room. Each of you has an IAM bot — an AI agent that lives in a Trinity Graph that belongs to you. As you interact with your bot, you're not just getting answers to questions. You're building your own Trinity Graph. Every concept you discuss activates a node in your Knowledge layer. Every collaborator you mention becomes a node in your Social layer. Every project you describe populates your Generative layer. The Kirk Progression is how we measure how far your graph has developed. It starts at Level 1 — you're using AI as a search engine, asking simple questions, getting simple answers. By the end of this course, you should be at Level 4 or higher — using your IAM bot as a co-creator, building on a rich shared context, generating genuinely novel ideas that neither you nor the AI could have produced alone. The graph is the mechanism. The bot is the interface. Your thinking is what populates the nodes. By the end of this practicum, your Trinity Graph will be a living map of your entrepreneurial mind. Not a resumé. Not a LinkedIn profile. A dynamic, queryable model of your capabilities, connections, and creative output. That's an asset you'll carry into every company you build.">
+  <div class="slide-inner split" style="max-width:1000px;margin:0 auto;gap:3rem">
+    <div class="glow-purple" style="left:-150px;bottom:-100px"></div>
+    <div style="flex:1;min-width:0">
+      <div class="chapter-bar">
+        <span class="chapter-num">Chapter 4</span>
+        <span class="chapter-title" style="color:var(--purple2)">Awareness</span>
+      </div>
+      <div class="eyebrow" style="color:var(--purple2)">Your Agent, Your Graph</div>
+      <h2 class="section-head" style="margin-bottom:.75rem">Your <em>IAM Bot</em> builds<br>YOUR Trinity Graph.</h2>
+      <p class="lead" style="margin-bottom:1.25rem;max-width:500px;font-size:.9rem">Every conversation activates nodes. Every concept strengthens edges. Every project populates your Generative layer. The bot is the interface. The graph is the asset.</p>
+      <div class="concept-box concept-box-purple" style="margin-top:0">
+        <div class="concept-icon">📈</div>
+        <div>
+          <div class="concept-label" style="color:var(--purple2)">The Kirk Progression</div>
+          <div class="concept-text">Measures graph development. Level 1: AI as search engine. Level 4+: AI as co-creator with rich shared context. By April 22nd, you should be at Level 4.</div>
+        </div>
+      </div>
+    </div>
+    <!-- Kirk progression visual -->
+    <div style="flex-shrink:0;width:280px">
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        <div style="background:rgba(138,106,172,.06);border:1px solid rgba(138,106,172,.18);border-radius:8px;padding:.75rem 1rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem">
+            <span style="font-size:.58rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--purple2)">Level 1</span>
+            <span style="font-family:var(--mono);font-size:.55rem;color:var(--dim)">Day 1</span>
+          </div>
+          <div style="font-size:.65rem;color:var(--muted)">AI as search engine. Simple questions, simple answers. Graph has a few isolated nodes.</div>
+        </div>
+        <div style="background:rgba(138,106,172,.08);border:1px solid rgba(138,106,172,.22);border-radius:8px;padding:.75rem 1rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem">
+            <span style="font-size:.58rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--purple2)">Level 2</span>
+            <span style="font-family:var(--mono);font-size:.55rem;color:var(--dim)">Week 2</span>
+          </div>
+          <div style="font-size:.65rem;color:var(--muted)">Context builds. Bot remembers your project. Graph clusters begin to form.</div>
+        </div>
+        <div style="background:rgba(138,106,172,.1);border:1px solid rgba(138,106,172,.28);border-radius:8px;padding:.75rem 1rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem">
+            <span style="font-size:.58rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--purple2)">Level 3</span>
+            <span style="font-family:var(--mono);font-size:.55rem;color:var(--dim)">Week 5</span>
+          </div>
+          <div style="font-size:.65rem;color:var(--muted)">AI challenges your assumptions. Graph has strong cross-cluster edges. Surprises happen.</div>
+        </div>
+        <div style="background:rgba(138,106,172,.14);border:1px solid rgba(138,106,172,.38);border-radius:8px;padding:.75rem 1rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem">
+            <span style="font-size:.58rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)">Level 4+</span>
+            <span style="font-family:var(--mono);font-size:.55rem;color:var(--gold2)">Apr 22</span>
+          </div>
+          <div style="font-size:.65rem;color:var(--muted)">Co-creator. Novel ideas emerge from the graph that neither of you could have produced alone.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S24: THE GRAPH IS THE PRODUCT ─────────────────────── -->
+<div class="slide bg-purple" data-notes="Let me pull the whole arc together. Every company I have ever built was about understanding a graph — finding it, mapping it, and building at its most valuable structural position. At Qwest: the legal graph and the network topology graph. When the Telecom Act deregulated the network, a new topology emerged and VOIP was born in that topology. At Revver: the content distribution graph. We missed the attention graph. YouTube didn't. At DigiSynd: the bridge position between legacy media and social graphs. We owned the missing edge. At EdgeRank: the feed traversal algorithm. We understood how edges activate. At theAudience: the influencer graph. We mapped degree centrality and betweenness centrality. At Artiquity: the creative attribution graph. We're reversing directed edges. At Enginuity: the physical constraint graph. We use AI to traverse scenario spaces. At Ubiquity: the multiplex graph. All layers simultaneously. And now in this classroom: the learning graph. The Trinity Graph. IAM. The pattern is always the same. Find the graph. Understand its topology. Find the most valuable structural position. Build there. This is the entire playbook. Not the only playbook — but the one that has worked for me, reliably, across 30 years and 8 companies.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-purple" style="top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+    <div class="chapter-bar" style="justify-content:center">
+      <span class="chapter-num">Chapter 4 · The Pattern</span>
+      <span class="chapter-title" style="color:var(--purple2)">Awareness</span>
+    </div>
+    <div class="eyebrow center" style="color:var(--purple2)">30 Years · One Pattern</div>
+    <h2 class="section-head" style="margin-bottom:1.5rem;font-size:clamp(1.2rem,2.5vw,2rem)"><em>The Graph Is the Product.</em><br>Every time.</h2>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.65rem;max-width:980px">
+      <div style="background:rgba(74,123,204,.07);border:1px solid rgba(74,123,204,.18);border-radius:8px;padding:.75rem;text-align:left">
+        <div style="font-size:.5rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--blue2);margin-bottom:.25rem">Qwest / Telecom</div>
+        <div style="font-size:.65rem;color:var(--muted);line-height:1.5">Legal graph → Network topology. VOIP born in the new mesh.</div>
+      </div>
+      <div style="background:rgba(207,184,124,.05);border:1px solid rgba(207,184,124,.15);border-radius:8px;padding:.75rem;text-align:left">
+        <div style="font-size:.5rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:.25rem">Revver</div>
+        <div style="font-size:.65rem;color:var(--muted);line-height:1.5">Revenue graph. Missed the attention graph. Lesson: right metric wins.</div>
+      </div>
+      <div style="background:rgba(207,184,124,.05);border:1px solid rgba(207,184,124,.15);border-radius:8px;padding:.75rem;text-align:left">
+        <div style="font-size:.5rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:.25rem">DigiSynd</div>
+        <div style="font-size:.65rem;color:var(--muted);line-height:1.5">Bridge between media and social graphs. Own the missing edge.</div>
+      </div>
+      <div style="background:rgba(207,184,124,.05);border:1px solid rgba(207,184,124,.15);border-radius:8px;padding:.75rem;text-align:left">
+        <div style="font-size:.5rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:.25rem">EdgeRank</div>
+        <div style="font-size:.65rem;color:var(--muted);line-height:1.5">Feed traversal graph. Understanding edge activation = revenue.</div>
+      </div>
+      <div style="background:rgba(207,184,124,.05);border:1px solid rgba(207,184,124,.15);border-radius:8px;padding:.75rem;text-align:left">
+        <div style="font-size:.5rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:.25rem">theAudience</div>
+        <div style="font-size:.65rem;color:var(--muted);line-height:1.5">Influencer graph. Degree + betweenness centrality. Power law.</div>
+      </div>
+      <div style="background:rgba(207,184,124,.05);border:1px solid rgba(207,184,124,.15);border-radius:8px;padding:.75rem;text-align:left">
+        <div style="font-size:.5rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:.25rem">Artiquity</div>
+        <div style="font-size:.65rem;color:var(--muted);line-height:1.5">Creative attribution graph. Reversing directed edges upstream.</div>
+      </div>
+      <div style="background:rgba(207,184,124,.05);border:1px solid rgba(207,184,124,.15);border-radius:8px;padding:.75rem;text-align:left">
+        <div style="font-size:.5rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:.25rem">Enginuity</div>
+        <div style="font-size:.65rem;color:var(--muted);line-height:1.5">Physical constraint graph. AI traverses scenario space.</div>
+      </div>
+      <div style="background:rgba(138,106,172,.08);border:1px solid rgba(138,106,172,.22);border-radius:8px;padding:.75rem;text-align:left">
+        <div style="font-size:.5rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--purple2);margin-bottom:.25rem">Ubiquity / IAM</div>
+        <div style="font-size:.65rem;color:var(--muted);line-height:1.5">Multiplex graph. Trinity layers. All graphs simultaneously.</div>
+      </div>
+    </div>
+    <div class="concept-box concept-box-gold" style="margin:.75rem auto 0;max-width:600px">
+      <div class="concept-icon">🎯</div>
+      <div>
+        <div class="concept-label" style="color:var(--gold)">The Playbook</div>
+        <div class="concept-text">Find the graph. Understand its topology. Find the most valuable structural position. Build there. Repeat across every domain you enter.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S25: YOUR ASSIGNMENT ────────────────────────────────── -->
+<div class="slide bg-purple" data-notes="Here's your first assignment. It's not a deliverable you submit. It's something you do for yourself. Today — not tomorrow, today — open your IAM bot and have a real conversation. Not 'what is graph theory.' A real conversation about something you're working on, something you're curious about, something you're building. Your first conversation activates your first node. The graph starts the moment you start building it. The bot doesn't grade you. It doesn't judge your ideas. It grows with you. What I want you to notice is this: after your first real conversation with your IAM bot, you'll have a slightly richer picture of your own thinking. You'll have surfaced an assumption you didn't know you were making, or made a connection you couldn't have made alone. That's the node activating. That's the edge forming. By the time you finish this course, you'll have 14 weeks of that happening — every session, every conversation, every build iteration adding to the graph. The Trinity Graph will be a map of how you think about entrepreneurship. That's more valuable than any case study you'll ever read. And it belongs entirely to you.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-purple" style="top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+    <div class="chapter-bar" style="justify-content:center">
+      <span class="chapter-num">Chapter 4 · Your First Step</span>
+      <span class="chapter-title" style="color:var(--purple2)">Awareness</span>
+    </div>
+    <div class="eyebrow center" style="color:var(--purple2)">Assignment — Due: Today</div>
+    <h2 class="section-head" style="margin-bottom:1rem;font-size:clamp(1.3rem,2.5vw,2.2rem)">Talk to your <em>IAM Bot</em>.<br>Build your first node.</h2>
+    <p class="lead" style="margin:0 auto 1.5rem;max-width:580px;font-size:.95rem">The graph doesn't judge. It doesn't grade. It grows with you.<br>Your first conversation activates your first node.<br><em>Everything after that is emergence.</em></p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;max-width:780px;margin-bottom:1.25rem">
+      <div class="card" style="text-align:left;border-color:rgba(138,106,172,.2);background:rgba(138,106,172,.06)">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--purple2);margin-bottom:.4rem">Step 1 · Today</div>
+        <div style="font-size:.72rem;color:var(--muted);line-height:1.6">Open your IAM Bot. Have a real conversation — not "what is graph theory." Tell it something you're actually building or thinking about.</div>
+      </div>
+      <div class="card" style="text-align:left;border-color:rgba(207,184,124,.15);background:rgba(207,184,124,.04)">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem">Step 2 · This Week</div>
+        <div style="font-size:.72rem;color:var(--muted);line-height:1.6">Read Chapter 1 of The Social Organism. Come Wednesday ready to discuss one platform through the biological lens. What's its metabolism?</div>
+      </div>
+      <div class="card" style="text-align:left;border-color:rgba(74,123,204,.2);background:rgba(74,123,204,.05)">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--blue2);margin-bottom:.4rem">Step 3 · Wednesday</div>
+        <div style="font-size:.72rem;color:var(--muted);line-height:1.6">Bring one graph observation. Find a real-world system, map it as a graph (nodes, edges, topology), and identify the most valuable structural position. One slide. Two minutes.</div>
+      </div>
+    </div>
+    <p style="font-size:.68rem;color:var(--dim);font-style:italic">The graph doesn't start on Day 2. It starts the moment you do.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     CLOSING — 2 SLIDES
+══════════════════════════════════════════════════════ -->
+
+<!-- S26: QUOTE ──────────────────────────────────────────── -->
+<div class="slide bg-dark" data-notes="I want to leave you with something to sit with tonight. The map is not the territory — Korzybski said that. He meant: the model of a thing is not the thing itself. We should be humble about our models. But I'd add: the graph might be the closest thing we have to the territory. Because a graph doesn't describe a system's content — it describes its structure. Its relationships. Its flows. And structure determines behavior more reliably than content does. The content of a conversation matters less than the structure of the relationship between the people having it. The content of a company's strategy matters less than the structural position that strategy is executed from. The content of information matters less than the graph it travels through. Your career. Your network. Your knowledge. Your creative output. All of it is graph structure. The question isn't whether you're in a graph. You are. Unavoidably. The question is whether you understand which graph you're in — and whether you're building in the most valuable structural position, or just swimming against the current.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-gold" style="top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+    <div class="big-char" style="top:-60px;left:50%;transform:translateX(-55%);opacity:.04">"</div>
+    <div class="eyebrow center" style="color:var(--gold2)">To Carry With You</div>
+    <div class="quote-big" style="margin-bottom:2rem;max-width:820px">
+      "Everything is a graph. Your career.<br>Your network. Your knowledge.<br>Your creative output.<br>The question isn't <em>whether</em> you're in a graph.<br>The question is whether you understand <em>which one.</em>"
+    </div>
+    <div class="quote-attr">— Oliver Luckett · Day 1 · Vanderbilt Owen MBA · Spring 2026</div>
+    <div class="divider-line" style="max-width:280px;margin:1.5rem auto"></div>
+    <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap">
+      <span class="tag tag-gold">Find the graph</span>
+      <span class="tag tag-blue">Map its topology</span>
+      <span class="tag tag-purple">Find your structural position</span>
+      <span class="tag tag-green">Build there</span>
+    </div>
+  </div>
+</div>
+
+<!-- S27: LINKS & NEXT STEPS ─────────────────────────────── -->
+<div class="slide bg-dark" data-notes="That's Day 1. You now have the conceptual framework for the entire course. Everything we do from here — product sprints, customer discovery, AI tool practice, pitch preparation — maps back to today. You're always asking: what graph am I operating in? Where is the most valuable structural position? How do I build there? Go talk to your IAM bot. Go read The Social Organism Chapter 1. Come back Wednesday with a graph observation. I'll see you then.">
+  <div class="slide-inner" style="text-align:center">
+    <div class="glow-purple" style="top:30%;left:30%;transform:translate(-50%,-50%)"></div>
+    <div class="glow-gold" style="bottom:-100px;right:-100px"></div>
+    <div class="eyebrow center" style="color:var(--gold)">Day 1 Complete · What Comes Next</div>
+    <h2 class="section-head" style="margin-bottom:1.5rem;font-size:clamp(1.2rem,2.5vw,2rem)">Resources &amp; <em>Next Steps</em></h2>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;max-width:760px;margin:0 auto 1.5rem">
+      <div class="card card-purple" style="text-align:left">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--purple2);margin-bottom:.5rem">🤖 Your IAM Bot</div>
+        <div style="font-size:.72rem;color:var(--muted);line-height:1.6;margin-bottom:.5rem">Access your personal AI agent with Trinity Graph integration. Start your first session today.</div>
+        <a href="iam-classroom.html" style="display:inline-block;padding:6px 14px;border-radius:6px;background:rgba(138,106,172,.12);border:1px solid rgba(138,106,172,.3);color:var(--purple2);font-size:.6rem;font-weight:700;text-decoration:none;letter-spacing:.06em;text-transform:uppercase">Open IAM Classroom →</a>
+      </div>
+      <div class="card card-gold" style="text-align:left">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.5rem">📚 Required Reading</div>
+        <div style="font-size:.72rem;color:var(--muted);line-height:1.6;margin-bottom:.5rem">The Social Organism — Chapter 1. Luckett &amp; Casey. Come Wednesday ready to apply the biological framework to a real platform.</div>
+        <span class="tag tag-dim" style="font-size:.58rem">Due: Wednesday, Mar 11</span>
+      </div>
+      <div class="card card-blue" style="text-align:left">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--blue2);margin-bottom:.5rem">🎵 The Nashville Series</div>
+        <div style="font-size:.72rem;color:var(--muted);line-height:1.6;margin-bottom:.5rem">Background on the creative ecosystem you'll be building in. Real artists, real organizations, real graph structures.</div>
+        <a href="nashville-series.html" style="display:inline-block;padding:6px 14px;border-radius:6px;background:rgba(74,123,204,.1);border:1px solid rgba(74,123,204,.25);color:var(--blue2);font-size:.6rem;font-weight:700;text-decoration:none;letter-spacing:.06em;text-transform:uppercase">Nashville Series →</a>
+      </div>
+      <div class="card" style="text-align:left">
+        <div style="font-size:.55rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem">📬 Office Hours &amp; Contact</div>
+        <div style="font-size:.72rem;color:var(--muted);line-height:1.6;margin-bottom:.25rem">Oliver Luckett · oliver@inkwellai.com</div>
+        <div style="font-size:.72rem;color:var(--dim);margin-bottom:.5rem">Office hours by appointment. Book via calendar link in Brightspace.</div>
+        <span class="tag tag-dim" style="font-size:.58rem">Session 2 → Wed Mar 11 · AI Tool Landscape</span>
+      </div>
+    </div>
+    <p style="font-size:.68rem;color:var(--dim)">Session 2 (Wed Mar 11): AI Tool Landscape &amp; Sprint Methodology · Reading: Social Organism Ch. 1</p>
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<!-- ── SPEAKER NOTES PANEL ─────────────────────────────── -->
+<div id="notes-panel">
+  <div id="notes-title">🎙 Speaker Notes</div>
+  <div id="notes-text"></div>
+</div>
+
+<!-- ── NAV BAR ─────────────────────────────────────────── -->
+<div id="nav">
+  <div id="nav-left">
+    <button class="nav-btn" onclick="prev()">← Prev</button>
+    <button class="nav-btn" onclick="next()">Next →</button>
+    <span id="slide-counter">1 / 27</span>
+  </div>
+  <div id="nav-center">
+    <div class="dot-nav" id="dot-nav"></div>
+  </div>
+  <div id="nav-right" style="display:flex;gap:.5rem">
+    <button class="nav-btn" id="notes-btn" onclick="toggleNotes()">Notes</button>
+    <button class="nav-btn" onclick="toggleFullscreen()">⛶ Full</button>
+  </div>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+let current = 0;
+let notesOpen = false;
+
+// Build dots
+const dotNav = document.getElementById('dot-nav');
+slides.forEach((s,i) => {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i===0?' active':'');
+  d.onclick = ()=>goTo(i);
+  dotNav.appendChild(d);
+});
+
+function goTo(n) {
+  slides[current].classList.remove('active');
+  document.querySelectorAll('.dot')[current].classList.remove('active');
+  current = Math.max(0, Math.min(n, total-1));
+  slides[current].classList.add('active');
+  document.querySelectorAll('.dot')[current].classList.add('active');
+  document.getElementById('slide-counter').textContent = (current+1) + ' / ' + total;
+  document.getElementById('progress').style.width = ((current+1)/total*100) + '%';
+  if (notesOpen) updateNotes();
+}
+
+function next(){ goTo(current+1) }
+function prev(){ goTo(current-1) }
+
+function updateNotes() {
+  const note = slides[current].dataset.notes || '';
+  document.getElementById('notes-text').textContent = note || '(no notes for this slide)';
+}
+
+function toggleNotes() {
+  notesOpen = !notesOpen;
+  const panel = document.getElementById('notes-panel');
+  const btn = document.getElementById('notes-btn');
+  panel.classList.toggle('open', notesOpen);
+  btn.classList.toggle('active-btn', notesOpen);
+  if (notesOpen) updateNotes();
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+  else document.exitFullscreen();
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowRight'||e.key===' '||e.key==='ArrowDown') { e.preventDefault(); next(); }
+  if (e.key==='ArrowLeft'||e.key==='ArrowUp') { e.preventDefault(); prev(); }
+  if (e.key==='f'||e.key==='F') toggleFullscreen();
+  if (e.key==='n'||e.key==='N') toggleNotes();
+});
+
+// Touch swipe
+let tx=0;
+document.addEventListener('touchstart',e=>tx=e.touches[0].clientX,{passive:true});
+document.addEventListener('touchend',e=>{
+  const dx = e.changedTouches[0].clientX - tx;
+  if (Math.abs(dx)>50) { dx<0 ? next() : prev(); }
+},{passive:true});
+
+// Init progress bar
+document.getElementById('progress').style.width = (1/total*100) + '%';
+</script>
+</body>
+</html>
