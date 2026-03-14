@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0e1a">
+<title>VanderBot Mobile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0e1a;
+  --surface:#12162a;
+  --card:rgba(26,31,53,0.7);
+  --border:rgba(255,255,255,0.08);
+  --border-hover:rgba(255,255,255,0.15);
+  --green:#00ff88;
+  --green-dim:rgba(0,255,136,0.12);
+  --blue:#4facfe;
+  --blue-dim:rgba(79,172,254,0.12);
+  --purple:#aa66ff;
+  --purple-dim:rgba(170,102,255,0.12);
+  --cyan:#00d4ff;
+  --cyan-dim:rgba(0,212,255,0.12);
+  --gold:#d4af37;
+  --red:#ff4455;
+  --text:#e8e8f0;
+  --dim:#666688;
+  --muted:#44445a;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  min-height:100dvh;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+input,textarea{font-size:16px!important;}
+button{min-height:44px;font-family:inherit;}
+
+/* ── APP SHELL ── */
+.app{
+  max-width:430px;
+  margin:0 auto;
+  min-height:100dvh;
+  display:flex;
+  flex-direction:column;
+  position:relative;
+}
+
+/* ── SCREENS ── */
+.screen{display:none;flex:1;flex-direction:column;overflow:hidden;}
+.screen.active{display:flex;}
+
+/* ── NAV BAR ── */
+.nav-bar{
+  position:fixed;bottom:0;left:0;right:0;
+  max-width:430px;margin:0 auto;
+  height:64px;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-around;
+  padding-bottom:env(safe-area-inset-bottom,8px);
+  z-index:100;
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+}
+.nav-item{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:6px 20px;border-radius:12px;cursor:pointer;
+  transition:all 0.2s;
+}
+.nav-item .ni{font-size:22px;transition:transform 0.2s;}
+.nav-item .nl{font-size:10px;font-weight:600;letter-spacing:0.3px;}
+.nav-item.active .ni{transform:scale(1.1);}
+.nav-item.active .nl{color:var(--green);}
+.nav-item:not(.active) .ni,.nav-item:not(.active) .nl{color:var(--dim);}
+.nav-item:active{transform:scale(0.95);}
+
+/* ── TOP BAR ── */
+.top-bar{
+  height:56px;
+  background:var(--surface);
+  display:flex;align-items:center;
+  padding:0 16px;gap:12px;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+  flex-shrink:0;
+}
+.top-bar .back{
+  width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  border-radius:10px;cursor:pointer;font-size:20px;color:var(--text);
+  transition:background 0.2s;
+}
+.top-bar .back:active{background:rgba(255,255,255,0.05);}
+.top-bar h2{font-size:17px;font-weight:600;}
+
+/* ── GLASS CARD ── */
+.glass{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  transition:all 0.2s;
+  cursor:pointer;
+}
+.glass:active{transform:scale(0.98);border-color:var(--border-hover);}
+
+/* ═══════════════════════════════════
+   HOME SCREEN
+   ═══════════════════════════════════ */
+.home-scroll{
+  flex:1;overflow-y:auto;padding:20px 20px 84px;
+  -webkit-overflow-scrolling:touch;
+}
+.home-header h1{font-size:28px;font-weight:700;letter-spacing:-0.5px;}
+.home-header p{font-size:13px;color:var(--dim);margin-top:2px;}
+
+.quick-actions{display:flex;gap:10px;margin-top:20px;}
+.qa{
+  flex:1;
+  border-radius:14px;
+  padding:16px 6px;
+  text-align:center;
+  cursor:pointer;
+  border:1px solid var(--border);
+  transition:all 0.2s;
+}
+.qa:active{transform:scale(0.95);}
+.qa .icon{font-size:22px;}
+.qa .label{font-size:10px;margin-top:6px;font-weight:600;letter-spacing:0.3px;}
+.qa.green{background:var(--green-dim);}.qa.green .icon,.qa.green .label{color:var(--green);}
+.qa.blue{background:var(--blue-dim);}.qa.blue .icon,.qa.blue .label{color:var(--blue);}
+.qa.purple{background:var(--purple-dim);}.qa.purple .icon,.qa.purple .label{color:var(--purple);}
+.qa.cyan{background:var(--cyan-dim);}.qa.cyan .icon,.qa.cyan .label{color:var(--cyan);}
+
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-top:24px;margin-bottom:10px;}
+.section-header h3{font-size:15px;font-weight:600;}
+.section-header a{font-size:12px;color:var(--green);text-decoration:none;font-weight:500;}
+
+.list-item{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px;margin-bottom:8px;
+}
+.li-icon{font-size:18px;flex-shrink:0;}
+.li-info{flex:1;min-width:0;}
+.li-title{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.li-meta{font-size:11px;color:var(--dim);margin-top:2px;display:flex;gap:6px;align-items:center;}
+.li-meta .live{color:var(--green);}
+.li-arrow{color:var(--muted);font-size:16px;}
+
+.empty-state{text-align:center;padding:60px 20px;}
+.empty-state .emoji{font-size:52px;}
+.empty-state .msg{color:var(--dim);margin-top:12px;font-size:14px;}
+
+/* ═══════════════════════════════════
+   CHAT SCREEN
+   ═══════════════════════════════════ */
+.chat-messages{
+  flex:1;overflow-y:auto;padding:16px 16px 8px;
+  display:flex;flex-direction:column;gap:10px;
+  -webkit-overflow-scrolling:touch;
+}
+.bubble{
+  max-width:82%;
+  padding:10px 14px;
+  font-size:13.5px;
+  line-height:1.55;
+  animation:fadeUp 0.25s ease;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.bubble.user{
+  align-self:flex-end;
+  background:var(--green-dim);
+  border:1px solid rgba(0,255,136,0.15);
+  border-radius:18px 18px 4px 18px;
+}
+.bubble.bot{
+  align-self:flex-start;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px 18px 18px 4px;
+}
+.bubble b{color:var(--green);}
+.typing-dots{color:var(--green);font-size:18px;letter-spacing:3px;animation:pulse 1.2s infinite;}
+@keyframes pulse{0%,100%{opacity:0.3;}50%{opacity:1;}}
+
+.chat-input-bar{
+  background:var(--surface);
+  padding:8px 12px;
+  padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));
+  display:flex;align-items:flex-end;gap:8px;
+  border-top:1px solid rgba(255,255,255,0.05);
+  flex-shrink:0;
+}
+.attach-btn{
+  width:40px;height:40px;display:flex;align-items:center;justify-content:center;
+  font-size:20px;color:var(--dim);cursor:pointer;border:none;background:none;
+  border-radius:10px;transition:background 0.2s;flex-shrink:0;
+}
+.attach-btn:active{background:rgba(255,255,255,0.05);}
+.chat-input{
+  flex:1;
+  background:rgba(255,255,255,0.04);
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:10px 16px;
+  color:var(--text);
+  font-size:14px;
+  outline:none;
+  resize:none;
+  min-height:40px;
+  max-height:120px;
+  line-height:1.4;
+  transition:border-color 0.2s;
+}
+.chat-input:focus{border-color:rgba(0,255,136,0.3);}
+.chat-input::placeholder{color:var(--dim);}
+.send-btn{
+  width:40px;height:40px;
+  background:var(--green);
+  border:none;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;
+  transition:all 0.2s;
+  color:var(--bg);font-size:18px;font-weight:700;
+}
+.send-btn:disabled{opacity:0.3;cursor:default;}
+.send-btn:not(:disabled):active{transform:scale(0.9);}
+
+/* ═══════════════════════════════════
+   FILES SCREEN
+   ═══════════════════════════════════ */
+.files-scroll{flex:1;overflow-y:auto;padding:0 16px 84px;-webkit-overflow-scrolling:touch;}
+.filters{display:flex;gap:8px;padding:12px 0;overflow-x:auto;}
+.chip{
+  padding:7px 16px;border-radius:20px;font-size:12px;font-weight:600;
+  border:1px solid var(--border);background:var(--card);color:var(--dim);
+  cursor:pointer;white-space:nowrap;transition:all 0.2s;letter-spacing:0.3px;
+}
+.chip:active{transform:scale(0.95);}
+.chip.active{background:var(--green-dim);color:var(--green);border-color:rgba(0,255,136,0.25);}
+
+.file-item{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px;margin-bottom:8px;
+}
+.file-icon{font-size:22px;flex-shrink:0;}
+.file-info{flex:1;min-width:0;}
+.file-title{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.file-meta{font-size:11px;color:var(--dim);margin-top:3px;display:flex;gap:8px;align-items:center;}
+.file-meta .live{color:var(--green);}
+
+/* ── DOC DETAIL ── */
+.doc-detail{padding:20px;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:84px;}
+.doc-title{font-size:20px;font-weight:700;margin-bottom:4px;}
+.doc-meta-line{font-size:12px;color:var(--dim);margin-bottom:16px;}
+.doc-actions{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.doc-btn{
+  padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;
+  border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:6px;
+  transition:all 0.2s;
+}
+.doc-btn:active{transform:scale(0.95);}
+.doc-btn.primary{background:var(--green);color:var(--bg);border-color:var(--green);}
+.doc-btn.open{background:transparent;color:var(--cyan);border-color:rgba(0,212,255,0.3);}
+.doc-btn.danger{background:transparent;color:var(--red);border-color:rgba(255,68,85,0.3);}
+.doc-content-preview{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:16px;font-size:13px;line-height:1.6;color:rgba(232,232,240,0.75);
+  white-space:pre-wrap;
+}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);
+  background:var(--green);color:var(--bg);padding:10px 20px;border-radius:12px;
+  font-size:13px;font-weight:600;z-index:200;
+  transition:transform 0.3s ease;pointer-events:none;
+}
+.toast.show{transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- ═══ TOAST ═══ -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══ HOME ═══ -->
+<div class="screen active" id="screen-home">
+  <div class="home-scroll">
+    <div class="home-header">
+      <h1>VanderBot</h1>
+      <p>Your AI workspace</p>
+    </div>
+
+    <div class="quick-actions">
+      <div class="qa green" onclick="newChat()"><div class="icon">💬</div><div class="label">New Chat</div></div>
+      <div class="qa blue" onclick="createDoc('doc')"><div class="icon">📄</div><div class="label">Document</div></div>
+      <div class="qa purple" onclick="createDoc('deck')"><div class="icon">📊</div><div class="label">Deck</div></div>
+      <div class="qa cyan" onclick="createDoc('page')"><div class="icon">🌐</div><div class="label">Page</div></div>
+    </div>
+
+    <div class="section-header">
+      <h3>Recent Chats</h3>
+      <a href="#" onclick="navTo('chat');return false;">See all</a>
+    </div>
+    <div id="home-chats"></div>
+
+    <div class="section-header">
+      <h3>Recent Files</h3>
+      <a href="#" onclick="navTo('files');return false;">See all</a>
+    </div>
+    <div id="home-files"></div>
+  </div>
+</div>
+
+<!-- ═══ CHAT ═══ -->
+<div class="screen" id="screen-chat">
+  <div class="top-bar">
+    <div class="back" onclick="navTo('home')">‹</div>
+    <h2 id="chat-title">Chat</h2>
+  </div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <div class="chat-input-bar">
+    <button class="attach-btn" onclick="toast('📷 Image picker')">🖼️</button>
+    <textarea class="chat-input" id="chat-input" placeholder="Message VanderBot…" rows="1"
+      oninput="autoGrow(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
+    <button class="send-btn" id="send-btn" onclick="sendMsg()" disabled>↑</button>
+  </div>
+</div>
+
+<!-- ═══ FILES ═══ -->
+<div class="screen" id="screen-files">
+  <div class="top-bar">
+    <div class="back" onclick="navTo('home')">‹</div>
+    <h2>Files</h2>
+  </div>
+  <div class="files-scroll">
+    <div class="filters" id="file-filters"></div>
+    <div id="file-list"></div>
+  </div>
+</div>
+
+<!-- ═══ DOC DETAIL ═══ -->
+<div class="screen" id="screen-doc">
+  <div class="top-bar">
+    <div class="back" onclick="navTo('files')">‹</div>
+    <h2>Document</h2>
+  </div>
+  <div class="doc-detail" id="doc-detail"></div>
+</div>
+
+<!-- ═══ NAV BAR ═══ -->
+<div class="nav-bar" id="nav-bar">
+  <div class="nav-item active" data-screen="home" onclick="navTo('home')">
+    <div class="ni">🏠</div><div class="nl">Home</div>
+  </div>
+  <div class="nav-item" data-screen="files" onclick="navTo('files')">
+    <div class="ni">📁</div><div class="nl">Files</div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ── STATE ──
+const state = {
+  chats: [
+    {id:'c1',title:'BackyardOne product email draft',time:'Mar 13, 3:08 PM',messages:[
+      {role:'user',text:'Draft an email about the BackyardOne product process for the Inkwell team'},
+      {role:'bot',text:'Here\'s the draft — shows both the product stages and the technical layers:\n\n<b>Subject:</b> BackyardOne — Product Process, Architecture & How to Get Involved\n\nTeam, I want to share a clearer outline of where we are with BackyardOne — both the product process and the underlying architecture…'},
+      {role:'user',text:'Add the IAM awareness model as the common foundation with Volvox'},
+      {role:'bot',text:'Updated. Added a new section after the Technical Architecture intro:\n\n<b>Common Foundation — IAM & Volvox</b>\n\nAll Inkwell Labs ventures are built on the Inkwell Awareness Model (IAM) and a common Knowledge Graph powered by Volvox. Rather than isolated data layers, IAM provides unified capabilities: awareness refraction, spiral pattern detection, C2PA provenance, vector search, and graph traversals shared across the portfolio via Neo4j.\n\nVolvox serves as the shared Knowledge Graph connecting all ventures. Knowledge compounds across the portfolio — every venture we build makes the others smarter.'}
+    ]},
+    {id:'c2',title:'Enginuity VNY scenario planning',time:'Mar 12, 11:22 AM',messages:[
+      {role:'user',text:'Build a scenario planner for VNY Hart Street lease'},
+      {role:'bot',text:'Built <b>vny-scenario.html</b> with 5 modules: Demand Oracle, Meridian risk mapping, CHORUS stakeholder analysis, ATLAS configuration scoring, and ORACLE decision synthesis.\n\n4 configurations scored: Full Jet FBO, Hybrid GA/Jet, eVTOL Hub, and Charter + MRO.\n\nKey risk: FAA Part 13/16 equal access grant obligations. Southwest Aviation (35yr tenant) class action threat is real.'}
+    ]},
+    {id:'c3',title:'Block BMOS venue intelligence',time:'Mar 11, 4:15 PM',messages:[
+      {role:'user',text:'Build a venue database for touring'},
+      {role:'bot',text:'Done. <b>bmos-venues.html</b> — 360 US live venues with operator filtering (Live Nation, AEG, MSG, OVG, Independent), capacity ranges, market grouping, and Gemini-powered tour routing.\n\nAlso seeded Neo4j with the full venue graph: 360 Venue nodes, 5 Operators, 5 Markets, 10 Vendors, plus The Weeknd Starboy World Tour 2026 relationships.'}
+    ]}
+  ],
+  docs: [
+    {id:'d1',title:'backyard-one.html',type:'page',version:3,date:'Mar 13',published:true,url:'https://revilopark.github.io/ontological-theatre/backyard-one.html',content:'<!DOCTYPE html>\n<html lang="en">\n<head>\n<title>BackyardOne — LA Real Estate Intelligence</title>\n...\n\nFull property lookup with LADBS permits, assessor records, ZIMAS zoning, parcel maps. Live Socrata API integration. Alert subscriptions for ownership changes and new permits.'},
+    {id:'d2',title:'vny-scenario.html',type:'page',version:2,date:'Mar 12',published:true,url:'https://revilopark.github.io/ontological-theatre/vny-scenario.html',content:'5-module Enginuity scenario planner for VNY Hart Street lease.\n\nModules: Demand Oracle, Meridian, CHORUS, ATLAS, ORACLE\n4 Configurations: Full Jet FBO, Hybrid, eVTOL Hub, Charter+MRO'},
+    {id:'d3',title:'Inkwell Labs Overview',type:'deck',version:2,date:'Mar 11',published:false,content:'Slide 1: Inkwell Labs — Building the Intelligence Layer\nSlide 2: Portfolio (BackyardOne, Artiquity, Enginuity, Block BMOS, Aura Health, Ubiquity)\nSlide 3: Common Foundation — IAM + Volvox Knowledge Graph\nSlide 4: Trinity Graph Architecture\nSlide 5: Team & Traction'},
+    {id:'d4',title:'BackyardOne Product Email',type:'doc',version:4,date:'Mar 13',published:false,content:'Subject: BackyardOne — Product Process, Architecture & How to Get Involved\n\nTeam, I want to share a clearer outline of where we are with BackyardOne…\n\nPhase 1: Product-Market Fit\nPhase 2: Launch Partners\nPhase 3: MVP Build\nPhase 4: Legal & Platform Readiness\n\nCommon Foundation — IAM & Volvox\nAll ventures built on shared Knowledge Graph…'},
+    {id:'d5',title:'OAHM Assessment Notes',type:'doc',version:1,date:'Feb 27',published:false,content:'Yoby Étienne — OAHM Platform\n\nAllostasis framework, 7-question client fit quiz, Content Studio, Movement Intelligence Engine.\n\nCamera-based biomechanical assessment using MediaPipe Pose.\n32-exercise repertoire with program builder.'},
+    {id:'d6',title:'wildling-series.html',type:'page',version:1,date:'Feb 27',published:true,url:'https://revilopark.github.io/ontological-theatre/wildling-series.html',content:'3-Part Editorial Series for Wildling Beauty\n\nPart I: The Science of the Stone\nPart II: The Ritual Is the Remedy\nPart III: The Future of Your Skin\n\nReal product images from Wildling Shopify CDN + YouTube embeds.'},
+    {id:'d7',title:'bmos-venues.html',type:'page',version:1,date:'Feb 27',published:true,url:'https://revilopark.github.io/ontological-theatre/bmos-venues.html',content:'360 US Live Performance Venues\n\nOperators: Live Nation (100), Independent (224), AEG (24), MSG (6), OVG (6)\nCapacity filtering, market grouping, Gemini tour routing.'}
+  ],
+  currentChat:null,
+  currentDoc:null,
+  fileFilter:'all',
+  activeScreen:'home'
+};
+
+// ── NAVIGATION ──
+function navTo(screen) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+screen).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const navItem = document.querySelector(`.nav-item[data-screen="${screen}"]`);
+  if(navItem) navItem.classList.add('active');
+  // Show/hide nav bar on chat
+  document.getElementById('nav-bar').style.display = (screen==='chat'||screen==='doc')?'none':'flex';
+  state.activeScreen = screen;
+  if(screen==='home') renderHome();
+  if(screen==='files') renderFiles();
+}
+
+// ── TOAST ──
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+// ── HOME ──
+function renderHome(){
+  const chatsEl = document.getElementById('home-chats');
+  chatsEl.innerHTML = state.chats.slice(0,3).map(c=>`
+    <div class="glass list-item" onclick="openChat('${c.id}')">
+      <span class="li-icon" style="color:var(--green)">💬</span>
+      <div class="li-info">
+        <div class="li-title">${c.title}</div>
+        <div class="li-meta">${c.time}</div>
+      </div>
+      <span class="li-arrow">›</span>
+    </div>
+  `).join('');
+
+  const filesEl = document.getElementById('home-files');
+  filesEl.innerHTML = state.docs.slice(0,4).map(d=>`
+    <div class="glass list-item" onclick="openDoc('${d.id}')">
+      <span class="li-icon" style="color:${typeColor(d.type)}">${typeIcon(d.type)}</span>
+      <div class="li-info">
+        <div class="li-title">${d.title}</div>
+        <div class="li-meta">
+          <span>${d.type.toUpperCase()}</span>
+          ${d.published?'<span class="live">● LIVE</span>':''}
+          <span>v${d.version}</span>
+        </div>
+      </div>
+      <span class="li-arrow">›</span>
+    </div>
+  `).join('');
+}
+
+// ── CHAT ──
+function openChat(id){
+  const chat = state.chats.find(c=>c.id===id);
+  if(!chat) return;
+  state.currentChat = chat;
+  document.getElementById('chat-title').textContent = chat.title.length>30 ? chat.title.slice(0,30)+'…' : chat.title;
+  renderMessages();
+  navTo('chat');
+  setTimeout(()=>{
+    const el = document.getElementById('chat-messages');
+    el.scrollTop = el.scrollHeight;
+  },50);
+}
+
+function newChat(){
+  const id = 'c'+Date.now();
+  const chat = {id,title:'New Chat',time:'Just now',messages:[]};
+  state.chats.unshift(chat);
+  openChat(id);
+}
+
+function renderMessages(){
+  const chat = state.currentChat;
+  if(!chat) return;
+  const el = document.getElementById('chat-messages');
+  if(chat.messages.length===0){
+    el.innerHTML = '<div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;"><div style="font-size:52px;">🐘</div><div style="color:var(--dim);margin-top:12px;font-size:15px;">What are we building?</div></div>';
+    return;
+  }
+  el.innerHTML = chat.messages.map(m=>`
+    <div class="bubble ${m.role==='user'?'user':'bot'}">${m.text}</div>
+  `).join('');
+}
+
+function autoGrow(el){
+  el.style.height='auto';
+  el.style.height=Math.min(el.scrollHeight,120)+'px';
+  document.getElementById('send-btn').disabled = el.value.trim()==='';
+}
+
+function sendMsg(){
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if(!text || !state.currentChat) return;
+
+  // Add user message
+  state.currentChat.messages.push({role:'user',text});
+  state.currentChat.title = state.currentChat.messages.length<=2 ? text.slice(0,50) : state.currentChat.title;
+  state.currentChat.time = 'Just now';
+  input.value='';
+  input.style.height='auto';
+  document.getElementById('send-btn').disabled=true;
+  renderMessages();
+
+  const el = document.getElementById('chat-messages');
+  el.scrollTop = el.scrollHeight;
+
+  // Simulate typing
+  const typingBubble = document.createElement('div');
+  typingBubble.className='bubble bot';
+  typingBubble.innerHTML='<span class="typing-dots">●●●</span>';
+  el.appendChild(typingBubble);
+  el.scrollTop = el.scrollHeight;
+
+  // Simulate response
+  setTimeout(()=>{
+    const responses = [
+      "Got it. Let me work on that.\n\nI'll draft something that captures the full scope — product process, technical layers, and how the team can get involved. Give me a moment.",
+      "Here's what I'd suggest:\n\n<b>1.</b> Start with the problem statement — what pain point are we solving?\n<b>2.</b> Layer in the technical architecture\n<b>3.</b> Show how IAM + Volvox connects everything\n<b>4.</b> Clear call to action for the team\n\nWant me to build this out?",
+      "Done. I've structured it across three sections:\n\n• <b>Product Process</b> — PMF → Partners → MVP → Legal\n• <b>Common Foundation</b> — IAM awareness model + Volvox Knowledge Graph\n• <b>Technical Architecture</b> — Data Layer → Intelligence Layer → Experience Layer\n\nShall I publish it or refine further?",
+      "That's a clean approach. The key insight is that all Inkwell ventures share the same graph infrastructure — what we build for one makes the others smarter.\n\nI'll incorporate that into the doc. Anything else to add?"
+    ];
+    const resp = responses[Math.floor(Math.random()*responses.length)];
+    state.currentChat.messages.push({role:'bot',text:resp});
+    renderMessages();
+    el.scrollTop = el.scrollHeight;
+  }, 1200 + Math.random()*800);
+}
+
+// ── FILES ──
+function renderFiles(){
+  const filters = document.getElementById('file-filters');
+  const types = [['all','All'],['doc','Docs'],['deck','Decks'],['page','Pages']];
+  filters.innerHTML = types.map(([k,v])=>`
+    <div class="chip ${state.fileFilter===k?'active':''}" onclick="setFilter('${k}')">${v}</div>
+  `).join('');
+
+  const list = document.getElementById('file-list');
+  const docs = state.fileFilter==='all' ? state.docs : state.docs.filter(d=>d.type===state.fileFilter);
+  list.innerHTML = docs.map(d=>`
+    <div class="glass file-item" onclick="openDoc('${d.id}')">
+      <span class="file-icon">${typeIcon(d.type)}</span>
+      <div class="file-info">
+        <div class="file-title">${d.title}</div>
+        <div class="file-meta">
+          <span>${d.type.toUpperCase()}</span>
+          <span>v${d.version}</span>
+          ${d.published?'<span class="live">● LIVE</span>':''}
+          <span>${d.date}</span>
+        </div>
+      </div>
+      <span style="color:var(--muted);font-size:16px;">›</span>
+    </div>
+  `).join('');
+}
+
+function setFilter(f){
+  state.fileFilter=f;
+  renderFiles();
+}
+
+function openDoc(id){
+  const doc = state.docs.find(d=>d.id===id);
+  if(!doc) return;
+  state.currentDoc = doc;
+  const el = document.getElementById('doc-detail');
+  el.innerHTML = `
+    <div class="doc-title">${doc.title}</div>
+    <div class="doc-meta-line">${doc.type.toUpperCase()} · v${doc.version} · ${doc.date}</div>
+    <div class="doc-actions">
+      ${doc.type==='page'?`<button class="doc-btn primary" onclick="publishDoc()">🚀 ${doc.published?'Republish':'Publish'}</button>`:''}
+      ${doc.published&&doc.url?`<button class="doc-btn open" onclick="window.open('${doc.url}','_blank')">🔗 View Live</button>`:''}
+      <button class="doc-btn danger" onclick="toast('🗑️ Delete confirmation would appear')">🗑️ Delete</button>
+    </div>
+    <div class="doc-content-preview">${doc.content}</div>
+  `;
+  navTo('doc');
+}
+
+function publishDoc(){
+  if(!state.currentDoc) return;
+  toast('🚀 Published to GitHub Pages!');
+  state.currentDoc.published = true;
+}
+
+function createDoc(type){
+  const names = {doc:'Document',deck:'Deck',page:'Page'};
+  const id = 'd'+Date.now();
+  const doc = {id,title:`Untitled ${names[type]}`,type,version:1,date:'Just now',published:false,content:`New ${names[type]} — start editing here…`};
+  state.docs.unshift(doc);
+  openDoc(id);
+}
+
+// ── HELPERS ──
+function typeIcon(t){return{doc:'📄',deck:'📊',page:'🌐'}[t]||'📄';}
+function typeColor(t){return{doc:'var(--blue)',deck:'var(--purple)',page:'var(--cyan)'}[t]||'var(--blue)';}
+
+// ── INIT ──
+renderHome();
+</script>
+</body>
+</html>
