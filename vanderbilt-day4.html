@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Session 4 — Knowledge Graph Design | Vanderbilt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --blue-900:#0A2540;--blue-800:#0F3460;--blue-700:#1A5276;--blue-600:#2980B9;--blue-500:#4A9FD9;--blue-400:#6BB5E0;--blue-300:#8ECAE6;
+  --warm-100:#F5F0E8;--warm-200:#EDE5D4;--vand:#cfb87c;
+  --glass-bg:rgba(255,255,255,0.55);--glass-border:rgba(255,255,255,0.6);
+  --shadow-sm:0 4px 16px rgba(10,37,64,0.06);--shadow-md:0 8px 32px rgba(10,37,64,0.08);--shadow-lg:0 16px 48px rgba(10,37,64,0.12);
+  --font-display:'Playfair Display',Georgia,serif;--font-body:'Inter',system-ui,sans-serif;--font-mono:'SF Mono','Fira Code',monospace;
+  --green:#059669;--green-soft:rgba(5,150,105,0.08);--purple:#7c3aed;--purple-soft:rgba(124,58,237,0.08);
+  --orange:#ea580c;--orange-soft:rgba(234,88,12,0.08);--cyan:#0891b2;--cyan-soft:rgba(8,145,178,0.08);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:linear-gradient(180deg,#EBF5FB 0%,#FFFFFF 40%,#F5F0E8 100%);font-family:var(--font-body);color:var(--blue-900);}
+
+.deck{width:100%;height:100%;position:relative;}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:56px 64px 160px;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity 0.4s ease;background:linear-gradient(180deg,#EBF5FB 0%,#FFFFFF 40%,#F5F0E8 100%);}
+.slide.active{opacity:1;pointer-events:all;}
+.slide.center{justify-content:center;}
+
+.label{font-family:var(--font-body);font-size:11px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--blue-500);margin-bottom:12px;}
+h1,.h1{font-family:var(--font-display);font-size:clamp(36px,5vw,72px);font-weight:900;line-height:1.08;background:linear-gradient(135deg,#0F3460,#4A9FD9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+h2,.h2{font-family:var(--font-display);font-size:clamp(26px,3.5vw,48px);font-weight:700;line-height:1.15;color:var(--blue-900);}
+h3,.h3{font-family:var(--font-display);font-size:clamp(20px,2.5vw,32px);font-weight:600;line-height:1.25;color:var(--blue-800);}
+.subtitle{font-size:clamp(16px,2vw,22px);color:var(--blue-600);font-weight:400;line-height:1.5;margin-top:16px;max-width:720px;text-align:center;}
+
+.glass{background:var(--glass-bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--glass-border);border-radius:20px;box-shadow:var(--shadow-md);padding:32px;margin-top:24px;width:100%;max-width:860px;}
+.glass-sm{background:rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.5);border-radius:16px;padding:24px;box-shadow:var(--shadow-sm);}
+
+.content{width:100%;max-width:860px;}
+.content p,.content li{font-size:clamp(14px,1.5vw,17px);line-height:1.7;color:#3D3D56;}
+.content ul,.content ol{padding-left:24px;margin-top:12px;}
+.content li{margin-bottom:8px;}
+.content strong{color:var(--blue-900);}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:20px;}
+@media(max-width:768px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+.highlight{background:rgba(74,159,217,0.06);border-left:4px solid var(--blue-400);border-radius:0 12px 12px 0;padding:16px 20px;margin-top:16px;}
+.highlight p{font-size:14px;color:var(--blue-700);font-weight:500;}
+
+.big-num{font-family:var(--font-display);font-size:clamp(48px,8vw,96px);font-weight:900;background:linear-gradient(135deg,#0F3460,#4A9FD9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;}
+
+.quote{font-family:var(--font-display);font-size:clamp(22px,3vw,36px);font-style:italic;font-weight:400;color:var(--blue-800);line-height:1.4;max-width:720px;text-align:center;margin-top:24px;}
+.quote-attr{font-family:var(--font-body);font-size:14px;color:var(--blue-500);margin-top:12px;text-align:center;font-style:normal;font-weight:500;}
+
+.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:9999px;font-size:12px;font-weight:600;}
+.badge-what{background:rgba(52,152,219,0.12);color:#1a5276;}
+
+/* Code/graph blocks */
+.code-block{background:#0A2540;border-radius:14px;padding:24px;color:#8ECAE6;font-family:var(--font-mono);font-size:13px;line-height:1.7;overflow-x:auto;margin-top:16px;}
+.code-block .comment{color:#4A9FD9;}
+.code-block .keyword{color:#cfb87c;}
+.code-block .string{color:#059669;}
+
+/* Triple card */
+.triple{display:flex;align-items:center;gap:12px;padding:16px;background:rgba(255,255,255,0.5);border-radius:12px;border:1px solid rgba(255,255,255,0.5);margin-bottom:10px;}
+.triple .entity{background:rgba(41,128,185,0.1);color:var(--blue-700);padding:6px 12px;border-radius:8px;font-size:13px;font-weight:600;white-space:nowrap;}
+.triple .relation{color:var(--blue-500);font-size:12px;font-weight:500;white-space:nowrap;}
+
+/* Timeline */
+.timeline-item{display:flex;gap:16px;align-items:flex-start;margin-bottom:20px;}
+.timeline-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:6px;}
+.timeline-content h4{font-size:16px;font-weight:600;color:var(--blue-900);margin-bottom:4px;}
+.timeline-content p{font-size:14px;color:#555570;line-height:1.5;}
+
+.nav{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);display:flex;gap:12px;z-index:100;background:rgba(255,255,255,0.8);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.6);border-radius:16px;padding:8px 16px;box-shadow:var(--shadow-md);}
+.nav button{width:44px;height:44px;border:none;border-radius:10px;background:transparent;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.nav button:hover{background:rgba(41,128,185,0.08);}
+.nav button:active{transform:scale(0.92);}
+.nav .counter{font-size:13px;font-weight:600;color:var(--blue-600);display:flex;align-items:center;padding:0 8px;min-width:44px;justify-content:center;}
+
+@media(max-width:640px){.slide{padding:32px 20px 140px;}}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- SLIDE 1: Title -->
+<div class="slide center active" data-slide="1">
+  <div class="label">Session 4 · Wednesday, March 18, 2026</div>
+  <h1 style="text-align:center;">Knowledge<br>Graph Design</h1>
+  <p class="subtitle">From conversations to structure. Entities, facts, triples — building the WHAT layer of the Trinity Graph.</p>
+  <div style="display:flex;gap:8px;margin-top:24px;">
+    <span class="badge badge-what">WHAT Layer</span>
+  </div>
+</div>
+
+<!-- SLIDE 2: Agenda -->
+<div class="slide" data-slide="2">
+  <div class="label">Today's Session</div>
+  <h2>Agenda</h2>
+  <div class="glass content">
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:var(--blue-600);"></div>
+      <div class="timeline-content">
+        <h4>1. From WHO to WHAT — The Transition</h4>
+        <p>You've built the social layer. Now we structure what you know. The Knowledge Graph is where opinion becomes fact.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:var(--green);"></div>
+      <div class="timeline-content">
+        <h4>2. Entities, Facts, Triples</h4>
+        <p>The building blocks of knowledge. How to decompose any domain into structured, queryable, composable units.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:var(--purple);"></div>
+      <div class="timeline-content">
+        <h4>3. Building Your 100-Triple Graph</h4>
+        <p>Hands-on workshop: take your project and build a domain knowledge graph with at least 100 triples.</p>
+      </div>
+    </div>
+    <div class="timeline-item" style="margin-bottom:0;">
+      <div class="timeline-dot" style="background:var(--vand);"></div>
+      <div class="timeline-content">
+        <h4>4. The "What We Don't Know" Exercise</h4>
+        <p>The most important graph is the one that maps your ignorance. What's missing? Where are the gaps?</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3: WHO → WHAT -->
+<div class="slide center" data-slide="3">
+  <div class="label">The Transition</div>
+  <h1 style="text-align:center;">WHO → WHAT</h1>
+  <p class="subtitle">Week 1 was about people and connections.<br>Week 2 is about what those people know — and what they don't.</p>
+</div>
+
+<!-- SLIDE 4: Social vs Knowledge -->
+<div class="slide" data-slide="4">
+  <div class="label">Two Graph Layers</div>
+  <h2>Social Graph vs. Knowledge Graph</h2>
+  <div class="grid-2" style="width:100%;max-width:860px;">
+    <div class="glass-sm" style="border-top:4px solid var(--green);">
+      <h3 style="font-size:18px;margin-bottom:12px;">🟢 Social Graph (WHO)</h3>
+      <p style="font-size:14px;color:#555570;line-height:1.6;"><strong>Nodes:</strong> People, organizations, teams</p>
+      <p style="font-size:14px;color:#555570;line-height:1.6;"><strong>Edges:</strong> knows, works_with, reports_to, trusts</p>
+      <p style="font-size:14px;color:#555570;line-height:1.6;"><strong>Question it answers:</strong> Who is connected to whom?</p>
+      <p style="font-size:14px;color:#555570;line-height:1.6;margin-top:8px;"><em>You built this in Week 1.</em></p>
+    </div>
+    <div class="glass-sm" style="border-top:4px solid var(--blue-600);">
+      <h3 style="font-size:18px;margin-bottom:12px;">🔵 Knowledge Graph (WHAT)</h3>
+      <p style="font-size:14px;color:#555570;line-height:1.6;"><strong>Nodes:</strong> Entities, concepts, facts, documents</p>
+      <p style="font-size:14px;color:#555570;line-height:1.6;"><strong>Edges:</strong> is_a, has_property, causes, requires, contradicts</p>
+      <p style="font-size:14px;color:#555570;line-height:1.6;"><strong>Question it answers:</strong> What do we know — and how sure are we?</p>
+      <p style="font-size:14px;color:#555570;line-height:1.6;margin-top:8px;"><em>We build this today.</em></p>
+    </div>
+  </div>
+  <div class="highlight" style="max-width:860px;width:100%;margin-top:24px;">
+    <p>💡 The power comes from connecting them. When a <strong>person</strong> in your social graph is linked to a <strong>fact</strong> in your knowledge graph, you know not just WHAT is true but WHO knows it — and how much you trust that source.</p>
+  </div>
+</div>
+
+<!-- SLIDE 5: What is a Triple -->
+<div class="slide" data-slide="5">
+  <div class="label">The Building Block</div>
+  <h2>What Is a Triple?</h2>
+  <div class="glass content">
+    <p>Every fact in a knowledge graph is stored as a <strong>triple</strong>: a subject, a predicate (relationship), and an object.</p>
+    <div style="text-align:center;margin:24px 0 16px;">
+      <div class="big-num" style="font-size:36px;">Subject → Predicate → Object</div>
+    </div>
+    <div class="triple"><span class="entity">BackyardOne</span><span class="relation">— solves →</span><span class="entity">LA Property Research Fragmentation</span></div>
+    <div class="triple"><span class="entity">LADBS</span><span class="relation">— publishes →</span><span class="entity">Permit Data</span></div>
+    <div class="triple"><span class="entity">Permit Data</span><span class="relation">— requires →</span><span class="entity">Socrata API Access</span></div>
+    <div class="triple"><span class="entity">BackyardOne</span><span class="relation">— competes_with →</span><span class="entity">ZIMAS Direct Access</span></div>
+    <div class="triple"><span class="entity">LA Developer</span><span class="relation">— needs →</span><span class="entity">Zoning + Permit Cross-Reference</span></div>
+    <div class="highlight">
+      <p>💡 Five triples. Already you can traverse: BackyardOne → solves → fragmentation, and the same developer who needs zoning data also needs permits — which come from LADBS via Socrata. The graph connects what spreadsheets can't.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6: Entity Types -->
+<div class="slide" data-slide="6">
+  <div class="label">Taxonomy</div>
+  <h2>Entity Types for Your Project</h2>
+  <div class="glass content">
+    <p>Every domain has the same core entity categories. Map yours:</p>
+    <div class="grid-3" style="margin-top:16px;">
+      <div class="glass-sm" style="text-align:center;">
+        <div style="font-size:28px;margin-bottom:8px;">👤</div>
+        <h4 style="font-size:14px;">Actors</h4>
+        <p style="font-size:12px;color:#555570;">People, orgs, systems that DO things</p>
+      </div>
+      <div class="glass-sm" style="text-align:center;">
+        <div style="font-size:28px;margin-bottom:8px;">📦</div>
+        <h4 style="font-size:14px;">Assets</h4>
+        <p style="font-size:12px;color:#555570;">Products, data, content, IP</p>
+      </div>
+      <div class="glass-sm" style="text-align:center;">
+        <div style="font-size:28px;margin-bottom:8px;">⚡</div>
+        <h4 style="font-size:14px;">Events</h4>
+        <p style="font-size:12px;color:#555570;">Things that happen with timestamps</p>
+      </div>
+      <div class="glass-sm" style="text-align:center;">
+        <div style="font-size:28px;margin-bottom:8px;">📐</div>
+        <h4 style="font-size:14px;">Concepts</h4>
+        <p style="font-size:12px;color:#555570;">Abstract ideas, frameworks, categories</p>
+      </div>
+      <div class="glass-sm" style="text-align:center;">
+        <div style="font-size:28px;margin-bottom:8px;">📏</div>
+        <h4 style="font-size:14px;">Constraints</h4>
+        <p style="font-size:12px;color:#555570;">Rules, regulations, limits, dependencies</p>
+      </div>
+      <div class="glass-sm" style="text-align:center;">
+        <div style="font-size:28px;margin-bottom:8px;">❓</div>
+        <h4 style="font-size:14px;">Unknowns</h4>
+        <p style="font-size:12px;color:#555570;">Gaps, assumptions, open questions</p>
+      </div>
+    </div>
+    <div class="highlight">
+      <p>💡 The <strong>Unknowns</strong> category is the most important. A graph that only maps what you know is dangerous. A graph that maps what you <em>don't</em> know is strategic.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 7: Neo4j Example -->
+<div class="slide" data-slide="7">
+  <div class="label">In Practice</div>
+  <h2>What This Looks Like in Neo4j</h2>
+  <div class="glass content">
+    <p>Your VanderBot stores every triple in a Neo4j graph database. Here's the Cypher query language:</p>
+    <div class="code-block">
+<span class="comment">// Create entities</span>
+<span class="keyword">CREATE</span> (b:Venture {name: <span class="string">"BackyardOne"</span>, stage: <span class="string">"PMF"</span>})
+<span class="keyword">CREATE</span> (l:DataSource {name: <span class="string">"LADBS"</span>, api: <span class="string">"Socrata"</span>})
+<span class="keyword">CREATE</span> (z:DataSource {name: <span class="string">"ZIMAS"</span>, type: <span class="string">"Zoning"</span>})
+<span class="keyword">CREATE</span> (d:Actor {name: <span class="string">"LA Developer"</span>, segment: <span class="string">"Target User"</span>})
+
+<span class="comment">// Create relationships (triples)</span>
+<span class="keyword">CREATE</span> (b)-[:INGESTS]->(l)
+<span class="keyword">CREATE</span> (b)-[:INGESTS]->(z)
+<span class="keyword">CREATE</span> (d)-[:NEEDS]->(b)
+<span class="keyword">CREATE</span> (l)-[:PUBLISHES]->(p:Asset {name: <span class="string">"Permit Records"</span>})
+
+<span class="comment">// Query: What does a developer need?</span>
+<span class="keyword">MATCH</span> (d:Actor)-[:NEEDS]->(v)-[:INGESTS]->(s)
+<span class="keyword">RETURN</span> d.name, v.name, collect(s.name)
+    </div>
+    <p style="margin-top:16px;">You don't need to write Cypher. Your VanderBot does this for you. But understanding the structure helps you ask better questions.</p>
+  </div>
+</div>
+
+<!-- SLIDE 8: Workshop Title -->
+<div class="slide center" data-slide="8">
+  <div class="label">Workshop</div>
+  <h1 style="text-align:center;">Build Your<br>100-Triple Graph</h1>
+  <p class="subtitle">Open your VanderBot. You have 30 minutes. Build the knowledge graph for your project.</p>
+</div>
+
+<!-- SLIDE 9: Workshop Instructions -->
+<div class="slide" data-slide="9">
+  <div class="label">Workshop — 30 Minutes</div>
+  <h2>The 100-Triple Challenge</h2>
+  <div class="glass content">
+    <h3 style="font-size:18px;margin-bottom:16px;">Instructions</h3>
+    <ol>
+      <li><strong>Open VanderBot</strong> and tell it: "I want to build a knowledge graph for [your project]. Start with the core entities."</li>
+      <li><strong>Map your Actors</strong> — Who are the users? Partners? Competitors? Regulators?</li>
+      <li><strong>Map your Assets</strong> — What data, products, or IP exists? What are you building?</li>
+      <li><strong>Map your Constraints</strong> — What regulations, dependencies, or technical limits apply?</li>
+      <li><strong>Map your Unknowns</strong> — What do you not know yet? What assumptions are you making?</li>
+      <li><strong>Connect everything</strong> — The edges matter more than the nodes. How do entities relate?</li>
+    </ol>
+
+    <h3 style="font-size:18px;margin-top:24px;margin-bottom:12px;">Target: 100 Triples</h3>
+    <div class="grid-2">
+      <div class="glass-sm">
+        <p style="font-size:14px;"><strong>20 triples:</strong> You've listed some things</p>
+        <p style="font-size:14px;"><strong>50 triples:</strong> You have a real structure</p>
+        <p style="font-size:14px;"><strong>100 triples:</strong> You have a queryable knowledge base</p>
+        <p style="font-size:14px;"><strong>200+ triples:</strong> You have an intelligence system</p>
+      </div>
+      <div class="glass-sm">
+        <p style="font-size:14px;"><strong>Good triples:</strong></p>
+        <p style="font-size:13px;color:#555570;">BackyardOne → requires → LADBS API access</p>
+        <p style="font-size:13px;color:#555570;">Permit processing → takes → 4-6 months (LADBS)</p>
+        <p style="font-size:13px;color:#555570;">ADU market → unknown → conversion rate to paid</p>
+      </div>
+    </div>
+
+    <div class="highlight">
+      <p>🎯 <strong>Tip:</strong> Don't try to be comprehensive. Be specific. "BackyardOne needs data" is useless. "BackyardOne requires Socrata API rate limit of 1000 req/hr" is a real node.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 10: What We Don't Know -->
+<div class="slide center" data-slide="10">
+  <div class="label">The Hard Part</div>
+  <h1 style="text-align:center;">What We<br>Don't Know</h1>
+  <p class="subtitle">The most valuable part of your knowledge graph is the map of your ignorance.</p>
+</div>
+
+<!-- SLIDE 11: Unknown Framework -->
+<div class="slide" data-slide="11">
+  <div class="label">Risk Analysis</div>
+  <h2>Mapping Your Unknowns</h2>
+  <div class="glass content">
+    <p>For every project, there are four quadrants of knowledge:</p>
+    <div class="grid-2" style="margin-top:16px;">
+      <div class="glass-sm" style="border-left:4px solid var(--green);">
+        <h4 style="font-size:15px;margin-bottom:6px;">✅ Known Knowns</h4>
+        <p style="font-size:13px;color:#555570;">Facts in your graph. Verified, sourced.</p>
+        <p style="font-size:12px;color:#999;margin-top:4px;"><em>"LADBS publishes permit data via Socrata API"</em></p>
+      </div>
+      <div class="glass-sm" style="border-left:4px solid var(--blue-600);">
+        <h4 style="font-size:15px;margin-bottom:6px;">🔵 Known Unknowns</h4>
+        <p style="font-size:13px;color:#555570;">Questions you know to ask. Gaps you can name.</p>
+        <p style="font-size:12px;color:#999;margin-top:4px;"><em>"We don't know the conversion rate for property data → paid subscription"</em></p>
+      </div>
+      <div class="glass-sm" style="border-left:4px solid var(--orange);">
+        <h4 style="font-size:15px;margin-bottom:6px;">🟠 Unknown Knowns</h4>
+        <p style="font-size:13px;color:#555570;">Things you know but haven't structured. Tribal knowledge, intuition.</p>
+        <p style="font-size:12px;color:#999;margin-top:4px;"><em>"The team knows permit expediters use workarounds, but it's not documented"</em></p>
+      </div>
+      <div class="glass-sm" style="border-left:4px solid #dc2626;">
+        <h4 style="font-size:15px;margin-bottom:6px;">🔴 Unknown Unknowns</h4>
+        <p style="font-size:13px;color:#555570;">Risks you haven't imagined. This is where failure lives.</p>
+        <p style="font-size:12px;color:#999;margin-top:4px;"><em>"What if LADBS changes their API policy next month?"</em></p>
+      </div>
+    </div>
+    <div class="highlight">
+      <p>💡 <strong>Assignment:</strong> Your "What We Don't Know" risk analysis is about surfacing the blue and orange quadrants — and imagining the red. The graph should make ignorance visible, not hide it.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 12: Pod Check-in -->
+<div class="slide" data-slide="12">
+  <div class="label">Pod Status</div>
+  <h2>Quick Check-In: Where Are You?</h2>
+  <div class="glass content">
+    <p>Each pod: 2 minutes. Share with the class:</p>
+    <ol style="margin-top:16px;">
+      <li><strong>Project:</strong> What are you working on?</li>
+      <li><strong>Graph status:</strong> How many nodes/triples have you created?</li>
+      <li><strong>Biggest unknown:</strong> What's the one thing you most need to figure out?</li>
+      <li><strong>Help needed:</strong> Is there a connection, skill, or resource another pod might have?</li>
+    </ol>
+    <div class="highlight">
+      <p>💡 Listen to other pods. The graph is shared. If BackyardOne's data sources overlap with your project, that's a connection worth making.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 13: Due Before Next Session -->
+<div class="slide" data-slide="13">
+  <div class="label">Deliverables</div>
+  <h2>Due Before Session 5 (Monday)</h2>
+  <div class="glass content">
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:var(--blue-600);"></div>
+      <div class="timeline-content">
+        <h4>📐 Knowledge Architecture Document</h4>
+        <p>2–3 pages. Map your project's entity types, key relationships, and data sources. Include a visual graph diagram (hand-drawn is fine, or export from VanderBot). Submit to Brightspace.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:#dc2626;"></div>
+      <div class="timeline-content">
+        <h4>🔴 "What We Don't Know" Risk Analysis</h4>
+        <p>1–2 pages. Four-quadrant analysis for your project. At least 5 Known Unknowns and 3 possible Unknown Unknowns. This is the hard one — and the most valuable.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:var(--green);"></div>
+      <div class="timeline-content">
+        <h4>💬 VanderBot: 100-Triple Milestone</h4>
+        <p>Your project's knowledge graph should hit 100 triples by Monday. Ask your VanderBot: "How many triples do I have?" If you're under 100, keep going.</p>
+      </div>
+    </div>
+    <div class="timeline-item" style="margin-bottom:0;">
+      <div class="timeline-dot" style="background:var(--vand);"></div>
+      <div class="timeline-content">
+        <h4>📚 Read: Survey of Knowledge Graph Embedding Models</h4>
+        <p>Available on Brightspace. Focus on: what are embeddings, why do they matter for search and reasoning, how do they connect to the WHAT IF layer we're building toward.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 14: Close -->
+<div class="slide center" data-slide="14">
+  <div class="quote">"A fact without context is trivia.<br>A fact in a graph is intelligence."</div>
+  <div class="quote-attr">— Session 4 · Knowledge Graph Design</div>
+  <p style="margin-top:32px;font-size:14px;color:var(--blue-500);">Monday: Knowledge Graph cont. & Verification — we test what you've built</p>
+</div>
+
+</div>
+
+<!-- Nav -->
+<div class="nav" id="nav">
+  <button onclick="go(-1)">←</button>
+  <div class="counter"><span id="cur">1</span> / <span id="tot">14</span></div>
+  <button onclick="go(1)">→</button>
+</div>
+
+<script>
+let cur=1;
+const slides=document.querySelectorAll('.slide');
+const total=slides.length;
+document.getElementById('tot').textContent=total;
+function go(d){const n=cur+d;if(n<1||n>total)return;slides[cur-1].classList.remove('active');cur=n;slides[cur-1].classList.add('active');document.getElementById('cur').textContent=cur;}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' ')go(1);if(e.key==='ArrowLeft')go(-1);});
+let tx=0;
+document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50){dx<0?go(1):go(-1);}},{passive:true});
+</script>
+</body>
+</html>
