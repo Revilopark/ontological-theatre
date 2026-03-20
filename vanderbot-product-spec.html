@@ -1,0 +1,1945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VanderBot — Product Spec · UI/UX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN SYSTEM — Inkwell Light Glass Morphic
+   ============================================================ */
+:root {
+  --bg: #f0f2f5;
+  --surface: rgba(255,255,255,0.72);
+  --surface-hover: rgba(255,255,255,0.88);
+  --glass-border: rgba(255,255,255,0.6);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  --glass-shadow-lg: 0 20px 60px rgba(0,0,0,0.12);
+  --blur: blur(20px);
+  --ink-blue: #4f6df0;
+  --ink-blue-soft: rgba(79,109,240,0.08);
+  --vand-gold: #cfb87c;
+  --vand-gold-light: #e8d5a3;
+  --text-primary: #1a1a2e;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --border: rgba(0,0,0,0.06);
+  --grad-blue: linear-gradient(135deg, #667eea, #764ba2);
+  --grad-research: linear-gradient(135deg, #f093fb, #f5576c);
+  --grad-notebook: linear-gradient(135deg, #4facfe, #00f2fe);
+  --grad-infographic: linear-gradient(135deg, #43e97b, #38f9d7);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --spring: cubic-bezier(.34,1.56,.64,1);
+  --sidebar-width: 280px;
+  --content-max: 860px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+
+html { scroll-behavior: smooth; scroll-padding-top: 32px; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  line-height: 1.7;
+  font-size: 15px;
+  overflow-x: hidden;
+}
+
+/* ============================================================
+   GRADIENT MESH BACKGROUND + ANIMATED ORBS
+   ============================================================ */
+.bg-mesh {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(79,109,240,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 80% 20%, rgba(175,82,222,0.08) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 50% 90%, rgba(207,184,124,0.10) 0%, transparent 55%),
+    linear-gradient(135deg, #edf0f7 0%, #f0f2f5 40%, #f5f0fa 70%, #f0f5f0 100%);
+}
+
+.mesh-orb {
+  position: fixed; border-radius: 50%; filter: blur(80px); opacity: 0.35;
+  z-index: 0; pointer-events: none; animation: orbFloat 25s ease-in-out infinite;
+}
+.mesh-orb-1 {
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(79,109,240,0.25) 0%, transparent 70%);
+  top: -150px; left: -100px;
+}
+.mesh-orb-2 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(207,184,124,0.22) 0%, transparent 70%);
+  top: 40%; right: -120px; animation-delay: -8s;
+}
+.mesh-orb-3 {
+  width: 450px; height: 450px;
+  background: radial-gradient(circle, rgba(175,82,222,0.18) 0%, transparent 70%);
+  bottom: -80px; left: 25%; animation-delay: -16s;
+}
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(40px, -30px) scale(1.08); }
+  66% { transform: translate(-30px, 40px) scale(0.94); }
+}
+
+/* ============================================================
+   SIDEBAR NAVIGATION (Desktop)
+   ============================================================ */
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-width); z-index: 100;
+  background: rgba(255,255,255,0.60);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  border-right: 1px solid var(--border);
+  padding: 32px 0;
+  overflow-y: auto;
+  transition: transform 0.35s var(--spring);
+}
+.sidebar-brand {
+  padding: 0 24px 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.sidebar-brand h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px; font-weight: 700; color: var(--text-primary);
+}
+.sidebar-brand p {
+  font-size: 12px; color: var(--text-secondary); margin-top: 4px;
+  text-transform: uppercase; letter-spacing: 1.2px; font-weight: 600;
+}
+.sidebar-nav { list-style: none; padding: 0 12px; }
+.sidebar-nav li { margin-bottom: 2px; }
+.sidebar-nav a {
+  display: block; padding: 10px 16px; border-radius: var(--radius-sm);
+  text-decoration: none; color: var(--text-secondary);
+  font-size: 13px; font-weight: 500;
+  transition: var(--transition);
+  line-height: 1.4;
+}
+.sidebar-nav a:hover, .sidebar-nav a.active {
+  background: var(--ink-blue-soft);
+  color: var(--ink-blue);
+}
+.sidebar-nav a .nav-num {
+  display: inline-block; width: 22px; font-weight: 700;
+  color: var(--text-tertiary); font-size: 11px;
+}
+.sidebar-nav a.active .nav-num { color: var(--ink-blue); }
+
+/* Hamburger (mobile) */
+.hamburger {
+  display: none; position: fixed; top: 16px; left: 16px; z-index: 200;
+  width: 44px; height: 44px; border-radius: 12px; border: none;
+  background: var(--surface); backdrop-filter: var(--blur);
+  box-shadow: var(--glass-shadow); cursor: pointer;
+  flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+}
+.hamburger span {
+  display: block; width: 20px; height: 2px; background: var(--text-primary);
+  border-radius: 2px; transition: var(--transition);
+}
+.hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+.sidebar-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+  z-index: 99; opacity: 0; transition: opacity 0.3s;
+}
+.sidebar-overlay.show { display: block; opacity: 1; }
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+.main {
+  margin-left: var(--sidebar-width);
+  position: relative; z-index: 1;
+  min-height: 100vh;
+}
+.content-wrapper {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 40px 120px;
+}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero {
+  padding: 100px 40px 60px;
+  text-align: center;
+  max-width: var(--content-max);
+  margin: 0 auto;
+}
+.hero-logo {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 80px; height: 80px; border-radius: 24px;
+  background: var(--grad-blue); color: #fff;
+  font-size: 36px; font-weight: 800; font-family: 'Playfair Display', serif;
+  box-shadow: 0 12px 40px rgba(79,109,240,0.3);
+  margin-bottom: 32px;
+}
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(42px, 6vw, 64px);
+  font-weight: 700; line-height: 1.1;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+.hero h1 span {
+  background: var(--grad-blue);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-subtitle {
+  font-size: 18px; color: var(--text-secondary);
+  font-weight: 400; margin-bottom: 28px;
+  letter-spacing: 0.3px;
+}
+.hero-badges {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  justify-content: center; margin-bottom: 24px;
+}
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 20px;
+  font-size: 12px; font-weight: 600;
+  background: var(--surface); backdrop-filter: var(--blur);
+  border: 1px solid var(--border); color: var(--text-secondary);
+}
+.badge.gold { border-color: var(--vand-gold); color: #8a6d2b; background: rgba(207,184,124,0.12); }
+.badge.blue { border-color: var(--ink-blue); color: var(--ink-blue); background: rgba(79,109,240,0.08); }
+.badge .badge-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.badge .badge-dot.gold-dot { background: var(--vand-gold); }
+.badge .badge-dot.blue-dot { background: var(--ink-blue); }
+
+.hero-org-badges {
+  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+}
+.org-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 20px; border-radius: var(--radius);
+  background: var(--surface); backdrop-filter: var(--blur);
+  border: 1px solid var(--border);
+  font-size: 13px; font-weight: 600; color: var(--text-primary);
+  box-shadow: var(--glass-shadow);
+}
+.org-badge .org-icon {
+  width: 28px; height: 28px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.org-badge .org-icon.owen { background: linear-gradient(135deg, var(--vand-gold), #b8983a); color: #fff; }
+.org-badge .org-icon.inkwell { background: var(--grad-blue); color: #fff; }
+
+/* ============================================================
+   SECTION CARDS
+   ============================================================ */
+.section-card {
+  background: var(--surface);
+  backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-lg);
+  padding: 48px;
+  margin-bottom: 32px;
+  transition: var(--transition);
+}
+.section-card:hover {
+  box-shadow: var(--glass-shadow-lg);
+}
+.section-header {
+  margin-bottom: 32px;
+}
+.section-num {
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 2px; color: var(--ink-blue); margin-bottom: 8px;
+}
+.section-header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(26px, 3.5vw, 34px);
+  font-weight: 700; color: var(--text-primary);
+  margin-bottom: 8px; line-height: 1.2;
+}
+.section-header .gold-line {
+  width: 60px; height: 3px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--vand-gold), var(--vand-gold-light));
+}
+
+.subsection-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 18px; font-weight: 700;
+  color: var(--text-primary); margin: 32px 0 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.subsection-title .sub-icon {
+  width: 28px; height: 28px; border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+
+h4 {
+  font-size: 15px; font-weight: 700; color: var(--text-primary);
+  margin: 24px 0 12px;
+}
+
+p { margin-bottom: 16px; color: var(--text-primary); }
+p.muted { color: var(--text-secondary); }
+
+strong { font-weight: 700; }
+em { font-style: italic; color: var(--text-secondary); }
+
+.highlight-text {
+  font-size: 17px; font-weight: 500; line-height: 1.8;
+  color: var(--text-primary); margin-bottom: 20px;
+}
+.highlight-text strong {
+  color: var(--ink-blue);
+}
+
+/* ============================================================
+   GLASS TABLES
+   ============================================================ */
+.glass-table-wrap {
+  overflow-x: auto; margin: 16px 0 24px;
+  border-radius: var(--radius);
+}
+.glass-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
+.glass-table thead {
+  background: rgba(79,109,240,0.06);
+}
+.glass-table th {
+  padding: 12px 16px; text-align: left; font-weight: 700;
+  color: var(--text-primary); font-size: 11px;
+  text-transform: uppercase; letter-spacing: 1px;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+.glass-table td {
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  color: var(--text-primary); vertical-align: top;
+}
+.glass-table tbody tr:hover {
+  background: rgba(79,109,240,0.03);
+}
+.glass-table code {
+  background: rgba(79,109,240,0.08); padding: 2px 8px;
+  border-radius: 4px; font-size: 12px; font-family: 'SF Mono', 'Fira Code', monospace;
+  color: var(--ink-blue);
+}
+
+/* ============================================================
+   COLOR SWATCHES & GRADIENT BARS
+   ============================================================ */
+.color-swatch {
+  display: inline-block; width: 16px; height: 16px;
+  border-radius: 50%; vertical-align: middle;
+  margin-right: 8px; border: 2px solid rgba(255,255,255,0.8);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+.gradient-bar {
+  display: inline-block; width: 80px; height: 16px;
+  border-radius: 8px; vertical-align: middle;
+  margin-right: 8px; border: 1px solid rgba(0,0,0,0.05);
+}
+
+/* ============================================================
+   PHONE MOCKUP (ASCII wireframes)
+   ============================================================ */
+.phone-mockup {
+  background: #1a1a2e;
+  border-radius: 28px;
+  padding: 20px;
+  max-width: 340px;
+  margin: 24px auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  border: 3px solid #2a2a3e;
+  position: relative;
+  overflow: hidden;
+}
+.phone-mockup::before {
+  content: '';
+  position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+  width: 80px; height: 6px; border-radius: 3px;
+  background: #2a2a3e;
+}
+.phone-mockup pre {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 11px; line-height: 1.5;
+  color: #a0aec0; white-space: pre;
+  overflow-x: auto; margin: 0; padding: 8px 0;
+}
+.phone-mockup .screen-title {
+  text-align: center; font-size: 10px; font-weight: 700;
+  color: var(--vand-gold); text-transform: uppercase;
+  letter-spacing: 2px; margin-bottom: 12px; padding-top: 8px;
+}
+
+/* ============================================================
+   CODE BLOCKS
+   ============================================================ */
+.code-block {
+  background: #1e1e2e;
+  border-radius: var(--radius);
+  padding: 24px;
+  margin: 16px 0 24px;
+  overflow-x: auto;
+  border: 1px solid rgba(255,255,255,0.05);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.2);
+}
+.code-block pre {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 13px; line-height: 1.6; color: #cdd6f4;
+  margin: 0; white-space: pre; overflow-x: auto;
+}
+.code-block .kw { color: #cba6f7; } /* keyword */
+.code-block .str { color: #a6e3a1; } /* string */
+.code-block .cmt { color: #6c7086; font-style: italic; } /* comment */
+.code-block .fn { color: #89b4fa; } /* function */
+.code-block .type { color: #fab387; } /* type */
+.code-block .num { color: #f9e2af; } /* number */
+.code-block .label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 1px; color: #585b70; margin-bottom: 12px;
+  display: block;
+}
+
+/* ============================================================
+   TREE DIAGRAM (Information Architecture)
+   ============================================================ */
+.tree {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 13px; line-height: 2;
+  padding: 20px 0;
+}
+.tree-root {
+  font-weight: 800; font-family: 'Playfair Display', serif;
+  font-size: 18px; color: var(--ink-blue);
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 8px;
+}
+.tree-root::before {
+  content: '✦'; font-size: 14px;
+}
+.tree ul {
+  list-style: none; padding-left: 24px;
+  border-left: 2px solid var(--border);
+}
+.tree li {
+  position: relative; padding: 2px 0 2px 20px;
+  color: var(--text-primary); font-family: 'Inter', sans-serif;
+  font-size: 14px; font-weight: 500;
+}
+.tree li::before {
+  content: ''; position: absolute; left: -2px; top: 14px;
+  width: 16px; height: 2px; background: var(--border);
+}
+.tree li .tree-icon {
+  margin-right: 6px;
+}
+.tree li.tree-section > span {
+  font-weight: 700; color: var(--ink-blue);
+}
+.tree li .tree-leaf {
+  color: var(--text-secondary); font-weight: 400;
+}
+
+/* ============================================================
+   CONTENT TYPE GRID (8 types — 2×4)
+   ============================================================ */
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin: 24px 0;
+}
+.content-type-card {
+  background: var(--surface);
+  backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 20px 16px;
+  text-align: center;
+  transition: var(--transition);
+  cursor: default;
+}
+.content-type-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--glass-shadow-lg);
+}
+.ct-icon {
+  width: 56px; height: 56px; border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; margin: 0 auto 12px;
+  color: #fff;
+}
+.ct-label {
+  font-size: 13px; font-weight: 700; color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.ct-desc {
+  font-size: 11px; color: var(--text-secondary); line-height: 1.4;
+}
+
+/* ============================================================
+   PROGRESS BARS (Performance Targets)
+   ============================================================ */
+.perf-grid { margin: 24px 0; }
+.perf-item {
+  display: flex; align-items: center; gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.perf-item:last-child { border-bottom: none; }
+.perf-label {
+  min-width: 140px; font-size: 13px; font-weight: 600;
+  color: var(--text-primary);
+}
+.perf-bar-wrap {
+  flex: 1; height: 8px; background: rgba(0,0,0,0.06);
+  border-radius: 4px; overflow: hidden;
+}
+.perf-bar {
+  height: 100%; border-radius: 4px;
+  background: var(--grad-blue);
+  transition: width 1s var(--spring);
+}
+.perf-bar.green { background: linear-gradient(90deg, #43e97b, #38f9d7); }
+.perf-bar.gold { background: linear-gradient(90deg, var(--vand-gold), var(--vand-gold-light)); }
+.perf-target {
+  min-width: 90px; text-align: right;
+  font-size: 13px; font-weight: 700; color: var(--ink-blue);
+}
+
+/* ============================================================
+   TIMELINE (Roadmap)
+   ============================================================ */
+.timeline { padding: 16px 0; }
+.timeline-item {
+  display: flex; gap: 20px; padding-bottom: 32px;
+  position: relative;
+}
+.timeline-item::before {
+  content: ''; position: absolute; left: 19px; top: 40px;
+  bottom: 0; width: 2px; background: var(--border);
+}
+.timeline-item:last-child::before { display: none; }
+.timeline-dot {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 800; color: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 1;
+}
+.timeline-content {
+  flex: 1; padding-top: 6px;
+}
+.timeline-version {
+  font-size: 18px; font-weight: 800; color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.timeline-desc {
+  font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;
+}
+.timeline-features {
+  list-style: none; padding: 0;
+}
+.timeline-features li {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 4px 0; font-size: 13px; color: var(--text-primary);
+}
+.timeline-features li::before {
+  content: '○'; color: var(--text-tertiary); font-size: 10px;
+  margin-top: 3px; flex-shrink: 0;
+}
+
+/* ============================================================
+   TAB BAR MOCKUP
+   ============================================================ */
+.tab-bar-demo {
+  display: flex; justify-content: center; gap: 0;
+  background: var(--surface); backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius); padding: 12px 24px;
+  margin: 20px auto; max-width: 320px;
+  box-shadow: var(--glass-shadow);
+}
+.tab-item {
+  flex: 1; text-align: center; padding: 8px 12px;
+  font-size: 11px; font-weight: 600; color: var(--text-tertiary);
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.tab-item.active { color: var(--ink-blue); }
+.tab-item .tab-icon {
+  font-size: 20px; transition: transform 0.3s var(--spring);
+}
+.tab-item.active .tab-icon { transform: scale(1.15); }
+
+/* ============================================================
+   MODE PILLS
+   ============================================================ */
+.mode-pills {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin: 16px 0 24px;
+}
+.mode-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 20px;
+  font-size: 13px; font-weight: 600; color: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+/* ============================================================
+   LIST STYLES
+   ============================================================ */
+ul.spec-list {
+  list-style: none; padding: 0; margin: 12px 0 20px;
+}
+ul.spec-list li {
+  padding: 6px 0 6px 24px; position: relative;
+  font-size: 14px; color: var(--text-primary);
+}
+ul.spec-list li::before {
+  content: ''; position: absolute; left: 8px; top: 14px;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ink-blue); opacity: 0.5;
+}
+
+/* Checklist */
+ul.checklist {
+  list-style: none; padding: 0; margin: 12px 0 20px;
+}
+ul.checklist li {
+  padding: 6px 0 6px 28px; position: relative;
+  font-size: 14px; color: var(--text-primary);
+}
+ul.checklist li::before {
+  content: '☐'; position: absolute; left: 4px; top: 5px;
+  font-size: 14px; color: var(--text-tertiary);
+}
+
+/* ============================================================
+   ANALYTICS TABLE SPECIAL
+   ============================================================ */
+.event-badge {
+  display: inline-block;
+  background: rgba(79,109,240,0.08);
+  padding: 3px 10px; border-radius: 6px;
+  font-family: 'SF Mono', monospace;
+  font-size: 12px; font-weight: 600;
+  color: var(--ink-blue);
+}
+
+/* ============================================================
+   BACK TO TOP
+   ============================================================ */
+.back-to-top {
+  position: fixed; bottom: 32px; right: 32px;
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--surface); backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 100;
+  opacity: 0; transform: translateY(20px);
+  transition: var(--transition);
+  font-size: 18px; color: var(--ink-blue);
+}
+.back-to-top.show {
+  opacity: 1; transform: translateY(0);
+}
+.back-to-top:hover {
+  background: var(--surface-hover);
+  box-shadow: var(--glass-shadow-lg);
+  transform: translateY(-2px);
+}
+
+/* ============================================================
+   LINKS
+   ============================================================ */
+a.ref-link {
+  color: var(--ink-blue); text-decoration: none;
+  font-weight: 600; border-bottom: 1px solid rgba(79,109,240,0.3);
+  transition: var(--transition);
+}
+a.ref-link:hover {
+  border-bottom-color: var(--ink-blue);
+}
+
+/* ============================================================
+   PRINT STYLES
+   ============================================================ */
+@media print {
+  .bg-mesh, .mesh-orb, .sidebar, .hamburger, .back-to-top, .sidebar-overlay { display: none !important; }
+  .main { margin-left: 0 !important; }
+  .section-card {
+    break-inside: avoid; box-shadow: none;
+    border: 1px solid #ddd; backdrop-filter: none;
+    background: #fff;
+  }
+  body { font-size: 12px; }
+  .hero h1 { font-size: 32px; }
+  .phone-mockup { border: 1px solid #333; }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1024px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .hamburger { display: flex; }
+  .main { margin-left: 0; }
+  .content-wrapper { padding: 0 20px 100px; }
+  .hero { padding: 80px 20px 40px; }
+  .section-card { padding: 28px 24px; }
+}
+
+@media (max-width: 640px) {
+  .content-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .content-type-card { padding: 16px 12px; }
+  .ct-icon { width: 44px; height: 44px; font-size: 22px; border-radius: 12px; }
+  .perf-item { flex-wrap: wrap; gap: 8px; }
+  .perf-label { min-width: 100%; font-size: 12px; }
+  .perf-target { min-width: auto; }
+  .phone-mockup { max-width: 100%; }
+  .hero h1 { font-size: 36px; }
+  .glass-table { font-size: 12px; }
+  .glass-table th, .glass-table td { padding: 8px 10px; }
+  .section-card { padding: 24px 18px; border-radius: var(--radius); }
+  .back-to-top { bottom: 20px; right: 20px; width: 44px; height: 44px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg-mesh"></div>
+<div class="mesh-orb mesh-orb-1"></div>
+<div class="mesh-orb mesh-orb-2"></div>
+<div class="mesh-orb mesh-orb-3"></div>
+
+<!-- Hamburger -->
+<button class="hamburger" onclick="toggleSidebar()" aria-label="Toggle navigation">
+  <span></span><span></span><span></span>
+</button>
+
+<!-- Sidebar Overlay -->
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <h2>VanderBot</h2>
+    <p>Product Spec · v1.0</p>
+  </div>
+  <ul class="sidebar-nav" id="sidebarNav">
+    <li><a href="#s1"><span class="nav-num">01</span> Product Vision</a></li>
+    <li><a href="#s2"><span class="nav-num">02</span> Design Language</a></li>
+    <li><a href="#s3"><span class="nav-num">03</span> Information Architecture</a></li>
+    <li><a href="#s4"><span class="nav-num">04</span> Navigation</a></li>
+    <li><a href="#s5"><span class="nav-num">05</span> Screens</a></li>
+    <li><a href="#s6"><span class="nav-num">06</span> Create Screen</a></li>
+    <li><a href="#s7"><span class="nav-num">07</span> Interaction Patterns</a></li>
+    <li><a href="#s8"><span class="nav-num">08</span> Onboarding</a></li>
+    <li><a href="#s9"><span class="nav-num">09</span> Technical Architecture</a></li>
+    <li><a href="#s10"><span class="nav-num">10</span> Content Types</a></li>
+    <li><a href="#s11"><span class="nav-num">11</span> Accessibility</a></li>
+    <li><a href="#s12"><span class="nav-num">12</span> Performance</a></li>
+    <li><a href="#s13"><span class="nav-num">13</span> Analytics</a></li>
+    <li><a href="#s14"><span class="nav-num">14</span> Roadmap</a></li>
+    <li><a href="#s15"><span class="nav-num">15</span> Live References</a></li>
+  </ul>
+</nav>
+
+<!-- Main Content -->
+<div class="main">
+
+  <!-- Hero -->
+  <header class="hero" id="top">
+    <div class="hero-logo">V</div>
+    <h1>Vander<span>Bot</span></h1>
+    <p class="hero-subtitle">Product Spec · UI/UX</p>
+    <div class="hero-badges">
+      <span class="badge"><span class="badge-dot blue-dot"></span> v1.0</span>
+      <span class="badge">March 20, 2026</span>
+      <span class="badge blue">Android · Jetpack Compose</span>
+      <span class="badge">Material 3</span>
+    </div>
+    <div class="hero-org-badges">
+      <div class="org-badge">
+        <div class="org-icon owen">V</div>
+        Vanderbilt Owen MBA
+      </div>
+      <div class="org-badge">
+        <div class="org-icon inkwell">✦</div>
+        Inkwell Labs
+      </div>
+    </div>
+  </header>
+
+  <div class="content-wrapper">
+
+    <!-- ============================================================
+         SECTION 1 — Product Vision
+         ============================================================ -->
+    <section class="section-card" id="s1">
+      <div class="section-header">
+        <div class="section-num">Section 01</div>
+        <h2>Product Vision</h2>
+        <div class="gold-line"></div>
+      </div>
+      <p class="highlight-text">
+        VanderBot is an AI-native creative workspace for the Vanderbilt Owen MBA program. It combines conversational AI with structured content creation — letting students and faculty generate documents, pitch decks, research reports, infographics, and web pages from a single mobile interface.
+      </p>
+      <p class="highlight-text">
+        Not a chatbot. Not a note-taking app. A <strong>creative operating system</strong> powered by Claude.
+      </p>
+    </section>
+
+    <!-- ============================================================
+         SECTION 2 — Design Language
+         ============================================================ -->
+    <section class="section-card" id="s2">
+      <div class="section-header">
+        <div class="section-num">Section 02</div>
+        <h2>Design Language</h2>
+        <div class="gold-line"></div>
+      </div>
+
+      <div class="subsection-title">
+        <div class="sub-icon" style="background: var(--grad-blue); color: #fff;">✦</div>
+        Inkwell Light Glass Morphic
+      </div>
+
+      <div class="glass-table-wrap">
+        <table class="glass-table">
+          <thead>
+            <tr><th>Token</th><th>Value</th><th>Usage</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>--bg</code></td>
+              <td><span class="color-swatch" style="background:#f0f2f5;"></span> <code>#f0f2f5</code></td>
+              <td>App background</td>
+            </tr>
+            <tr>
+              <td><code>--surface</code></td>
+              <td><span class="color-swatch" style="background:rgba(255,255,255,0.72); border-color: #ddd;"></span> <code>rgba(255,255,255,0.72)</code></td>
+              <td>Glass cards, panels</td>
+            </tr>
+            <tr>
+              <td><code>--ink-blue</code></td>
+              <td><span class="color-swatch" style="background:#4f6df0;"></span> <code>#4f6df0</code></td>
+              <td>Primary actions, active states</td>
+            </tr>
+            <tr>
+              <td><code>--ink-blue-soft</code></td>
+              <td><span class="color-swatch" style="background:rgba(79,109,240,0.08); border-color: #c0c8f0;"></span> <code>rgba(79,109,240,0.08)</code></td>
+              <td>Subtle highlights</td>
+            </tr>
+            <tr>
+              <td><code>--text-primary</code></td>
+              <td><span class="color-swatch" style="background:#1a1a2e;"></span> <code>#1a1a2e</code></td>
+              <td>Headlines, body</td>
+            </tr>
+            <tr>
+              <td><code>--text-secondary</code></td>
+              <td><span class="color-swatch" style="background:#6b7280;"></span> <code>#6b7280</code></td>
+              <td>Labels, metadata</td>
+            </tr>
+            <tr>
+              <td><code>--text-tertiary</code></td>
+              <td><span class="color-swatch" style="background:#9ca3af;"></span> <code>#9ca3af</code></td>
+              <td>Hints, placeholders</td>
+            </tr>
+            <tr>
+              <td><code>--border</code></td>
+              <td><span class="color-swatch" style="background:rgba(0,0,0,0.06); border-color: #ccc;"></span> <code>rgba(0,0,0,0.06)</code></td>
+              <td>Card edges, dividers</td>
+            </tr>
+            <tr>
+              <td><code>--vand-gold</code></td>
+              <td><span class="color-swatch" style="background:#cfb87c;"></span> <code>#cfb87c</code></td>
+              <td>Vanderbilt accent</td>
+            </tr>
+            <tr>
+              <td><code>--grad-blue</code></td>
+              <td><span class="gradient-bar" style="background:linear-gradient(135deg, #667eea, #764ba2);"></span></td>
+              <td>Chat mode</td>
+            </tr>
+            <tr>
+              <td><code>--grad-research</code></td>
+              <td><span class="gradient-bar" style="background:linear-gradient(135deg, #f093fb, #f5576c);"></span></td>
+              <td>Research mode</td>
+            </tr>
+            <tr>
+              <td><code>--grad-notebook</code></td>
+              <td><span class="gradient-bar" style="background:linear-gradient(135deg, #4facfe, #00f2fe);"></span></td>
+              <td>Notebook mode</td>
+            </tr>
+            <tr>
+              <td><code>--grad-infographic</code></td>
+              <td><span class="gradient-bar" style="background:linear-gradient(135deg, #43e97b, #38f9d7);"></span></td>
+              <td>Infographic mode</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="subsection-title">Typography</div>
+      <ul class="spec-list">
+        <li><strong>Primary:</strong> Inter (400, 500, 600, 700, 800)</li>
+        <li><strong>Display:</strong> Playfair Display (headers, hero moments)</li>
+        <li><strong>System fallback:</strong> SF Pro / system-ui</li>
+      </ul>
+
+      <div class="subsection-title">Principles</div>
+      <ul class="spec-list">
+        <li>Glass cards with <code>backdrop-filter: blur(20px)</code> + subtle borders</li>
+        <li>Animated gradient mesh background (3 floating orbs)</li>
+        <li>Spring-based micro-animations <code>cubic-bezier(.34,1.56,.64,1)</code></li>
+        <li>Touch targets ≥ 44px</li>
+        <li>Safe areas via <code>env(safe-area-inset-*)</code></li>
+        <li>Mobile-first: 375px base width</li>
+      </ul>
+    </section>
+
+    <!-- ============================================================
+         SECTION 3 — Information Architecture
+         ============================================================ -->
+    <section class="section-card" id="s3">
+      <div class="section-header">
+        <div class="section-num">Section 03</div>
+        <h2>Information Architecture</h2>
+        <div class="gold-line"></div>
+      </div>
+
+      <div class="tree">
+        <div class="tree-root">VanderBot</div>
+        <ul>
+          <li class="tree-section">
+            <span>🏠 Home</span> <span class="tree-leaf">(default)</span>
+            <ul>
+              <li><span class="tree-icon">⊞</span> Quick Create Grid (8 content types)</li>
+              <li><span class="tree-icon">💬</span> Recent Chats</li>
+              <li><span class="tree-icon">📁</span> Recent Files</li>
+            </ul>
+          </li>
+          <li class="tree-section">
+            <span>✦ Create</span>
+            <ul>
+              <li>
+                <span class="tree-icon">💬</span> Chat → <span class="tree-leaf">(mode switcher)</span>
+                <ul>
+                  <li><span class="tree-icon">💬</span> Chat</li>
+                  <li><span class="tree-icon">🔬</span> Deep Research</li>
+                  <li><span class="tree-icon">📓</span> NotebookLM</li>
+                  <li><span class="tree-icon">📊</span> Infographic</li>
+                </ul>
+              </li>
+              <li><span class="tree-icon">📄</span> Doc</li>
+              <li><span class="tree-icon">📊</span> Deck</li>
+              <li><span class="tree-icon">🌐</span> Page</li>
+              <li><span class="tree-icon">🖼</span> Image</li>
+            </ul>
+          </li>
+          <li class="tree-section">
+            <span>📁 Files</span>
+            <ul>
+              <li>All</li>
+              <li>Chats</li>
+              <li>Docs</li>
+              <li>Decks</li>
+              <li>Pages</li>
+              <li>Infographics</li>
+              <li>Research</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 4 — Navigation
+         ============================================================ -->
+    <section class="section-card" id="s4">
+      <div class="section-header">
+        <div class="section-num">Section 04</div>
+        <h2>Navigation</h2>
+        <div class="gold-line"></div>
+      </div>
+
+      <div class="subsection-title">Bottom Tab Bar (3 tabs)</div>
+
+      <div class="tab-bar-demo">
+        <div class="tab-item active">
+          <span class="tab-icon">🏠</span>
+          Home
+        </div>
+        <div class="tab-item">
+          <span class="tab-icon">✦</span>
+          Create
+        </div>
+        <div class="tab-item">
+          <span class="tab-icon">📁</span>
+          Files
+        </div>
+      </div>
+
+      <div class="glass-table-wrap">
+        <table class="glass-table">
+          <thead>
+            <tr><th>Tab</th><th>Icon</th><th>Label</th><th>Destination</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>🏠</td><td>Home</td><td>Home screen</td></tr>
+            <tr><td>2</td><td>✦</td><td>Create</td><td>Content type picker</td></tr>
+            <tr><td>3</td><td>📁</td><td>Files</td><td>File manager</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ul class="spec-list">
+        <li>Active tab: <code>--ink-blue</code> tint + <code>scale(1.1)</code> icon animation</li>
+        <li>Inactive tab: <code>--text-dim</code> color</li>
+        <li>Tab bar: glass card with <code>backdrop-filter: blur(24px)</code></li>
+        <li>Height: 64px + safe area inset</li>
+      </ul>
+
+      <div class="subsection-title">Top Bar</div>
+      <ul class="spec-list">
+        <li>Left: Back chevron (‹) on sub-screens, hidden on Home</li>
+        <li>Center: Screen title or conversation name</li>
+        <li>Right: Context actions (share, export, settings)</li>
+        <li>Height: 48px · Transparent with blur, border-bottom</li>
+      </ul>
+    </section>
+
+    <!-- ============================================================
+         SECTION 5 — Screens
+         ============================================================ -->
+    <section class="section-card" id="s5">
+      <div class="section-header">
+        <div class="section-num">Section 05</div>
+        <h2>Screens</h2>
+        <div class="gold-line"></div>
+      </div>
+
+      <!-- 5.1 Home -->
+      <div class="subsection-title">
+        <div class="sub-icon" style="background: #4f6df0; color: #fff;">🏠</div>
+        5.1 — Home Screen
+      </div>
+      <p>Launch pad. Get to anything in one tap.</p>
+
+      <div class="phone-mockup">
+        <div class="screen-title">Home Screen</div>
+<pre>
+┌─────────────────────────┐
+│  VanderBot         [⚙]  │
+├─────────────────────────┤
+│                         │
+│  Quick Create           │
+│  ┌────┬────┬────┬────┐  │
+│  │Chat│Doc │Deck│Page│  │
+│  ├────┼────┼────┼────┤  │
+│  │Info│Note│Rsch│Img │  │
+│  └────┴────┴────┴────┘  │
+│                         │
+│  Recent Chats    See all│
+│  ┌─────────────────┐   │
+│  │ Chat preview 1  │   │
+│  │ Chat preview 2  │   │
+│  └─────────────────┘   │
+│                         │
+│  Recent Files    See all│
+│  ┌─────────────────┐   │
+│  │ File preview 1  │   │
+│  │ File preview 2  │   │
+│  └─────────────────┘   │
+│                         │
+├─────────────────────────┤
+│  🏠 Home   ✦ Create  📁│
+└─────────────────────────┘</pre>
+      </div>
+
+      <h4>Quick Create Grid (8 items)</h4>
+      <div class="glass-table-wrap">
+        <table class="glass-table">
+          <thead>
+            <tr><th>Item</th><th>Icon</th><th>Label</th><th>Color</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>💬</td><td>Chat</td><td><span class="gradient-bar" style="background:linear-gradient(135deg,#667eea,#764ba2);width:50px;height:12px;"></span></td><td>New chat conversation</td></tr>
+            <tr><td>2</td><td>📄</td><td>Doc</td><td><span class="color-swatch" style="background:#6366f1;"></span> <code>#6366f1</code></td><td>New document draft</td></tr>
+            <tr><td>3</td><td>📊</td><td>Deck</td><td><span class="color-swatch" style="background:#ec4899;"></span> <code>#ec4899</code></td><td>New pitch deck</td></tr>
+            <tr><td>4</td><td>🌐</td><td>Page</td><td><span class="color-swatch" style="background:#14b8a6;"></span> <code>#14b8a6</code></td><td>New web page</td></tr>
+            <tr><td>5</td><td>📈</td><td>Infographic</td><td><span class="gradient-bar" style="background:linear-gradient(135deg,#43e97b,#38f9d7);width:50px;height:12px;"></span></td><td>New infographic</td></tr>
+            <tr><td>6</td><td>📓</td><td>NotebookLM</td><td><span class="gradient-bar" style="background:linear-gradient(135deg,#4facfe,#00f2fe);width:50px;height:12px;"></span></td><td>New research notebook</td></tr>
+            <tr><td>7</td><td>🔬</td><td>Deep Research</td><td><span class="gradient-bar" style="background:linear-gradient(135deg,#f093fb,#f5576c);width:50px;height:12px;"></span></td><td>New deep research report</td></tr>
+            <tr><td>8</td><td>🖼</td><td>Image</td><td><span class="color-swatch" style="background:#f59e0b;"></span> <code>#f59e0b</code></td><td>Image upload + vision</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Each item: glass card, 72×72px icon area, 12px label, <code>border-radius: 16px</code>, tap → <code>scale(0.92)</code> spring animation.</p>
+
+      <!-- 5.2 Chat -->
+      <div class="subsection-title" style="margin-top:48px;">
+        <div class="sub-icon" style="background: var(--grad-blue); color: #fff;">💬</div>
+        5.2 — Chat Screen
+      </div>
+      <p>The core AI interaction. Streaming Claude conversations with mode switching.</p>
+
+      <div class="phone-mockup">
+        <div class="screen-title">Chat Screen</div>
+<pre>
+┌─────────────────────────┐
+│  ‹  New Chat       [⋯]  │
+├─────────────────────────┤
+│ 💬Chat 🔬Research 📓NB 📊│
+├─────────────────────────┤
+│                         │
+│  ┌───────────────────┐  │
+│  │ User message      │  │
+│  └───────────────────┘  │
+│                         │
+│  ┌───────────────────┐  │
+│  │ Assistant message │  │
+│  │ with streaming... │  │
+│  └───────────────────┘  │
+│                         │
+│  ┌───────────────────┐  │
+│  │ [Artifact Card]   │  │
+│  │ "Q1 Strategy.pdf" │  │
+│  │ [Open] [Export]   │  │
+│  └───────────────────┘  │
+│                         │
+├─────────────────────────┤
+│  [📎] [Type a message]  │
+│  [📷]           [Send ↑]│
+└─────────────────────────┘</pre>
+      </div>
+
+      <h4>Mode Switcher</h4>
+      <p>Horizontal pill bar below top bar. Modes share the same chat thread but change the AI's behavior:</p>
+
+      <div class="mode-pills">
+        <span class="mode-pill" style="background: var(--grad-blue);">💬 Chat</span>
+        <span class="mode-pill" style="background: var(--grad-research);">🔬 Deep Research</span>
+        <span class="mode-pill" style="background: var(--grad-notebook);">📓 NotebookLM</span>
+        <span class="mode-pill" style="background: var(--grad-infographic);">📊 Infographic</span>
+      </div>
+
+      <div class="glass-table-wrap">
+        <table class="glass-table">
+          <thead>
+            <tr><th>Mode</th><th>Chip Color</th><th>Behavior</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>💬 Chat</td><td><span class="gradient-bar" style="background:var(--grad-blue);width:50px;height:12px;"></span></td><td>Standard Claude conversation</td></tr>
+            <tr><td>🔬 Deep Research</td><td><span class="gradient-bar" style="background:var(--grad-research);width:50px;height:12px;"></span></td><td>Multi-source research with citations, longer responses</td></tr>
+            <tr><td>📓 NotebookLM</td><td><span class="gradient-bar" style="background:var(--grad-notebook);width:50px;height:12px;"></span></td><td>Create study guides, flashcards, audio summaries</td></tr>
+            <tr><td>📊 Infographic</td><td><span class="gradient-bar" style="background:var(--grad-infographic);width:50px;height:12px;"></span></td><td>Generate data visualizations from conversation context</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Switching modes mid-conversation: the mode chip animates, the system prompt changes, but the conversation history is preserved.</p>
+
+      <h4>Message Bubbles</h4>
+      <ul class="spec-list">
+        <li><strong>User:</strong> right-aligned, blue gradient background, white text</li>
+        <li><strong>Assistant:</strong> left-aligned, glass card background, dark text</li>
+        <li><strong>Streaming:</strong> cursor blink animation, characters build progressively</li>
+        <li><strong>Markdown:</strong> headers, bold, italic, code blocks, lists</li>
+        <li><strong>Artifact cards:</strong> inline glass cards for generated content</li>
+      </ul>
+
+      <h4>Input Bar</h4>
+      <ul class="spec-list">
+        <li>Glass card at bottom with safe area padding</li>
+        <li>Text input: expandable, max 5 lines before scroll</li>
+        <li>Left: attachment (📎) + camera (📷) buttons</li>
+        <li>Right: send (↑) — blue when text present, dim when empty</li>
+      </ul>
+
+      <!-- 5.3 Chat Modes -->
+      <div class="subsection-title" style="margin-top:48px;">
+        <div class="sub-icon" style="background: var(--grad-research); color: #fff;">🔬</div>
+        5.3 — Chat Modes (Detailed)
+      </div>
+
+      <h4>Deep Research Mode 🔬</h4>
+      <p>When activated, the AI searches multiple sources (web, academic, news) and returns structured reports with sections and citations. Shows a "Researching..." progress indicator with source count.</p>
+      <ul class="spec-list">
+        <li>Source pills below response (clickable → opens URL)</li>
+        <li>Citation numbers [1] [2] [3] inline, tappable</li>
+        <li><strong>Depth selector:</strong> Quick (3 sources) / Standard (8) / Deep (15+)</li>
+      </ul>
+
+      <h4>NotebookLM Mode 📓</h4>
+      <p>Creates structured study materials: Study Guides, Flashcard Sets, Audio Overviews, FAQ, Timeline.</p>
+      <ul class="spec-list">
+        <li>Output type selector: Study Guide / Flashcards / Audio / FAQ / Timeline</li>
+        <li>Flashcard view: swipeable card stack with flip animation</li>
+        <li>Audio player: inline waveform for generated audio summaries</li>
+        <li>"Add Source" button: paste URLs, upload PDFs, or reference prior chats</li>
+      </ul>
+
+      <h4>Infographic Mode 📊</h4>
+      <p>Analyzes conversation data and generates visual infographics. Auto-detects chart types.</p>
+      <ul class="spec-list">
+        <li>Style selector: Corporate / Minimal / Bold / Playful</li>
+        <li>Export: PNG, PDF, or embed in a Deck</li>
+        <li>Edit: tap to modify data points, colors, labels</li>
+      </ul>
+
+      <!-- 5.4 Document Editor -->
+      <div class="subsection-title" style="margin-top:48px;">
+        <div class="sub-icon" style="background: #6366f1; color: #fff;">📄</div>
+        5.4 — Document Editor
+      </div>
+      <p>Draft and edit text documents with AI assistance.</p>
+
+      <div class="phone-mockup">
+        <div class="screen-title">Document Editor</div>
+<pre>
+┌─────────────────────────┐
+│  ‹  Untitled Doc   [⋯]  │
+├─────────────────────────┤
+│                         │
+│  [Title field]          │
+│                         │
+│  Body text with full    │
+│  markdown support...    │
+│                         │
+│  • Bullet lists         │
+│  • **Bold**, *italic*   │
+│  • ## Headers           │
+│  • Code blocks          │
+│                         │
+│  ┌─────────────────┐   │
+│  │ ✦ AI: "Make it  │   │
+│  │  more concise"  │   │
+│  └─────────────────┘   │
+│                         │
+├─────────────────────────┤
+│ B I U H1 H2 • — `` ✦   │
+└─────────────────────────┘</pre>
+      </div>
+
+      <h4>AI Assist (✦ button)</h4>
+      <ul class="spec-list">
+        <li>Floating action button in toolbar</li>
+        <li>Command palette: "Make it shorter", "Expand", "Fix grammar", "Change tone", "Translate"</li>
+        <li>Select text → tap ✦ → AI modifies selection only</li>
+      </ul>
+
+      <h4>Export Options</h4>
+      <ul class="spec-list">
+        <li>Google Docs (via Drive API)</li>
+        <li>PDF · Markdown · Copy to clipboard</li>
+      </ul>
+
+      <!-- 5.5 Pitch Deck -->
+      <div class="subsection-title" style="margin-top:48px;">
+        <div class="sub-icon" style="background: #ec4899; color: #fff;">📊</div>
+        5.5 — Pitch Deck Builder
+      </div>
+      <p>Generate and edit slide decks from a prompt.</p>
+
+      <div class="phone-mockup">
+        <div class="screen-title">Pitch Deck Builder</div>
+<pre>
+┌─────────────────────────┐
+│  ‹  Q1 Strategy    [⋯]  │
+├─────────────────────────┤
+│ ┌─────────────────────┐ │
+│ │                     │ │
+│ │   Slide Preview     │ │
+│ │   (rendered)        │ │
+│ │                     │ │
+│ └─────────────────────┘ │
+│  ◂  Slide 3 of 12  ▸   │
+├─────────────────────────┤
+│ ┌──┐ ┌──┐ ┌──┐ ┌──┐    │
+│ │1 │ │2 │ │3✓│ │4 │    │
+│ └──┘ └──┘ └──┘ └──┘    │
+├─────────────────────────┤
+│ Title: [editable]       │
+│ Body:  [editable]       │
+│ [✦ Redesign Slide]      │
+├─────────────────────────┤
+│  🏠 Home   ✦ Create  📁│
+└─────────────────────────┘</pre>
+      </div>
+
+      <h4>Slide Layouts</h4>
+      <ul class="spec-list">
+        <li>Title Slide (centered, large)</li>
+        <li>Title + Bullets · Title + Two Columns</li>
+        <li>Title + Image · Quote Slide · Data/Chart</li>
+        <li>Section Divider · Thank You / Q&A</li>
+      </ul>
+
+      <h4>Design Themes</h4>
+      <ul class="spec-list">
+        <li><strong>Inkwell Glass</strong> (default — glass morphism)</li>
+        <li><strong>Vanderbilt Gold</strong> (dark + gold accents)</li>
+        <li><strong>Minimal White</strong> · <strong>Bold Dark</strong></li>
+      </ul>
+
+      <!-- 5.6 Page Builder -->
+      <div class="subsection-title" style="margin-top:48px;">
+        <div class="sub-icon" style="background: #14b8a6; color: #fff;">🌐</div>
+        5.6 — Page Builder
+      </div>
+      <p>Create HTML/CSS web pages and publish to GitHub Pages.</p>
+
+      <div class="phone-mockup">
+        <div class="screen-title">Page Builder</div>
+<pre>
+┌─────────────────────────┐
+│  ‹  My Page        [⋯]  │
+├─────────────────────────┤
+│  [Edit] [Preview] [Code]│
+├─────────────────────────┤
+│                         │
+│  ┌─────────────────┐   │
+│  │ WebView preview │   │
+│  │ of the page     │   │
+│  │ being built     │   │
+│  └─────────────────┘   │
+│                         │
+├─────────────────────────┤
+│ Prompt: "Add a hero     │
+│ section with stats"     │
+│              [Apply ✦]  │
+├─────────────────────────┤
+│  🏠 Home   ✦ Create  📁│
+└─────────────────────────┘</pre>
+      </div>
+
+      <h4>Publish Flow</h4>
+      <ul class="spec-list">
+        <li>One-tap publish to GitHub Pages</li>
+        <li>Custom slug: <code>vanderbot.com/projects/my-page</code></li>
+        <li>Version history (GitHub commits)</li>
+        <li>QR code for sharing</li>
+      </ul>
+
+      <!-- 5.7 Files -->
+      <div class="subsection-title" style="margin-top:48px;">
+        <div class="sub-icon" style="background: var(--vand-gold); color: #fff;">📁</div>
+        5.7 — Files Screen
+      </div>
+      <p>Browse, search, and manage all generated content.</p>
+
+      <div class="phone-mockup">
+        <div class="screen-title">Files Screen</div>
+<pre>
+┌─────────────────────────┐
+│  Files             [🔍]  │
+├─────────────────────────┤
+│ All│Chat│Doc│Deck│Page│  │
+├─────────────────────────┤
+│ ┌─────────────────────┐ │
+│ │ 📄 Q1 Strategy.doc  │ │
+│ │    Modified 2h ago  │ │
+│ ├─────────────────────┤ │
+│ │ 💬 Market Research   │ │
+│ │    Modified 1d ago  │ │
+│ ├─────────────────────┤ │
+│ │ 📊 Funding Deck     │ │
+│ │    Modified 3d ago  │ │
+│ ├─────────────────────┤ │
+│ │ 🌐 Landing Page     │ │
+│ │    Published        │ │
+│ └─────────────────────┘ │
+├─────────────────────────┤
+│  🏠 Home   ✦ Create  📁│
+└─────────────────────────┘</pre>
+      </div>
+
+      <h4>Actions (long press or swipe)</h4>
+      <ul class="spec-list">
+        <li>Open · Share · Export · Duplicate · Delete</li>
+      </ul>
+    </section>
+
+    <!-- ============================================================
+         SECTION 6 — Create Screen
+         ============================================================ -->
+    <section class="section-card" id="s6">
+      <div class="section-header">
+        <div class="section-num">Section 06</div>
+        <h2>Create Screen</h2>
+        <div class="gold-line"></div>
+      </div>
+      <p>Central hub for creating new content when tapping the ✦ Create tab.</p>
+
+      <div class="phone-mockup">
+        <div class="screen-title">Create Screen</div>
+<pre>
+┌─────────────────────────┐
+│  ‹  Create               │
+├─────────────────────────┤
+│                         │
+│  What do you want       │
+│  to create?             │
+│                         │
+│  ┌─────────────────┐   │
+│  │ 💬 Chat         │   │
+│  │ Start a new AI  │   │
+│  │ conversation    │   │
+│  ├─────────────────┤   │
+│  │ 📄 Document     │   │
+│  │ Draft a memo,   │   │
+│  │ email, proposal │   │
+│  ├─────────────────┤   │
+│  │ 📊 Pitch Deck   │   │
+│  │ Generate slides │   │
+│  │ from a prompt   │   │
+│  ├─────────────────┤   │
+│  │ 🌐 Web Page     │   │
+│  │ Build & publish │   │
+│  │ to the web      │   │
+│  └─────────────────┘   │
+│  ... + 4 more           │
+├─────────────────────────┤
+│  🏠 Home   ✦ Create  📁│
+└─────────────────────────┘</pre>
+      </div>
+
+      <p>Each card: glass surface, type icon with gradient background, title, 1-line description. Tap → navigates to the relevant creation flow.</p>
+    </section>
+
+    <!-- ============================================================
+         SECTION 7 — Interaction Patterns
+         ============================================================ -->
+    <section class="section-card" id="s7">
+      <div class="section-header">
+        <div class="section-num">Section 07</div>
+        <h2>Interaction Patterns</h2>
+        <div class="gold-line"></div>
+      </div>
+
+      <div class="subsection-title">7.1 Streaming Responses</div>
+      <ul class="spec-list">
+        <li>Characters appear one at a time with a blinking cursor</li>
+        <li>Markdown rendered progressively (headers snap in, lists build)</li>
+        <li>Artifact cards slide in with spring animation when complete</li>
+        <li>"Stop generating" button appears during streaming</li>
+      </ul>
+
+      <div class="subsection-title">7.2 Haptic Feedback</div>
+      <ul class="spec-list">
+        <li><strong>Light tap:</strong> button presses, tab switches</li>
+        <li><strong>Medium:</strong> mode switch, send message</li>
+        <li><strong>Heavy:</strong> delete, publish</li>
+      </ul>
+
+      <div class="subsection-title">7.3 Gesture Support</div>
+      <ul class="spec-list">
+        <li>Swipe right on chat bubble → reply/quote</li>
+        <li>Swipe left on file card → delete</li>
+        <li>Long press on message → copy, share, regenerate</li>
+        <li>Pull to refresh on file list</li>
+        <li>Pinch to zoom on page preview / deck slides</li>
+      </ul>
+
+      <div class="subsection-title">7.4 Loading States</div>
+      <ul class="spec-list">
+        <li>Skeleton screens (not spinners) for content loading</li>
+        <li>Shimmer animation on placeholder cards</li>
+        <li>"Thinking..." indicator with 3 animated dots</li>
+      </ul>
+
+      <div class="subsection-title">7.5 Empty States</div>
+      <ul class="spec-list">
+        <li><strong>Home:</strong> "Start creating. Tap any card above."</li>
+        <li><strong>Files:</strong> "Nothing here yet. Create something amazing."</li>
+        <li><strong>Chat:</strong> Welcome message with suggested prompts</li>
+      </ul>
+
+      <div class="subsection-title">7.6 Error Handling</div>
+      <ul class="spec-list">
+        <li>Toast notifications for transient errors (network, API)</li>
+        <li>Inline error cards for persistent issues</li>
+        <li>Retry buttons on failed generations</li>
+        <li>Offline mode: draft editing works, syncs when connected</li>
+      </ul>
+    </section>
+
+    <!-- ============================================================
+         SECTION 8 — Onboarding
+         ============================================================ -->
+    <section class="section-card" id="s8">
+      <div class="section-header">
+        <div class="section-num">Section 08</div>
+        <h2>Onboarding</h2>
+        <div class="gold-line"></div>
+      </div>
+
+      <div class="subsection-title">First Launch (3 screens)</div>
+
+      <h4>Screen 1 — "Welcome to VanderBot"</h4>
+      <ul class="spec-list">
+        <li>Inkwell logo + glass morphism hero</li>
+        <li>"Your AI-powered creative workspace"</li>
+        <li>Vanderbilt Owen badge</li>
+      </ul>
+
+      <h4>Screen 2 — "Create Anything"</h4>
+      <ul class="spec-list">
+        <li>Grid of content types with brief labels</li>
+        <li>"Chat, documents, decks, pages, research — all from one place"</li>
+      </ul>
+
+      <h4>Screen 3 — "Let's Get Started"</h4>
+      <ul class="spec-list">
+        <li>API key input (pre-configured for course)</li>
+        <li>Optional: connect Google Drive</li>
+        <li>"Start Creating" button</li>
+      </ul>
+
+      <div class="subsection-title">Suggested Prompts (First session)</div>
+      <ul class="spec-list">
+        <li>"Draft a 1-page executive summary of my startup"</li>
+        <li>"Build a 10-slide pitch deck for Demo Day"</li>
+        <li>"Research the competitive landscape for AI in education"</li>
+        <li>"Create a landing page for my venture"</li>
+      </ul>
+    </section>
+
+    <!-- ============================================================
+         SECTION 9 — Technical Architecture
+         ============================================================ -->
+    <section class="section-card" id="s9">
+      <div class="section-header">
+        <div class="section-num">Section 09</div>
+        <h2>Technical Architecture</h2>
+        <div class="gold-line"></div>
+      </div>
+
+      <div class="subsection-title">API Layer</div>
+      <div class="code-block">
+        <span class="label">API Architecture</span>
+<pre><span class="type">Claude API</span> (Anthropic)
+├── Streaming SSE for chat
+├── Vision (image upload → base64)
+├── System prompts per mode:
+│   ├── <span class="str">Chat:</span> general assistant
+│   ├── <span class="str">Research:</span> structured report + citations
+│   ├── <span class="str">NotebookLM:</span> study materials
+│   └── <span class="str">Infographic:</span> data extraction + visualization
+
+<span class="type">GitHub REST API</span>
+├── Push HTML pages to gh-pages branch
+├── Commit history as version control
+
+<span class="type">Google Drive API</span> <span class="cmt">(optional)</span>
+├── Export docs to Google Docs
+├── Export decks to Google Slides
+└── Backup all files to Drive folder</pre>
+      </div>
+
+      <div class="subsection-title">Local Storage (Room Database)</div>
+      <div class="code-block">
+        <span class="label">Database Schema</span>
+<pre><span class="type">conversations</span>
+├── id <span class="cmt">(UUID)</span>
+├── title
+├── mode <span class="cmt">(chat/research/notebook/infographic)</span>
+├── created_at, updated_at
+
+<span class="type">messages</span>
+├── id <span class="cmt">(UUID)</span>
+├── conversation_id <span class="cmt">(FK)</span>
+├── role <span class="cmt">(user/assistant)</span>
+├── content <span class="cmt">(markdown)</span>
+├── artifacts <span class="cmt">(JSON — embedded docs/decks/pages)</span>
+├── created_at
+
+<span class="type">documents</span>
+├── id <span class="cmt">(UUID)</span>
+├── type <span class="cmt">(doc/deck/page/infographic/research)</span>
+├── title
+├── content <span class="cmt">(markdown/html/json)</span>
+├── status <span class="cmt">(draft/published/exported)</span>
+├── github_path <span class="cmt">(nullable)</span>
+└── created_at, updated_at</pre>
+      </div>
+
+      <div class="subsection-title">Config</div>
+      <div class="code-block">
+        <span class="label">Kotlin</span>
+<pre><span class="kw">object</span> <span class="type">VanderBotConfig</span> {
+    <span class="kw">const val</span> <span class="fn">CLAUDE_MODEL</span> = <span class="str">"claude-sonnet-4-20250514"</span>
+    <span class="kw">const val</span> <span class="fn">CLAUDE_API</span> = <span class="str">"https://api.anthropic.com/v1/messages"</span>
+    <span class="kw">const val</span> <span class="fn">GITHUB_REPO</span> = <span class="str">"Revilopark/ontological-theatre"</span>
+    <span class="kw">const val</span> <span class="fn">GITHUB_BRANCH</span> = <span class="str">"gh-pages"</span>
+    <span class="kw">const val</span> <span class="fn">BASE_URL</span> = <span class="str">"https://revilopark.github.io/ontological-theatre/"</span>
+}</pre>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 10 — Content Type Specifications
+         ============================================================ -->
+    <section class="section-card" id="s10">
+      <div class="section-header">
+        <div class="section-num">Section 10</div>
+        <h2>Content Types</h2>
+        <div class="gold-line"></div>
+      </div>
+
+      <div class="content-grid">
+        <div class="content-type-card">
+          <div class="ct-icon" style="background: var(--grad-blue);">💬</div>
+          <div class="ct-label">Chat</div>
+          <div class="ct-desc">Text, images → streaming markdown</div>
+        </div>
+        <div class="content-type-card">
+          <div class="ct-icon" style="background: #6366f1;">📄</div>
+          <div class="ct-label">Document</div>
+          <div class="ct-desc">Prompt or blank → markdown with AI</div>
+        </div>
+        <div class="content-type-card">
+          <div class="ct-icon" style="background: #ec4899;">📊</div>
+          <div class="ct-label">Pitch Deck</div>
+          <div class="ct-desc">Topic → 8-15 rendered slides</div>
+        </div>
+        <div class="content-type-card">
+          <div class="ct-icon" style="background: #14b8a6;">🌐</div>
+          <div class="ct-label">Web Page</div>
+          <div class="ct-desc">Description → live HTML/CSS</div>
+        </div>
+        <div class="content-type-card">
+          <div class="ct-icon" style="background: var(--grad-infographic);">📈</div>
+          <div class="ct-label">Infographic</div>
+          <div class="ct-desc">Data or topic → SVG/Canvas viz</div>
+        </div>
+        <div class="content-type-card">
+          <div class="ct-icon" style="background: var(--grad-notebook);">📓</div>
+          <div class="ct-label">NotebookLM</div>
+          <div class="ct-desc">Sources → study guides, audio</div>
+        </div>
+        <div class="content-type-card">
+          <div class="ct-icon" style="background: var(--grad-research);">🔬</div>
+          <div class="ct-label">Deep Research</div>
+          <div class="ct-desc">Query → report + citations</div>
+        </div>
+        <div class="content-type-card">
+          <div class="ct-icon" style="background: #f59e0b;">🖼</div>
+          <div class="ct-label">Image</div>
+          <div class="ct-desc">Camera/gallery → vision analysis</div>
+        </div>
+      </div>
+
+      <div class="glass-table-wrap">
+        <table class="glass-table">
+          <thead>
+            <tr><th>Type</th><th>Input</th><th>Output</th><th>Export Formats</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>💬 Chat</td><td>Text, images</td><td>Streaming markdown</td><td>PDF, TXT</td></tr>
+            <tr><td>📄 Document</td><td>Prompt or blank</td><td>Markdown with AI assist</td><td>Google Docs, PDF, MD</td></tr>
+            <tr><td>📊 Pitch Deck</td><td>Topic prompt</td><td>8-15 slides (HTML rendered)</td><td>Google Slides, PDF, PPTX</td></tr>
+            <tr><td>🌐 Web Page</td><td>Description</td><td>Single-file HTML/CSS</td><td>GitHub Pages (live URL)</td></tr>
+            <tr><td>📈 Infographic</td><td>Data or topic</td><td>SVG/Canvas visualization</td><td>PNG, PDF, embed</td></tr>
+            <tr><td>📓 NotebookLM</td><td>Sources (URL, PDF, text)</td><td>Study guide, flashcards, audio</td><td>PDF, audio file</td></tr>
+            <tr><td>🔬 Deep Research</td><td>Query</td><td>Structured report + citations</td><td>PDF, Google Docs</td></tr>
+            <tr><td>🖼 Image</td><td>Camera/gallery upload</td><td>Vision analysis in chat</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 11 — Accessibility
+         ============================================================ -->
+    <section class="section-card" id="s11">
+      <div class="section-header">
+        <div class="section-num">Section 11</div>
+        <h2>Accessibility</h2>
+        <div class="gold-line"></div>
+      </div>
+      <ul class="spec-list">
+        <li>Dynamic type support (system font scaling)</li>
+        <li>Minimum contrast ratio: <strong>4.5:1</strong> (WCAG AA)</li>
+        <li>Screen reader labels on all interactive elements</li>
+        <li>Reduce Motion: disables spring animations, parallax</li>
+        <li>Focus indicators for keyboard/switch navigation</li>
+        <li>Alt text on all generated images</li>
+      </ul>
+    </section>
+
+    <!-- ============================================================
+         SECTION 12 — Performance Targets
+         ============================================================ -->
+    <section class="section-card" id="s12">
+      <div class="section-header">
+        <div class="section-num">Section 12</div>
+        <h2>Performance Targets</h2>
+        <div class="gold-line"></div>
+      </div>
+
+      <div class="perf-grid">
+        <div class="perf-item">
+          <span class="perf-label">Cold start</span>
+          <div class="perf-bar-wrap"><div class="perf-bar green" data-width="90"></div></div>
+          <span class="perf-target">&lt; 2s</span>
+        </div>
+        <div class="perf-item">
+          <span class="perf-label">Chat first token</span>
+          <div class="perf-bar-wrap"><div class="perf-bar" data-width="95"></div></div>
+          <span class="perf-target">&lt; 500ms</span>
+        </div>
+        <div class="perf-item">
+          <span class="perf-label">Screen transition</span>
+          <div class="perf-bar-wrap"><div class="perf-bar green" data-width="97"></div></div>
+          <span class="perf-target">&lt; 300ms</span>
+        </div>
+        <div class="perf-item">
+          <span class="perf-label">Image upload</span>
+          <div class="perf-bar-wrap"><div class="perf-bar gold" data-width="80"></div></div>
+          <span class="perf-target">&lt; 3s</span>
+        </div>
+        <div class="perf-item">
+          <span class="perf-label">Page publish</span>
+          <div class="perf-bar-wrap"><div class="perf-bar gold" data-width="72"></div></div>
+          <span class="perf-target">&lt; 5s</span>
+        </div>
+        <div class="perf-item">
+          <span class="perf-label">Deck generation</span>
+          <div class="perf-bar-wrap"><div class="perf-bar" data-width="55"></div></div>
+          <span class="perf-target">&lt; 15s (10 slides)</span>
+        </div>
+        <div class="perf-item">
+          <span class="perf-label">App size</span>
+          <div class="perf-bar-wrap"><div class="perf-bar green" data-width="85"></div></div>
+          <span class="perf-target">&lt; 25MB</span>
+        </div>
+        <div class="perf-item">
+          <span class="perf-label">Offline support</span>
+          <div class="perf-bar-wrap"><div class="perf-bar gold" data-width="60"></div></div>
+          <span class="perf-target">Draft editing + queue</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 13 — Analytics Events
+         ============================================================ -->
+    <section class="section-card" id="s13">
+      <div class="section-header">
+        <div class="section-num">Section 13</div>
+        <h2>Analytics Events</h2>
+        <div class="gold-line"></div>
+      </div>
+
+      <div class="glass-table-wrap">
+        <table class="glass-table">
+          <thead>
+            <tr><th>Event</th><th>Trigger</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="event-badge">content_created</span></td><td>New chat/doc/deck/page/etc</td></tr>
+            <tr><td><span class="event-badge">mode_switched</span></td><td>Chat mode change</td></tr>
+            <tr><td><span class="event-badge">message_sent</span></td><td>User sends message</td></tr>
+            <tr><td><span class="event-badge">artifact_exported</span></td><td>Export to Drive/PDF/etc</td></tr>
+            <tr><td><span class="event-badge">page_published</span></td><td>Push to GitHub Pages</td></tr>
+            <tr><td><span class="event-badge">session_duration</span></td><td>Time in app</td></tr>
+            <tr><td><span class="event-badge">error_occurred</span></td><td>API failure, crash</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 14 — Roadmap
+         ============================================================ -->
+    <section class="section-card" id="s14">
+      <div class="section-header">
+        <div class="section-num">Section 14</div>
+        <h2>Future Roadmap</h2>
+        <div class="gold-line"></div>
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background: var(--grad-blue);">1.1</div>
+          <div class="timeline-content">
+            <div class="timeline-version">Version 1.1</div>
+            <div class="timeline-desc">Near-term enhancements</div>
+            <ul class="timeline-features">
+              <li>Collaborative editing (real-time, multi-user)</li>
+              <li>Voice input (Whisper transcription)</li>
+              <li>Template gallery for decks and pages</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background: var(--grad-notebook);">1.2</div>
+          <div class="timeline-content">
+            <div class="timeline-version">Version 1.2</div>
+            <div class="timeline-desc">Platform expansion</div>
+            <ul class="timeline-features">
+              <li>iOS companion app</li>
+              <li>Desktop web app (responsive PWA)</li>
+              <li>Integration with Vanderbilt Canvas LMS</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background: var(--grad-research);">2.0</div>
+          <div class="timeline-content">
+            <div class="timeline-version">Version 2.0</div>
+            <div class="timeline-desc">Intelligence layer</div>
+            <ul class="timeline-features">
+              <li>Trinity Graph integration (knowledge graph across all content)</li>
+              <li>Cross-student collaboration (shared projects)</li>
+              <li>AI-powered feedback on student work</li>
+              <li>Professor dashboard with analytics</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 15 — Live References
+         ============================================================ -->
+    <section class="section-card" id="s15">
+      <div class="section-header">
+        <div class="section-num">Section 15</div>
+        <h2>Live References</h2>
+        <div class="gold-line"></div>
+      </div>
+
+      <div class="glass-table-wrap">
+        <table class="glass-table">
+          <thead>
+            <tr><th>Resource</th><th>URL</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Interactive Simulation</td><td><a class="ref-link" href="https://revilopark.github.io/ontological-theatre/vanderbot-sim.html" target="_blank">revilopark.github.io/…/vanderbot-sim.html</a></td></tr>
+            <tr><td>Android Repo (private)</td><td><a class="ref-link" href="https://github.com/Revilopark/vanderbot-mobile" target="_blank">github.com/Revilopark/vanderbot-mobile</a></td></tr>
+            <tr><td>Course Site</td><td><a class="ref-link" href="https://vanderbot.com" target="_blank">vanderbot.com</a></td></tr>
+            <tr><td>Design System</td><td>Inkwell Light Glass Morphic</td></tr>
+            <tr><td>AI Model</td><td>Claude Sonnet 4 (Anthropic)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p style="text-align:center; margin-top:40px; color: var(--text-tertiary); font-size: 13px; font-style: italic;">
+        This spec is the single source of truth for VanderBot UI/UX.<br>
+        All design and engineering decisions should reference this document.
+      </p>
+
+      <p style="text-align:center; margin-top:16px; font-weight: 700; color: var(--text-secondary); font-size: 14px; letter-spacing: 1px;">
+        Inkwell Labs · 2026
+      </p>
+    </section>
+
+  </div><!-- /content-wrapper -->
+</div><!-- /main -->
+
+<!-- Back to Top -->
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">↑</button>
+
+<script>
+// ============================================================
+// SIDEBAR TOGGLE (mobile)
+// ============================================================
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
+  const hamburger = document.querySelector('.hamburger');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('show');
+  hamburger.classList.toggle('open');
+}
+
+// Close sidebar on nav click (mobile)
+document.querySelectorAll('.sidebar-nav a').forEach(a => {
+  a.addEventListener('click', () => {
+    if (window.innerWidth <= 1024) toggleSidebar();
+  });
+});
+
+// ============================================================
+// ACTIVE NAV TRACKING (Intersection Observer)
+// ============================================================
+const sections = document.querySelectorAll('.section-card');
+const navLinks = document.querySelectorAll('.sidebar-nav a');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      navLinks.forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { rootMargin: '-20% 0px -60% 0px', threshold: 0 });
+
+sections.forEach(s => observer.observe(s));
+
+// ============================================================
+// BACK TO TOP BUTTON
+// ============================================================
+const btt = document.getElementById('backToTop');
+window.addEventListener('scroll', () => {
+  btt.classList.toggle('show', window.scrollY > 600);
+}, { passive: true });
+
+// ============================================================
+// PERFORMANCE BAR ANIMATION (on scroll into view)
+// ============================================================
+const perfObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.querySelectorAll('.perf-bar').forEach(bar => {
+        const w = bar.getAttribute('data-width');
+        bar.style.width = w + '%';
+      });
+      perfObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.3 });
+
+const perfSection = document.getElementById('s12');
+if (perfSection) {
+  // Initialize bars at 0
+  perfSection.querySelectorAll('.perf-bar').forEach(bar => { bar.style.width = '0%'; });
+  perfObserver.observe(perfSection);
+}
+</script>
+</body>
+</html>
