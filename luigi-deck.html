@@ -1,0 +1,1759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LUIGI · Your AI Insurance Fighter · Seed Round</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN SYSTEM — Luigi Dark Glass Morphism
+   ============================================================ */
+:root {
+  --bg: #0a0a0f;
+  --bg2: #0d0d14;
+  --glass: rgba(34,197,94,0.06);
+  --glass-hover: rgba(34,197,94,0.12);
+  --glass-border: rgba(34,197,94,0.15);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  --glass-shadow-lg: 0 20px 60px rgba(0,0,0,0.6);
+  --blur: blur(20px);
+  --blur-sm: blur(12px);
+  --green: #22c55e;
+  --green-light: #4ade80;
+  --green-dark: #166534;
+  --green-glow: rgba(34,197,94,0.4);
+  --orange: #f97316;
+  --orange-light: #fb923c;
+  --danger: #ef4444;
+  --danger-light: #f87171;
+  --text: #e4e4e7;
+  --text-muted: #a1a1aa;
+  --text-light: #71717a;
+  --text-dark: #52525b;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  user-select: none;
+}
+
+/* ============================================================
+   GRADIENT MESH BACKGROUND
+   ============================================================ */
+.bg-mesh {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(34,197,94,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 80% 20%, rgba(74,222,128,0.05) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 50% 90%, rgba(34,197,94,0.06) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 60% at 90% 80%, rgba(249,115,22,0.04) 0%, transparent 50%),
+    linear-gradient(135deg, #0a0a0f 0%, #0d1117 30%, #0a0f0a 60%, #0a0a0f 100%);
+  z-index: 0;
+}
+
+.mesh-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.3;
+  z-index: 0;
+  animation: orbFloat 20s ease-in-out infinite;
+}
+.mesh-orb-1 {
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(34,197,94,0.15) 0%, transparent 70%);
+  top: -150px; left: -150px;
+  animation-delay: 0s;
+}
+.mesh-orb-2 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(74,222,128,0.1) 0%, transparent 70%);
+  top: 50%; right: -100px;
+  animation-delay: -7s;
+}
+.mesh-orb-3 {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(34,197,94,0.12) 0%, transparent 70%);
+  bottom: -80px; left: 30%;
+  animation-delay: -14s;
+}
+
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -20px) scale(1.05); }
+  66% { transform: translate(-20px, 30px) scale(0.95); }
+}
+
+/* ============================================================
+   PROGRESS BAR
+   ============================================================ */
+.progress-bar-container {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: rgba(255,255,255,0.03);
+  z-index: 1000;
+}
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green), var(--green-light), var(--green));
+  background-size: 200% 100%;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: progressShimmer 3s linear infinite;
+  box-shadow: 0 0 12px var(--green-glow);
+}
+@keyframes progressShimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* ============================================================
+   SLIDE SYSTEM
+   ============================================================ */
+.slides-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 40px 140px;
+  opacity: 0;
+  pointer-events: none;
+  overflow-y: auto;
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(20px) scale(0.98);
+}
+
+.slide.active {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateY(0) scale(1);
+}
+
+.slide.exit-left {
+  opacity: 0;
+  transform: translateX(-40px) scale(0.96);
+}
+
+.slide.exit-right {
+  opacity: 0;
+  transform: translateX(40px) scale(0.96);
+}
+
+/* ============================================================
+   GLASS COMPONENTS
+   ============================================================ */
+.glass {
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius);
+}
+
+.glass-card {
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: var(--transition);
+}
+
+.glass-card:hover {
+  background: var(--glass-hover);
+  box-shadow: var(--glass-shadow-lg);
+  transform: translateY(-2px);
+}
+
+.glass-panel {
+  background: rgba(34,197,94,0.04);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(34,197,94,0.12);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+  border-radius: var(--radius-xl);
+  padding: 48px;
+}
+
+/* ============================================================
+   BOTTOM NAVIGATION
+   ============================================================ */
+.bottom-nav {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(10,10,15,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(34,197,94,0.15);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  border-radius: 50px;
+  padding: 10px 20px;
+  z-index: 999;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition);
+  font-family: 'Inter', sans-serif;
+}
+
+.nav-btn:hover {
+  background: rgba(34,197,94,0.12);
+  color: var(--green);
+}
+
+.nav-btn svg {
+  width: 16px; height: 16px;
+}
+
+.dot-nav {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.dot.active {
+  width: 20px;
+  border-radius: 3px;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green-glow);
+}
+
+.dot:hover:not(.active) {
+  background: rgba(34,197,94,0.5);
+  transform: scale(1.2);
+}
+
+.slide-counter {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-light);
+  letter-spacing: 0.5px;
+  min-width: 44px;
+  text-align: center;
+}
+
+/* ============================================================
+   SPEAKER NOTES
+   ============================================================ */
+.notes-panel {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  width: 760px;
+  max-width: 90vw;
+  background: rgba(10,10,15,0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(34,197,94,0.15);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  z-index: 998;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.notes-panel.visible {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateX(-50%) translateY(0);
+}
+
+.notes-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.notes-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+.display-xl {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(48px, 6vw, 80px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -2px;
+  color: var(--text);
+}
+
+.display-lg {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -1px;
+  color: var(--text);
+}
+
+.display-md {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(24px, 3vw, 38px);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.headline {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(18px, 2.2vw, 28px);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text);
+}
+
+.body-lg {
+  font-size: clamp(15px, 1.5vw, 19px);
+  font-weight: 400;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.body-md {
+  font-size: clamp(13px, 1.3vw, 16px);
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.body-sm {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-light);
+}
+
+.mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--green), var(--green-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-orange {
+  background: linear-gradient(135deg, var(--orange), var(--orange-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-danger {
+  background: linear-gradient(135deg, var(--danger), var(--danger-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.green-glow {
+  text-shadow: 0 0 40px rgba(34,197,94,0.5), 0 0 80px rgba(34,197,94,0.2);
+}
+
+/* ============================================================
+   BADGES & STATS
+   ============================================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 100px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.badge-green {
+  background: rgba(34,197,94,0.12);
+  color: var(--green);
+  border: 1px solid rgba(34,197,94,0.25);
+}
+
+.badge-orange {
+  background: rgba(249,115,22,0.12);
+  color: var(--orange);
+  border: 1px solid rgba(249,115,22,0.25);
+}
+
+.badge-danger {
+  background: rgba(239,68,68,0.12);
+  color: var(--danger);
+  border: 1px solid rgba(239,68,68,0.25);
+}
+
+.stat-huge {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(36px, 5vw, 64px);
+  font-weight: 700;
+  letter-spacing: -2px;
+  line-height: 1;
+}
+
+.stat-lg {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(28px, 3.5vw, 48px);
+  font-weight: 700;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.stat-md {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(20px, 2.5vw, 32px);
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ============================================================
+   LAYOUT HELPERS
+   ============================================================ */
+.slide-content {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.center-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  width: 100%;
+}
+
+.three-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+}
+
+.four-col {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+.divider {
+  width: 48px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--green), transparent);
+  border-radius: 2px;
+  margin: 16px 0;
+}
+
+.divider.center { margin: 16px auto; }
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(34,197,94,0.3); }
+  50% { box-shadow: 0 0 40px rgba(34,197,94,0.6); }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes glitch {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(2px, -2px); }
+  60% { transform: translate(-1px, -1px); }
+  80% { transform: translate(1px, 1px); }
+}
+
+@keyframes loopSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-float { animation: float 4s ease-in-out infinite; }
+.animate-float-delay { animation: float 4s ease-in-out infinite 2s; }
+
+.slide.active .stagger-1 { animation: fadeUp 0.6s cubic-bezier(0.4,0,0.2,1) 0.1s both; }
+.slide.active .stagger-2 { animation: fadeUp 0.6s cubic-bezier(0.4,0,0.2,1) 0.2s both; }
+.slide.active .stagger-3 { animation: fadeUp 0.6s cubic-bezier(0.4,0,0.2,1) 0.3s both; }
+.slide.active .stagger-4 { animation: fadeUp 0.6s cubic-bezier(0.4,0,0.2,1) 0.4s both; }
+.slide.active .stagger-5 { animation: fadeUp 0.6s cubic-bezier(0.4,0,0.2,1) 0.5s both; }
+.slide.active .stagger-6 { animation: fadeUp 0.6s cubic-bezier(0.4,0,0.2,1) 0.6s both; }
+.slide.active .stagger-7 { animation: fadeUp 0.6s cubic-bezier(0.4,0,0.2,1) 0.7s both; }
+.slide.active .stagger-8 { animation: fadeUp 0.6s cubic-bezier(0.4,0,0.2,1) 0.8s both; }
+
+/* ============================================================
+   SPECIFIC COMPONENTS
+   ============================================================ */
+
+/* Tool grid icons */
+.tool-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  background: rgba(34,197,94,0.08);
+  border: 1px solid rgba(34,197,94,0.15);
+  transition: var(--transition);
+}
+
+.tool-icon:hover {
+  background: rgba(34,197,94,0.18);
+  transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(34,197,94,0.3);
+}
+
+/* Insight card */
+.insight-card {
+  padding: 24px 28px;
+  border-radius: var(--radius-lg);
+  border-left: 4px solid var(--green);
+  background: rgba(34,197,94,0.04);
+  border-top: 1px solid rgba(34,197,94,0.08);
+  border-right: 1px solid rgba(34,197,94,0.08);
+  border-bottom: 1px solid rgba(34,197,94,0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.insight-card.orange { border-left-color: var(--orange); background: rgba(249,115,22,0.04); }
+.insight-card.danger { border-left-color: var(--danger); background: rgba(239,68,68,0.04); }
+
+/* Feedback loop */
+.loop-node {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.12);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.loop-arrow {
+  color: var(--green);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* Demo terminal */
+.terminal {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  overflow: hidden;
+}
+
+.terminal-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(34,197,94,0.1);
+}
+
+.terminal-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.terminal-prompt {
+  color: var(--green);
+}
+
+.terminal-output {
+  color: var(--text-muted);
+}
+
+.terminal-highlight {
+  color: var(--green-light);
+  font-weight: 600;
+}
+
+/* Market size circles */
+.market-circle {
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  .slide {
+    padding: 60px 20px 140px;
+  }
+  .two-col, .three-col, .four-col {
+    grid-template-columns: 1fr;
+  }
+  .bottom-nav {
+    padding: 8px 14px;
+    gap: 10px;
+  }
+  .glass-panel {
+    padding: 28px 20px;
+  }
+  .dot-nav {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .slide {
+    padding: 50px 16px 130px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg-mesh"></div>
+<div class="mesh-orb mesh-orb-1"></div>
+<div class="mesh-orb mesh-orb-2"></div>
+<div class="mesh-orb mesh-orb-3"></div>
+
+<!-- Scanline overlay -->
+<div style="position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;opacity:0.03;">
+  <div style="width:100%;height:200%;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(34,197,94,0.3) 2px,rgba(34,197,94,0.3) 4px);animation:scanline 8s linear infinite;"></div>
+</div>
+
+<!-- Progress Bar -->
+<div class="progress-bar-container">
+  <div class="progress-bar" id="progressBar" style="width:6.67%"></div>
+</div>
+
+<!-- ============================================================
+     SLIDES
+     ============================================================ -->
+<div class="slides-container">
+
+  <!-- =====================================================
+       SLIDE 1 — TITLE
+       ===================================================== -->
+  <div class="slide active" id="slide-1" data-notes="Open with energy. This is a seed round deck for Luigi — an AI-powered insurance advocacy platform. The name is deliberately provocative. Own it.">
+    <div class="center-content" style="max-width: 800px; margin: 0 auto;">
+
+      <div class="stagger-1" style="margin-bottom: 24px;">
+        <span class="badge badge-green">✦ Inkwell Labs</span>
+      </div>
+
+      <div class="stagger-2" style="margin-bottom: 8px;">
+        <span style="font-size: clamp(80px, 12vw, 140px); display: block;">🍄</span>
+      </div>
+
+      <div class="stagger-3" style="margin-bottom: 16px;">
+        <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: clamp(72px, 14vw, 160px); font-weight: 700; letter-spacing: -4px; line-height: 0.9;">
+          <span class="gradient-text green-glow">LUIGI</span>
+        </h1>
+      </div>
+
+      <div class="stagger-4" style="margin-bottom: 32px;">
+        <p style="font-family: 'Space Grotesk', sans-serif; font-size: clamp(18px, 2.5vw, 28px); font-weight: 500; color: var(--text-muted); letter-spacing: 2px;">
+          Your AI Insurance Fighter
+        </p>
+      </div>
+
+      <div class="divider center stagger-5"></div>
+
+      <div class="stagger-6" style="margin-top: 16px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dark); letter-spacing: 2px; text-transform: uppercase;">
+          Seed Round · Confidential · 2026
+        </span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 2 — THE PROBLEM
+       ===================================================== -->
+  <div class="slide" id="slide-2" data-notes="This isn't a bug — it's the business model. UnitedHealth Group made $22B in profit in 2023. A significant portion comes from denied claims that are never appealed. Let these numbers land. Pause between each stat.">
+    <div class="slide-content">
+
+      <span class="badge badge-danger stagger-1" style="margin-bottom: 24px;">⚠️ The Problem</span>
+
+      <h2 class="display-lg stagger-2" style="margin-bottom: 36px;">
+        The System Is Designed<br><span class="gradient-text-danger">Against You</span>
+      </h2>
+
+      <div class="two-col" style="margin-bottom: 28px;">
+        <div class="glass-card stagger-3" style="text-align: center;">
+          <div class="stat-lg gradient-text" style="margin-bottom: 8px;">50–60%</div>
+          <div class="body-md">of insurance appeals <strong style="color: var(--green);">are successful</strong></div>
+        </div>
+        <div class="glass-card stagger-4" style="text-align: center;">
+          <div class="stat-lg gradient-text-danger" style="margin-bottom: 8px;">0.5%</div>
+          <div class="body-md">of denied claims are <strong style="color: var(--danger);">ever appealed</strong></div>
+        </div>
+      </div>
+
+      <div class="two-col" style="margin-bottom: 28px;">
+        <div class="glass-card stagger-5" style="text-align: center;">
+          <div class="stat-lg gradient-text-orange" style="margin-bottom: 8px;">$262B</div>
+          <div class="body-md">in claims denied annually by US health insurers</div>
+        </div>
+        <div class="glass-card stagger-6" style="text-align: center;">
+          <div class="stat-lg" style="color: var(--text); margin-bottom: 8px;">18 hrs</div>
+          <div class="body-md">average time fighting a <strong>single</strong> denial</div>
+        </div>
+      </div>
+
+      <div class="insight-card danger stagger-7" style="text-align: center;">
+        <p class="body-lg" style="color: var(--text);">
+          Insurance companies profit from consumer <strong>inaction</strong>.<br>
+          <span style="color: var(--danger);">The process is deliberately opaque because confusion is profitable.</span>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 3 — WHY NOW
+       ===================================================== -->
+  <div class="slide" id="slide-3" data-notes="The Luigi Mangione moment crystallized something that was already building. Healthcare costs are the #1 financial anxiety in America. The convergence of AI capability, consumer rage, and regulatory support makes this the exact right time.">
+    <div class="slide-content">
+
+      <span class="badge badge-orange stagger-1" style="margin-bottom: 24px;">⏱ Why Now</span>
+
+      <h2 class="display-lg stagger-2" style="margin-bottom: 36px;">
+        Three <span class="gradient-text-orange">Converging</span> Forces
+      </h2>
+
+      <div class="three-col">
+        <div class="glass-card stagger-3">
+          <div style="font-size: 32px; margin-bottom: 12px;">🤖</div>
+          <h3 class="headline" style="margin-bottom: 10px; font-size: 18px;">AI Capability</h3>
+          <p class="body-md">LLMs can now read insurance policies, understand medical coding, and generate <strong style="color: var(--green);">legally precise documents</strong>.</p>
+        </div>
+        <div class="glass-card stagger-4">
+          <div style="font-size: 32px; margin-bottom: 12px;">🔥</div>
+          <h3 class="headline" style="margin-bottom: 10px; font-size: 18px;">Consumer Rage</h3>
+          <p class="body-md">Public sentiment against insurance companies at <strong style="color: var(--danger);">all-time high</strong>. The cultural moment is now.</p>
+        </div>
+        <div class="glass-card stagger-5">
+          <div style="font-size: 32px; margin-bottom: 12px;">⚖️</div>
+          <h3 class="headline" style="margin-bottom: 10px; font-size: 18px;">Regulatory Tailwind</h3>
+          <p class="body-md">No Surprises Act (2022), CMS transparency rules, <strong style="color: var(--orange);">state-level reforms</strong> all moving our direction.</p>
+        </div>
+      </div>
+
+      <div class="insight-card stagger-6" style="margin-top: 28px; text-align: center;">
+        <p class="body-lg" style="color: var(--text);">
+          The technology exists. The demand exists. The regulations are on our side.<br>
+          <strong class="gradient-text">No one has built it.</strong>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 4 — THE SOLUTION
+       ===================================================== -->
+  <div class="slide" id="slide-4" data-notes="We're not building another health app. We're building a weapon. Every tool generates a specific, actionable document — a letter, a form, a complaint — that the user sends directly to their insurer.">
+    <div class="slide-content">
+
+      <span class="badge badge-green stagger-1" style="margin-bottom: 24px;">🍄 The Solution</span>
+
+      <h2 class="display-lg stagger-2" style="margin-bottom: 12px;">
+        Luigi: <span class="gradient-text">AI-Powered</span><br>Patient Advocacy
+      </h2>
+
+      <p class="body-lg stagger-3" style="text-align: center; margin-bottom: 32px; max-width: 700px; margin-left: auto; margin-right: auto;">
+        Luigi arms consumers with the same weapons that <strong style="color: var(--green);">billion-dollar RCM companies</strong> use — for free.
+      </p>
+
+      <div class="four-col" style="margin-bottom: 24px;">
+        <div class="glass-card stagger-4" style="text-align: center; padding: 16px 12px;">
+          <div class="tool-icon" style="margin: 0 auto 10px;">🔑</div>
+          <div style="font-size: 12px; font-weight: 700; color: var(--green);">GAP Auth</div>
+        </div>
+        <div class="glass-card stagger-4" style="text-align: center; padding: 16px 12px;">
+          <div class="tool-icon" style="margin: 0 auto 10px;">⚔️</div>
+          <div style="font-size: 12px; font-weight: 700; color: var(--green);">Denial Appeals</div>
+        </div>
+        <div class="glass-card stagger-5" style="text-align: center; padding: 16px 12px;">
+          <div class="tool-icon" style="margin: 0 auto 10px;">📋</div>
+          <div style="font-size: 12px; font-weight: 700; color: var(--green);">Prior Auth</div>
+        </div>
+        <div class="glass-card stagger-5" style="text-align: center; padding: 16px 12px;">
+          <div class="tool-icon" style="margin: 0 auto 10px;">🔍</div>
+          <div style="font-size: 12px; font-weight: 700; color: var(--green);">EOB Decoder</div>
+        </div>
+      </div>
+      <div class="four-col" style="margin-bottom: 28px;">
+        <div class="glass-card stagger-6" style="text-align: center; padding: 16px 12px;">
+          <div class="tool-icon" style="margin: 0 auto 10px;">🛡️</div>
+          <div style="font-size: 12px; font-weight: 700; color: var(--green);">Balance Bill Fighter</div>
+        </div>
+        <div class="glass-card stagger-6" style="text-align: center; padding: 16px 12px;">
+          <div class="tool-icon" style="margin: 0 auto 10px;">💰</div>
+          <div style="font-size: 12px; font-weight: 700; color: var(--green);">Rate Negotiator</div>
+        </div>
+        <div class="glass-card stagger-7" style="text-align: center; padding: 16px 12px;">
+          <div class="tool-icon" style="margin: 0 auto 10px;">📊</div>
+          <div style="font-size: 12px; font-weight: 700; color: var(--green);">Plan Analyzer</div>
+        </div>
+        <div class="glass-card stagger-7" style="text-align: center; padding: 16px 12px;">
+          <div class="tool-icon" style="margin: 0 auto 10px; background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.25);">☢️</div>
+          <div style="font-size: 12px; font-weight: 700; color: var(--danger);">Nuclear Option</div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap;" class="stagger-8">
+        <div class="glass-card" style="padding: 10px 18px; text-align: center;">
+          <span class="body-md" style="color: var(--text);">Tell Luigi what happened</span>
+        </div>
+        <span style="color: var(--green); font-size: 20px;">→</span>
+        <div class="glass-card" style="padding: 10px 18px; text-align: center;">
+          <span class="body-md" style="color: var(--text);">Luigi analyzes your case</span>
+        </div>
+        <span style="color: var(--green); font-size: 20px;">→</span>
+        <div class="glass-card" style="padding: 10px 18px; text-align: center; border-color: rgba(34,197,94,0.3);">
+          <span class="body-md" style="color: var(--green); font-weight: 700;">Luigi fights for you</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 5 — PRODUCT DEMO
+       ===================================================== -->
+  <div class="slide" id="slide-5" data-notes="Live demo available. The GAP auth generator on our site is functional today. We've templated the first tool and validated the approach. This is real. It works. Let me show you.">
+    <div class="slide-content">
+
+      <span class="badge badge-green stagger-1" style="margin-bottom: 24px;">💻 Product Demo</span>
+
+      <h2 class="display-lg stagger-2" style="margin-bottom: 32px; text-align: center;">
+        It Actually <span class="gradient-text">Works</span>
+      </h2>
+
+      <div class="terminal stagger-3" style="margin-bottom: 20px;">
+        <div class="terminal-header">
+          <div class="terminal-dot" style="background: var(--danger);"></div>
+          <div class="terminal-dot" style="background: var(--orange);"></div>
+          <div class="terminal-dot" style="background: var(--green);"></div>
+          <span style="font-size: 12px; color: var(--text-dark); margin-left: 8px;">luigi — gap-authorization</span>
+        </div>
+        <div>
+          <span class="terminal-prompt">patient@luigi:~$</span> <span style="color: var(--text);">describe your situation</span>
+        </div>
+        <div style="margin: 12px 0; padding: 12px 16px; background: rgba(34,197,94,0.04); border-radius: 8px; border: 1px solid rgba(34,197,94,0.1);">
+          <span class="terminal-output">"My orthopedic surgeon is out of network. I've been his patient for 8 years. My insurer says I need to find someone in-network."</span>
+        </div>
+        <div style="margin: 8px 0;">
+          <span class="terminal-prompt">luigi:~$</span> <span style="color: var(--green);">generating gap exception letter...</span>
+        </div>
+        <div style="margin: 12px 0; padding: 12px 16px; background: rgba(34,197,94,0.06); border-radius: 8px; border: 1px solid rgba(34,197,94,0.15);">
+          <div class="terminal-highlight">✓ Citing 42 CFR §422.112 — continuity of care provisions</div>
+          <div class="terminal-highlight">✓ State continuity of care laws — applicable statutes identified</div>
+          <div class="terminal-highlight">✓ Network adequacy requirements — gap exception triggered</div>
+          <div class="terminal-highlight">✓ 8-year treatment history — established relationship documented</div>
+        </div>
+        <div style="margin-top: 12px; padding: 12px 16px; background: rgba(34,197,94,0.12); border-radius: 8px; border: 1px solid rgba(34,197,94,0.3);">
+          <span style="color: var(--green); font-weight: 700; font-size: 14px;">RESULT: Approved at in-network rate.</span><br>
+          <span style="color: var(--green-light); font-size: 18px; font-weight: 700;">Patient saved $10,800.</span>
+        </div>
+      </div>
+
+      <div class="insight-card stagger-4" style="text-align: center;">
+        <p class="body-lg" style="color: var(--text);">
+          Luigi doesn't give advice. <strong class="gradient-text">Luigi generates documents that win.</strong>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 6 — HOW IT WORKS (TECHNICAL)
+       ===================================================== -->
+  <div class="slide" id="slide-6" data-notes="Key insight: all the data we need is public. Payer clinical policy bulletins, CMS coverage determinations, state insurance codes — all freely available. We're just making it accessible and actionable. The Trinity Graph is the secret weapon.">
+    <div class="slide-content">
+
+      <span class="badge badge-green stagger-1" style="margin-bottom: 24px;">⚙️ Architecture</span>
+
+      <h2 class="display-lg stagger-2" style="margin-bottom: 32px; text-align: center;">
+        <span class="gradient-text">Trinity Graph</span> Architecture
+      </h2>
+
+      <div class="three-col">
+        <div class="glass-card stagger-3" style="border-top: 3px solid #3b82f6;">
+          <div style="text-align: center; margin-bottom: 16px;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(59,130,246,0.15); border: 2px solid rgba(59,130,246,0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 20px;">🔵</div>
+          </div>
+          <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: #60a5fa; margin-bottom: 10px; text-align: center;">Social Graph</h3>
+          <p class="body-sm">Maps <strong>patient ↔ provider ↔ payer ↔ regulator</strong> relationships. Tracks which payers respond to which pressure.</p>
+        </div>
+        <div class="glass-card stagger-4" style="border-top: 3px solid var(--orange);">
+          <div style="text-align: center; margin-bottom: 16px;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(249,115,22,0.15); border: 2px solid rgba(249,115,22,0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 20px;">🟠</div>
+          </div>
+          <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: var(--orange); margin-bottom: 10px; text-align: center;">Knowledge Graph</h3>
+          <p class="body-sm">Every payer's clinical policies, all 50 state codes, federal regs (ACA, ERISA, No Surprises), CMS LCDs/NCDs, CPT/ICD-10. <strong style="color: var(--orange);">ALL PUBLIC DATA.</strong></p>
+        </div>
+        <div class="glass-card stagger-5" style="border-top: 3px solid var(--green);">
+          <div style="text-align: center; margin-bottom: 16px;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(34,197,94,0.15); border: 2px solid rgba(34,197,94,0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 20px;">🟢</div>
+          </div>
+          <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: var(--green); margin-bottom: 10px; text-align: center;">Generative Graph</h3>
+          <p class="body-sm">Claude-powered document generation. Writes appeals, GAP letters, complaints in the <strong style="color: var(--green);">exact language that gets approvals</strong>.</p>
+        </div>
+      </div>
+
+      <div class="insight-card stagger-6" style="margin-top: 28px; text-align: center;">
+        <p class="body-lg" style="color: var(--text);">
+          The insurance companies' own rules are published.<br>
+          <span style="color: var(--green);">Consumers just don't know where to find them.</span>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 7 — THE MOAT
+       ===================================================== -->
+  <div class="slide" id="slide-7" data-notes="The moat isn't the AI — anyone can use Claude. The moat is the outcome data. Every appeal we process makes the next one more likely to succeed. Network effects in insurance advocacy. This is a true data flywheel.">
+    <div class="slide-content">
+
+      <span class="badge badge-green stagger-1" style="margin-bottom: 24px;">🏰 Defensibility</span>
+
+      <h2 class="display-lg stagger-2" style="margin-bottom: 12px; text-align: center;">
+        Outcome Data <span class="gradient-text">No One Else Has</span>
+      </h2>
+
+      <p class="body-lg stagger-3" style="text-align: center; margin-bottom: 32px; color: var(--text-muted);">
+        Every appeal Luigi generates, we track: <strong style="color: var(--green);">did it work?</strong>
+      </p>
+
+      <!-- Feedback loop -->
+      <div class="stagger-4" style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 32px;">
+        <div class="loop-node">📝 Generate appeal</div>
+        <span class="loop-arrow">→</span>
+        <div class="loop-node">📊 Track outcome</div>
+        <span class="loop-arrow">→</span>
+        <div class="loop-node">🔧 Improve templates</div>
+        <span class="loop-arrow">→</span>
+        <div class="loop-node" style="border-color: rgba(34,197,94,0.3);">📈 Higher win rate</div>
+        <span class="loop-arrow">→</span>
+        <div class="loop-node">👥 More users</div>
+        <span class="loop-arrow">→</span>
+        <div class="loop-node" style="border-color: rgba(34,197,94,0.3);">💎 More data</div>
+        <span class="loop-arrow" style="font-size: 24px;">↻</span>
+      </div>
+
+      <div class="terminal stagger-5" style="margin-bottom: 24px;">
+        <div style="padding: 4px 0;">
+          <span class="terminal-prompt">luigi:~$</span> <span style="color: var(--text);">query outcome_data --payer="UnitedHealthcare" --type="MRI denial" --state="CA"</span>
+        </div>
+        <div style="margin-top: 12px; padding: 12px 16px; background: rgba(34,197,94,0.06); border-radius: 8px; border: 1px solid rgba(34,197,94,0.15);">
+          <div class="terminal-highlight">Template #7 citing LCD L35059</div>
+          <div style="color: var(--green-light); font-size: 24px; font-weight: 700; margin: 4px 0;">73% overturn rate</div>
+          <div class="terminal-output" style="font-size: 12px;">Based on 847 appeals processed · Last updated 2h ago</div>
+        </div>
+      </div>
+
+      <div class="insight-card stagger-6" style="text-align: center;">
+        <p class="body-lg" style="color: var(--text);">
+          This outcome data doesn't exist anywhere. Not at CMS. Not at the payers.<br>
+          <strong class="gradient-text">Only at Luigi.</strong>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 8 — MARKET SIZE
+       ===================================================== -->
+  <div class="slide" id="slide-8" data-notes="KFF reports average denial rates of 17% across ACA marketplace plans. Some payers deny 30%+. Prior auth denials are even higher. The entire consumer-facing market for insurance appeals is unserved.">
+    <div class="slide-content">
+
+      <span class="badge badge-orange stagger-1" style="margin-bottom: 24px;">📐 Market</span>
+
+      <h2 class="display-lg stagger-2" style="margin-bottom: 36px; text-align: center;">
+        <span class="gradient-text-orange">$262B</span> Problem,<br><span style="color: var(--text-light);">Zero Solutions</span>
+      </h2>
+
+      <div class="three-col" style="margin-bottom: 28px;">
+        <div class="glass-card stagger-3" style="text-align: center; padding: 28px 20px;">
+          <div class="label" style="color: var(--text-dark); margin-bottom: 12px;">TAM</div>
+          <div class="stat-lg gradient-text-orange" style="margin-bottom: 8px;">$262B</div>
+          <p class="body-sm">Annual denied claims</p>
+          <p style="font-size: 10px; color: var(--text-dark); margin-top: 4px;">AMA / KFF data</p>
+        </div>
+        <div class="glass-card stagger-4" style="text-align: center; padding: 28px 20px;">
+          <div class="label" style="color: var(--text-dark); margin-bottom: 12px;">SAM</div>
+          <div class="stat-lg gradient-text" style="margin-bottom: 8px;">$78B</div>
+          <p class="body-sm">Appealable denials</p>
+          <p style="font-size: 10px; color: var(--text-dark); margin-top: 4px;">~30% with strong grounds</p>
+        </div>
+        <div class="glass-card stagger-5" style="text-align: center; padding: 28px 20px; border-color: rgba(34,197,94,0.3);">
+          <div class="label" style="color: var(--green); margin-bottom: 12px;">SOM</div>
+          <div class="stat-lg gradient-text" style="margin-bottom: 8px;">$7.8B</div>
+          <p class="body-sm">Year 3 addressable</p>
+          <p style="font-size: 10px; color: var(--text-dark); margin-top: 4px;">Top 10 states</p>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="glass-card stagger-6">
+          <h4 style="font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; color: var(--text-light); margin-bottom: 12px;">COMPETITORS (LOL)</h4>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <span class="body-sm">Patient advocacy firms</span>
+              <span class="mono" style="font-size: 12px; color: var(--danger);">$300–500/hr</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <span class="body-sm">Attorney services</span>
+              <span class="mono" style="font-size: 12px; color: var(--danger);">$200–400/hr</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0;">
+              <span class="body-sm">DIY templates</span>
+              <span class="mono" style="font-size: 12px; color: var(--orange);">Generic, no AI</span>
+            </div>
+          </div>
+        </div>
+        <div class="insight-card stagger-7" style="display: flex; align-items: center;">
+          <p class="body-lg" style="color: var(--text); text-align: center; width: 100%;">
+            We're not competing with anyone.<br>
+            <strong class="gradient-text">We're creating a category.</strong>
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 9 — BUSINESS MODEL
+       ===================================================== -->
+  <div class="slide" id="slide-9" data-notes="We model 5% free-to-paid conversion. At 1M free users, that's 50K paying subscribers = $6M ARR from subscriptions alone. Legal referrals add another $2-4M. Enterprise white-label is the long play.">
+    <div class="slide-content">
+
+      <span class="badge badge-green stagger-1" style="margin-bottom: 24px;">💸 Business Model</span>
+
+      <h2 class="display-lg stagger-2" style="margin-bottom: 32px; text-align: center;">
+        Free to Fight.<br><span class="gradient-text">Premium to Win More.</span>
+      </h2>
+
+      <div class="two-col" style="margin-bottom: 24px;">
+        <div class="glass-card stagger-3" style="border-top: 3px solid var(--text-dark);">
+          <h4 style="font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; color: var(--text-light); margin-bottom: 14px;">FREE TIER</h4>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;"><span style="color: var(--green);">✓</span><span class="body-sm">3 documents / month</span></div>
+            <div style="display: flex; align-items: center; gap: 8px;"><span style="color: var(--green);">✓</span><span class="body-sm">Basic appeal letters</span></div>
+            <div style="display: flex; align-items: center; gap: 8px;"><span style="color: var(--green);">✓</span><span class="body-sm">Single state coverage</span></div>
+          </div>
+        </div>
+        <div class="glass-card stagger-4" style="border-top: 3px solid var(--green); position: relative;">
+          <div style="position: absolute; top: -12px; right: 16px; background: var(--green); color: var(--bg); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 100px;">$9.99/mo</div>
+          <h4 style="font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; color: var(--green); margin-bottom: 14px;">LUIGI PRO</h4>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;"><span style="color: var(--green);">✓</span><span class="body-sm"><strong>Unlimited</strong> documents</span></div>
+            <div style="display: flex; align-items: center; gap: 8px;"><span style="color: var(--green);">✓</span><span class="body-sm">All 8 tools</span></div>
+            <div style="display: flex; align-items: center; gap: 8px;"><span style="color: var(--green);">✓</span><span class="body-sm">Case tracking + deadline alerts</span></div>
+            <div style="display: flex; align-items: center; gap: 8px;"><span style="color: var(--green);">✓</span><span class="body-sm">All 50 states</span></div>
+            <div style="display: flex; align-items: center; gap: 8px;"><span style="color: var(--green);">✓</span><span class="body-sm">Priority generation</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stagger-5" style="width: 100%;">
+        <h4 style="font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; color: var(--text-light); margin-bottom: 14px; text-align: center;">REVENUE STREAMS</h4>
+        <div class="four-col">
+          <div class="glass-card" style="text-align: center; padding: 16px;">
+            <div style="font-size: 24px; margin-bottom: 8px;">📱</div>
+            <div style="font-size: 12px; font-weight: 700; color: var(--green); margin-bottom: 4px;">Subscriptions</div>
+            <div style="font-size: 11px; color: var(--text-dark);">Primary</div>
+          </div>
+          <div class="glass-card" style="text-align: center; padding: 16px;">
+            <div style="font-size: 24px; margin-bottom: 8px;">⚖️</div>
+            <div style="font-size: 12px; font-weight: 700; color: var(--orange); margin-bottom: 4px;">Legal Referrals</div>
+            <div style="font-size: 11px; color: var(--text-dark);">15–20% fee</div>
+          </div>
+          <div class="glass-card" style="text-align: center; padding: 16px;">
+            <div style="font-size: 24px; margin-bottom: 8px;">🏥</div>
+            <div style="font-size: 12px; font-weight: 700; color: #60a5fa; margin-bottom: 4px;">Enterprise</div>
+            <div style="font-size: 11px; color: var(--text-dark);">White-label</div>
+          </div>
+          <div class="glass-card" style="text-align: center; padding: 16px;">
+            <div style="font-size: 24px; margin-bottom: 8px;">📊</div>
+            <div style="font-size: 12px; font-weight: 700; color: #a78bfa; margin-bottom: 4px;">Data Licensing</div>
+            <div style="font-size: 11px; color: var(--text-dark);">Anonymized</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 10 — GO-TO-MARKET
+       ===================================================== -->
+  <div class="slide" id="slide-10" data-notes="The No Surprises Act created massive search volume for balance billing help. We capture that demand with content marketing and the free tool. Every success story is organic distribution.">
+    <div class="slide-content">
+
+      <span class="badge badge-green stagger-1" style="margin-bottom: 24px;">🚀 Go-to-Market</span>
+
+      <h2 class="display-lg stagger-2" style="margin-bottom: 12px; text-align: center;">
+        Virality Is <span class="gradient-text">Built In</span>
+      </h2>
+
+      <p class="body-lg stagger-3" style="text-align: center; margin-bottom: 28px; color: var(--text-muted);">
+        Every Luigi success story is shareable content.
+      </p>
+
+      <div class="three-col" style="margin-bottom: 24px;">
+        <div class="glass-card stagger-4">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+            <span class="badge badge-green" style="font-size: 10px; padding: 4px 10px;">Phase 1</span>
+            <span class="mono" style="font-size: 11px; color: var(--text-dark);">Months 1–3</span>
+          </div>
+          <h4 style="font-size: 14px; font-weight: 700; color: var(--green); margin-bottom: 8px;">Launch & Seed</h4>
+          <p class="body-sm">GAP Auth + Denial Appeals. Target Reddit, TikTok health creators, patient advocacy communities.</p>
+        </div>
+        <div class="glass-card stagger-5">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+            <span class="badge badge-orange" style="font-size: 10px; padding: 4px 10px;">Phase 2</span>
+            <span class="mono" style="font-size: 11px; color: var(--text-dark);">Months 4–6</span>
+          </div>
+          <h4 style="font-size: 14px; font-weight: 700; color: var(--orange); margin-bottom: 8px;">Expand & Partner</h4>
+          <p class="body-sm">All 8 tools live. Partner with Patient Advocate Foundation and nonprofits.</p>
+        </div>
+        <div class="glass-card stagger-6">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+            <span class="badge" style="font-size: 10px; padding: 4px 10px; background: rgba(96,165,250,0.12); color: #60a5fa; border: 1px solid rgba(96,165,250,0.25);">Phase 3</span>
+            <span class="mono" style="font-size: 11px; color: var(--text-dark);">Months 7–12</span>
+          </div>
+          <h4 style="font-size: 14px; font-weight: 700; color: #60a5fa; margin-bottom: 8px;">Enterprise & Scale</h4>
+          <p class="body-sm">Pilot with 3 health systems. State insurance commissioner partnerships.</p>
+        </div>
+      </div>
+
+      <div class="glass-panel stagger-7" style="text-align: center; padding: 24px 32px; background: rgba(34,197,94,0.06); border-color: rgba(34,197,94,0.2);">
+        <p style="font-family: 'Space Grotesk', sans-serif; font-size: clamp(16px, 1.8vw, 22px); font-weight: 600; color: var(--text); line-height: 1.4; font-style: italic;">
+          "I saved <span class="gradient-text">$10,800</span> on my surgery with this free AI tool"
+        </p>
+        <p style="font-size: 13px; color: var(--text-light); margin-top: 8px;">
+          — The most shareable post in healthcare
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 11 — TRACTION / VALIDATION
+       ===================================================== -->
+  <div class="slide" id="slide-11" data-notes="We have a working demo, a validated market thesis, and clear consumer demand. What we need is capital to build the knowledge base and scale the platform. The prototype is live — go try it.">
+    <div class="slide-content">
+
+      <span class="badge badge-green stagger-1" style="margin-bottom: 24px;">📈 Traction</span>
+
+      <h2 class="display-lg stagger-2" style="margin-bottom: 32px; text-align: center;">
+        Early <span class="gradient-text">Signals</span>
+      </h2>
+
+      <div class="two-col" style="margin-bottom: 24px;">
+        <div class="glass-card stagger-3" style="border-left: 4px solid var(--green);">
+          <h4 style="font-size: 13px; font-weight: 700; color: var(--green); margin-bottom: 12px;">🟢 WORKING PROTOTYPE</h4>
+          <p class="body-md" style="margin-bottom: 10px;">GAP authorization generator <strong style="color: var(--green);">live</strong> and functional.</p>
+          <div style="padding: 8px 12px; background: rgba(0,0,0,0.3); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--green-light); word-break: break-all;">
+            revilopark.github.io/ontological-theatre/luigi.html
+          </div>
+        </div>
+        <div class="glass-card stagger-4" style="border-left: 4px solid var(--orange);">
+          <h4 style="font-size: 13px; font-weight: 700; color: var(--orange); margin-bottom: 12px;">📊 THESIS VALIDATED</h4>
+          <p class="body-md">Trinity Graph RCM analysis confirms market thesis. Insurance denial appeal success rates: <strong style="color: var(--green);">50–60%</strong> win rate.</p>
+        </div>
+      </div>
+
+      <div class="stagger-5" style="width: 100%;">
+        <h4 style="font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; color: var(--text-light); margin-bottom: 16px; text-align: center;">DEMAND VALIDATION</h4>
+        <div class="three-col">
+          <div class="glass-card" style="text-align: center;">
+            <div style="font-size: 24px; margin-bottom: 8px;">💬</div>
+            <div class="stat-md gradient-text" style="margin-bottom: 4px;">500K+</div>
+            <p class="body-sm">r/healthinsurance members</p>
+          </div>
+          <div class="glass-card" style="text-align: center;">
+            <div style="font-size: 24px; margin-bottom: 8px;">🔍</div>
+            <div class="stat-md gradient-text-orange" style="margin-bottom: 4px;">40K+</div>
+            <p class="body-sm">Monthly Google searches: "how to appeal insurance denial"</p>
+          </div>
+          <div class="glass-card" style="text-align: center;">
+            <div style="font-size: 24px; margin-bottom: 8px;">💰</div>
+            <div class="stat-md gradient-text-danger" style="margin-bottom: 4px;">$2B+</div>
+            <p class="body-sm">Patient advocacy industry — at $300–500/hr. Luigi does it <strong style="color: var(--green);">free</strong>.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 12 — TEAM
+       ===================================================== -->
+  <div class="slide" id="slide-12" data-notes="Inkwell Labs has built and deployed Trinity Graph applications across multiple verticals. Luigi applies the same framework to the highest-impact consumer problem in America. This isn't a pivot — it's the culmination.">
+    <div class="slide-content">
+
+      <span class="badge badge-green stagger-1" style="margin-bottom: 24px;">👥 Team</span>
+
+      <h2 class="display-lg stagger-2" style="margin-bottom: 32px; text-align: center;">
+        Built by <span class="gradient-text">Inkwell Labs</span>
+      </h2>
+
+      <div class="two-col" style="margin-bottom: 24px;">
+        <div class="glass-card stagger-3" style="padding: 28px;">
+          <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--green), var(--green-light)); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: var(--bg);">OP</div>
+            <div>
+              <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: var(--text);">Oliver Park</h3>
+              <p style="font-size: 12px; color: var(--green); font-weight: 600;">CEO, Inkwell Labs</p>
+            </div>
+          </div>
+          <p class="body-md">Serial entrepreneur. Built Trinity Graph framework powering AI applications across healthcare, real estate, music, and education. <strong>Vanderbilt Owen MBA faculty.</strong></p>
+        </div>
+        <div class="glass-card stagger-4" style="padding: 28px;">
+          <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, rgba(34,197,94,0.2), rgba(74,222,128,0.2)); border: 2px solid rgba(34,197,94,0.3); display: flex; align-items: center; justify-content: center; font-size: 22px;">✦</div>
+            <div>
+              <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: var(--text);">Inkwell Labs</h3>
+              <p style="font-size: 12px; color: var(--green); font-weight: 600;">Venture Studio</p>
+            </div>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <span class="badge badge-green" style="font-size: 9px; padding: 3px 8px;">Aurea Health</span>
+            <span class="badge badge-green" style="font-size: 9px; padding: 3px 8px;">BackyardOne</span>
+            <span class="badge badge-green" style="font-size: 9px; padding: 3px 8px;">Block BMOS</span>
+            <span class="badge badge-green" style="font-size: 9px; padding: 3px 8px;">Enginuity</span>
+            <span class="badge badge-green" style="font-size: 9px; padding: 3px 8px;">VanderBot</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card stagger-5" style="text-align: center; padding: 16px 24px; margin-bottom: 20px;">
+        <h4 style="font-size: 12px; font-weight: 700; color: var(--text-light); margin-bottom: 10px;">ADVISORY</h4>
+        <p class="body-md"><strong>Jeff Jonas</strong> — IBM Fellow, entity resolution pioneer · <strong>Vanderbilt Owen School</strong> network</p>
+      </div>
+
+      <div class="insight-card stagger-6" style="text-align: center;">
+        <p class="body-lg" style="color: var(--text);">
+          We've already built the Trinity Graph.<br>
+          <strong class="gradient-text">Luigi is its most important application.</strong>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 13 — THE ASK
+       ===================================================== -->
+  <div class="slide" id="slide-13" data-notes="At $2.5M we have 18 months of runway. We expect to be Series A ready at Month 12 with 500K users and meaningful revenue. This is a capital-efficient raise for a massive market.">
+    <div class="slide-content">
+
+      <span class="badge badge-green stagger-1" style="margin-bottom: 24px;">🎯 The Ask</span>
+
+      <h2 class="display-lg stagger-2" style="margin-bottom: 32px; text-align: center;">
+        Seed Round: <span class="gradient-text">$2.5M</span>
+      </h2>
+
+      <div class="two-col" style="margin-bottom: 24px;">
+        <div class="stagger-3" style="display: flex; flex-direction: column; gap: 12px;">
+          <h4 style="font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; color: var(--text-light); margin-bottom: 4px;">USE OF FUNDS</h4>
+
+          <div class="glass-card" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 13px; font-weight: 700; color: var(--orange);">Knowledge Base</div>
+              <div class="body-sm" style="font-size: 11px;">50 state codes, payer CPBs, CMS, regs</div>
+            </div>
+            <div class="mono" style="font-size: 16px; font-weight: 700; color: var(--orange);">$800K</div>
+          </div>
+
+          <div class="glass-card" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 13px; font-weight: 700; color: var(--green);">Product</div>
+              <div class="body-sm" style="font-size: 11px;">8 tools, mobile apps, case mgmt</div>
+            </div>
+            <div class="mono" style="font-size: 16px; font-weight: 700; color: var(--green);">$700K</div>
+          </div>
+
+          <div class="glass-card" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 13px; font-weight: 700; color: #60a5fa;">Team</div>
+              <div class="body-sm" style="font-size: 11px;">2 eng, 1 regulatory, 1 design (12mo)</div>
+            </div>
+            <div class="mono" style="font-size: 16px; font-weight: 700; color: #60a5fa;">$600K</div>
+          </div>
+
+          <div class="glass-card" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 13px; font-weight: 700; color: #a78bfa;">Go-to-Market</div>
+              <div class="body-sm" style="font-size: 11px;">Content, creators, community, PR</div>
+            </div>
+            <div class="mono" style="font-size: 16px; font-weight: 700; color: #a78bfa;">$400K</div>
+          </div>
+        </div>
+
+        <div class="stagger-4" style="display: flex; flex-direction: column; gap: 12px;">
+          <h4 style="font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; color: var(--text-light); margin-bottom: 4px;">MILESTONES</h4>
+
+          <div class="glass-card" style="padding: 16px 20px; border-left: 3px solid var(--green);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="mono" style="font-size: 12px; color: var(--green); font-weight: 700;">Month 3</span>
+            </div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--text); margin-top: 6px;">Full platform launch (web)</div>
+          </div>
+
+          <div class="glass-card" style="padding: 16px 20px; border-left: 3px solid var(--orange);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="mono" style="font-size: 12px; color: var(--orange); font-weight: 700;">Month 6</span>
+            </div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--text); margin-top: 6px;">100K users · Mobile apps</div>
+          </div>
+
+          <div class="glass-card" style="padding: 16px 20px; border-left: 3px solid #60a5fa;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="mono" style="font-size: 12px; color: #60a5fa; font-weight: 700;">Month 9</span>
+            </div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--text); margin-top: 6px;">Enterprise pilot · Data moat established</div>
+          </div>
+
+          <div class="glass-card" style="padding: 16px 20px; border-left: 3px solid var(--green); border-color: rgba(34,197,94,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="mono" style="font-size: 12px; color: var(--green); font-weight: 700;">Month 12</span>
+              <span class="badge badge-green" style="font-size: 9px; padding: 2px 8px;">SERIES A READY</span>
+            </div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--text); margin-top: 6px;">500K users · $1M ARR</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 14 — THE VISION
+       ===================================================== -->
+  <div class="slide" id="slide-14" data-notes="The endgame isn't just helping individual consumers. It's systemic change. When denial rates have consequences, they go down. Luigi creates those consequences at scale. This is the slide that should make people feel something.">
+    <div class="slide-content" style="max-width: 800px;">
+
+      <span class="badge badge-green stagger-1" style="margin-bottom: 24px;">🌍 Vision</span>
+
+      <h2 class="display-lg stagger-2" style="margin-bottom: 32px; text-align: center;">
+        What If Everyone <span class="gradient-text">Fought Back?</span>
+      </h2>
+
+      <div class="glass-panel stagger-3" style="text-align: center; margin-bottom: 24px; padding: 36px 40px;">
+        <p class="body-lg" style="color: var(--text); margin-bottom: 20px;">
+          Right now, insurance companies deny <strong style="color: var(--danger);">$262 billion</strong> in claims because they know <strong style="color: var(--danger);">99.5%</strong> of people won't appeal.
+        </p>
+        <div class="divider center"></div>
+        <p style="font-family: 'Space Grotesk', sans-serif; font-size: clamp(22px, 2.8vw, 34px); font-weight: 700; color: var(--green); margin: 20px 0; line-height: 1.3;">
+          Luigi changes that math.
+        </p>
+        <div class="divider center"></div>
+        <p class="body-lg" style="color: var(--text-muted); margin-top: 20px;">
+          If just <strong style="color: var(--green);">10%</strong> of denied claims were appealed — with AI-generated, regulation-citing, payer-specific documents — the insurance industry would be <strong style="color: var(--orange);">forced to change</strong>.
+        </p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;" class="stagger-4">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="color: var(--green); font-size: 18px;">✓</span>
+          <span class="body-lg" style="color: var(--text);">Fewer improper denials</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="color: var(--green); font-size: 18px;">✓</span>
+          <span class="body-lg" style="color: var(--text);">Faster approvals</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="color: var(--green); font-size: 18px;">✓</span>
+          <span class="body-lg" style="color: var(--text);">Fair pricing</span>
+        </div>
+      </div>
+
+      <div class="insight-card stagger-5" style="margin-top: 28px; text-align: center;">
+        <p style="font-family: 'Space Grotesk', sans-serif; font-size: clamp(16px, 1.8vw, 22px); font-weight: 600; color: var(--text); line-height: 1.5;">
+          Luigi isn't just a tool. <span class="gradient-text">It's a movement.</span><br>
+          <span style="color: var(--text-muted); font-weight: 400;">Healthcare shouldn't require a law degree to navigate.</span>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 15 — CLOSE
+       ===================================================== -->
+  <div class="slide" id="slide-15" data-notes="Thank you. We're raising $2.5M to build the platform that finally fights back against insurance denial at scale. The prototype works. The market is massive. The time is now. Let's talk.">
+    <div class="center-content" style="max-width: 800px; margin: 0 auto;">
+
+      <div class="stagger-1" style="margin-bottom: 16px;">
+        <span style="font-size: clamp(60px, 10vw, 100px); display: block;">🍄</span>
+      </div>
+
+      <div class="stagger-2" style="margin-bottom: 24px;">
+        <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: clamp(64px, 12vw, 140px); font-weight: 700; letter-spacing: -4px; line-height: 0.9;">
+          <span class="gradient-text green-glow">LUIGI</span>
+        </h1>
+      </div>
+
+      <div class="divider center stagger-3"></div>
+
+      <div class="stagger-4" style="margin: 20px 0 8px;">
+        <p style="font-family: 'Space Grotesk', sans-serif; font-size: clamp(18px, 2.2vw, 26px); font-weight: 600; color: var(--text); line-height: 1.5;">
+          Every denied claim is a bet<br>that you won't fight back.
+        </p>
+      </div>
+
+      <div class="stagger-5" style="margin-bottom: 32px;">
+        <p style="font-family: 'Space Grotesk', sans-serif; font-size: clamp(20px, 2.5vw, 30px); font-weight: 700;">
+          <span class="gradient-text">Luigi changes the odds.</span>
+        </p>
+      </div>
+
+      <div class="glass-card stagger-6" style="padding: 20px 32px; text-align: center; margin-bottom: 20px;">
+        <p style="font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px;">Oliver Park</p>
+        <p style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--green);">oliver@aiinkwell.com</p>
+        <p style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text-muted);">aiinkwell.com</p>
+      </div>
+
+      <div class="stagger-7">
+        <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dark); letter-spacing: 1.5px;">
+          CONFIDENTIAL · ✦ INKWELL LABS 2026
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /slides-container -->
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav" id="bottomNav">
+  <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="10 4 6 8 10 12"/>
+    </svg>
+    Prev
+  </button>
+
+  <div class="dot-nav" id="dotNav"></div>
+
+  <div class="slide-counter" id="slideCounter">1 / 15</div>
+
+  <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">
+    Next
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 4 10 8 6 12"/>
+    </svg>
+  </button>
+
+  <button class="nav-btn" onclick="toggleNotes()" id="notesBtn" style="border-left: 1px solid rgba(255,255,255,0.06); padding-left: 16px; margin-left: 4px;">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="2" width="12" height="12" rx="2"/>
+      <line x1="5" y1="6" x2="11" y2="6"/>
+      <line x1="5" y1="9" x2="9" y2="9"/>
+    </svg>
+    Notes
+  </button>
+</div>
+
+<!-- Speaker Notes Panel -->
+<div class="notes-panel" id="notesPanel">
+  <div class="notes-label">Speaker Notes</div>
+  <div class="notes-text" id="notesText"></div>
+</div>
+
+<script>
+// ============================================================
+// SLIDE NAVIGATION ENGINE
+// ============================================================
+const TOTAL_SLIDES = 15;
+let currentSlide = 1;
+let notesVisible = false;
+
+const slides = document.querySelectorAll('.slide');
+const progressBar = document.getElementById('progressBar');
+const slideCounter = document.getElementById('slideCounter');
+const notesPanel = document.getElementById('notesPanel');
+const notesText = document.getElementById('notesText');
+const dotNav = document.getElementById('dotNav');
+
+function buildDots() {
+  dotNav.innerHTML = '';
+  for (let i = 1; i <= TOTAL_SLIDES; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i === 1 ? ' active' : '');
+    dot.setAttribute('title', 'Slide ' + i);
+    dot.addEventListener('click', () => goToSlide(i));
+    dotNav.appendChild(dot);
+  }
+}
+
+function updateUI(prev, next) {
+  const prevSlide = document.getElementById('slide-' + prev);
+  const nextSlide = document.getElementById('slide-' + next);
+
+  if (prevSlide) {
+    prevSlide.classList.remove('active');
+    prevSlide.classList.add(next > prev ? 'exit-left' : 'exit-right');
+    setTimeout(() => prevSlide.classList.remove('exit-left', 'exit-right'), 500);
+  }
+
+  if (nextSlide) {
+    nextSlide.classList.add('active');
+  }
+
+  const progress = (next / TOTAL_SLIDES) * 100;
+  progressBar.style.width = progress + '%';
+
+  slideCounter.textContent = next + ' / ' + TOTAL_SLIDES;
+
+  document.querySelectorAll('.dot').forEach((dot, i) => {
+    dot.classList.toggle('active', i + 1 === next);
+  });
+
+  if (notesVisible) {
+    updateNotes(next);
+  }
+
+  document.getElementById('prevBtn').style.opacity = next === 1 ? '0.4' : '1';
+  document.getElementById('nextBtn').style.opacity = next === TOTAL_SLIDES ? '0.4' : '1';
+}
+
+function changeSlide(direction) {
+  const prev = currentSlide;
+  const next = Math.min(Math.max(currentSlide + direction, 1), TOTAL_SLIDES);
+  if (next === currentSlide) return;
+  currentSlide = next;
+  updateUI(prev, next);
+}
+
+function goToSlide(n) {
+  const prev = currentSlide;
+  currentSlide = Math.min(Math.max(n, 1), TOTAL_SLIDES);
+  updateUI(prev, currentSlide);
+}
+
+function updateNotes(slideNum) {
+  const slide = document.getElementById('slide-' + slideNum);
+  if (slide) {
+    const notes = slide.getAttribute('data-notes') || 'No speaker notes for this slide.';
+    notesText.textContent = notes;
+  }
+}
+
+function toggleNotes() {
+  notesVisible = !notesVisible;
+  notesPanel.classList.toggle('visible', notesVisible);
+  document.getElementById('notesBtn').style.color = notesVisible ? 'var(--green)' : '';
+  if (notesVisible) updateNotes(currentSlide);
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  switch (e.key) {
+    case 'ArrowRight':
+    case 'ArrowDown':
+    case ' ':
+      e.preventDefault();
+      changeSlide(1);
+      break;
+    case 'ArrowLeft':
+    case 'ArrowUp':
+      e.preventDefault();
+      changeSlide(-1);
+      break;
+    case 'n':
+    case 'N':
+      toggleNotes();
+      break;
+    case 'Home':
+      goToSlide(1);
+      break;
+    case 'End':
+      goToSlide(TOTAL_SLIDES);
+      break;
+  }
+});
+
+// Touch/swipe support
+let touchStartX = 0;
+let touchStartY = 0;
+
+document.addEventListener('touchstart', (e) => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.addEventListener('touchend', (e) => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+    changeSlide(dx < 0 ? 1 : -1);
+  }
+}, { passive: true });
+
+// Initialize
+buildDots();
+document.getElementById('slide-1').classList.add('active');
+progressBar.style.width = (1 / TOTAL_SLIDES * 100) + '%';
+document.getElementById('prevBtn').style.opacity = '0.4';
+
+// Subtle entrance
+window.addEventListener('load', () => {
+  document.querySelectorAll('.mesh-orb').forEach(orb => {
+    orb.style.opacity = '0';
+    orb.style.transition = 'opacity 1.5s ease';
+    setTimeout(() => { orb.style.opacity = '0.3'; }, 100);
+  });
+});
+</script>
+</body>
+</html>
