@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>THE VIGILANTE PROTOCOL — Comic Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;--s1:#0d0d14;--s2:#12121c;--s3:#1a1a28;
+  --green:#22c55e;--green2:#16a34a;--greeng:rgba(34,197,94,.08);
+  --red:#ef4444;--red2:#b91c1c;
+  --text:#e4e4e7;--muted:#52525b;--border:#1a1a28;
+  --sans:'Inter',system-ui,sans-serif;
+  --head:'Space Grotesk',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --r:6px;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--sans)}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--s3);border-radius:2px}
+
+/* ── SCANLINE ── */
+body::after{
+  content:'';position:fixed;inset:0;z-index:99999;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 2px,rgba(0,0,0,.06) 2px,rgba(0,0,0,.06) 4px);
+}
+
+@keyframes flicker{0%,95%,100%{opacity:1}96%{opacity:.94}97%{opacity:.98}98%{opacity:.9}99%{opacity:1}}
+body{animation:flicker 10s infinite}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex-direction:column;height:100%}
+.topbar{height:48px;background:rgba(10,10,15,.95);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;
+  padding:0 16px;gap:12px;flex-shrink:0;z-index:100}
+.logo{font-family:var(--head);font-size:1.1rem;font-weight:700;
+  color:var(--green);letter-spacing:.06em}
+.logo em{font-style:italic;font-weight:400;color:var(--muted);font-size:.7rem;
+  font-family:var(--sans);letter-spacing:0}
+.top-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.tbtn{padding:.3rem .7rem;border-radius:4px;border:1px solid var(--border);
+  background:var(--s1);color:var(--muted);font-size:.7rem;font-weight:500;
+  cursor:pointer;transition:all .2s;font-family:var(--sans)}
+.tbtn:hover{border-color:var(--green);color:var(--green)}
+.tbtn.green{background:var(--green);color:#0a0a0f;border-color:var(--green);font-weight:700}
+.tbtn.green:hover{opacity:.9;box-shadow:0 0 12px rgba(34,197,94,.4)}
+.tbtn:disabled{opacity:.4;cursor:default}
+.ep-tag{font-family:var(--mono);font-size:.6rem;color:var(--green);
+  padding:.15rem .4rem;background:var(--greeng);border:1px solid rgba(34,197,94,.2);border-radius:3px}
+
+.workspace{flex:1;display:flex;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{width:260px;background:var(--s1);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.sb-hdr{padding:12px 14px;border-bottom:1px solid var(--border);
+  font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.15em}
+.sb-scroll{flex:1;overflow-y:auto;padding:8px}
+.ep-card{padding:12px;border-radius:var(--r);border:1px solid transparent;
+  cursor:pointer;transition:all .2s;margin-bottom:6px}
+.ep-card:hover{background:var(--s2);border-color:var(--border)}
+.ep-card.active{background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.25)}
+.ep-era{font-size:.55rem;font-weight:700;color:var(--green);letter-spacing:.15em;text-transform:uppercase;margin-bottom:3px;font-family:var(--mono)}
+.ep-title{font-family:var(--head);font-size:.95rem;font-weight:600;color:var(--text);margin-bottom:3px}
+.ep-sub{font-size:.68rem;color:var(--muted);line-height:1.5}
+.ep-meta{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.ep-chip{font-size:.55rem;padding:.15rem .4rem;background:var(--s2);border:1px solid var(--border);
+  border-radius:3px;color:var(--muted)}
+
+.panel-list{border-top:1px solid var(--border);padding:8px;flex-shrink:0;max-height:240px;overflow-y:auto}
+.pl-item{display:flex;gap:8px;align-items:center;padding:5px 8px;border-radius:4px;
+  cursor:pointer;font-size:.7rem;color:var(--muted);transition:all .15s;margin-bottom:2px}
+.pl-item:hover{background:var(--s2);color:var(--text)}
+.pl-item.active{color:var(--green);background:rgba(34,197,94,.06)}
+.pl-item.done{color:var(--text)}
+.pl-item.done::before{content:'✓';color:var(--green);font-size:.6rem;margin-right:2px}
+.pl-thumb{width:32px;height:24px;border-radius:3px;overflow:hidden;background:var(--s3);flex-shrink:0}
+.pl-thumb img{width:100%;height:100%;object-fit:cover}
+.pl-num{font-family:var(--mono);font-size:.6rem;color:var(--green);width:16px;flex-shrink:0}
+
+/* ── CENTER — PHONE ── */
+.center{flex:1;display:flex;flex-direction:column;align-items:center;
+  background:var(--bg);overflow:hidden;padding:12px 0}
+.gen-bar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;justify-content:center}
+.gen-progress{font-size:.68rem;color:var(--muted);font-family:var(--mono)}
+
+.phone{background:#020208;border-radius:40px;border:3px solid #111118;
+  box-shadow:0 0 0 1px #060610,0 20px 60px rgba(0,0,0,.9),inset 0 0 0 1px rgba(34,197,94,.04);
+  overflow:hidden;position:relative;width:340px;height:640px;flex-shrink:0}
+.phone-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:110px;height:26px;background:#020208;border-radius:0 0 16px 16px;z-index:10}
+.phone-screen{height:100%;overflow-y:scroll;overflow-x:hidden;padding-top:26px;
+  background:#020206;scroll-behavior:smooth;
+  box-shadow:inset 0 0 80px rgba(34,197,94,.03)}
+.phone-screen::-webkit-scrollbar{display:none}
+
+/* STRIP */
+.strip-title{padding:32px 20px 16px;text-align:center}
+.strip-title .st-era{font-size:.55rem;font-weight:700;color:var(--green);
+  letter-spacing:.25em;text-transform:uppercase;margin-bottom:6px;font-family:var(--mono)}
+.strip-title h2{font-family:var(--head);font-size:1.3rem;color:var(--green);
+  font-weight:700;line-height:1.3;margin-bottom:6px}
+.strip-title .st-sub{font-size:.72rem;color:var(--muted);font-style:italic;
+  font-family:var(--sans)}
+.strip-end{padding:24px 20px 48px;text-align:center}
+.strip-end .se-mark{font-size:1.2rem;color:var(--green);font-weight:700;margin-bottom:4px}
+.strip-end .se-sub{font-size:.65rem;color:var(--muted)}
+
+.s-panel{width:100%;position:relative;overflow:hidden}
+.s-panel img{width:100%;display:block;filter:contrast(1.08) saturate(.9)}
+.s-panel .s-placeholder{width:100%;display:flex;align-items:center;justify-content:center;
+  background:var(--s2);flex-direction:column;gap:6px;
+  border:1px dashed rgba(34,197,94,.15)}
+.s-panel .s-placeholder .s-ph-num{font-family:var(--mono);font-size:.6rem;color:var(--green)}
+.s-panel .s-placeholder .s-ph-desc{font-size:.65rem;color:var(--muted);text-align:center;
+  padding:0 20px;line-height:1.5}
+.s-panel .gen-spin{position:absolute;inset:0;background:rgba(0,0,0,.8);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;font-size:.65rem;color:var(--muted)}
+
+.s-caption{position:absolute;bottom:0;left:0;right:0;padding:10px 14px;
+  background:linear-gradient(transparent,rgba(10,10,15,.92));
+  font-family:var(--sans);font-size:.72rem;color:var(--text);
+  line-height:1.6}
+.s-caption.top{bottom:auto;top:0;
+  background:linear-gradient(rgba(10,10,15,.92),transparent)}
+.s-caption .cap-tag{font-size:.5rem;font-weight:700;color:var(--green);
+  letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:3px;font-family:var(--mono)}
+
+.spin{width:20px;height:20px;border:2px solid rgba(34,197,94,.15);
+  border-top-color:var(--green);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── EDITOR ── */
+.editor{width:260px;background:var(--s1);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden}
+.ed-hdr{padding:10px 14px;border-bottom:1px solid var(--border);
+  font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.15em}
+.ed-scroll{flex:1;overflow-y:auto;padding:14px}
+.ed-section{margin-bottom:14px}
+.ed-label{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--muted);margin-bottom:5px}
+.ed-ta{width:100%;padding:.55rem .7rem;border-radius:4px;border:1px solid var(--border);
+  background:var(--s2);color:var(--text);font-size:.78rem;font-family:var(--sans);
+  resize:none;line-height:1.6}
+.ed-ta:focus{outline:none;border-color:rgba(34,197,94,.4)}
+.ed-ta::placeholder{color:var(--muted)}
+.ed-small{font-size:.6rem;color:var(--muted);margin-top:3px;font-style:italic;line-height:1.4}
+.gen-one{width:100%;padding:.55rem;border-radius:4px;border:none;
+  background:var(--green);color:#0a0a0f;font-size:.78rem;font-weight:700;
+  cursor:pointer;font-family:var(--sans);transition:all .2s;margin-top:4px}
+.gen-one:hover{opacity:.9;box-shadow:0 0 16px rgba(34,197,94,.4)}
+.gen-one:disabled{opacity:.4;cursor:default}
+.gen-one.regen{background:var(--s2);color:var(--green);border:1px solid var(--green)}
+.gen-one.regen:hover{background:rgba(34,197,94,.08)}
+
+.char-chips{display:flex;gap:4px;flex-wrap:wrap}
+.char-chip{padding:.2rem .5rem;border-radius:3px;font-size:.6rem;
+  background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);color:var(--green);
+  cursor:pointer;transition:all .15s}
+.char-chip:hover{background:rgba(34,197,94,.15)}
+
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+  background:var(--s2);border:1px solid var(--border);border-radius:6px;
+  padding:.45rem .9rem;font-size:.72rem;color:var(--text);z-index:99998;
+  pointer-events:none;transition:opacity .3s;white-space:nowrap}
+.toast.ok{border-color:rgba(34,197,94,.4);color:var(--green)}
+.toast.err{border-color:rgba(239,68,68,.4);color:var(--red)}
+.toast.hide{opacity:0}
+
+@keyframes glitchH{
+  0%{clip-path:inset(40% 0 60% 0);transform:translate(-2px,0)}
+  20%{clip-path:inset(10% 0 85% 0);transform:translate(2px,0)}
+  40%{clip-path:inset(70% 0 5% 0);transform:translate(-1px,0)}
+  60%{clip-path:inset(50% 0 30% 0);transform:translate(1px,0)}
+  80%{clip-path:inset(20% 0 70% 0);transform:translate(-2px,0)}
+  100%{clip-path:inset(0);transform:translate(0)}
+}
+.glitch-active .phone-screen{animation:glitchH .15s steps(3) 1}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="topbar">
+  <div class="logo">🍄 THE VIGILANTE PROTOCOL <em>— comic builder</em></div>
+  <div class="top-right">
+    <span class="ep-tag" id="genCount">0 / 0 panels</span>
+    <button class="tbtn green" id="genAllBtn" onclick="generateAll()">✦ Generate Episode</button>
+    <button class="tbtn" onclick="exportStrip()">⬇ Export Strip</button>
+  </div>
+</div>
+
+<div class="workspace">
+
+  <div class="sidebar">
+    <div class="sb-hdr">Episodes</div>
+    <div class="sb-scroll" id="epList"></div>
+    <div class="panel-list" id="panelList"></div>
+  </div>
+
+  <div class="center">
+    <div class="gen-bar">
+      <span class="gen-progress" id="genStatus">Select an episode</span>
+    </div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen" id="phoneScreen"></div>
+    </div>
+  </div>
+
+  <div class="editor">
+    <div class="ed-hdr">Panel Editor</div>
+    <div class="ed-scroll" id="edScroll">
+      <div style="padding:30px 0;text-align:center;color:var(--muted);font-size:.78rem">
+        Select a panel to edit
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<div class="toast hide" id="toast"></div>
+
+<script>
+const PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app';
+const FAL   = PROXY + '/fal/generate-sync';
+const GEM   = PROXY + '/gemini/generate';
+
+const STYLE = `cinematic cyberpunk noir illustration, dark urban environment, neon green accents on black, corporate dystopia meets hacker resistance, high contrast dramatic lighting, surveillance cameras and screens, medical and insurance imagery, figures in shadow with green-lit faces, professional graphic novel illustration, no text no words no speech bubbles, moody atmospheric noir`;
+
+const CHARACTERS = {
+  'Maya Chen': 'Asian American woman, mid-30s, tired but determined eyes, wearing scrubs or casual clothes, illuminated by green computer screen light, medical bills scattered around her, everywoman patient fighting the system',
+  'The Builder': 'figure in shadow, only green screen light visible on face, hoodie, surrounded by multiple monitors showing code and data, hands on keyboard, anonymous architect, could be anyone',
+  'Insurance Executive': 'middle-aged white man in expensive suit, corporate boardroom, cold fluorescent lighting, looking at denial rate dashboards, glass tower office, morally ambiguous',
+  'Senator Torres': 'Latina woman, 50s, power suit, standing at congressional podium, determined expression, screens behind her showing data visualizations, fighting for accountability',
+  'Dr. Patel': 'South Asian man, 40s, white coat, stethoscope, frustrated expression, holding denial letter, standing in hospital hallway, caught between patient care and billing bureaucracy',
+  'The Network': 'overhead shot of city at night, thousands of green dots of light in windows, each one a person at a computer, connected by faint green lines, distributed resistance',
+  'Corporate Tower': 'massive glass corporate skyscraper at night, cold blue-white interior lights, logo of fictional insurance company, imposing and inhuman, surveillance aesthetic',
+  'The Mushroom': 'single green glowing mushroom growing through a crack in concrete, bioluminescent, symbol of resilience and distributed growth, mycelium network visible underground',
+};
+
+const EPISODES = [
+  {
+    id:'denial', era:'DAY 1 · MEMORIAL HOSPITAL', title:'The Denial',
+    sub:'Maya gets the letter. The system says no.',
+    chars:['Maya Chen','Dr. Patel'],
+    panels:[
+      {type:'cinematic', desc:'Hospital billing office, fluorescent overhead lights casting harsh shadows, woman in her 30s standing at a counter receiving a letter, sterile institutional environment, medical files stacked, the atmosphere is cold and bureaucratic', caption:'Memorial Hospital. Billing department. The fluorescent lights have a frequency that makes everything look slightly dead.'},
+      {type:'standard', desc:'Close-up of woman sitting in a hospital parking lot in her car, staring at a letter in her hands, the letter has red stamped text, tears forming, dashboard visible, harsh parking lot lights, lonely and defeated', caption:'Maya Chen reads the letter twice. Then a third time. The words don\'t change. CLAIM DENIED — Not Medically Necessary.'},
+      {type:'portrait', desc:'Medical bill document on a kitchen table, harsh overhead light, the total showing $47,000, coffee cup next to it, woman\'s hands visible at edge of frame gripping the table, financial devastation captured in a still life', caption:'$47,000. For a surgery her doctor says she needs. Her insurance says otherwise. An algorithm made the decision in 1.2 seconds.'},
+      {type:'standard', desc:'Woman on phone in her apartment, frustrated expression, hand on forehead, phone pressed to ear, the room is dim and messy with medical paperwork, hold music visualized as musical notes in the air, clock showing hours passed', caption:'She calls the number on the letter. "Your call is important to us." She is caller 847 in the queue. Average wait time: not disclosed.'},
+      {type:'tall', desc:'Abstract visualization of an automated phone menu system as a maze, woman tiny at the center, arrows and numbered options branching in impossible directions, "Press 1 for..." text fragments floating, Kafka-esque bureaucratic labyrinth in green and black', caption:'Press 1 for claims. Press 3 for appeals. Press 7 for medical necessity review. Press 0 to speak to — we\'re sorry, that option is not available.'},
+      {type:'cinematic', desc:'Woman hanging up the phone and putting her head on the kitchen table, defeated, papers and bills scattered around her, the kitchen is dark except for the harsh light over the table, a moment of despair and exhaustion', caption:'Three hours and forty-seven minutes. She is told to submit Form 1247-B within 30 days. She hangs up. She does not cry. She is too tired to cry.'},
+    ]
+  },
+  {
+    id:'discovery', era:'DAY 14 · MAYA\'S APARTMENT', title:'The Discovery',
+    sub:'She finds the tool. Anonymous. Free. It knows things.',
+    chars:['Maya Chen','The Builder'],
+    panels:[
+      {type:'standard', desc:'Woman at laptop at night, apartment dark except for screen glow in green, blanket over shoulders, scrolling through Reddit threads and forums, searching for "insurance appeal help", determined late-night research session', caption:'Day 14. Maya hasn\'t slept properly in two weeks. Tonight she goes looking. Not for hope. For weapons.'},
+      {type:'portrait', desc:'Close-up of laptop screen showing a Reddit thread, green terminal-style text, the post title reads something about AI insurance appeal tool, upvotes visible, comments mentioning "it actually worked", green mushroom emoji visible', caption:'r/InsuranceComplaints. Buried thread, 47 upvotes. "Used this AI tool to write my appeal. Got approved in 6 days. Not kidding." Link in comments.'},
+      {type:'cinematic', desc:'Screen showing a dark website with green UI elements and a mushroom icon, the Luigi AI tool interface, clean and minimal design, text input field, the words "Your AI Insurance Fighter" visible, woman\'s face reflected faintly in the screen', caption:'The site is simple. Dark background. Green text. A mushroom icon. No company name. No ads. Just a text field: "Paste your denial letter here."'},
+      {type:'standard', desc:'Woman typing on laptop, leaning forward with intense focus, green light from screen illuminating her face and hands, the keyboard visible, text flowing on screen, her expression shifting from skeptical to amazed', caption:'She pastes the denial letter. She enters her diagnosis. She hits generate. Eight seconds.'},
+      {type:'tall', desc:'Dramatic close-up of screen showing AI-generated appeal letter with legal citations highlighted in green, regulatory codes visible, the letter is dense and professional, specific policy numbers cited, the quality is stunning and unexpected', caption:'The AI generates a three-page appeal citing 42 CFR §422.112, the insurer\'s own Clinical Policy Bulletin 2024-ORTHO-112, and a Montana DOI precedent from last year. It found contradictions in the denial that a human lawyer would have missed.'},
+      {type:'cinematic', desc:'Woman leaning back from laptop, hand over mouth in shock, green screen glow on her face, the appeal letter visible on screen, her expression is one of disbelief and dawning hope, the dark apartment around her', caption:'Maya reads it three times. It\'s perfect. It cites regulations she\'s never heard of. It uses the insurance company\'s own words against them. It took eight seconds. It was free.'},
+    ]
+  },
+  {
+    id:'weapon', era:'DAY 15 · THE APPEAL', title:'The Weapon',
+    sub:'Maya fires. The insurance company reads its own playbook turned against it.',
+    chars:['Maya Chen','Insurance Executive'],
+    panels:[
+      {type:'standard', desc:'Woman clicking submit button on a computer screen, finger on mouse, the green submit button glowing, her face determined, the appeal letter visible on screen behind the button, moment of action and defiance', caption:'Day 15. 9:47 AM. Maya clicks Submit. The appeal enters the system. She does not know she is user #4,847.'},
+      {type:'cinematic', desc:'Corporate mail room or intake center, sterile white and gray, a conveyor belt of documents, one envelope arriving with a green glow or subtle mushroom watermark, standing out among hundreds of generic envelopes, institutional processing', caption:'The appeal arrives in the insurer\'s document processing center at 2:13 PM Eastern. It is assigned to an analyst named Kevin. Kevin does not know what he is about to read.'},
+      {type:'portrait', desc:'Insurance company analyst at desk, reading a document with confused expression, glasses pushed up on forehead, highlighting passages, the letter is dense with citations, his coffee forgotten and getting cold, fluorescent office lighting', caption:'Kevin reads it once. He reads it again. He highlights seven passages. He has been reviewing appeals for four years. He has never seen one like this.'},
+      {type:'standard', desc:'Insurance analyst walking down a corporate hallway carrying the document, heading toward a corner office, the hallway is sleek glass and steel, passing other cubicles with workers, his expression urgent', caption:'Kevin escalates to legal. The letter cites the company\'s own policy manual — page 47, paragraph 3 — which contradicts the denial. The AI found the loophole the company wrote into its own rules.'},
+      {type:'tall', desc:'Corporate legal team around a conference table, multiple lawyers examining printed copies of the appeal letter, highlighted sections visible, their expressions ranging from impressed to alarmed, a glass corporate interior', caption:'Legal recognizes the citations. They should — they wrote them. The appeal uses their precedent from Montana against their policy in Oregon. It cross-references their Q3 coverage memo with their Q4 denial criteria. The math doesn\'t work in their favor.'},
+      {type:'cinematic', desc:'Insurance executive alone in glass office, looking out at city skyline at night, holding the appeal letter, his reflection in the window superimposed on the city lights, contemplative and slightly worried, power dynamics shifting', caption:'The appeal is approved on Day 21. Six days. The previous average approval time for appeals at this company was 47 days. Something has changed. They don\'t know what yet.'},
+    ]
+  },
+  {
+    id:'network', era:'DAY 45 · DISTRIBUTED', title:'The Network',
+    sub:'It spreads. Mushrooms through concrete. Impossible to stop.',
+    chars:['The Network','The Builder','The Mushroom'],
+    panels:[
+      {type:'cinematic', desc:'Overhead shot of a city at night, but hundreds of windows have a faint green glow coming from computer screens, scattered across the dark urban landscape, each one a person using the tool, constellation of digital resistance', caption:'Day 45. The map shows 12,000 active users. Each green dot is someone who was told no. Each green dot is fighting back.'},
+      {type:'standard', desc:'Montage-style collage of different screens showing different stories: "$10,247 saved", "Surgery approved after 3 appeals", "My mom can get her medication", green text on dark screens, emotional testimonials rendered as data', caption:'The stories come in. A teacher in Ohio: saved $10,247. A grandfather in Texas: heart surgery approved. A child in Minnesota: medication coverage reinstated. The algorithm fights for all of them equally.'},
+      {type:'portrait', desc:'Figure in hoodie at multiple monitors in dark room, watching real-time data dashboard showing user growth curve going exponential, map with spreading green dots, code commits flowing, anonymous builder watching their creation grow', caption:'The Builder watches the data. User growth: exponential. Appeal success rate: 73%. Average time to generate: 8.4 seconds. The system is learning. Every denial it reads makes the next appeal stronger.'},
+      {type:'standard', desc:'Abstract visualization of a feedback loop: denial letters flowing in, being analyzed, patterns extracted, templates improved, better appeals flowing out, a cycle of machine learning and justice, rendered as flowing green data streams', caption:'The feedback loop is elegant. Every denial teaches the AI. Every appeal that succeeds validates the template. The insurance companies are training their own adversary with every rejection they issue.'},
+      {type:'tall', desc:'Green glowing mushroom growing through a crack in gray concrete, mycelium network visible spreading underground, other mushrooms beginning to sprout in the background, bioluminescent, beautiful and unstoppable, nature versus infrastructure', caption:'It spreads the way mushrooms spread — underground, invisible, connected. By the time you see it on the surface, the network beneath is vast. You cannot kill a mycelium by picking the mushrooms.'},
+      {type:'cinematic', desc:'Split screen: left side shows corporate glass towers cold and dark, right side shows thousands of green-lit windows in residential buildings, the contrast between corporate power and distributed people power, night scene', caption:'50,000 copies. Open source. No central server. Running on laptops in apartments and libraries and hospital waiting rooms. They cannot send a cease and desist to everyone.'},
+    ]
+  },
+  {
+    id:'reckoning', era:'DAY 90 · CONGRESSIONAL HEARING', title:'The Reckoning',
+    sub:'The data speaks. The Senate listens. The market reacts.',
+    chars:['Senator Torres','Insurance Executive','Maya Chen'],
+    panels:[
+      {type:'cinematic', desc:'Grand congressional hearing room, ornate architecture, wood paneling, senator at elevated podium with gavel, data visualizations on large screens behind her, packed gallery, cameras flashing, formal governmental power on display', caption:'Day 90. Senate Committee on Health. Senator Torres calls the hearing to order. The gallery is full. The cameras are live. The insurance industry sends its most expensive lawyers.'},
+      {type:'portrait', desc:'Insurance executive in expensive suit sitting at witness table with microphone, sweating slightly, looking up at the senator who towers above on the podium, data screens behind showing damning statistics, power imbalance reversed', caption:'The executive is asked one question: "Can you explain why your company\'s AI denied 100,000 claims using identical language, for patients with different conditions, in the same quarter?" He asks for a recess.'},
+      {type:'standard', desc:'Large screen in hearing room showing data visualization: a massive spike in denial rates, then a massive spike in appeals, then denial rates crashing, the graph tells the whole story in one image, green and red lines crossing', caption:'The data is projected on a 40-foot screen. Denial rate: 32%. Appeal rate before Luigi: 0.5%. Appeal rate after: 12.3%. Win rate on those appeals: 73%. The room goes quiet.'},
+      {type:'standard', desc:'Woman in gallery of congressional hearing, watching from the seats, her face lit by the screens, surrounded by other patients and advocates, she is one of thousands but in this moment she is seen, emotional recognition', caption:'Maya Chen watches from the gallery. Row 14, seat 7. She is one data point on that screen. She is also the reason that screen exists.'},
+      {type:'tall', desc:'Multiple overlapping newspaper headlines and news chyrons, "Insurance Industry Faces Congressional Inquiry", "AI Tool Exposes Systematic Denials", "Patient Advocacy AI: Civil Rights of the 21st Century?", breaking news aesthetic', caption:'The headlines write themselves. Cable news runs it for three days straight. Twitter trends for a week. The insurance lobby spends $4.2 million on crisis PR in 48 hours. It doesn\'t work.'},
+      {type:'cinematic', desc:'Stock market ticker showing insurance company stocks dropping, red numbers everywhere, trading floor chaos, the numbers are falling in real time, institutional investors pulling out, the financial consequences of systematic denial made visible', caption:'UnitedHealth: -18%. Anthem: -14%. Cigna: -11%. The market is repricing denial. When every claim gets appealed, the economics of rejection collapse.'},
+    ]
+  },
+  {
+    id:'beacon', era:'NOW', title:'The Beacon',
+    sub:'This story is a weapon. The tool is real. The protocol is open.',
+    chars:['Maya Chen','The Builder','The Mushroom'],
+    panels:[
+      {type:'standard', desc:'Woman in hospital bed, recovering from surgery, sunlight streaming through window, she looks tired but peaceful, medical equipment around her but the atmosphere is warm and hopeful, morning light, the fight was worth it', caption:'Day 120. Maya Chen recovers from surgery. The surgery her insurance said wasn\'t necessary. Her body disagrees. She is healing.'},
+      {type:'cinematic', desc:'Figure in hoodie at computer screen, but the screen shows this comic being read, recursive image, the comic panels visible on the monitor, the builder reading their own story being told, meta-narrative moment, green glow', caption:'The Builder watches the comic being read. Not this comic — a comic about this comic. The recursion is deliberate. Stories are technology. This one has a specific purpose.'},
+      {type:'portrait', desc:'Computer screen showing the Luigi AI tool interface, but with actual working UI elements visible, the tool is real and functional, green interface on dark background, mushroom icon, the line between fiction and reality dissolving', caption:'The tool is real. The link works. The regulations it cites are actual regulations. The loopholes it finds are actual loopholes. The only fiction in this story is the timeline.'},
+      {type:'standard', desc:'Dark scene with a single glowing green mushroom in the foreground, and behind it a city skyline with thousands of green-glowing windows, the mushroom is beautiful and the network is vast, bioluminescent hope spreading', caption:'Every denied claim is a bet that you won\'t fight back. That you won\'t know the regulations. That you won\'t find the contradictions. That you\'ll give up.'},
+      {type:'tall', desc:'Single green glowing mushroom growing through cracked concrete, extreme close-up, bioluminescent light illuminating the cracks, underground mycelium network visible as thin green lines, beautiful and defiant, symbol of unstoppable distributed resistance', caption:'Luigi changes the odds. This comic is a beacon. Copy it. Share it. The protocol is open.'},
+      {type:'cinematic', desc:'Pure black frame with a single small green light in the center, minimalist, the green dot could be a cursor, a mushroom, a signal, glowing against infinite darkness, a beacon', caption:'✦ The fight is real. The tools are real. The only question is whether you\'ll use them.'},
+    ]
+  },
+  {
+    id:'custom', era:'YOUR STORY', title:'Custom Episode',
+    sub:'Write your own chapter of the protocol.',
+    chars:[],
+    panels:[
+      {type:'cinematic', desc:'', caption:null},
+      {type:'standard', desc:'', caption:null},
+      {type:'portrait', desc:'', caption:null},
+      {type:'standard', desc:'', caption:null},
+      {type:'tall', desc:'', caption:null},
+      {type:'cinematic', desc:'', caption:null},
+    ]
+  }
+];
+
+const PANEL_TYPES = {
+  standard:  {h:240, ratio:'4:3',  fal:'landscape_4_3'},
+  cinematic: {h:152, ratio:'21:9', fal:'landscape_16_9'},
+  portrait:  {h:426, ratio:'3:4',  fal:'portrait_4_3'},
+  tall:      {h:480, ratio:'9:16', fal:'portrait_4_3'},
+  square:    {h:340, ratio:'1:1',  fal:'square'},
+};
+
+let st = { epIdx:0, selPanel:0, panels:[], generating:false };
+
+function curEp(){ return EPISODES[st.epIdx]; }
+
+// ── GLITCH ──
+function triggerGlitch(){
+  document.body.classList.add('glitch-active');
+  setTimeout(()=> document.body.classList.remove('glitch-active'), 200);
+}
+setInterval(()=>{ if(Math.random()<0.1) triggerGlitch(); }, 8000+Math.random()*15000);
+
+// ── INIT ──
+function init(){
+  renderEpList();
+  selectEp(0);
+}
+
+function selectEp(idx){
+  st.epIdx = idx;
+  const ep = curEp();
+  st.panels = ep.panels.map(p=>({
+    desc:p.desc, caption:p.caption, type:p.type,
+    imageUrl:p.imageUrl||null, generating:false
+  }));
+  st.selPanel = 0;
+  renderAll();
+}
+
+function renderAll(){
+  renderEpList();
+  renderPanelList();
+  renderPhone();
+  renderEditor();
+  updateCounts();
+}
+
+function renderEpList(){
+  document.getElementById('epList').innerHTML = EPISODES.map((ep,i)=>`
+    <div class="ep-card ${i===st.epIdx?'active':''}" onclick="selectEp(${i})">
+      <div class="ep-era">${ep.era}</div>
+      <div class="ep-title">${ep.title}</div>
+      <div class="ep-sub">${ep.sub}</div>
+      <div class="ep-meta">
+        ${ep.chars.map(c=>`<span class="ep-chip">${c}</span>`).join('')}
+        <span class="ep-chip">${ep.panels.length} panels</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderPanelList(){
+  document.getElementById('panelList').innerHTML = st.panels.map((p,i)=>`
+    <div class="pl-item ${i===st.selPanel?'active':''} ${p.imageUrl?'done':''}" onclick="selectPanelIdx(${i})">
+      <span class="pl-num">${i+1}</span>
+      <div class="pl-thumb">${p.imageUrl?`<img src="${p.imageUrl}">`:'<div style="width:100%;height:100%;background:var(--s3)"></div>'}</div>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.desc.slice(0,40)||'(empty)'}</span>
+    </div>`).join('');
+}
+
+function renderPhone(){
+  const ep = curEp();
+  const screen = document.getElementById('phoneScreen');
+  let html = `<div class="strip-title">
+    <div class="st-era">${ep.era}</div>
+    <h2>${ep.title}</h2>
+    <div class="st-sub">${ep.sub}</div>
+  </div>`;
+
+  st.panels.forEach((p,i)=>{
+    const pt = PANEL_TYPES[p.type]||PANEL_TYPES.standard;
+    html += `<div class="s-panel" id="sp-${i}" style="cursor:pointer" onclick="selectPanelIdx(${i})">`;
+    if(p.generating){
+      html += `<div class="s-placeholder" style="height:${pt.h}px"></div>`;
+      html += `<div class="gen-spin"><div class="spin"></div><span>Generating panel ${i+1}…</span></div>`;
+    } else if(p.imageUrl){
+      html += `<img src="${p.imageUrl}" style="min-height:${pt.h*.6}px">`;
+    } else {
+      html += `<div class="s-placeholder" style="height:${pt.h}px">
+        <div class="s-ph-num">Panel ${i+1} · ${pt.ratio}</div>
+        <div class="s-ph-desc">${p.desc.slice(0,80)||'Describe this scene…'}</div>
+      </div>`;
+    }
+    if(p.caption && (p.imageUrl||p.generating)){
+      html += `<div class="s-caption${i===0?' top':''}">
+        ${i===0?'<span class="cap-tag">Narration</span>':''}
+        ${p.caption}
+      </div>`;
+    }
+    html += `</div>`;
+  });
+
+  html += `<div class="strip-end">
+    <div class="se-mark">🍄</div>
+    <div class="se-sub">${ep.title} — THE VIGILANTE PROTOCOL</div>
+  </div>`;
+  screen.innerHTML = html;
+}
+
+function renderEditor(){
+  const ed = document.getElementById('edScroll');
+  if(!st.panels.length){
+    ed.innerHTML='<div style="padding:30px 0;text-align:center;color:var(--muted);font-size:.78rem">No panels</div>';
+    return;
+  }
+  const p = st.panels[st.selPanel];
+  const ep = curEp();
+  const pt = PANEL_TYPES[p.type]||PANEL_TYPES.standard;
+
+  ed.innerHTML = `
+    <div class="ed-section">
+      <div class="ed-label">Panel ${st.selPanel+1} of ${st.panels.length} · ${pt.ratio}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
+        ${Object.entries(PANEL_TYPES).map(([k,t])=>`
+          <span class="char-chip" style="${p.type===k?'background:var(--green);color:#0a0a0f;border-color:var(--green)':''}"
+            onclick="setPanelType(${st.selPanel},'${k}')">${k} ${t.ratio}</span>
+        `).join('')}
+      </div>
+    </div>
+    <div class="ed-section">
+      <div class="ed-label">Scene Description</div>
+      <textarea class="ed-ta" rows="5" id="ed-desc"
+        placeholder="Describe what happens in this panel…"
+        oninput="st.panels[${st.selPanel}].desc=this.value">${esc(p.desc)}</textarea>
+      ${ep.chars.length?`<div style="margin-top:5px"><div class="ed-label">Characters</div>
+        <div class="char-chips">${ep.chars.map(c=>`<span class="char-chip" onclick="injectChar('${esc(c)}')">${c}</span>`).join('')}</div></div>`:''}
+    </div>
+    <div class="ed-section">
+      <div class="ed-label">Caption / Narration</div>
+      <textarea class="ed-ta" rows="3" id="ed-cap"
+        placeholder="Optional narration text overlay…"
+        oninput="st.panels[${st.selPanel}].caption=this.value||null">${esc(p.caption||'')}</textarea>
+      <button class="tbtn" style="margin-top:4px;width:100%" onclick="aiCaption(${st.selPanel})">✦ AI Write Caption</button>
+    </div>
+    <div class="ed-section">
+      <button class="gen-one ${p.imageUrl?'regen':''}" onclick="generateOne(${st.selPanel})" ${p.generating?'disabled':''}>
+        ${p.generating?'Generating…':p.imageUrl?'↻ Regenerate':'✦ Generate This Panel'}
+      </button>
+    </div>
+    <div class="ed-section" style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="tbtn" onclick="addPanelAt(${st.selPanel})">+ Insert Before</button>
+      <button class="tbtn" onclick="addPanelAt(${st.selPanel+1})">+ Insert After</button>
+      <button class="tbtn" onclick="removePanelAt(${st.selPanel})" style="color:var(--red)">× Remove</button>
+    </div>`;
+}
+
+function updateCounts(){
+  const done = st.panels.filter(p=>p.imageUrl).length;
+  document.getElementById('genCount').textContent = `${done} / ${st.panels.length} panels`;
+  document.getElementById('genStatus').textContent = st.generating
+    ? 'Generating…' : done===st.panels.length&&done>0
+    ? `${curEp().title} — Complete ✓` : `${curEp().title}`;
+}
+
+// ── ACTIONS ──
+function selectPanelIdx(i){
+  st.selPanel = i;
+  renderPanelList();
+  renderEditor();
+  document.querySelectorAll('.s-panel').forEach((el,j)=>{
+    el.style.outline = j===i ? '2px solid var(--green)' : 'none';
+  });
+  const el = document.getElementById('sp-'+i);
+  if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function setPanelType(i,type){
+  st.panels[i].type = type;
+  renderAll();
+}
+
+function injectChar(name){
+  const ta = document.getElementById('ed-desc');
+  if(!ta) return;
+  const add = st.panels[st.selPanel].desc ? `, ${name}` : name;
+  ta.value += add;
+  st.panels[st.selPanel].desc = ta.value;
+}
+
+function addPanelAt(i){
+  st.panels.splice(i,0,{desc:'',caption:null,type:'standard',imageUrl:null,generating:false});
+  st.selPanel = i;
+  renderAll();
+}
+
+function removePanelAt(i){
+  if(st.panels.length<=1) return;
+  st.panels.splice(i,1);
+  if(st.selPanel>=st.panels.length) st.selPanel = st.panels.length-1;
+  renderAll();
+}
+
+// ── GENERATE ──
+function buildFalPrompt(panel){
+  const ep = curEp();
+  let charDescs = '';
+  for(const name of ep.chars){
+    if(panel.desc.toLowerCase().includes(name.toLowerCase().split(' ')[0]) && CHARACTERS[name]){
+      charDescs += CHARACTERS[name] + ', ';
+    }
+  }
+  return `${STYLE}, ${charDescs}${panel.desc}`;
+}
+
+async function generateOne(i){
+  const p = st.panels[i];
+  if(!p.desc.trim()){ toast('Write a scene description first','err'); return; }
+  p.generating = true;
+  renderAll();
+  try{
+    const pt = PANEL_TYPES[p.type]||PANEL_TYPES.standard;
+    const r = await fetch(FAL,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'fal-ai/flux/schnell',
+        prompt: buildFalPrompt(p),
+        image_size: pt.fal,
+        num_inference_steps: 4,
+      })
+    });
+    const data = await r.json();
+    const url = data?.images?.[0]?.url;
+    if(url){ p.imageUrl = url; toast('Panel generated ✓','ok'); triggerGlitch(); }
+    else throw new Error(data?.detail||'No image');
+  } catch(e){ toast('Failed: '+e.message,'err'); }
+  p.generating = false;
+  renderAll();
+}
+
+async function generateAll(){
+  if(st.generating) return;
+  const empty = st.panels.filter(p=>!p.imageUrl && p.desc.trim());
+  if(!empty.length){ toast('All panels generated or no descriptions','err'); return; }
+  st.generating = true;
+  document.getElementById('genAllBtn').disabled = true;
+  renderAll();
+  for(let i=0;i<st.panels.length;i++){
+    const p = st.panels[i];
+    if(p.imageUrl || !p.desc.trim()) continue;
+    document.getElementById('genStatus').textContent = `Generating panel ${i+1} of ${st.panels.length}…`;
+    await generateOne(i);
+    await new Promise(r=>setTimeout(r,300));
+  }
+  st.generating = false;
+  document.getElementById('genAllBtn').disabled = false;
+  renderAll();
+  toast('Episode complete ✓','ok');
+}
+
+// ── AI CAPTION ──
+async function aiCaption(i){
+  const p = st.panels[i];
+  if(!p.desc.trim()){ toast('Write a scene description first','err'); return; }
+  toast('Writing caption…');
+  try{
+    const ep = curEp();
+    const r = await fetch(GEM,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        system_instruction:{parts:[{text:`You are the narrator of THE VIGILANTE PROTOCOL — a cyberpunk graphic novel about AI-powered patient advocacy. Write in a clipped, noir documentary voice. Present tense. Short declarative sentences. Mix clinical precision with understated emotion. Think: Edward Snowden's memoir meets a medical thriller. One or two sentences maximum.`}]},
+        contents:[{parts:[{text:`Episode: "${ep.title}" — ${ep.era}\nScene description: ${p.desc}\n\nWrite a single caption (1-2 sentences) for this comic panel. Clinical narration, not dialogue. State facts that hit hard.`}]}]
+      })
+    });
+    const data = await r.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if(text){
+      p.caption = text.replace(/^["']|["']$/g,'').trim();
+      document.getElementById('ed-cap').value = p.caption;
+      renderPhone();
+      toast('Caption written ✓','ok');
+    } else throw new Error('No text');
+  } catch(e){ toast('Caption failed: '+e.message,'err'); }
+}
+
+// ── EXPORT ──
+async function exportStrip(){
+  const generated = st.panels.filter(p=>p.imageUrl);
+  if(!generated.length){ toast('Generate some panels first','err'); return; }
+  toast('Building strip…');
+  const W = 340;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  let totalH = 80;
+  const items = [];
+  for(const p of generated){
+    const pt = PANEL_TYPES[p.type]||PANEL_TYPES.standard;
+    const img = new Image(); img.crossOrigin = 'anonymous';
+    await new Promise(r=>{img.onload=r;img.onerror=r;img.src=p.imageUrl;});
+    const h = Math.round(W * (pt.h / 340));
+    items.push({img,h,panel:p});
+    totalH += h;
+  }
+  totalH += 60;
+  canvas.height = totalH;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#0a0a0f';
+  ctx.fillRect(0,0,W,totalH);
+
+  ctx.fillStyle = '#22c55e';
+  ctx.font = '700 9px "Inter"';
+  ctx.textAlign = 'center';
+  ctx.fillText(curEp().era, W/2, 28);
+  ctx.fillStyle = '#22c55e';
+  ctx.font = '700 20px "Space Grotesk",sans-serif';
+  ctx.fillText(curEp().title, W/2, 52);
+  ctx.fillStyle = '#52525b';
+  ctx.font = '11px "Inter",sans-serif';
+  ctx.fillText(curEp().sub.slice(0,50), W/2, 68);
+
+  let y = 80;
+  for(const {img,h,panel} of items){
+    ctx.drawImage(img,0,y,W,h);
+    ctx.fillStyle = 'rgba(34,197,94,0.02)';
+    ctx.fillRect(0,y,W,h);
+    if(panel.caption){
+      const grad = ctx.createLinearGradient(0,y+h-50,0,y+h);
+      grad.addColorStop(0,'transparent');
+      grad.addColorStop(1,'rgba(10,10,15,0.9)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0,y+h-50,W,50);
+      ctx.fillStyle = '#e4e4e7';
+      ctx.font = '10px "Inter",sans-serif';
+      ctx.textAlign = 'left';
+      wrapText(ctx, panel.caption, 14, y+h-18, W-28, 12);
+      ctx.textAlign = 'center';
+    }
+    y += h;
+  }
+  // Scanlines
+  ctx.fillStyle = 'rgba(0,0,0,0.04)';
+  for(let sy=0; sy<totalH; sy+=4) ctx.fillRect(0,sy,W,2);
+
+  ctx.fillStyle = '#22c55e';
+  ctx.font = '16px serif';
+  ctx.fillText('🍄', W/2, y+24);
+  ctx.fillStyle = '#52525b';
+  ctx.font = '9px "Inter"';
+  ctx.fillText(curEp().title+' — THE VIGILANTE PROTOCOL', W/2, y+40);
+
+  const link = document.createElement('a');
+  link.download = 'vigilante-' + curEp().id + '.jpg';
+  link.href = canvas.toDataURL('image/jpeg',.92);
+  link.click();
+  toast('Strip exported ✓','ok');
+}
+
+function wrapText(ctx,text,x,y,maxW,lineH){
+  const words = text.split(' ');
+  let line = '';
+  for(const w of words){
+    const test = line + w + ' ';
+    if(ctx.measureText(test).width > maxW && line){
+      ctx.fillText(line.trim(),x,y);
+      line = w + ' ';
+      y += lineH;
+    } else line = test;
+  }
+  if(line) ctx.fillText(line.trim(),x,y);
+}
+
+function esc(s){ return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+let _tt;
+function toast(msg,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='toast '+(type||'');
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.add('hide'),3000);
+}
+
+init();
+</script>
+</body>
+</html>
