@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>THE VIGILANTE PROTOCOL — An Ontological Theatre Production</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  --bg: #0a0a0f;
+  --bg-deep: #060610;
+  --void: #020206;
+  --green: #22c55e;
+  --green-dim: #16a34a;
+  --green-glow: rgba(34, 197, 94, 0.4);
+  --green-subtle: rgba(34, 197, 94, 0.08);
+  --red: #ef4444;
+  --red-dim: #b91c1c;
+  --red-glow: rgba(239, 68, 68, 0.3);
+  --text: #e4e4e7;
+  --text-dim: #a1a1aa;
+  --muted: #52525b;
+  --warm: #fbbf24;
+  --cold: #94a3b8;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-snap-type: y proximity; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NOISE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  background-size: 256px;
+  pointer-events: none;
+  z-index: 10000;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+}
+
+/* ── SCANLINE OVERLAY ── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px, rgba(0, 0, 0, 0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 10001;
+}
+
+.scanline {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 3px;
+  background: rgba(34, 197, 94, 0.06);
+  animation: scanline 6s linear infinite;
+  pointer-events: none;
+  z-index: 10002;
+}
+
+/* ── KEYFRAMES ── */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes glitch {
+  0%, 88%, 100% { clip-path: none; transform: none; }
+  90% { clip-path: polygon(0 10%, 100% 10%, 100% 35%, 0 35%); transform: translate(-4px, 0); color: var(--red); }
+  92% { clip-path: polygon(0 50%, 100% 50%, 100% 70%, 0 70%); transform: translate(4px, 0); color: cyan; }
+  94% { clip-path: polygon(0 75%, 100% 75%, 100% 90%, 0 90%); transform: translate(-2px, 0); }
+  96% { clip-path: none; transform: none; }
+}
+
+@keyframes glitchHard {
+  0%, 70% { clip-path: none; transform: none; opacity: 1; }
+  72% { clip-path: polygon(0 5%, 100% 5%, 100% 25%, 0 25%); transform: translate(-8px, 2px) skewX(-3deg); color: var(--red); }
+  76% { clip-path: polygon(0 40%, 100% 40%, 100% 55%, 0 55%); transform: translate(6px, -1px) skewX(2deg); color: cyan; }
+  80% { clip-path: polygon(0 65%, 100% 65%, 100% 85%, 0 85%); transform: translate(-4px, 0); opacity: 0.7; }
+  84% { clip-path: none; transform: none; opacity: 0.2; }
+  88% { opacity: 1; }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  48% { opacity: 1; }
+  50% { opacity: 0.7; }
+  52% { opacity: 1; }
+  78% { opacity: 1; }
+  80% { opacity: 0.4; }
+  82% { opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 99% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes glow {
+  0%, 100% { text-shadow: 0 0 10px var(--green-glow), 0 0 30px rgba(34, 197, 94, 0.15); }
+  50% { text-shadow: 0 0 20px var(--green-glow), 0 0 60px rgba(34, 197, 94, 0.25), 0 0 100px rgba(34, 197, 94, 0.1); }
+}
+
+@keyframes tickerScroll {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+@keyframes networkDot {
+  0% { opacity: 0; transform: scale(0); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes dropTicker {
+  0% { transform: translateY(-20px); opacity: 0; }
+  10% { transform: translateY(0); opacity: 1; }
+  90% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(20px); opacity: 0; }
+}
+
+@keyframes greenFog {
+  0% { transform: translateX(-10%) scaleX(1); opacity: 0.15; }
+  50% { transform: translateX(5%) scaleX(1.05); opacity: 0.3; }
+  100% { transform: translateX(-10%) scaleX(1); opacity: 0.15; }
+}
+
+@keyframes mushGlow {
+  0%, 100% { filter: drop-shadow(0 0 10px rgba(34,197,94,0.4)) drop-shadow(0 0 30px rgba(34,197,94,0.15)); }
+  50% { filter: drop-shadow(0 0 20px rgba(34,197,94,0.7)) drop-shadow(0 0 60px rgba(34,197,94,0.3)) drop-shadow(0 0 100px rgba(34,197,94,0.1)); }
+}
+
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes stampSlam {
+  0% { transform: scale(3) rotate(-15deg); opacity: 0; }
+  50% { transform: scale(1.1) rotate(-12deg); opacity: 1; }
+  100% { transform: scale(1) rotate(-12deg); opacity: 1; }
+}
+
+/* ── PANELS ── */
+.panel {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  scroll-snap-align: start;
+  padding: 40px 20px;
+}
+
+.panel-counter {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  z-index: 10;
+  letter-spacing: 0.1em;
+}
+
+.panel-inner {
+  max-width: 800px;
+  width: 100%;
+  position: relative;
+}
+
+.caption {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--text-dim);
+  max-width: 600px;
+  margin: 24px auto 0;
+}
+
+.caption strong { color: var(--text); }
+.caption em { color: var(--green); font-style: normal; }
+
+.data-overlay {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--green);
+  opacity: 0.7;
+  margin-top: 16px;
+  padding: 8px 12px;
+  background: var(--green-subtle);
+  border: 1px solid rgba(34,197,94,0.15);
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.small-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+  margin-top: 8px;
+  letter-spacing: 0.05em;
+}
+
+/* SVG containers */
+.svg-scene {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.svg-scene svg {
+  width: 100%;
+  height: auto;
+}
+
+/* ── PANEL 1: TITLE ── */
+.panel-title {
+  background: #020206;
+  text-align: center;
+}
+
+.title-main {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(2rem, 6vw, 4rem);
+  font-weight: 700;
+  color: var(--green);
+  animation: glow 3s ease-in-out infinite, glitch 8s ease-in-out infinite;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.title-sub {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+.title-small {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ── PANEL 2: THE DENIAL ── */
+.denial-letter {
+  background: #f5f5f0;
+  color: #1a1a1a;
+  padding: 24px 28px;
+  max-width: 400px;
+  margin: 20px auto;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  border-radius: 2px;
+  position: relative;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+}
+
+.denial-letter .stamp {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--red);
+  border: 3px solid var(--red);
+  padding: 4px 12px;
+  transform: rotate(-12deg);
+  animation: stampSlam 0.5s ease-out forwards;
+  animation-play-state: paused;
+}
+
+.denial-letter .stamp.visible {
+  animation-play-state: running;
+}
+
+/* ── PANEL 4: ON HOLD ── */
+.hold-timer {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 2rem;
+  color: var(--red);
+  text-align: center;
+  margin-top: 20px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.music-notes {
+  position: absolute;
+  font-size: 1.2rem;
+  animation: float 3s ease-in-out infinite;
+  opacity: 0.3;
+  color: var(--muted);
+}
+
+/* ── PANEL 5-6: SCREEN GLOW ── */
+.screen-glow {
+  background: radial-gradient(ellipse at center, rgba(34,197,94,0.08) 0%, transparent 70%);
+  padding: 40px 20px;
+}
+
+.luigi-screen {
+  background: var(--void);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 500px;
+  margin: 0 auto;
+  box-shadow: 0 0 40px rgba(34,197,94,0.1), inset 0 0 40px rgba(34,197,94,0.03);
+}
+
+.luigi-screen .screen-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(34,197,94,0.15);
+}
+
+.luigi-screen .mushroom-icon {
+  font-size: 1.5rem;
+}
+
+.luigi-screen .screen-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  color: var(--green);
+  font-size: 1.1rem;
+}
+
+.code-scroll {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--green);
+  opacity: 0.6;
+  line-height: 1.8;
+  overflow: hidden;
+  max-height: 120px;
+  position: relative;
+}
+
+.code-scroll::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(transparent, var(--void));
+}
+
+/* ── PANEL 7: SPLIT PANEL ── */
+.split-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+@media (max-width: 600px) {
+  .split-panel { grid-template-columns: 1fr; }
+}
+
+.split-side {
+  background: var(--bg-deep);
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.split-side.corporate {
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+}
+
+.filed-stamp {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--green);
+  border: 3px solid var(--green);
+  padding: 8px 20px;
+  margin-top: 16px;
+  letter-spacing: 0.15em;
+}
+
+/* ── PANEL 8: NETWORK ── */
+.network-viz {
+  width: 100%;
+  max-width: 700px;
+  height: 400px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.network-viz canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.network-stat {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--green);
+  text-align: center;
+  margin-top: 16px;
+  animation: glow 3s ease-in-out infinite;
+}
+
+.network-stat .arrow {
+  color: var(--muted);
+  margin: 0 8px;
+}
+
+/* ── PANEL 9: BOARDROOM ── */
+.speech-bubble {
+  background: #1e293b;
+  color: var(--cold);
+  padding: 16px 20px;
+  border-radius: 12px 12px 12px 2px;
+  max-width: 350px;
+  margin: 20px auto 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  font-style: italic;
+  position: relative;
+}
+
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 16px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid #1e293b;
+  border-bottom: 8px solid transparent;
+}
+
+/* ── PANEL 10: HYDRA ── */
+.mushroom-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  max-width: 300px;
+  margin: 20px auto 0;
+}
+
+.mush-cell {
+  font-size: 1.5rem;
+  text-align: center;
+  animation: networkDot 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+.mush-cell:nth-child(1) { animation-delay: 0.1s; }
+.mush-cell:nth-child(2) { animation-delay: 0.2s; }
+.mush-cell:nth-child(3) { animation-delay: 0.3s; }
+.mush-cell:nth-child(4) { animation-delay: 0.4s; }
+.mush-cell:nth-child(5) { animation-delay: 0.5s; }
+.mush-cell:nth-child(6) { animation-delay: 0.6s; }
+.mush-cell:nth-child(7) { animation-delay: 0.7s; }
+.mush-cell:nth-child(8) { animation-delay: 0.8s; }
+.mush-cell:nth-child(9) { animation-delay: 0.9s; }
+.mush-cell:nth-child(10) { animation-delay: 1.0s; }
+
+/* ── PANEL 11: HEADLINES ── */
+.headline-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 20px auto 0;
+  max-width: 500px;
+}
+
+.headline {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text);
+  padding: 10px 16px;
+  background: rgba(255,255,255,0.03);
+  border-left: 3px solid var(--green);
+  animation: fadeInUp 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+.headline:nth-child(1) { animation-delay: 0.3s; }
+.headline:nth-child(2) { animation-delay: 0.6s; }
+.headline:nth-child(3) { animation-delay: 0.9s; }
+
+/* ── PANEL 12: STOCK TICKER ── */
+.ticker-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  margin-top: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.ticker-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ticker-item.down { color: var(--red); }
+.ticker-item.up { color: var(--green); }
+
+.ticker-item .arrow-icon { font-size: 1rem; }
+
+/* ── PANEL 13: THE BUILDER ── */
+.builder-screen {
+  background: var(--void);
+  border: 1px solid rgba(34,197,94,0.1);
+  border-radius: 6px;
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--green);
+  opacity: 0.8;
+  line-height: 2;
+  position: relative;
+  overflow: hidden;
+}
+
+.builder-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 30%, rgba(34,197,94,0.06) 0%, transparent 60%);
+}
+
+/* ── PANEL 14: RECURSIVE ── */
+.recursive-frame {
+  border: 1px solid rgba(34,197,94,0.2);
+  padding: 16px;
+  max-width: 350px;
+  margin: 20px auto 0;
+  position: relative;
+  background: var(--bg-deep);
+}
+
+.recursive-frame .recursive-inner {
+  border: 1px solid rgba(34,197,94,0.1);
+  padding: 12px;
+  background: var(--void);
+  text-align: center;
+}
+
+.recursive-frame .recursive-inner .recursive-deep {
+  border: 1px solid rgba(34,197,94,0.05);
+  padding: 8px;
+  background: rgba(0,0,0,0.5);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  color: var(--green);
+  opacity: 0.4;
+}
+
+.tool-link {
+  display: inline-block;
+  margin-top: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  color: var(--green);
+  text-decoration: none;
+  padding: 10px 24px;
+  border: 1px solid var(--green);
+  border-radius: 4px;
+  transition: all 0.3s;
+  animation: glow 3s ease-in-out infinite;
+}
+
+.tool-link:hover {
+  background: rgba(34,197,94,0.15);
+  box-shadow: 0 0 30px rgba(34,197,94,0.2);
+}
+
+/* ── PANEL 15: FINAL ── */
+.panel-final {
+  background: #020206;
+  text-align: center;
+}
+
+.final-mushroom {
+  font-size: 4rem;
+  animation: mushGlow 3s ease-in-out infinite, float 4s ease-in-out infinite;
+  margin-bottom: 32px;
+}
+
+.final-text {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.2rem;
+  color: var(--text);
+  max-width: 500px;
+  margin: 0 auto;
+  line-height: 1.8;
+}
+
+.final-beat {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--green);
+  margin-top: 24px;
+  animation: glow 3s ease-in-out infinite;
+}
+
+.final-small {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  margin-top: 32px;
+  letter-spacing: 0.1em;
+}
+
+.inkwell-mark {
+  font-size: 1.5rem;
+  color: var(--green);
+  margin-top: 40px;
+  opacity: 0.5;
+}
+
+/* ── GREEN FOG EFFECT ── */
+.green-fog {
+  position: absolute;
+  bottom: 0;
+  left: -10%;
+  width: 120%;
+  height: 40%;
+  background: radial-gradient(ellipse at 50% 100%, rgba(34,197,94,0.06) 0%, transparent 60%);
+  animation: greenFog 12s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ── REVEAL ON SCROLL ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .panel { padding: 30px 16px; }
+  .title-main { font-size: clamp(1.5rem, 8vw, 3rem); letter-spacing: 0.08em; }
+  .caption { font-size: 0.9rem; }
+  .network-viz { height: 280px; }
+  .denial-letter { padding: 16px 20px; max-width: 90%; }
+  .luigi-screen { padding: 16px; }
+  .builder-screen { padding: 12px; font-size: 0.6rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- PANEL 1: TITLE                                              -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="panel panel-title" id="panel-1">
+  <div class="panel-counter">01 / 15</div>
+  <div class="green-fog"></div>
+  <div class="panel-inner" style="text-align:center">
+    <div class="svg-scene" style="max-width:300px;margin-bottom:32px">
+      <svg viewBox="0 0 300 250" xmlns="http://www.w3.org/2000/svg">
+        <!-- Computer desk silhouette -->
+        <defs>
+          <radialGradient id="screenGlow" cx="50%" cy="45%" r="50%">
+            <stop offset="0%" stop-color="#22c55e" stop-opacity="0.3"/>
+            <stop offset="60%" stop-color="#22c55e" stop-opacity="0.05"/>
+            <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="glow1">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <!-- Green glow from screen -->
+        <ellipse cx="150" cy="140" rx="120" ry="100" fill="url(#screenGlow)"/>
+        <!-- Desk -->
+        <rect x="60" y="180" width="180" height="6" rx="2" fill="#1a1a2e"/>
+        <!-- Monitor -->
+        <rect x="110" y="100" width="80" height="55" rx="3" fill="#0a0a1a" stroke="#22c55e" stroke-width="1" stroke-opacity="0.3"/>
+        <rect x="114" y="104" width="72" height="47" rx="1" fill="#060610"/>
+        <!-- Screen content lines -->
+        <line x1="120" y1="115" x2="175" y2="115" stroke="#22c55e" stroke-width="1" stroke-opacity="0.5"/>
+        <line x1="120" y1="122" x2="165" y2="122" stroke="#22c55e" stroke-width="1" stroke-opacity="0.3"/>
+        <line x1="120" y1="129" x2="170" y2="129" stroke="#22c55e" stroke-width="1" stroke-opacity="0.4"/>
+        <line x1="120" y1="136" x2="160" y2="136" stroke="#22c55e" stroke-width="1" stroke-opacity="0.2"/>
+        <line x1="120" y1="143" x2="168" y2="143" stroke="#22c55e" stroke-width="1" stroke-opacity="0.35"/>
+        <!-- Monitor stand -->
+        <rect x="142" y="155" width="16" height="25" rx="2" fill="#1a1a2e"/>
+        <!-- Keyboard -->
+        <rect x="105" y="185" width="90" height="10" rx="2" fill="#12121e"/>
+        <!-- Figure silhouette -->
+        <ellipse cx="150" cy="72" rx="18" ry="22" fill="#0a0a14"/>
+        <!-- Head -->
+        <rect x="130" y="85" width="40" height="50" rx="4" fill="#0a0a14"/>
+        <!-- Shoulders -->
+        <path d="M115 105 Q115 90 130 90 L170 90 Q185 90 185 105 L185 140 L115 140 Z" fill="#0a0a14"/>
+        <!-- Arms to keyboard -->
+        <path d="M118 120 Q108 140 110 180" stroke="#0a0a14" stroke-width="12" fill="none" stroke-linecap="round"/>
+        <path d="M182 120 Q192 140 190 180" stroke="#0a0a14" stroke-width="12" fill="none" stroke-linecap="round"/>
+        <!-- Green light on face -->
+        <ellipse cx="150" cy="75" rx="14" ry="17" fill="#22c55e" opacity="0.06"/>
+        <ellipse cx="150" cy="78" rx="8" ry="10" fill="#22c55e" opacity="0.04"/>
+      </svg>
+    </div>
+    <div class="title-main">THE VIGILANTE<br>PROTOCOL</div>
+    <div class="title-sub">An Ontological Theatre Production</div>
+    <div class="title-small">Based on true events that haven't happened yet.</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- PANEL 2: THE DENIAL                                         -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="panel" id="panel-2" style="background: linear-gradient(180deg, #0a0a0f 0%, #0d0d14 50%, #0a0a0f 100%);">
+  <div class="panel-counter">02 / 15</div>
+  <div class="panel-inner">
+    <div class="svg-scene" style="max-width:500px">
+      <svg viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg">
+        <!-- Hospital billing office -->
+        <defs>
+          <linearGradient id="fluor" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#f0f0e8" stop-opacity="0.1"/>
+            <stop offset="100%" stop-color="#f0f0e8" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <!-- Room -->
+        <rect x="0" y="0" width="500" height="300" fill="#0d0d14"/>
+        <!-- Fluorescent lights -->
+        <rect x="80" y="8" width="120" height="6" rx="3" fill="#e8e8d8" opacity="0.3"/>
+        <rect x="300" y="8" width="120" height="6" rx="3" fill="#e8e8d8" opacity="0.25"/>
+        <rect x="60" y="14" width="160" height="80" fill="url(#fluor)"/>
+        <rect x="280" y="14" width="160" height="80" fill="url(#fluor)"/>
+        <!-- Counter/desk -->
+        <rect x="40" y="180" width="420" height="8" rx="2" fill="#1e293b"/>
+        <rect x="50" y="188" width="400" height="90" rx="0" fill="#0f172a"/>
+        <!-- Papers scattered -->
+        <rect x="120" y="160" width="50" height="35" rx="1" fill="#f5f5f0" opacity="0.8" transform="rotate(-5 145 177)"/>
+        <rect x="300" y="165" width="45" height="30" rx="1" fill="#f5f5f0" opacity="0.6" transform="rotate(8 322 180)"/>
+        <!-- Maya silhouette -->
+        <ellipse cx="250" cy="105" rx="20" ry="24" fill="#1a1520"/>
+        <!-- Hair -->
+        <path d="M228 100 Q225 80 238 75 Q250 70 262 75 Q275 80 272 100 L270 108 Q260 98 250 95 Q240 98 230 108 Z" fill="#1a1520"/>
+        <!-- Body -->
+        <rect x="230" y="120" width="40" height="60" rx="4" fill="#1a1520"/>
+        <path d="M218 135 Q218 122 230 122 L270 122 Q282 122 282 135 L282 180 L218 180 Z" fill="#1a1520"/>
+        <!-- Arms holding letter -->
+        <path d="M222 145 Q210 160 220 175" stroke="#1a1520" stroke-width="10" fill="none" stroke-linecap="round"/>
+        <path d="M278 145 Q290 160 280 175" stroke="#1a1520" stroke-width="10" fill="none" stroke-linecap="round"/>
+        <!-- The letter in her hands -->
+        <rect x="222" y="165" width="56" height="40" rx="2" fill="#f5f5f0" opacity="0.9"/>
+        <line x1="230" y1="174" x2="270" y2="174" stroke="#666" stroke-width="0.8"/>
+        <line x1="230" y1="179" x2="265" y2="179" stroke="#666" stroke-width="0.8"/>
+        <line x1="230" y1="184" x2="268" y2="184" stroke="#666" stroke-width="0.8"/>
+        <!-- DENIED stamp on letter -->
+        <text x="248" y="198" font-family="Space Grotesk, sans-serif" font-size="8" font-weight="700" fill="#ef4444" text-anchor="middle" transform="rotate(-8 248 198)">DENIED</text>
+      </svg>
+    </div>
+
+    <div class="denial-letter reveal">
+      <div style="font-weight:600;margin-bottom:8px;font-size:0.7rem;color:#666;text-transform:uppercase;letter-spacing:0.1em">MegaHealth Insurance Group</div>
+      <div style="font-weight:700;color:#1a1a1a;font-size:0.95rem;margin-bottom:12px">CLAIM DENIED</div>
+      <div style="color:#444;font-size:0.75rem">Reason: <strong>Not Medically Necessary</strong></div>
+      <div style="color:#666;font-size:0.7rem;margin-top:8px">Patient: Maya Chen<br>Claim #: 847-2024-00491<br>Amount: $47,000.00</div>
+      <div class="stamp" id="denyStamp">DENIED</div>
+    </div>
+
+    <div class="caption reveal" style="text-align:center">
+      Maya Chen needed surgery. Her insurance said no.<br><strong>They always say no.</strong>
+    </div>
+    <div class="data-overlay reveal" style="margin:16px auto;display:block;text-align:center;max-width:400px">
+      17% average denial rate · $262 billion denied annually
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- PANEL 3: THE SYSTEM                                         -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="panel" id="panel-3" style="background: linear-gradient(180deg, #0a0a0f 0%, #0a0812 100%);">
+  <div class="panel-counter">03 / 15</div>
+  <div class="panel-inner">
+    <div class="svg-scene" style="max-width:500px">
+      <svg viewBox="0 0 500 400" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="towerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#1e293b"/>
+            <stop offset="100%" stop-color="#0f172a"/>
+          </linearGradient>
+          <filter id="redGlow">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <!-- Sky -->
+        <rect x="0" y="0" width="500" height="400" fill="#060610"/>
+        <!-- Corporate tower -->
+        <rect x="170" y="20" width="160" height="360" fill="url(#towerGrad)"/>
+        <!-- Window grid -->
+        <g opacity="0.15">
+          <rect x="180" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+          <rect x="198" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+          <rect x="216" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+          <rect x="234" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+          <rect x="252" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+          <rect x="270" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+          <rect x="288" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+          <rect x="306" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+        </g>
+        <!-- More window rows (repeating pattern) -->
+        <g opacity="0.12">
+          <!-- Rows of windows going down the building -->
+          <g transform="translate(0,18)">
+            <rect x="180" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="198" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="216" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="234" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="252" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="270" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="288" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="306" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+          </g>
+          <g transform="translate(0,36)">
+            <rect x="180" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="198" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="216" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="234" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="252" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="270" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="288" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="306" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+          </g>
+          <g transform="translate(0,54)">
+            <rect x="180" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="198" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="216" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="234" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="252" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="270" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="288" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="306" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+          </g>
+          <g transform="translate(0,72)">
+            <rect x="180" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="198" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="216" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="234" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="252" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="270" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="288" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="306" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+          </g>
+          <g transform="translate(0,90)">
+            <rect x="180" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="198" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="216" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="234" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="252" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="270" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="288" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="306" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+          </g>
+          <g transform="translate(0,108)">
+            <rect x="180" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="198" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="216" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="234" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="252" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="270" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="288" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="306" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+          </g>
+          <g transform="translate(0,126)">
+            <rect x="180" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="198" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="216" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="234" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="252" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="270" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="288" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="306" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+          </g>
+          <g transform="translate(0,144)">
+            <rect x="180" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="198" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="216" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="234" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="252" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="270" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="288" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="306" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+          </g>
+          <g transform="translate(0,162)">
+            <rect x="180" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="198" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="216" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="234" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="252" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="270" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="288" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+            <rect x="306" y="30" width="12" height="8" fill="#94a3b8" rx="1"/>
+          </g>
+        </g>
+        <!-- Floating DENIED stamps -->
+        <g filter="url(#redGlow)">
+          <text x="90" y="150" font-family="Space Grotesk" font-size="14" font-weight="700" fill="#ef4444" opacity="0.6" transform="rotate(-15 90 150)">DENIED</text>
+          <text x="350" y="100" font-family="Space Grotesk" font-size="11" font-weight="700" fill="#ef4444" opacity="0.4" transform="rotate(10 350 100)">DENIED</text>
+          <text x="380" y="200" font-family="Space Grotesk" font-size="16" font-weight="700" fill="#ef4444" opacity="0.5" transform="rotate(-8 380 200)">DENIED</text>
+          <text x="60" y="250" font-family="Space Grotesk" font-size="12" font-weight="700" fill="#ef4444" opacity="0.35" transform="rotate(12 60 250)">DENIED</text>
+          <text x="400" y="300" font-family="Space Grotesk" font-size="10" font-weight="700" fill="#ef4444" opacity="0.3" transform="rotate(-20 400 300)">DENIED</text>
+          <text x="120" y="330" font-family="Space Grotesk" font-size="13" font-weight="700" fill="#ef4444" opacity="0.45" transform="rotate(5 120 330)">DENIED</text>
+        </g>
+        <!-- AI processing nodes inside building -->
+        <g>
+          <circle cx="210" cy="200" r="3" fill="#ef4444" opacity="0.4"><animate attributeName="opacity" values="0.2;0.6;0.2" dur="2s" repeatCount="indefinite"/></circle>
+          <circle cx="250" cy="220" r="3" fill="#ef4444" opacity="0.5"><animate attributeName="opacity" values="0.3;0.7;0.3" dur="1.5s" repeatCount="indefinite"/></circle>
+          <circle cx="290" cy="210" r="3" fill="#ef4444" opacity="0.3"><animate attributeName="opacity" values="0.2;0.5;0.2" dur="2.5s" repeatCount="indefinite"/></circle>
+          <circle cx="230" cy="240" r="3" fill="#ef4444" opacity="0.4"><animate attributeName="opacity" values="0.3;0.6;0.3" dur="1.8s" repeatCount="indefinite"/></circle>
+          <circle cx="270" cy="250" r="3" fill="#ef4444" opacity="0.5"><animate attributeName="opacity" values="0.2;0.7;0.2" dur="2.2s" repeatCount="indefinite"/></circle>
+        </g>
+        <!-- Red glow at base -->
+        <rect x="0" y="350" width="500" height="50" fill="url(#fluor)" opacity="0.05"/>
+      </svg>
+    </div>
+
+    <div class="caption reveal" style="text-align:center">
+      UnitedHealth Group processes <em>1.3 billion</em> claims per year. Their AI denies millions automatically. <strong>No human ever reads the file.</strong>
+    </div>
+    <div class="small-text reveal" style="text-align:center">Q4 2023 profit: $5.8 billion.</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- PANEL 4: THE CALL                                           -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="panel" id="panel-4" style="background: var(--bg);">
+  <div class="panel-counter">04 / 15</div>
+  <div class="panel-inner">
+    <div class="svg-scene" style="max-width:500px">
+      <svg viewBox="0 0 500 350" xmlns="http://www.w3.org/2000/svg">
+        <!-- Maya on hold -->
+        <rect x="0" y="0" width="500" height="350" fill="#0a0a0f"/>
+        <!-- Maze of automated menus (phone cord becomes labyrinth) -->
+        <g stroke="#1e293b" stroke-width="2" fill="none" opacity="0.4">
+          <path d="M250 180 L250 130 L320 130 L320 80 L400 80 L400 130"/>
+          <path d="M250 180 L180 180 L180 130 L120 130 L120 80 L60 80"/>
+          <path d="M320 80 L320 50 L380 50 L380 30"/>
+          <path d="M120 80 L120 50 L80 50 L80 30"/>
+          <path d="M250 180 L250 230 L320 230 L320 280 L380 280"/>
+          <path d="M250 230 L180 230 L180 280 L120 280 L120 310"/>
+          <path d="M400 130 L450 130 L450 160"/>
+          <path d="M60 80 L30 80 L30 110"/>
+        </g>
+        <!-- Dead ends marked with red dots -->
+        <circle cx="380" cy="30" r="4" fill="#ef4444" opacity="0.5"/>
+        <circle cx="80" cy="30" r="4" fill="#ef4444" opacity="0.5"/>
+        <circle cx="450" cy="160" r="4" fill="#ef4444" opacity="0.5"/>
+        <circle cx="30" cy="110" r="4" fill="#ef4444" opacity="0.5"/>
+        <circle cx="380" cy="280" r="4" fill="#ef4444" opacity="0.5"/>
+        <circle cx="120" cy="310" r="4" fill="#ef4444" opacity="0.5"/>
+        <!-- Node labels -->
+        <text x="250" y="198" font-family="JetBrains Mono" font-size="6" fill="#52525b" text-anchor="middle">MAIN MENU</text>
+        <text x="320" y="75" font-family="JetBrains Mono" font-size="5" fill="#52525b" text-anchor="middle">PRESS 1 FOR...</text>
+        <text x="120" y="75" font-family="JetBrains Mono" font-size="5" fill="#52525b" text-anchor="middle">PRESS 2 FOR...</text>
+        <text x="400" y="125" font-family="JetBrains Mono" font-size="5" fill="#52525b" text-anchor="middle">PLEASE HOLD</text>
+        <text x="320" y="275" font-family="JetBrains Mono" font-size="5" fill="#52525b" text-anchor="middle">TRANSFERRED</text>
+        <!-- Maya at center -->
+        <ellipse cx="250" cy="165" rx="14" ry="16" fill="#1a1520"/>
+        <rect x="236" y="175" width="28" height="30" rx="3" fill="#1a1520"/>
+        <!-- Phone to ear -->
+        <rect x="268" y="158" width="6" height="18" rx="3" fill="#27272a"/>
+        <!-- Music notes floating -->
+        <text x="200" y="120" font-size="16" fill="#52525b" opacity="0.4">♪</text>
+        <text x="300" y="100" font-size="12" fill="#52525b" opacity="0.3">♫</text>
+        <text x="160" y="90" font-size="14" fill="#52525b" opacity="0.25">♪</text>
+        <text x="340" y="60" font-size="10" fill="#52525b" opacity="0.2">♫</text>
+        <text x="420" y="110" font-size="13" fill="#52525b" opacity="0.35">♪</text>
+        <text x="70" y="100" font-size="11" fill="#52525b" opacity="0.3">♫</text>
+      </svg>
+    </div>
+
+    <div class="caption reveal" style="text-align:center">
+      She called. She waited. She was transferred. She waited more.<br>
+      She was told to submit <em>Form 1247-B</em> within 30 days.
+    </div>
+    <div class="hold-timer reveal" id="holdTimer">3:47:22</div>
+    <div class="small-text reveal" style="text-align:center">Time on hold</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- PANEL 5: THE DISCOVERY                                      -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="panel screen-glow" id="panel-5">
+  <div class="panel-counter">05 / 15</div>
+  <div class="green-fog"></div>
+  <div class="panel-inner">
+    <div class="svg-scene" style="max-width:450px">
+      <svg viewBox="0 0 450 320" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="laptopGlow" cx="50%" cy="40%" r="55%">
+            <stop offset="0%" stop-color="#22c55e" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect x="0" y="0" width="450" height="320" fill="#060610"/>
+        <ellipse cx="225" cy="160" rx="200" ry="150" fill="url(#laptopGlow)"/>
+        <!-- Dark room — just the laptop light -->
+        <!-- Laptop -->
+        <rect x="140" y="110" width="170" height="110" rx="5" fill="#0a0a1a" stroke="#22c55e" stroke-width="1" stroke-opacity="0.2"/>
+        <rect x="146" y="116" width="158" height="98" rx="2" fill="#040810"/>
+        <!-- Screen content: Luigi -->
+        <text x="225" y="145" font-family="Space Grotesk" font-size="8" font-weight="700" fill="#22c55e" text-anchor="middle" opacity="0.8">🍄 LUIGI</text>
+        <text x="225" y="158" font-family="Inter" font-size="5" fill="#a1a1aa" text-anchor="middle">Your AI Insurance Fighter</text>
+        <rect x="175" y="165" width="100" height="12" rx="2" fill="#0f1a12" stroke="#22c55e" stroke-width="0.5" stroke-opacity="0.3"/>
+        <text x="183" y="173" font-family="JetBrains Mono" font-size="4.5" fill="#22c55e" opacity="0.6">Enter your denial details...</text>
+        <rect x="190" y="185" width="70" height="10" rx="2" fill="#22c55e" opacity="0.2"/>
+        <text x="225" y="192" font-family="Space Grotesk" font-size="5" font-weight="600" fill="#22c55e" text-anchor="middle">Fight Back →</text>
+        <!-- Laptop base -->
+        <path d="M120 220 L140 220 L140 225 L310 225 L310 220 L330 220 L320 235 L130 235 Z" fill="#1a1a2e"/>
+        <!-- Maya silhouette at laptop -->
+        <ellipse cx="225" cy="80" rx="18" ry="22" fill="#0a0a14"/>
+        <path d="M200 95 Q200 85 210 82 L240 82 Q250 85 250 95 L250 115 L200 115 Z" fill="#0a0a14"/>
+        <!-- Green light on face -->
+        <ellipse cx="225" cy="85" rx="12" ry="14" fill="#22c55e" opacity="0.04"/>
+        <!-- Dark room elements -->
+        <rect x="20" y="260" width="60" height="40" rx="2" fill="#0f0f18" opacity="0.3"/>
+        <rect x="370" y="250" width="50" height="50" rx="2" fill="#0f0f18" opacity="0.25"/>
+      </svg>
+    </div>
+
+    <div class="caption reveal" style="text-align:center">
+      Then she found it. A tool someone had built. <em>Free. Anonymous.</em><br>
+      <strong>It knew things.</strong>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- PANEL 6: THE WEAPON                                         -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="panel screen-glow" id="panel-6">
+  <div class="panel-counter">06 / 15</div>
+  <div class="panel-inner">
+    <div class="luigi-screen reveal">
+      <div class="screen-header">
+        <div class="mushroom-icon">🍄</div>
+        <div class="screen-title">LUIGI — AI Insurance Fighter</div>
+      </div>
+      <div style="font-family:'Inter';font-size:0.78rem;color:var(--text-dim);margin-bottom:12px">
+        <strong style="color:var(--text)">Analyzing denial letter...</strong><br><br>
+        <span style="color:var(--green)">✓</span> Identified: CPT Code 27447 — Total Knee Arthroplasty<br>
+        <span style="color:var(--green)">✓</span> Matched insurer policy: MHG-CPS-2024-ORTHO-112<br>
+        <span style="color:var(--green)">✓</span> Found 3 contradictions in denial reasoning<br>
+        <span style="color:var(--green)">✓</span> Citing: 42 CFR §422.112, §438.228<br>
+        <span style="color:var(--green)">✓</span> Precedent: DOI Case #2023-4481 (Montana)
+      </div>
+      <div class="code-scroll">
+        § 422.112(a)(1) - "Organization must provide medically<br>
+        necessary services..."<br>
+        MHG Clinical Policy Bulletin 2024-ORTHO-112, p.7:<br>
+        "TKA indicated when conservative treatment fails..."<br>
+        Patient record: 14 months physical therapy documented.<br>
+        MRI confirmed: Grade IV chondral damage.<br>
+        Insurer's own criteria: MET on 5/5 indicators.<br>
+        APPEAL GENERATED — 8.2 seconds<br>
+        <span style="animation:blink 1s infinite">█</span>
+      </div>
+    </div>
+
+    <div class="caption reveal" style="text-align:center;margin-top:24px">
+      It read her denial letter. It cited the insurer's <em>own</em> clinical policy bulletin.<br>
+      It referenced <em>42 CFR §422.112</em>. It generated a perfect appeal in <strong>8 seconds</strong>.
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- PANEL 7: THE APPEAL                                         -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="panel" id="panel-7">
+  <div class="panel-counter">07 / 15</div>
+  <div class="panel-inner">
+    <div class="split-panel reveal">
+      <div class="split-side" style="border-right: 1px solid rgba(34,197,94,0.1);">
+        <svg viewBox="0 0 200 200" width="140" xmlns="http://www.w3.org/2000/svg">
+          <!-- Maya clicking submit -->
+          <rect x="40" y="80" width="120" height="80" rx="4" fill="#0a0a1a" stroke="#22c55e" stroke-width="1" stroke-opacity="0.2"/>
+          <!-- Screen shows letter -->
+          <rect x="50" y="90" width="100" height="50" rx="2" fill="#040810"/>
+          <line x1="60" y1="100" x2="140" y2="100" stroke="#22c55e" stroke-width="0.5" opacity="0.3"/>
+          <line x1="60" y1="106" x2="130" y2="106" stroke="#22c55e" stroke-width="0.5" opacity="0.3"/>
+          <line x1="60" y1="112" x2="135" y2="112" stroke="#22c55e" stroke-width="0.5" opacity="0.3"/>
+          <line x1="60" y1="118" x2="125" y2="118" stroke="#22c55e" stroke-width="0.5" opacity="0.3"/>
+          <line x1="60" y1="124" x2="138" y2="124" stroke="#22c55e" stroke-width="0.5" opacity="0.3"/>
+          <!-- Submit button -->
+          <rect x="80" y="132" width="40" height="10" rx="2" fill="#22c55e" opacity="0.8"/>
+          <text x="100" y="139" font-family="Space Grotesk" font-size="5" fill="#0a0a0f" text-anchor="middle" font-weight="700">SUBMIT</text>
+          <!-- Cursor clicking -->
+          <polygon points="122,136 122,148 128,142" fill="#e4e4e7" opacity="0.7"/>
+        </svg>
+        <div style="font-family:'JetBrains Mono';font-size:0.6rem;color:var(--green);margin-top:8px;text-align:center">MAYA CLICKS SUBMIT</div>
+      </div>
+      <div class="split-side corporate">
+        <svg viewBox="0 0 200 200" width="140" xmlns="http://www.w3.org/2000/svg">
+          <!-- Insurance company receiving -->
+          <rect x="30" y="60" width="140" height="100" rx="4" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+          <!-- Incoming letter envelope -->
+          <rect x="70" y="80" width="60" height="45" rx="2" fill="#f5f5f0" opacity="0.8"/>
+          <line x1="70" y1="80" x2="100" y2="105" stroke="#ddd" stroke-width="1"/>
+          <line x1="130" y1="80" x2="100" y2="105" stroke="#ddd" stroke-width="1"/>
+          <!-- Alert icon -->
+          <circle cx="100" cy="140" r="8" fill="none" stroke="#ef4444" stroke-width="1.5" opacity="0.6"/>
+          <text x="100" y="144" font-family="Space Grotesk" font-size="10" fill="#ef4444" text-anchor="middle" opacity="0.6">!</text>
+        </svg>
+        <div style="font-family:'JetBrains Mono';font-size:0.6rem;color:var(--red);margin-top:8px;text-align:center">APPEAL ARRIVES</div>
+      </div>
+    </div>
+
+    <div class="caption reveal" style="text-align:center;margin-top:24px">
+      The appeal cited regulations the insurance company wrote.<br>
+      <em>Used their own language against them.</em><br>
+      Referenced precedents they'd set in other states.
+    </div>
+    <div class="filed-stamp reveal" style="text-align:center;margin:16px auto">APPEAL FILED</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- PANEL 8: THE NETWORK                                        -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="panel" id="panel-8">
+  <div class="panel-counter">08 / 15</div>
+  <div class="green-fog"></div>
+  <div class="panel-inner" style="text-align:center">
+    <div class="network-viz reveal">
+      <canvas id="networkCanvas"></canvas>
+    </div>
+    <div class="caption reveal" style="text-align:center">
+      Maya was user <em>#4,847</em>. By the time her appeal was reviewed, there were <strong>12,000</strong>.
+    </div>
+    <div class="network-stat reveal">
+      0.5% <span class="arrow">→</span> 12.3%
+    </div>
+    <div class="small-text reveal" style="text-align:center">Appeal rate increase in 90 days</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- PANEL 9: THE PATTERN                                        -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="panel" id="panel-9" style="background: linear-gradient(180deg, #0a0a0f 0%, #0f0a0a 50%, #0a0a0f 100%);">
+  <div class="panel-counter">09 / 15</div>
+  <div class="panel-inner">
+    <div class="svg-scene" style="max-width:550px">
+      <svg viewBox="0 0 550 300" xmlns="http://www.w3.org/2000/svg">
+        <!-- Boardroom -->
+        <rect x="0" y="0" width="550" height="300" fill="#0d0a0a"/>
+        <!-- Long table -->
+        <rect x="80" y="140" width="390" height="60" rx="4" fill="#1a1510" stroke="#2a2520" stroke-width="1"/>
+        <!-- Dashboard on wall -->
+        <rect x="150" y="20" width="250" height="100" rx="4" fill="#0a0a14" stroke="#1e293b" stroke-width="1"/>
+        <!-- Chart showing spike -->
+        <polyline points="170,100 200,95 230,90 260,80 280,60 300,40 330,35 360,30" stroke="#ef4444" stroke-width="2" fill="none"/>
+        <text x="275" y="15" font-family="JetBrains Mono" font-size="6" fill="#ef4444" text-anchor="middle" opacity="0.7">APPEAL VOLUME ▲ 2,400%</text>
+        <!-- Red alert dots -->
+        <circle cx="360" cy="30" r="4" fill="#ef4444" opacity="0.7"><animate attributeName="opacity" values="0.3;0.9;0.3" dur="1s" repeatCount="indefinite"/></circle>
+        <circle cx="345" cy="35" r="3" fill="#ef4444" opacity="0.5"><animate attributeName="opacity" values="0.2;0.7;0.2" dur="1.3s" repeatCount="indefinite"/></circle>
+        <!-- Executive silhouettes around table -->
+        <g fill="#0d0a0a">
+          <!-- Left side -->
+          <ellipse cx="130" cy="125" rx="12" ry="14"/>
+          <rect x="120" y="136" width="20" height="20" rx="2"/>
+          <ellipse cx="200" cy="125" rx="12" ry="14"/>
+          <rect x="190" y="136" width="20" height="20" rx="2"/>
+          <!-- Right side -->
+          <ellipse cx="350" cy="125" rx="12" ry="14"/>
+          <rect x="340" y="136" width="20" height="20" rx="2"/>
+          <ellipse cx="420" cy="125" rx="12" ry="14"/>
+          <rect x="410" y="136" width="20" height="20" rx="2"/>
+          <!-- Head of table -->
+          <ellipse cx="275" cy="215" rx="14" ry="16"/>
+          <rect x="262" y="228" width="26" height="25" rx="3"/>
+        </g>
+        <!-- Warm overhead light -->
+        <ellipse cx="275" cy="130" rx="180" ry="30" fill="#fbbf24" opacity="0.02"/>
+      </svg>
+    </div>
+
+    <div class="caption reveal" style="text-align:center">
+      The insurers noticed. Appeal volumes up <strong style="color:var(--red)">2,400%</strong> in three months.<br>
+      Win rates: <em>73%</em>. Someone had given the patients the playbook.
+    </div>
+    <div class="speech-bubble reveal">
+      "Where are they getting these letters?"
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- PANEL 10: THE RESPONSE                                      -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="panel" id="panel-10">
+  <div class="panel-counter">10 / 15</div>
+  <div class="green-fog"></div>
+  <div class="panel-inner" style="text-align:center">
+    <div class="svg-scene" style="max-width:500px">
+      <svg viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg">
+        <!-- Hydra metaphor: cut one, two grow -->
+        <rect x="0" y="0" width="500" height="300" fill="#060610"/>
+        <!-- Central stump (cut head) -->
+        <line x1="250" y1="280" x2="250" y2="200" stroke="#1e293b" stroke-width="6"/>
+        <line x1="250" y1="200" x2="250" y2="170" stroke="#1e293b" stroke-width="4" stroke-dasharray="4 3" opacity="0.5"/>
+        <!-- Red X where it was cut -->
+        <line x1="240" y1="170" x2="260" y2="185" stroke="#ef4444" stroke-width="2"/>
+        <line x1="260" y1="170" x2="240" y2="185" stroke="#ef4444" stroke-width="2"/>
+        <!-- Two new branches growing -->
+        <path d="M250 200 Q220 160 200 130" stroke="#22c55e" stroke-width="3" fill="none"/>
+        <path d="M250 200 Q280 160 300 130" stroke="#22c55e" stroke-width="3" fill="none"/>
+        <!-- Four more from those -->
+        <path d="M200 130 Q180 100 160 80" stroke="#22c55e" stroke-width="2" fill="none"/>
+        <path d="M200 130 Q210 100 220 80" stroke="#22c55e" stroke-width="2" fill="none"/>
+        <path d="M300 130 Q290 100 280 80" stroke="#22c55e" stroke-width="2" fill="none"/>
+        <path d="M300 130 Q320 100 340 80" stroke="#22c55e" stroke-width="2" fill="none"/>
+        <!-- Mushroom heads at each endpoint -->
+        <text x="160" y="75" font-size="20" text-anchor="middle">🍄</text>
+        <text x="220" y="75" font-size="20" text-anchor="middle">🍄</text>
+        <text x="280" y="75" font-size="20" text-anchor="middle">🍄</text>
+        <text x="340" y="75" font-size="20" text-anchor="middle">🍄</text>
+        <!-- More tiny mushrooms growing from ground -->
+        <text x="80" y="270" font-size="14" opacity="0.5">🍄</text>
+        <text x="120" y="285" font-size="10" opacity="0.3">🍄</text>
+        <text x="380" y="260" font-size="12" opacity="0.4">🍄</text>
+        <text x="420" y="280" font-size="14" opacity="0.5">🍄</text>
+        <text x="60" y="290" font-size="8" opacity="0.2">🍄</text>
+        <text x="440" y="290" font-size="9" opacity="0.25">🍄</text>
+        <!-- Ground line -->
+        <line x1="0" y1="290" x2="500" y2="290" stroke="#1e293b" stroke-width="1" opacity="0.3"/>
+        <!-- Underground mycelium network -->
+        <g stroke="#22c55e" stroke-width="0.5" fill="none" opacity="0.15">
+          <path d="M80 290 Q100 295 120 290 Q160 295 200 290 Q250 298 300 290 Q350 296 400 290 Q430 294 460 290"/>
+          <path d="M120 290 Q130 300 150 295 Q180 305 220 295"/>
+          <path d="M300 290 Q320 300 350 296 Q370 304 400 295"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="caption reveal" style="text-align:center">
+      They tried to kill it. But you can't kill an idea that's already been copied <strong>50,000 times</strong>.
+    </div>
+
+    <div class="mushroom-grid reveal">
+      <div class="mush-cell">🍄</div><div class="mush-cell">🍄</div><div class="mush-cell">🍄</div><div class="mush-cell">🍄</div><div class="mush-cell">🍄</div>
+      <div class="mush-cell">🍄</div><div class="mush-cell">🍄</div><div class="mush-cell">🍄</div><div class="mush-cell">🍄</div><div class="mush-cell">🍄</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- PANEL 11: THE TRIBUNAL                                      -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="panel" id="panel-11">
+  <div class="panel-counter">11 / 15</div>
+  <div class="panel-inner">
+    <div class="svg-scene" style="max-width:550px">
+      <svg viewBox="0 0 550 300" xmlns="http://www.w3.org/2000/svg">
+        <!-- Congress hearing room -->
+        <rect x="0" y="0" width="550" height="300" fill="#0a0a0f"/>
+        <!-- Elevated bench/podium -->
+        <rect x="100" y="60" width="350" height="8" rx="2" fill="#2a2520"/>
+        <rect x="120" y="68" width="310" height="80" rx="0" fill="#1a1510"/>
+        <!-- Senator silhouette -->
+        <ellipse cx="275" cy="42" rx="16" ry="18" fill="#1a1520"/>
+        <rect x="260" y="55" width="30" height="15" rx="2" fill="#1a1520"/>
+        <!-- Microphone -->
+        <line x1="275" y1="58" x2="275" y2="50" stroke="#52525b" stroke-width="1"/>
+        <circle cx="275" cy="48" r="3" fill="#52525b"/>
+        <!-- Data screens behind -->
+        <rect x="140" y="10" width="100" height="35" rx="2" fill="#0a0a14" stroke="#22c55e" stroke-width="0.5" opacity="0.5"/>
+        <rect x="310" y="10" width="100" height="35" rx="2" fill="#0a0a14" stroke="#22c55e" stroke-width="0.5" opacity="0.5"/>
+        <!-- Chart on left screen -->
+        <polyline points="155,38 170,35 185,30 200,20 215,18 225,16" stroke="#22c55e" stroke-width="1" fill="none"/>
+        <!-- Bar chart on right screen -->
+        <rect x="322" y="32" width="10" height="8" fill="#ef4444" opacity="0.5"/>
+        <rect x="338" y="25" width="10" height="15" fill="#ef4444" opacity="0.6"/>
+        <rect x="354" y="18" width="10" height="22" fill="#ef4444" opacity="0.7"/>
+        <rect x="370" y="30" width="10" height="10" fill="#22c55e" opacity="0.5"/>
+        <rect x="386" y="26" width="10" height="14" fill="#22c55e" opacity="0.6"/>
+        <!-- Audience silhouettes -->
+        <g fill="#0a0a14" opacity="0.4">
+          <ellipse cx="120" cy="200" rx="10" ry="12"/>
+          <ellipse cx="160" cy="205" rx="10" ry="12"/>
+          <ellipse cx="200" cy="200" rx="10" ry="12"/>
+          <ellipse cx="240" cy="205" rx="10" ry="12"/>
+          <ellipse cx="280" cy="200" rx="10" ry="12"/>
+          <ellipse cx="320" cy="205" rx="10" ry="12"/>
+          <ellipse cx="360" cy="200" rx="10" ry="12"/>
+          <ellipse cx="400" cy="205" rx="10" ry="12"/>
+          <ellipse cx="440" cy="200" rx="10" ry="12"/>
+          <ellipse cx="140" cy="240" rx="10" ry="12"/>
+          <ellipse cx="180" cy="245" rx="10" ry="12"/>
+          <ellipse cx="220" cy="240" rx="10" ry="12"/>
+          <ellipse cx="260" cy="245" rx="10" ry="12"/>
+          <ellipse cx="300" cy="240" rx="10" ry="12"/>
+          <ellipse cx="340" cy="245" rx="10" ry="12"/>
+          <ellipse cx="380" cy="240" rx="10" ry="12"/>
+          <ellipse cx="420" cy="245" rx="10" ry="12"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="caption reveal" style="text-align:center">
+      When <em>100,000</em> identical improper denials from the same insurer surface simultaneously,<br>
+      <strong>even Congress pays attention.</strong>
+    </div>
+
+    <div class="headline-stack reveal">
+      <div class="headline">AI Tool Exposes Systematic Claim Denials</div>
+      <div class="headline">Insurance Industry Faces Congressional Inquiry</div>
+      <div class="headline">Patient Advocacy AI: The New Civil Rights?</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- PANEL 12: THE RECKONING                                     -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="panel" id="panel-12">
+  <div class="panel-counter">12 / 15</div>
+  <div class="panel-inner" style="text-align:center">
+    <div class="svg-scene" style="max-width:500px">
+      <svg viewBox="0 0 500 200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Stock ticker dropping -->
+        <rect x="0" y="0" width="500" height="200" fill="#0a0a0f"/>
+        <!-- Grid lines -->
+        <g stroke="#1e293b" stroke-width="0.5" opacity="0.3">
+          <line x1="50" y1="30" x2="50" y2="170"/>
+          <line x1="50" y1="170" x2="470" y2="170"/>
+          <line x1="50" y1="60" x2="470" y2="60" stroke-dasharray="2 4"/>
+          <line x1="50" y1="100" x2="470" y2="100" stroke-dasharray="2 4"/>
+          <line x1="50" y1="140" x2="470" y2="140" stroke-dasharray="2 4"/>
+        </g>
+        <!-- Stock price dropping -->
+        <polyline points="60,40 100,42 140,45 180,50 200,55 220,65 240,80 260,95 280,105 300,120 320,130 340,140 360,148 380,152 400,155 420,158 440,160 460,162"
+          stroke="#ef4444" stroke-width="2.5" fill="none"/>
+        <!-- Red area under curve -->
+        <polygon points="60,40 100,42 140,45 180,50 200,55 220,65 240,80 260,95 280,105 300,120 320,130 340,140 360,148 380,152 400,155 420,158 440,160 460,162 460,170 60,170"
+          fill="#ef4444" opacity="0.06"/>
+        <!-- Labels -->
+        <text x="40" y="45" font-family="JetBrains Mono" font-size="6" fill="#ef4444" text-anchor="end">$548</text>
+        <text x="40" y="165" font-family="JetBrains Mono" font-size="6" fill="#ef4444" text-anchor="end">$312</text>
+        <text x="250" y="190" font-family="JetBrains Mono" font-size="7" fill="#52525b" text-anchor="middle">UNH — 90 DAY</text>
+        <!-- Down arrow indicator -->
+        <text x="470" y="165" font-family="Space Grotesk" font-size="14" fill="#ef4444">↓</text>
+      </svg>
+    </div>
+
+    <div class="ticker-row reveal">
+      <div class="ticker-item down">
+        <span class="arrow-icon">▼</span> UNH <strong>-43%</strong>
+      </div>
+      <div class="ticker-item down">
+        <span class="arrow-icon">▼</span> ANTM <strong>-38%</strong>
+      </div>
+      <div class="ticker-item down">
+        <span class="arrow-icon">▼</span> CI <strong>-31%</strong>
+      </div>
+      <div class="ticker-item up">
+        <span class="arrow-icon">▲</span> Patient Approvals <strong>+340%</strong>
+      </div>
+    </div>
+
+    <div class="caption reveal" style="text-align:center;margin-top:24px">
+      UnitedHealth's denial rate dropped from <strong style="color:var(--red)">32%</strong> to <em>8%</em> in one quarter.<br>
+      Not because they changed their values. <strong>Because the math changed.</strong>
+    </div>
+    <div class="data-overlay reveal" style="display:block;text-align:center;max-width:500px;margin:16px auto">
+      When every denial gets appealed, denial becomes expensive.
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- PANEL 13: THE BUILDER                                       -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="panel screen-glow" id="panel-13">
+  <div class="panel-counter">13 / 15</div>
+  <div class="green-fog"></div>
+  <div class="panel-inner">
+    <div class="svg-scene" style="max-width:400px;margin-bottom:20px">
+      <svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="multiGlow" cx="50%" cy="45%" r="50%">
+            <stop offset="0%" stop-color="#22c55e" stop-opacity="0.12"/>
+            <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect x="0" y="0" width="400" height="280" fill="#020206"/>
+        <ellipse cx="200" cy="140" rx="180" ry="130" fill="url(#multiGlow)"/>
+        <!-- Multiple monitors -->
+        <!-- Center monitor -->
+        <rect x="130" y="90" width="140" height="90" rx="4" fill="#0a0a1a" stroke="#22c55e" stroke-width="0.8" stroke-opacity="0.3"/>
+        <rect x="136" y="96" width="128" height="78" rx="2" fill="#040810"/>
+        <!-- Code on center screen -->
+        <line x1="142" y1="108" x2="200" y2="108" stroke="#22c55e" stroke-width="0.8" opacity="0.5"/>
+        <line x1="148" y1="114" x2="230" y2="114" stroke="#22c55e" stroke-width="0.8" opacity="0.3"/>
+        <line x1="148" y1="120" x2="215" y2="120" stroke="#22c55e" stroke-width="0.8" opacity="0.4"/>
+        <line x1="142" y1="126" x2="240" y2="126" stroke="#22c55e" stroke-width="0.8" opacity="0.35"/>
+        <line x1="148" y1="132" x2="220" y2="132" stroke="#22c55e" stroke-width="0.8" opacity="0.3"/>
+        <line x1="148" y1="138" x2="210" y2="138" stroke="#22c55e" stroke-width="0.8" opacity="0.25"/>
+        <line x1="142" y1="144" x2="225" y2="144" stroke="#22c55e" stroke-width="0.8" opacity="0.4"/>
+        <line x1="148" y1="150" x2="235" y2="150" stroke="#22c55e" stroke-width="0.8" opacity="0.3"/>
+        <line x1="148" y1="156" x2="205" y2="156" stroke="#22c55e" stroke-width="0.8" opacity="0.25"/>
+        <line x1="142" y1="162" x2="218" y2="162" stroke="#22c55e" stroke-width="0.8" opacity="0.35"/>
+        <!-- Left monitor (knowledge graph) -->
+        <rect x="30" y="100" width="90" height="65" rx="3" fill="#0a0a1a" stroke="#22c55e" stroke-width="0.5" stroke-opacity="0.2"/>
+        <!-- Graph nodes -->
+        <circle cx="55" cy="120" r="4" fill="#22c55e" opacity="0.3"/>
+        <circle cx="80" cy="110" r="3" fill="#22c55e" opacity="0.2"/>
+        <circle cx="95" cy="135" r="4" fill="#22c55e" opacity="0.3"/>
+        <circle cx="65" cy="145" r="3" fill="#22c55e" opacity="0.2"/>
+        <line x1="55" y1="120" x2="80" y2="110" stroke="#22c55e" stroke-width="0.5" opacity="0.2"/>
+        <line x1="80" y1="110" x2="95" y2="135" stroke="#22c55e" stroke-width="0.5" opacity="0.2"/>
+        <line x1="55" y1="120" x2="65" y2="145" stroke="#22c55e" stroke-width="0.5" opacity="0.2"/>
+        <line x1="95" y1="135" x2="65" y2="145" stroke="#22c55e" stroke-width="0.5" opacity="0.2"/>
+        <!-- Right monitor (data) -->
+        <rect x="280" y="100" width="90" height="65" rx="3" fill="#0a0a1a" stroke="#22c55e" stroke-width="0.5" stroke-opacity="0.2"/>
+        <!-- Data bars -->
+        <rect x="290" y="140" width="6" height="15" fill="#22c55e" opacity="0.2"/>
+        <rect x="300" y="130" width="6" height="25" fill="#22c55e" opacity="0.3"/>
+        <rect x="310" y="120" width="6" height="35" fill="#22c55e" opacity="0.4"/>
+        <rect x="320" y="115" width="6" height="40" fill="#22c55e" opacity="0.5"/>
+        <rect x="330" y="110" width="6" height="45" fill="#22c55e" opacity="0.4"/>
+        <rect x="340" y="125" width="6" height="30" fill="#22c55e" opacity="0.3"/>
+        <rect x="350" y="135" width="6" height="20" fill="#22c55e" opacity="0.2"/>
+        <!-- Monitor stands -->
+        <rect x="190" y="180" width="20" height="15" rx="2" fill="#1a1a2e"/>
+        <rect x="65" y="165" width="15" height="10" rx="2" fill="#1a1a2e"/>
+        <rect x="315" y="165" width="15" height="10" rx="2" fill="#1a1a2e"/>
+        <!-- Desk surface -->
+        <rect x="20" y="190" width="360" height="5" rx="2" fill="#1a1a2e"/>
+        <!-- Hooded figure silhouette (The Builder) -->
+        <path d="M175 60 Q175 35 200 30 Q225 35 225 60 L230 80 L170 80 Z" fill="#0a0a14"/>
+        <!-- Hood -->
+        <ellipse cx="200" cy="55" rx="22" ry="25" fill="#0a0a14"/>
+        <!-- Body -->
+        <rect x="176" y="72" width="48" height="30" rx="4" fill="#0a0a14"/>
+        <!-- Arms reaching to keyboard -->
+        <path d="M178 85 Q160 100 155 120 Q150 140 160 185" stroke="#0a0a14" stroke-width="10" fill="none" stroke-linecap="round"/>
+        <path d="M222 85 Q240 100 245 120 Q250 140 240 185" stroke="#0a0a14" stroke-width="10" fill="none" stroke-linecap="round"/>
+        <!-- Green light on face (just a hint) -->
+        <ellipse cx="200" cy="58" rx="10" ry="12" fill="#22c55e" opacity="0.04"/>
+      </svg>
+    </div>
+
+    <div class="caption reveal" style="text-align:center">
+      Someone had to build the weapon first. Someone had to encode every regulation,<br>
+      every payer policy, every denial pattern into a <em>Knowledge Graph</em>.<br>
+      <strong>Someone had to make it free.</strong>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- PANEL 14: THE BEACON                                        -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="panel" id="panel-14">
+  <div class="panel-counter">14 / 15</div>
+  <div class="panel-inner" style="text-align:center">
+    <div class="recursive-frame reveal">
+      <div style="font-family:'JetBrains Mono';font-size:0.55rem;color:var(--green);margin-bottom:8px;text-align:left;opacity:0.5">THE VIGILANTE PROTOCOL</div>
+      <div class="recursive-inner">
+        <div style="font-family:'JetBrains Mono';font-size:0.45rem;color:var(--green);margin-bottom:6px;opacity:0.4">THE VIGILANTE PROTOCOL</div>
+        <div class="recursive-deep">
+          <div style="font-size:0.35rem;opacity:0.5">THE VIGILANTE PROTOCOL</div>
+          <div style="font-size:0.25rem;opacity:0.3;margin-top:2px">THE VIGILANTE PROTOCOL</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="caption reveal" style="text-align:center;margin-top:24px">
+      And someone had to tell the story.<br>
+      Because a tool without a story is just software.<br>
+      A story without a tool is just fiction.<br><br>
+      <strong>This is both.</strong>
+    </div>
+
+    <div class="caption reveal" style="text-align:center;margin-top:16px">
+      <em>The tool is real. The links work. The fight is happening now.</em>
+    </div>
+
+    <a href="luigi.html" class="tool-link reveal">🍄 luigi.html → Launch the Tool</a>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- PANEL 15: FINAL                                             -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="panel panel-final" id="panel-15">
+  <div class="panel-counter">15 / 15</div>
+  <div class="panel-inner" style="text-align:center">
+    <div class="final-mushroom">🍄</div>
+
+    <div class="final-text reveal">
+      Every denied claim is a bet that you won't fight back.
+    </div>
+
+    <div class="final-beat reveal" style="animation-delay: 0.5s">
+      Luigi changes the odds.
+    </div>
+
+    <div class="final-small reveal" style="animation-delay: 1s">
+      This comic is a beacon. Copy it. Share it. The protocol is open.
+    </div>
+
+    <div class="inkwell-mark reveal" style="animation-delay: 1.5s">✦</div>
+    <div class="small-text reveal" style="animation-delay: 1.5s;text-align:center">INKWELL LABS</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- JAVASCRIPT                                                  -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<script>
+// ── INTERSECTION OBSERVER FOR REVEAL ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      // Trigger stamp animation
+      const stamp = entry.target.querySelector('#denyStamp');
+      if (stamp) stamp.classList.add('visible');
+    }
+  });
+}, { threshold: 0.2 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ── HOLD TIMER ANIMATION ──
+const holdTimer = document.getElementById('holdTimer');
+if (holdTimer) {
+  let seconds = 3 * 3600 + 47 * 60 + 22;
+  setInterval(() => {
+    seconds++;
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    holdTimer.textContent = `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }, 1000);
+}
+
+// ── NETWORK VISUALIZATION (Panel 8) ──
+const netCanvas = document.getElementById('networkCanvas');
+if (netCanvas) {
+  const ctx = netCanvas.getContext('2d');
+  const nodes = [];
+  const MAX_NODES = 200;
+  let nodeCount = 0;
+  let animFrame;
+
+  function resizeNet() {
+    const rect = netCanvas.parentElement.getBoundingClientRect();
+    netCanvas.width = rect.width * window.devicePixelRatio;
+    netCanvas.height = rect.height * window.devicePixelRatio;
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    netCanvas.style.width = rect.width + 'px';
+    netCanvas.style.height = rect.height + 'px';
+  }
+
+  function addNode() {
+    if (nodeCount >= MAX_NODES) return;
+    const w = netCanvas.clientWidth;
+    const h = netCanvas.clientHeight;
+    nodes.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      r: 1.5 + Math.random() * 2,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      alpha: 0,
+      targetAlpha: 0.4 + Math.random() * 0.6
+    });
+    nodeCount++;
+  }
+
+  function drawNetwork() {
+    const w = netCanvas.clientWidth;
+    const h = netCanvas.clientHeight;
+    ctx.clearRect(0, 0, w, h);
+
+    // Draw connections
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dx = nodes[i].x - nodes[j].x;
+        const dy = nodes[i].y - nodes[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 80) {
+          const alpha = (1 - dist / 80) * 0.15 * Math.min(nodes[i].alpha, nodes[j].alpha);
+          ctx.strokeStyle = `rgba(34, 197, 94, ${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Draw nodes
+    nodes.forEach(n => {
+      n.alpha = Math.min(n.alpha + 0.02, n.targetAlpha);
+      n.x += n.vx;
+      n.y += n.vy;
+      if (n.x < 0 || n.x > w) n.vx *= -1;
+      if (n.y < 0 || n.y > h) n.vy *= -1;
+
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(34, 197, 94, ${n.alpha})`;
+      ctx.fill();
+
+      // Glow
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r * 3, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(34, 197, 94, ${n.alpha * 0.08})`;
+      ctx.fill();
+    });
+
+    animFrame = requestAnimationFrame(drawNetwork);
+  }
+
+  // Start network when panel 8 is visible
+  const panel8 = document.getElementById('panel-8');
+  let networkStarted = false;
+  const netObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && !networkStarted) {
+        networkStarted = true;
+        resizeNet();
+        // Add nodes progressively
+        const interval = setInterval(() => {
+          for (let i = 0; i < 3; i++) addNode();
+          if (nodeCount >= MAX_NODES) clearInterval(interval);
+        }, 100);
+        drawNetwork();
+      }
+      if (!entry.isIntersecting && networkStarted) {
+        // Keep running but slower
+      }
+    });
+  }, { threshold: 0.1 });
+
+  netObserver.observe(panel8);
+  window.addEventListener('resize', resizeNet);
+}
+
+// ── HEADLINE ANIMATION ──
+const headlineObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.querySelectorAll('.headline').forEach(h => {
+        h.style.animationPlayState = 'running';
+      });
+    }
+  });
+}, { threshold: 0.3 });
+
+document.querySelectorAll('.headline-stack').forEach(el => headlineObserver.observe(el));
+
+// ── RANDOM GREEN FLASH ──
+setInterval(() => {
+  if (Math.random() < 0.08) {
+    document.body.style.boxShadow = 'inset 0 0 100px rgba(34,197,94,0.03)';
+    setTimeout(() => {
+      document.body.style.boxShadow = 'none';
+    }, 150);
+  }
+}, 5000);
+
+// ── TICKER DATA COUNTER (Panel 12) ──
+const tickerObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.querySelectorAll('.ticker-item').forEach((item, i) => {
+        item.style.animation = `fadeInUp 0.5s ease-out ${i * 0.15}s forwards`;
+        item.style.opacity = '0';
+      });
+    }
+  });
+}, { threshold: 0.3 });
+
+document.querySelectorAll('.ticker-row').forEach(el => tickerObserver.observe(el));
+</script>
+
+</body>
+</html>
