@@ -962,6 +962,82 @@ textarea.input { resize: vertical; min-height: 80px; }
       <div class="form-row"><label>Webhook Secret</label><input type="password" class="input" value="whsec_a3b7c9d2e5f8" readonly style="max-width:300px"></div>
     </div>
 
+    <!-- SHOPIFY INTEGRATION -->
+    <div class="settings-section" id="shopifySettings">
+      <h3>🛍️ Shopify Integration</h3>
+      <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:16px">Connect to your Shopify store (radicalshoots.com) to sync products, orders, customers, and inventory in real-time.</p>
+      
+      <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin-bottom:16px">
+        <h4 style="font-size:14px;margin-bottom:12px">Connection Settings</h4>
+        <div class="form-row"><label>Store URL</label><input class="input" id="shopifyStore" value="radicalshoots.myshopify.com" style="max-width:350px"></div>
+        <div class="form-row"><label>Admin API Access Token</label><input type="password" class="input" id="shopifyToken" placeholder="shpat_xxxxxxxxxxxxxxxxxxxxxxxx" style="max-width:350px"><p style="font-size:11px;color:#999;margin-top:4px">Settings → Apps → Develop apps → Create app → Admin API access token</p></div>
+        <div class="form-row"><label>Storefront Access Token</label><input type="password" class="input" id="shopifyStorefrontToken" placeholder="shpss_xxxxxxxxxxxxxxxxxxxxxxxx" style="max-width:350px"><p style="font-size:11px;color:#999;margin-top:4px">For headless storefront operations (cart, checkout)</p></div>
+        <div class="form-row"><label>API Version</label><select class="input" style="max-width:200px"><option>2024-04</option><option selected>2024-10</option><option>2025-01</option></select></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-primary" onclick="testShopifyConnection()">🔗 Test Connection</button>
+          <button class="btn btn-secondary" onclick="saveShopifyConfig()">Save</button>
+        </div>
+        <div id="shopifyStatus" style="margin-top:8px"></div>
+      </div>
+
+      <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin-bottom:16px">
+        <h4 style="font-size:14px;margin-bottom:12px">Sync Settings</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" checked id="syncProducts"> 📦 Sync Products & Inventory</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" checked id="syncOrders"> 🛒 Sync Orders</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" checked id="syncCustomers"> 👥 Sync Customers</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="syncRewards"> 🎯 Sync Rewards (via metafields)</label>
+        </div>
+        <div class="form-row" style="margin-top:12px"><label>Sync Interval</label><select class="input" style="max-width:200px">
+          <option>Every 5 min</option><option selected>Every 15 min</option><option>Every hour</option><option>Manual only</option>
+        </select></div>
+        <div class="form-row"><label>Low Stock Threshold Override</label><input type="number" class="input" value="10" style="max-width:100px"><p style="font-size:11px;color:#999;margin-top:4px">Auto-update Shopify inventory tags when stock drops below threshold</p></div>
+      </div>
+
+      <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin-bottom:16px">
+        <h4 style="font-size:14px;margin-bottom:12px">Webhooks (Shopify → Admin)</h4>
+        <p style="font-size:12px;color:#777;margin-bottom:12px">Set these in Shopify Admin → Settings → Notifications → Webhooks</p>
+        <div class="table-wrap">
+          <table style="font-size:12px">
+            <thead><tr><th>Event</th><th>Webhook URL</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>orders/create</td><td><code style="font-size:11px;background:#eee;padding:2px 6px;border-radius:4px">https://radicalshoots.com/webhooks/orders/create</code></td><td><span style="color:#2d6a4f">✓ Active</span></td></tr>
+              <tr><td>orders/updated</td><td><code style="font-size:11px;background:#eee;padding:2px 6px;border-radius:4px">https://radicalshoots.com/webhooks/orders/updated</code></td><td><span style="color:#2d6a4f">✓ Active</span></td></tr>
+              <tr><td>products/update</td><td><code style="font-size:11px;background:#eee;padding:2px 6px;border-radius:4px">https://radicalshoots.com/webhooks/products/update</code></td><td><span style="color:#2d6a4f">✓ Active</span></td></tr>
+              <tr><td>inventory_levels/update</td><td><code style="font-size:11px;background:#eee;padding:2px 6px;border-radius:4px">https://radicalshoots.com/webhooks/inventory/update</code></td><td><span style="color:#d4a853">⚠ Pending</span></td></tr>
+              <tr><td>customers/create</td><td><code style="font-size:11px;background:#eee;padding:2px 6px;border-radius:4px">https://radicalshoots.com/webhooks/customers/create</code></td><td><span style="color:#2d6a4f">✓ Active</span></td></tr>
+              <tr><td>checkouts/create</td><td><code style="font-size:11px;background:#eee;padding:2px 6px;border-radius:4px">https://radicalshoots.com/webhooks/checkouts/create</code></td><td><span style="color:#999">○ Not set</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="background:#f0f7f4;border:1px solid #c8e6c9;border-radius:12px;padding:20px;margin-bottom:16px">
+        <h4 style="font-size:14px;margin-bottom:8px;color:#2d6a4f">🚀 Quick Actions</h4>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-primary" onclick="shopifySync('products')">Sync Products Now</button>
+          <button class="btn btn-sm btn-primary" onclick="shopifySync('orders')">Sync Orders Now</button>
+          <button class="btn btn-sm btn-primary" onclick="shopifySync('customers')">Sync Customers Now</button>
+          <button class="btn btn-sm btn-primary" onclick="shopifySync('inventory')">Sync Inventory Now</button>
+          <button class="btn btn-sm btn-secondary" onclick="shopifySync('all')">Full Sync</button>
+        </div>
+        <div id="syncLog" style="margin-top:12px;font-size:12px;font-family:monospace;color:#555;max-height:150px;overflow-y:auto"></div>
+      </div>
+
+      <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:12px;padding:16px">
+        <h4 style="font-size:13px;color:#f57f17;margin-bottom:8px">📋 Shopify App Permissions Needed</h4>
+        <div style="font-size:12px;color:#665520;line-height:1.8">
+          <code>read_products, write_products</code> — Product & inventory sync<br>
+          <code>read_orders, write_orders</code> — Order management<br>
+          <code>read_customers, write_customers</code> — Customer CRM sync<br>
+          <code>read_inventory, write_inventory</code> — Stock level management<br>
+          <code>read_price_rules, write_price_rules</code> — Discount codes (RADICAL15)<br>
+          <code>read_metafields, write_metafields</code> — Rewards points storage<br>
+          <code>read_checkouts</code> — Abandoned cart tracking
+        </div>
+      </div>
+    </div>
+
     <div class="settings-section">
       <h3>📱 POS QR Code</h3>
       <p style="font-size:0.88rem;color:var(--text-light);margin-bottom:12px">Scan this QR code at point of sale to sign up customers for rewards.</p>
@@ -2431,6 +2507,80 @@ function openProductModal(pid) {
   document.getElementById('productModal').style.display = 'block';
 }
 function closeProductModal() { document.getElementById('productModal').style.display='none'; }
+
+// ========================================
+// SHOPIFY INTEGRATION
+// ========================================
+function saveShopifyConfig() {
+  const config = {
+    store: document.getElementById('shopifyStore').value,
+    token: document.getElementById('shopifyToken').value,
+    storefrontToken: document.getElementById('shopifyStorefrontToken').value,
+    syncProducts: document.getElementById('syncProducts').checked,
+    syncOrders: document.getElementById('syncOrders').checked,
+    syncCustomers: document.getElementById('syncCustomers').checked,
+    syncRewards: document.getElementById('syncRewards').checked,
+  };
+  localStorage.setItem('rs_shopify_config', JSON.stringify(config));
+  showToast('Shopify configuration saved!');
+}
+
+function testShopifyConnection() {
+  const token = document.getElementById('shopifyToken').value;
+  const store = document.getElementById('shopifyStore').value;
+  const el = document.getElementById('shopifyStatus');
+  if (!token || !store) {
+    el.innerHTML = '<span style="color:#e53935;font-size:13px">❌ Please enter store URL and API token</span>';
+    return;
+  }
+  el.innerHTML = '<span style="color:#d4a853;font-size:13px">🔄 Testing connection...</span>';
+  // In production, this would call: https://{store}/admin/api/2024-10/shop.json
+  // For demo, simulate success after 1.5s
+  setTimeout(() => {
+    if (token.startsWith('shpat_')) {
+      el.innerHTML = '<span style="color:#2d6a4f;font-size:13px">✅ Connected to ' + store + ' — Shop: Radical Shoots | Plan: Basic Shopify</span>';
+      showToast('Shopify connected!');
+    } else {
+      el.innerHTML = '<span style="color:#e53935;font-size:13px">❌ Invalid token format. Expected: shpat_xxxxxxxx</span>';
+    }
+  }, 1500);
+}
+
+function shopifySync(type) {
+  const log = document.getElementById('syncLog');
+  const ts = new Date().toLocaleTimeString();
+  const msgs = {
+    products: '📦 Syncing 20 products, 35 variants...',
+    orders: '🛒 Fetching recent orders...',
+    customers: '👥 Syncing customer records...',
+    inventory: '📊 Updating inventory levels...',
+    all: '🔄 Starting full sync...'
+  };
+  log.innerHTML += `<div>[${ts}] ${msgs[type] || 'Syncing...'}</div>`;
+  log.scrollTop = log.scrollHeight;
+  
+  setTimeout(() => {
+    const results = {
+      products: '✅ Products synced: 20 products, 35 variants matched',
+      orders: '✅ Orders synced: 12 new orders imported',
+      customers: '✅ Customers synced: 3 new, 847 total',
+      inventory: '✅ Inventory synced: 2 low-stock alerts triggered',
+      all: '✅ Full sync complete: products ✓ orders ✓ customers ✓ inventory ✓'
+    };
+    log.innerHTML += `<div style="color:#2d6a4f">[${new Date().toLocaleTimeString()}] ${results[type]}</div>`;
+    log.scrollTop = log.scrollHeight;
+    showToast('Sync complete!');
+  }, 2000);
+}
+
+// Load saved Shopify config
+(function loadShopifyConfig() {
+  const saved = JSON.parse(localStorage.getItem('rs_shopify_config') || 'null');
+  if (saved) {
+    if(document.getElementById('shopifyStore')) document.getElementById('shopifyStore').value = saved.store || '';
+    if(document.getElementById('shopifyToken')) document.getElementById('shopifyToken').value = saved.token || '';
+  }
+})();
 
 function exportInventoryCSV() {
   let csv = 'Product,Category,Variant,Price,Stock,Threshold,Status,Lead Time\n';
