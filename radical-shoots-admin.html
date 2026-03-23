@@ -428,6 +428,9 @@ textarea.input { resize: vertical; min-height: 80px; }
     <a class="nav-item" data-view="social" onclick="navigate('social')">
       <span class="icon">📱</span> Social
     </a>
+    <a class="nav-item" data-view="products" onclick="navigate('products')">
+      <span class="icon">📦</span> Products
+    </a>
     <a class="nav-item" data-view="settings" onclick="navigate('settings')">
       <span class="icon">⚙️</span> Settings
     </a>
@@ -776,6 +779,122 @@ textarea.input { resize: vertical; min-height: 80px; }
   </div>
 </div>
 
+<!-- ============ PRODUCTS / INVENTORY VIEW ============ -->
+<div class="view" id="view-products">
+  <div class="page-header">
+    <h1>Product Manager</h1>
+    <div style="display:flex;gap:8px;margin-left:auto">
+      <button class="btn btn-sm btn-secondary" onclick="exportInventoryCSV()">📥 Export CSV</button>
+      <button class="btn btn-sm btn-primary" onclick="openProductModal()">+ Add Product</button>
+    </div>
+  </div>
+  <div class="page-content">
+
+    <!-- Inventory Alert Banner -->
+    <div id="inventoryAlerts" style="margin-bottom:20px"></div>
+
+    <!-- Stats -->
+    <div class="stat-cards" style="margin-bottom:24px">
+      <div class="stat-card"><div class="label">Total SKUs</div><div class="value" id="prodStatSKUs">0</div></div>
+      <div class="stat-card"><div class="label">In Stock</div><div class="value" id="prodStatInStock" style="color:#2d6a4f">0</div></div>
+      <div class="stat-card"><div class="label">Low Stock ⚠️</div><div class="value" id="prodStatLow" style="color:#d4a853">0</div></div>
+      <div class="stat-card"><div class="label">Out of Stock</div><div class="value" id="prodStatOut" style="color:#e53935">0</div></div>
+    </div>
+
+    <!-- Tabs: Inventory | Planting Schedule | Production -->
+    <div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid #eee;padding-bottom:0">
+      <button class="btn btn-sm" id="prodTabInv" onclick="switchProdTab('inventory')" style="border-radius:8px 8px 0 0;border-bottom:2px solid var(--primary);margin-bottom:-2px;font-weight:600">📦 Inventory</button>
+      <button class="btn btn-sm btn-secondary" id="prodTabPlant" onclick="switchProdTab('planting')" style="border-radius:8px 8px 0 0;margin-bottom:-2px">🌱 Planting Schedule</button>
+      <button class="btn btn-sm btn-secondary" id="prodTabProd" onclick="switchProdTab('production')" style="border-radius:8px 8px 0 0;margin-bottom:-2px">🏭 Production Pipeline</button>
+    </div>
+
+    <!-- INVENTORY TAB -->
+    <div id="prodPanelInventory">
+      <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+        <input class="input" id="prodSearch" placeholder="Search products..." style="flex:1;min-width:200px" oninput="renderInventory()">
+        <select class="input" id="prodCatFilter" style="width:auto" onchange="renderInventory()">
+          <option value="all">All Categories</option>
+          <option value="Microgreen">🌱 Microgreens</option>
+          <option value="Cheese">🧀 Cheese</option>
+          <option value="Honey">🍯 Honey</option>
+          <option value="Maple Syrup">🍁 Maple Syrup</option>
+          <option value="Mushroom">🍄 Mushrooms</option>
+        </select>
+        <select class="input" id="prodStockFilter" style="width:auto" onchange="renderInventory()">
+          <option value="all">All Stock</option>
+          <option value="in">In Stock</option>
+          <option value="low">Low Stock</option>
+          <option value="out">Out of Stock</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table id="inventoryTable">
+          <thead>
+            <tr>
+              <th onclick="sortInventory('name')" style="cursor:pointer">Product ↕</th>
+              <th onclick="sortInventory('category')" style="cursor:pointer">Category ↕</th>
+              <th onclick="sortInventory('variant')" style="cursor:pointer">Variant ↕</th>
+              <th onclick="sortInventory('price')" style="cursor:pointer">Price ↕</th>
+              <th onclick="sortInventory('stock')" style="cursor:pointer">Stock ↕</th>
+              <th>Threshold</th>
+              <th>Status</th>
+              <th>Lead Time</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="inventoryBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PLANTING SCHEDULE TAB -->
+    <div id="prodPanelPlanting" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3>🌱 Planting & Harvest Calendar — March 2026</h3>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm btn-secondary" onclick="prevPlantMonth()">←</button>
+          <button class="btn btn-sm btn-secondary" onclick="nextPlantMonth()">→</button>
+        </div>
+      </div>
+      <div id="plantingGantt" style="overflow-x:auto"></div>
+      <div style="margin-top:16px;display:flex;gap:16px;font-size:12px;color:#777;flex-wrap:wrap">
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;background:#81c784;border-radius:3px;display:inline-block"></span> Seeding</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;background:#4caf50;border-radius:3px;display:inline-block"></span> Growing</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;background:#2d6a4f;border-radius:3px;display:inline-block"></span> Harvest Ready</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;background:#d4a853;border-radius:3px;display:inline-block"></span> Cheese Aging</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;background:#8d6e63;border-radius:3px;display:inline-block"></span> Mushroom Fruiting</span>
+      </div>
+    </div>
+
+    <!-- PRODUCTION PIPELINE TAB -->
+    <div id="prodPanelProduction" style="display:none">
+      <div class="stat-cards" style="margin-bottom:20px">
+        <div class="stat-card"><div class="label">Active Batches</div><div class="value">12</div></div>
+        <div class="stat-card"><div class="label">Ready to Harvest</div><div class="value" style="color:#2d6a4f">3</div></div>
+        <div class="stat-card"><div class="label">Seeding This Week</div><div class="value" style="color:#81c784">5</div></div>
+        <div class="stat-card"><div class="label">Next Delivery</div><div class="value" style="font-size:1rem">Tue Mar 24</div></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Batch</th><th>Product</th><th>Qty</th><th>Seeded</th><th>Est. Harvest</th><th>Stage</th><th>Days Left</th><th>For</th></tr>
+          </thead>
+          <tbody id="pipelineBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Product Edit Modal -->
+<div id="productModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:1000;overflow-y:auto;padding:20px" onclick="if(event.target===this)closeProductModal()">
+  <div style="max-width:500px;margin:40px auto;background:#fff;border-radius:16px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+    <h3 id="productModalTitle" style="margin-bottom:20px">Edit Product</h3>
+    <div id="productModalContent"></div>
+  </div>
+</div>
+
 <!-- ============ SETTINGS VIEW ============ -->
 <div class="view" id="view-settings">
   <div class="page-header"><h1>Settings</h1></div>
@@ -999,6 +1118,7 @@ function applyHash() {
   if (hash === 'rewards') renderRewards();
   if (hash === 'email') renderEmail();
   if (hash === 'social') renderSocialCalendar();
+  if (hash === 'products') renderProducts();
   if (hash === 'dashboard') renderDashboard();
 }
 
@@ -1976,6 +2096,354 @@ function nextMonth() {
   calendarMonth++;
   if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
   renderSocialCalendar();
+}
+
+// ========================================
+// PRODUCT MANAGER / INVENTORY
+// ========================================
+const INVENTORY = [
+  // Microgreens
+  {id:1,name:'Amaranth Microgreen',category:'Microgreen',variants:[
+    {name:'Cut Clamshell 24oz',price:25.00,stock:18,threshold:10,leadDays:14},
+    {name:'Living Square 8x6',price:8.50,stock:24,threshold:15,leadDays:14}
+  ],emoji:'🌱',color:'#c0392b',growDays:12,shelfDays:12},
+  {id:2,name:'Radish Rainbow Mix',category:'Microgreen',variants:[
+    {name:'Cut Clamshell 24oz',price:14.00,stock:22,threshold:10,leadDays:14},
+    {name:'Living Square 8x6',price:8.50,stock:30,threshold:15,leadDays:14},
+    {name:'Cut Clamshell 38oz',price:16.00,stock:8,threshold:10,leadDays:14}
+  ],emoji:'🌱',color:'#e91e8c',growDays:10,shelfDays:12},
+  {id:3,name:'Radish Daikon',category:'Microgreen',variants:[
+    {name:'Cut Clamshell 38oz',price:15.00,stock:12,threshold:10,leadDays:14},
+    {name:'Living Square 8x6',price:8.50,stock:20,threshold:15,leadDays:14},
+    {name:'Cut Clamshell 24oz',price:14.00,stock:6,threshold:10,leadDays:14}
+  ],emoji:'🌱',color:'#81c784',growDays:10,shelfDays:12},
+  {id:4,name:'Radish China Rose',category:'Microgreen',variants:[
+    {name:'Cut Clamshell 38oz',price:16.00,stock:14,threshold:10,leadDays:14},
+    {name:'Living Square 8x6',price:8.50,stock:18,threshold:15,leadDays:14},
+    {name:'Cut Clamshell 24oz',price:14.00,stock:3,threshold:10,leadDays:14}
+  ],emoji:'🌱',color:'#e91e63',growDays:10,shelfDays:12},
+  {id:5,name:'Leek Microgreens',category:'Microgreen',variants:[
+    {name:'Single Box',price:14.00,stock:16,threshold:8,leadDays:14},
+    {name:'Double Box',price:24.00,stock:10,threshold:6,leadDays:14}
+  ],emoji:'🌱',color:'#4caf50',growDays:14,shelfDays:14},
+  {id:6,name:'Dill Microgreens',category:'Microgreen',variants:[
+    {name:'Single Box',price:14.00,stock:20,threshold:8,leadDays:14},
+    {name:'Double Box',price:24.00,stock:12,threshold:6,leadDays:14}
+  ],emoji:'🌱',color:'#66bb6a',growDays:14,shelfDays:14},
+  {id:7,name:'Chervil Microgreens',category:'Microgreen',variants:[
+    {name:'Single Box',price:14.00,stock:9,threshold:8,leadDays:14},
+    {name:'Double Box',price:24.00,stock:4,threshold:6,leadDays:14}
+  ],emoji:'🌱',color:'#a5d6a7',growDays:14,shelfDays:14},
+  // Cheese
+  {id:8,name:'Cheddar Cheese',category:'Cheese',variants:[
+    {name:'8oz Block',price:8.00,stock:32,threshold:12,leadDays:30}
+  ],emoji:'🧀',color:'#f9a825',ageDays:60},
+  {id:9,name:'Garlic Herb Cheese',category:'Cheese',variants:[
+    {name:'8oz Block',price:8.00,stock:18,threshold:12,leadDays:30}
+  ],emoji:'🧀',color:'#7cb342',ageDays:30},
+  {id:10,name:'Lamb Bush Cheese',category:'Cheese',variants:[
+    {name:'4oz Wedge',price:8.00,stock:8,threshold:6,leadDays:45}
+  ],emoji:'🧀',color:'#8d6e63',ageDays:90},
+  {id:11,name:'Gouda Cheese',category:'Cheese',variants:[
+    {name:'8oz Block',price:8.00,stock:24,threshold:12,leadDays:30}
+  ],emoji:'🧀',color:'#ffb300',ageDays:60},
+  {id:12,name:'Pepper Jack Cheese',category:'Cheese',variants:[
+    {name:'8oz Block',price:8.00,stock:15,threshold:12,leadDays:30}
+  ],emoji:'🧀',color:'#ef5350',ageDays:45},
+  {id:13,name:'Chipotle Cheddar',category:'Cheese',variants:[
+    {name:'8oz Block',price:8.00,stock:11,threshold:12,leadDays:30}
+  ],emoji:'🧀',color:'#d84315',ageDays:60},
+  // Honey
+  {id:14,name:'Raw TN Mountain Honey',category:'Honey',variants:[
+    {name:'3oz Hex Jar',price:5.25,stock:48,threshold:24,leadDays:0},
+    {name:'16oz Pint',price:13.00,stock:36,threshold:12,leadDays:0},
+    {name:'13.5oz Bear',price:13.00,stock:28,threshold:12,leadDays:0},
+    {name:'36oz Quart',price:19.00,stock:18,threshold:6,leadDays:0},
+    {name:'96oz Half-Gal',price:34.00,stock:6,threshold:4,leadDays:0}
+  ],emoji:'🍯',color:'#d4a853'},
+  // Maple Syrup
+  {id:15,name:'Pure Maple Syrup',category:'Maple Syrup',variants:[
+    {name:'Bottle',price:12.00,stock:22,threshold:10,leadDays:0}
+  ],emoji:'🍁',color:'#a0522d'},
+  {id:16,name:'Maple Cider Syrup',category:'Maple Syrup',variants:[
+    {name:'Bottle',price:14.00,stock:16,threshold:10,leadDays:0}
+  ],emoji:'🍁',color:'#bf360c'},
+  {id:17,name:'Chili-Infused Maple',category:'Maple Syrup',variants:[
+    {name:'Bottle',price:14.00,stock:14,threshold:10,leadDays:0}
+  ],emoji:'🍁',color:'#c62828'},
+  {id:18,name:'Sampler Gift Box',category:'Maple Syrup',variants:[
+    {name:'3-Pack Box',price:25.00,stock:7,threshold:5,leadDays:0}
+  ],emoji:'🍁',color:'#6d4c41'},
+  // Mushrooms
+  {id:19,name:"Lion's Mane",category:'Mushroom',variants:[
+    {name:'Fresh 8oz',price:9.00,stock:12,threshold:8,leadDays:14}
+  ],emoji:'🍄',color:'#f5f5f5',growDays:21,fruitDays:10},
+  {id:20,name:'Oyster Blend',category:'Mushroom',variants:[
+    {name:'Fresh 8oz',price:9.00,stock:0,threshold:8,leadDays:14}
+  ],emoji:'🍄',color:'#9e9e9e',growDays:14,fruitDays:7}
+];
+
+// Production pipeline
+const PIPELINE = [
+  {batch:'B-2026-089',product:'Amaranth Microgreen',qty:'4 trays',seeded:'Mar 10',estHarvest:'Mar 22',stage:'growing',daysLeft:0,for:'Stock'},
+  {batch:'B-2026-090',product:'Rainbow Radish',qty:'6 trays',seeded:'Mar 10',estHarvest:'Mar 20',stage:'harvest',daysLeft:0,for:'Chef Marcus'},
+  {batch:'B-2026-091',product:'Daikon Radish',qty:'3 trays',seeded:'Mar 12',estHarvest:'Mar 22',stage:'growing',daysLeft:0,for:'Stock'},
+  {batch:'B-2026-092',product:'China Rose Radish',qty:'4 trays',seeded:'Mar 12',estHarvest:'Mar 22',stage:'growing',daysLeft:0,for:'Stock'},
+  {batch:'B-2026-093',product:'Dill Microgreens',qty:'5 trays',seeded:'Mar 9',estHarvest:'Mar 23',stage:'harvest',daysLeft:0,for:'Nashville Spice'},
+  {batch:'B-2026-094',product:'Leek Microgreens',qty:'3 trays',seeded:'Mar 11',estHarvest:'Mar 25',stage:'growing',daysLeft:2,for:'Stock'},
+  {batch:'B-2026-095',product:'Chervil Microgreens',qty:'2 trays',seeded:'Mar 14',estHarvest:'Mar 28',stage:'growing',daysLeft:5,for:'East Nash Table'},
+  {batch:'B-2026-096',product:"Lion's Mane",qty:'8 blocks',seeded:'Mar 3',estHarvest:'Mar 24',stage:'fruiting',daysLeft:1,for:'Stock'},
+  {batch:'B-2026-097',product:'Cheddar Cheese',qty:'12 wheels',seeded:'Jan 22',estHarvest:'Mar 22',stage:'aging',daysLeft:0,for:'Stock'},
+  {batch:'B-2026-098',product:'Amaranth Microgreen',qty:'6 trays',seeded:'Mar 17',estHarvest:'Mar 29',stage:'seeding',daysLeft:6,for:'Monday Drop'},
+  {batch:'B-2026-099',product:'Rainbow Radish',qty:'4 trays',seeded:'Mar 17',estHarvest:'Mar 27',stage:'growing',daysLeft:4,for:'Monday Drop'},
+  {batch:'B-2026-100',product:'Garlic Herb Cheese',qty:'8 wheels',seeded:'Feb 21',estHarvest:'Mar 23',stage:'aging',daysLeft:0,for:'Stock'},
+];
+
+let invSortCol = 'name', invSortDir = 1;
+
+function getStockStatus(stock, threshold) {
+  if (stock === 0) return {label:'Out of Stock',color:'#e53935',cls:'out'};
+  if (stock <= threshold) return {label:'Low Stock',color:'#d4a853',cls:'low'};
+  return {label:'In Stock',color:'#2d6a4f',cls:'in'};
+}
+
+function renderProducts() {
+  renderInventory();
+  renderPipeline();
+  renderPlantingSchedule();
+  renderInventoryAlerts();
+}
+
+function renderInventoryAlerts() {
+  const alerts = [];
+  INVENTORY.forEach(p => {
+    p.variants.forEach(v => {
+      if (v.stock === 0) alerts.push({product:p.name,variant:v.name,type:'out',emoji:p.emoji});
+      else if (v.stock <= v.threshold) alerts.push({product:p.name,variant:v.name,type:'low',stock:v.stock,threshold:v.threshold,emoji:p.emoji});
+    });
+  });
+  const el = document.getElementById('inventoryAlerts');
+  if (alerts.length === 0) { el.innerHTML = ''; return; }
+  const outAlerts = alerts.filter(a=>a.type==='out');
+  const lowAlerts = alerts.filter(a=>a.type==='low');
+  let html = '';
+  if (outAlerts.length > 0) {
+    html += `<div style="background:#ffebee;border:1px solid #ef9a9a;border-radius:10px;padding:14px 18px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:20px">🚨</span>
+      <div><strong style="color:#c62828">Out of Stock (${outAlerts.length})</strong><br>
+      <span style="font-size:13px;color:#b71c1c">${outAlerts.map(a=>`${a.emoji} ${a.product} (${a.variant})`).join(' · ')}</span></div>
+    </div>`;
+  }
+  if (lowAlerts.length > 0) {
+    html += `<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:20px">⚠️</span>
+      <div><strong style="color:#f57f17">Low Stock (${lowAlerts.length})</strong><br>
+      <span style="font-size:13px;color:#e65100">${lowAlerts.map(a=>`${a.emoji} ${a.product} (${a.variant}: ${a.stock}/${a.threshold})`).join(' · ')}</span></div>
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+function renderInventory() {
+  const search = (document.getElementById('prodSearch')?.value || '').toLowerCase();
+  const catFilter = document.getElementById('prodCatFilter')?.value || 'all';
+  const stockFilter = document.getElementById('prodStockFilter')?.value || 'all';
+
+  let rows = [];
+  INVENTORY.forEach(p => {
+    if (catFilter !== 'all' && p.category !== catFilter) return;
+    if (search && !p.name.toLowerCase().includes(search)) return;
+    p.variants.forEach(v => {
+      const s = getStockStatus(v.stock, v.threshold);
+      if (stockFilter === 'in' && s.cls !== 'in') return;
+      if (stockFilter === 'low' && s.cls !== 'low') return;
+      if (stockFilter === 'out' && s.cls !== 'out') return;
+      rows.push({pid:p.id,name:p.name,category:p.category,variant:v.name,price:v.price,stock:v.stock,threshold:v.threshold,status:s,leadDays:v.leadDays,emoji:p.emoji,color:p.color,vRef:v});
+    });
+  });
+
+  // Sort
+  rows.sort((a,b) => {
+    let va=a[invSortCol], vb=b[invSortCol];
+    if (typeof va === 'string') return va.localeCompare(vb) * invSortDir;
+    return (va-vb) * invSortDir;
+  });
+
+  // Stats
+  let totalSKUs=0, inStock=0, lowStock=0, outStock=0;
+  INVENTORY.forEach(p=>p.variants.forEach(v=>{
+    totalSKUs++;
+    const s=getStockStatus(v.stock,v.threshold);
+    if(s.cls==='in') inStock++; else if(s.cls==='low') lowStock++; else outStock++;
+  }));
+  document.getElementById('prodStatSKUs').textContent = totalSKUs;
+  document.getElementById('prodStatInStock').textContent = inStock;
+  document.getElementById('prodStatLow').textContent = lowStock;
+  document.getElementById('prodStatOut').textContent = outStock;
+
+  document.getElementById('inventoryBody').innerHTML = rows.map(r => `
+    <tr>
+      <td><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;background:${r.color};border-radius:50%;display:inline-block"></span>${r.emoji} ${r.name}</span></td>
+      <td>${r.category}</td>
+      <td>${r.variant}</td>
+      <td>$${r.price.toFixed(2)}</td>
+      <td><input type="number" value="${r.stock}" min="0" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;text-align:center" onchange="updateStock(${r.pid},'${r.variant}',parseInt(this.value))"></td>
+      <td><input type="number" value="${r.threshold}" min="0" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;text-align:center" onchange="updateThreshold(${r.pid},'${r.variant}',parseInt(this.value))"></td>
+      <td><span style="background:${r.status.color}15;color:${r.status.color};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600">${r.status.label}</span></td>
+      <td>${r.leadDays > 0 ? r.leadDays + ' days' : '—'}</td>
+      <td><button class="btn btn-sm btn-secondary" onclick="openProductModal(${r.pid})">Edit</button></td>
+    </tr>
+  `).join('');
+}
+
+function sortInventory(col) {
+  if (invSortCol === col) invSortDir *= -1; else { invSortCol = col; invSortDir = 1; }
+  renderInventory();
+}
+
+function updateStock(pid, variant, val) {
+  const p = INVENTORY.find(x=>x.id===pid);
+  if(p) { const v=p.variants.find(x=>x.name===variant); if(v) { v.stock=val; renderInventory(); renderInventoryAlerts(); } }
+}
+
+function updateThreshold(pid, variant, val) {
+  const p = INVENTORY.find(x=>x.id===pid);
+  if(p) { const v=p.variants.find(x=>x.name===variant); if(v) { v.threshold=val; renderInventory(); renderInventoryAlerts(); } }
+}
+
+function renderPipeline() {
+  document.getElementById('pipelineBody').innerHTML = PIPELINE.map(b => {
+    const stageColors = {seeding:'#81c784',growing:'#4caf50',harvest:'#2d6a4f',fruiting:'#8d6e63',aging:'#d4a853'};
+    const c = stageColors[b.stage] || '#999';
+    return `<tr>
+      <td style="font-family:monospace;font-size:12px">${b.batch}</td>
+      <td>${b.product}</td>
+      <td>${b.qty}</td>
+      <td>${b.seeded}</td>
+      <td>${b.estHarvest}</td>
+      <td><span style="background:${c}20;color:${c};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase">${b.stage}</span></td>
+      <td>${b.daysLeft > 0 ? b.daysLeft + 'd' : '<span style="color:#2d6a4f;font-weight:600">READY</span>'}</td>
+      <td>${b.for}</td>
+    </tr>`;
+  }).join('');
+}
+
+let plantMonth = 2, plantYear = 2026;
+function renderPlantingSchedule() {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const daysInMonth = new Date(plantYear, plantMonth+1, 0).getDate();
+
+  // Build Gantt-style schedule
+  const scheduleItems = [
+    {name:'🌱 Amaranth (Batch 98)',start:1,seedEnd:2,growEnd:10,harvestDay:12,color:'#c0392b'},
+    {name:'🌱 Amaranth (Batch 100)',start:17,seedEnd:19,growEnd:27,harvestDay:29,color:'#c0392b'},
+    {name:'🌱 Rainbow Radish (Batch 90)',start:1,seedEnd:2,growEnd:8,harvestDay:10,color:'#e91e8c'},
+    {name:'🌱 Rainbow Radish (Batch 99)',start:17,seedEnd:18,growEnd:25,harvestDay:27,color:'#e91e8c'},
+    {name:'🌱 Daikon (Batch 91)',start:5,seedEnd:6,growEnd:13,harvestDay:15,color:'#81c784'},
+    {name:'🌱 China Rose (Batch 92)',start:5,seedEnd:6,growEnd:13,harvestDay:15,color:'#e91e63'},
+    {name:'🌱 Dill (Batch 93)',start:1,seedEnd:3,growEnd:12,harvestDay:14,color:'#66bb6a'},
+    {name:'🌱 Leek (Batch 94)',start:4,seedEnd:6,growEnd:16,harvestDay:18,color:'#4caf50'},
+    {name:'🌱 Chervil (Batch 95)',start:7,seedEnd:9,growEnd:19,harvestDay:21,color:'#a5d6a7'},
+    {name:'🍄 Lion\'s Mane (Batch 96)',start:1,seedEnd:3,growEnd:18,harvestDay:21,color:'#8d6e63',type:'mushroom'},
+    {name:'🧀 Cheddar (Batch 97)',start:1,seedEnd:0,growEnd:28,harvestDay:0,color:'#d4a853',type:'cheese'},
+    {name:'🧀 Garlic Herb (Batch 100)',start:1,seedEnd:0,growEnd:23,harvestDay:0,color:'#7cb342',type:'cheese'},
+  ];
+
+  let html = `<div style="min-width:800px">`;
+  // Header row with day numbers
+  html += `<div style="display:grid;grid-template-columns:200px repeat(${daysInMonth},1fr);gap:1px;margin-bottom:2px">`;
+  html += `<div style="padding:6px;font-size:11px;font-weight:600;color:#999">${months[plantMonth]} ${plantYear}</div>`;
+  for(let d=1;d<=daysInMonth;d++) {
+    const isMonday = new Date(plantYear,plantMonth,d).getDay()===1;
+    html += `<div style="padding:4px 2px;font-size:10px;text-align:center;color:${isMonday?'#2d6a4f':'#bbb'};font-weight:${isMonday?'700':'400'}">${d}</div>`;
+  }
+  html += `</div>`;
+
+  // Rows
+  scheduleItems.forEach(item => {
+    html += `<div style="display:grid;grid-template-columns:200px repeat(${daysInMonth},1fr);gap:1px;margin-bottom:1px">`;
+    html += `<div style="padding:5px 8px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#f8f9fa;border-radius:4px 0 0 4px">${item.name}</div>`;
+    for(let d=1;d<=daysInMonth;d++) {
+      let bg = 'transparent', opacity = '1';
+      if(d >= item.start && d <= (item.growEnd||item.start)) {
+        if(item.type==='cheese') bg = '#d4a853';
+        else if(item.type==='mushroom' && d <= (item.seedEnd||item.start)) bg = '#a5d6a7';
+        else if(item.type==='mushroom') bg = '#8d6e63';
+        else if(d <= (item.seedEnd||item.start)) bg = '#a5d6a7';
+        else bg = '#4caf50';
+        opacity = '0.7';
+      }
+      if(d === item.harvestDay && item.harvestDay > 0) { bg = '#2d6a4f'; opacity = '1'; }
+      html += `<div style="background:${bg};opacity:${opacity};min-height:20px;border-radius:2px" title="${d === item.harvestDay ? 'HARVEST' : d >= item.start && d <= item.growEnd ? (d <= item.seedEnd ? 'Seeding' : 'Growing') : ''}"></div>`;
+    }
+    html += `</div>`;
+  });
+  html += `</div>`;
+  document.getElementById('plantingGantt').innerHTML = html;
+}
+
+function prevPlantMonth() { plantMonth--; if(plantMonth<0){plantMonth=11;plantYear--;} renderPlantingSchedule(); }
+function nextPlantMonth() { plantMonth++; if(plantMonth>11){plantMonth=0;plantYear++;} renderPlantingSchedule(); }
+
+function switchProdTab(tab) {
+  document.getElementById('prodPanelInventory').style.display = tab==='inventory' ? '' : 'none';
+  document.getElementById('prodPanelPlanting').style.display = tab==='planting' ? '' : 'none';
+  document.getElementById('prodPanelProduction').style.display = tab==='production' ? '' : 'none';
+  ['prodTabInv','prodTabPlant','prodTabProd'].forEach(id => {
+    const el = document.getElementById(id);
+    el.className = 'btn btn-sm' + (el.id === 'prodTab' + {inventory:'Inv',planting:'Plant',production:'Prod'}[tab] ? '' : ' btn-secondary');
+    el.style.borderBottom = el.id === 'prodTab' + {inventory:'Inv',planting:'Plant',production:'Prod'}[tab] ? '2px solid var(--primary)' : 'none';
+  });
+}
+
+function openProductModal(pid) {
+  const p = pid ? INVENTORY.find(x=>x.id===pid) : null;
+  document.getElementById('productModalTitle').textContent = p ? `Edit: ${p.name}` : 'Add Product';
+  let html = '';
+  if(p) {
+    html += `<div class="form-row"><label>Product Name</label><input class="input" value="${p.name}" id="editProdName"></div>`;
+    html += `<div class="form-row"><label>Category</label><select class="input" id="editProdCat">
+      <option ${p.category==='Microgreen'?'selected':''}>Microgreen</option>
+      <option ${p.category==='Cheese'?'selected':''}>Cheese</option>
+      <option ${p.category==='Honey'?'selected':''}>Honey</option>
+      <option ${p.category==='Maple Syrup'?'selected':''}>Maple Syrup</option>
+      <option ${p.category==='Mushroom'?'selected':''}>Mushroom</option>
+    </select></div>`;
+    html += `<h4 style="margin:16px 0 8px">Variants & Stock</h4>`;
+    p.variants.forEach((v,i) => {
+      html += `<div style="background:#f8f9fa;padding:12px;border-radius:8px;margin-bottom:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="form-row"><label style="font-size:11px">Variant</label><input class="input" value="${v.name}" style="font-size:13px"></div>
+          <div class="form-row"><label style="font-size:11px">Price</label><input class="input" type="number" value="${v.price}" step="0.01" style="font-size:13px"></div>
+          <div class="form-row"><label style="font-size:11px">Stock</label><input class="input" type="number" value="${v.stock}" style="font-size:13px"></div>
+          <div class="form-row"><label style="font-size:11px">Threshold</label><input class="input" type="number" value="${v.threshold}" style="font-size:13px"></div>
+        </div>
+      </div>`;
+    });
+    if(p.growDays) html += `<div class="form-row"><label>Grow Days</label><input class="input" type="number" value="${p.growDays}"></div>`;
+    if(p.ageDays) html += `<div class="form-row"><label>Aging Days</label><input class="input" type="number" value="${p.ageDays}"></div>`;
+  }
+  html += `<div style="display:flex;gap:8px;margin-top:20px">
+    <button class="btn btn-primary" onclick="closeProductModal();showToast('Product saved!')">Save</button>
+    <button class="btn btn-secondary" onclick="closeProductModal()">Cancel</button>
+  </div>`;
+  document.getElementById('productModalContent').innerHTML = html;
+  document.getElementById('productModal').style.display = 'block';
+}
+function closeProductModal() { document.getElementById('productModal').style.display='none'; }
+
+function exportInventoryCSV() {
+  let csv = 'Product,Category,Variant,Price,Stock,Threshold,Status,Lead Time\n';
+  INVENTORY.forEach(p => p.variants.forEach(v => {
+    const s = getStockStatus(v.stock,v.threshold);
+    csv += `"${p.name}","${p.category}","${v.name}",${v.price},${v.stock},${v.threshold},"${s.label}",${v.leadDays}\n`;
+  }));
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'radical-shoots-inventory.csv';
+  a.click();
+  showToast('Inventory exported!');
 }
 
 // ========================================
