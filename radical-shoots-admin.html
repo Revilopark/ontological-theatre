@@ -428,6 +428,9 @@ textarea.input { resize: vertical; min-height: 80px; }
     <a class="nav-item" data-view="social" onclick="navigate('social')">
       <span class="icon">📱</span> Social
     </a>
+    <a class="nav-item" data-view="seo" onclick="navigate('seo')">
+      <span class="icon">🔍</span> SEO & Local
+    </a>
     <a class="nav-item" data-view="products" onclick="navigate('products')">
       <span class="icon">📦</span> Products
     </a>
@@ -587,6 +590,56 @@ textarea.input { resize: vertical; min-height: 80px; }
       </div>
       <div class="pagination" id="customersPagination"></div>
     </div>
+
+    <!-- Micro-Influencer Database -->
+    <div class="table-container" style="margin-top:28px">
+      <div class="table-header">
+        <h3>🤝 Nashville Micro-Influencer Database</h3>
+        <button class="btn btn-sm btn-primary" onclick="exportInfluencerCSV()">📥 Export</button>
+      </div>
+      <div class="table-wrap">
+        <table id="influencerTable">
+          <thead><tr>
+            <th>Name</th>
+            <th>Handle</th>
+            <th>Followers</th>
+            <th>Category</th>
+            <th>Fit Score</th>
+            <th>Status</th>
+            <th>Contact</th>
+            <th>Actions</th>
+          </tr></thead>
+          <tbody id="influencerBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Influencer DM Modal -->
+    <div id="influencerDMModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:3000;overflow-y:auto;padding:20px" onclick="if(event.target===this)this.style.display='none'">
+      <div style="max-width:520px;margin:60px auto;background:#fff;border-radius:16px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 id="dmModalTitle" style="font-size:1.1rem">Draft DM</h3>
+          <button style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-light)" onclick="document.getElementById('influencerDMModal').style.display='none'">✕</button>
+        </div>
+        <textarea class="input" id="dmModalText" rows="10" style="width:100%;font-size:0.88rem;line-height:1.6"></textarea>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('dmModalText').value);showToast('DM copied to clipboard!','success')">📋 Copy</button>
+          <button class="btn btn-primary" onclick="document.getElementById('influencerDMModal').style.display='none';showToast('DM draft saved','success')">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Influencer Notes Modal -->
+    <div id="influencerNotesModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:3000;overflow-y:auto;padding:20px" onclick="if(event.target===this)this.style.display='none'">
+      <div style="max-width:420px;margin:80px auto;background:#fff;border-radius:16px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <h3 id="notesModalTitle" style="font-size:1.1rem;margin-bottom:12px">Notes</h3>
+        <textarea class="input" id="notesModalText" rows="5" style="width:100%" placeholder="Add notes about this influencer..."></textarea>
+        <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+          <button class="btn btn-primary" onclick="saveInfluencerNote()">Save</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -776,6 +829,480 @@ textarea.input { resize: vertical; min-height: 80px; }
         <div id="postModalContent"></div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ============ SEO & LOCAL VIEW ============ -->
+<div class="view" id="view-seo">
+  <div class="page-header"><h1>SEO & Google Local</h1></div>
+  <div class="page-content">
+    <!-- SEO Tabs -->
+    <div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid #eee;padding-bottom:0;flex-wrap:wrap">
+      <button class="btn btn-sm" id="seoTabDash" onclick="switchSeoTab('dashboard')" style="border-radius:8px 8px 0 0;border-bottom:2px solid var(--primary);margin-bottom:-2px;font-weight:600">📊 Dashboard</button>
+      <button class="btn btn-sm btn-secondary" id="seoTabGBP" onclick="switchSeoTab('gbp')" style="border-radius:8px 8px 0 0;margin-bottom:-2px">📍 Google Business</button>
+      <button class="btn btn-sm btn-secondary" id="seoTabKW" onclick="switchSeoTab('keywords')" style="border-radius:8px 8px 0 0;margin-bottom:-2px">🔑 Keywords</button>
+      <button class="btn btn-sm btn-secondary" id="seoTabSchema" onclick="switchSeoTab('schema')" style="border-radius:8px 8px 0 0;margin-bottom:-2px">🏗️ Schema</button>
+      <button class="btn btn-sm btn-secondary" id="seoTabTech" onclick="switchSeoTab('technical')" style="border-radius:8px 8px 0 0;margin-bottom:-2px">⚙️ Technical</button>
+    </div>
+
+    <!-- SEO DASHBOARD TAB -->
+    <div id="seoPanelDashboard">
+      <div style="display:grid;grid-template-columns:280px 1fr;gap:24px;align-items:start">
+        <!-- SEO Health Score Gauge -->
+        <div class="settings-section" style="text-align:center">
+          <h3 style="border:none;padding:0;margin-bottom:12px">SEO Health Score</h3>
+          <svg width="180" height="180" viewBox="0 0 180 180" style="margin:0 auto;display:block">
+            <circle cx="90" cy="90" r="78" fill="none" stroke="#e9ecef" stroke-width="12"/>
+            <circle cx="90" cy="90" r="78" fill="none" stroke="#f39c12" stroke-width="12" stroke-dasharray="490" stroke-dashoffset="137" stroke-linecap="round" transform="rotate(-90 90 90)"/>
+            <text x="90" y="82" text-anchor="middle" font-size="38" font-weight="700" font-family="Playfair Display,serif" fill="#2d3436">72</text>
+            <text x="90" y="105" text-anchor="middle" font-size="14" fill="#636e72" font-family="DM Sans,sans-serif">/ 100</text>
+          </svg>
+          <div style="margin-top:12px;font-size:0.82rem;color:var(--text-light)">Needs improvement — focus on Google Business Profile & technical fixes</div>
+        </div>
+        <!-- Checklist -->
+        <div>
+          <div class="settings-section">
+            <h3>✅ Completed</h3>
+            <div style="display:grid;gap:8px">
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#d4edda;border-radius:8px;font-size:0.88rem"><span style="color:#155724;font-size:1.1rem">✅</span> Meta title set (under 60 chars)</div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#d4edda;border-radius:8px;font-size:0.88rem"><span style="color:#155724;font-size:1.1rem">✅</span> Meta description set (under 160 chars)</div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#d4edda;border-radius:8px;font-size:0.88rem"><span style="color:#155724;font-size:1.1rem">✅</span> H1 tag present</div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#d4edda;border-radius:8px;font-size:0.88rem"><span style="color:#155724;font-size:1.1rem">✅</span> Mobile responsive</div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#d4edda;border-radius:8px;font-size:0.88rem"><span style="color:#155724;font-size:1.1rem">✅</span> HTTPS enabled</div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#d4edda;border-radius:8px;font-size:0.88rem"><span style="color:#155724;font-size:1.1rem">✅</span> Sitemap exists</div>
+            </div>
+          </div>
+          <div class="settings-section">
+            <h3>⚠️ Needs Work</h3>
+            <div style="display:grid;gap:8px">
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#fff3cd;border-radius:8px;font-size:0.88rem"><span style="color:#856404;font-size:1.1rem">⚠️</span> Page speed (score: 68 — target: 90+)</div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#fff3cd;border-radius:8px;font-size:0.88rem"><span style="color:#856404;font-size:1.1rem">⚠️</span> Image alt tags (14/20 products have alt text)</div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#fff3cd;border-radius:8px;font-size:0.88rem"><span style="color:#856404;font-size:1.1rem">⚠️</span> Internal linking (only 2 internal links)</div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#fff3cd;border-radius:8px;font-size:0.88rem"><span style="color:#856404;font-size:1.1rem">⚠️</span> Structured data (partial — needs Product schema)</div>
+            </div>
+          </div>
+          <div class="settings-section">
+            <h3>❌ Missing</h3>
+            <div style="display:grid;gap:8px">
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8d7da;border-radius:8px;font-size:0.88rem"><span style="color:#721c24;font-size:1.1rem">❌</span> Google Business Profile not claimed</div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8d7da;border-radius:8px;font-size:0.88rem"><span style="color:#721c24;font-size:1.1rem">❌</span> robots.txt not configured</div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8d7da;border-radius:8px;font-size:0.88rem"><span style="color:#721c24;font-size:1.1rem">❌</span> Canonical URLs not set</div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8d7da;border-radius:8px;font-size:0.88rem"><span style="color:#721c24;font-size:1.1rem">❌</span> Blog/content section for organic traffic</div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8d7da;border-radius:8px;font-size:0.88rem"><span style="color:#721c24;font-size:1.1rem">❌</span> Backlinks strategy</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GOOGLE BUSINESS PROFILE TAB -->
+    <div id="seoPanelGBP" style="display:none">
+      <div class="settings-section">
+        <h3>📍 Business Information</h3>
+        <p style="font-size:0.82rem;color:var(--text-light);margin-bottom:16px">Fill out your Google Business Profile information. Data is saved locally for reference.</p>
+        <div class="form-row"><label>Business Name</label><input class="input" id="gbpName" value="Radical Shoots" onchange="saveGBPData()"></div>
+        <div class="form-row"><label>Primary Category</label><input class="input" id="gbpCategory" value="Farm, Specialty Food Store, Farmers Market Vendor" onchange="saveGBPData()"></div>
+        <div class="form-row"><label>Street Address</label><input class="input" id="gbpAddress" placeholder="Enter full street address" onchange="saveGBPData()"></div>
+        <div class="form-row"><label>City, State</label><input class="input" id="gbpCity" value="Nashville, TN" onchange="saveGBPData()"></div>
+        <div class="form-row"><label>Service Area</label><input class="input" id="gbpServiceArea" value="Davidson County, Nashville Metro" onchange="saveGBPData()"></div>
+        <div class="form-row"><label>Phone</label><input class="input" id="gbpPhone" placeholder="(615) 555-0142" onchange="saveGBPData()"></div>
+        <div class="form-row"><label>Website</label><input class="input" id="gbpWebsite" value="radicalshoots.com" onchange="saveGBPData()"></div>
+        <div class="form-row"><label>Hours</label><input class="input" id="gbpHours" value="Mon-Fri 8am-5pm, Sat 7am-2pm (Farmers Market)" onchange="saveGBPData()"></div>
+        <div class="form-row" style="align-items:start"><label>Description</label><textarea class="input" id="gbpDescription" rows="4" style="max-width:400px" onchange="saveGBPData()">Nashville's source for fresh microgreens, artisan cheese, raw honey, maple syrup &amp; gourmet mushrooms. Pesticide-free, sustainably grown. Weekly Monday drops, farmers market pickup, chef wholesale. Serving Nashville since [year].</textarea></div>
+      </div>
+
+      <div class="settings-section">
+        <h3>📂 Google Business Categories</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;cursor:pointer"><input type="checkbox" checked> Farm</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;cursor:pointer"><input type="checkbox" checked> Organic Farm</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;cursor:pointer"><input type="checkbox" checked> Specialty Food Store</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;cursor:pointer"><input type="checkbox" checked> Cheese Shop</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;cursor:pointer"><input type="checkbox" checked> Health Food Store</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;cursor:pointer"><input type="checkbox"> Farmers Market (secondary)</label>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>📸 Photos to Upload</h3>
+        <div style="display:grid;gap:8px" id="gbpPhotos">
+          <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8f9fa;border-radius:8px;font-size:0.88rem;cursor:pointer"><input type="checkbox" onchange="saveGBPData()"> 🖼️ Logo (1:1 square, brand logo)</label>
+          <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8f9fa;border-radius:8px;font-size:0.88rem;cursor:pointer"><input type="checkbox" onchange="saveGBPData()"> 🏞️ Cover photo (farm/products hero shot)</label>
+          <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8f9fa;border-radius:8px;font-size:0.88rem;cursor:pointer"><input type="checkbox" onchange="saveGBPData()"> 🌱 Product photos: Microgreens tray</label>
+          <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8f9fa;border-radius:8px;font-size:0.88rem;cursor:pointer"><input type="checkbox" onchange="saveGBPData()"> 🧀 Product photos: Cheese selection</label>
+          <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8f9fa;border-radius:8px;font-size:0.88rem;cursor:pointer"><input type="checkbox" onchange="saveGBPData()"> 🍯 Product photos: Honey jars</label>
+          <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8f9fa;border-radius:8px;font-size:0.88rem;cursor:pointer"><input type="checkbox" onchange="saveGBPData()"> 🍄 Product photos: Mushrooms</label>
+          <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8f9fa;border-radius:8px;font-size:0.88rem;cursor:pointer"><input type="checkbox" onchange="saveGBPData()"> 👥 Team/farm photos</label>
+          <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8f9fa;border-radius:8px;font-size:0.88rem;cursor:pointer"><input type="checkbox" onchange="saveGBPData()"> 🏕️ Farmers market booth</label>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>⭐ Review Strategy</h3>
+        <div class="stat-cards" style="margin-bottom:16px">
+          <div class="stat-card"><div class="label">Target Reviews</div><div class="value">25</div><div class="change">in first 3 months</div></div>
+          <div class="stat-card"><div class="label">Review QR Code</div><div style="margin-top:8px"><img src="https://chart.googleapis.com/chart?cht=qr&chs=120x120&chl=https://search.google.com/local/writereview?placeid=YOUR_PLACE_ID" alt="Review QR" style="border-radius:6px"></div></div>
+        </div>
+
+        <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin-bottom:16px">
+          <h4 style="font-size:14px;margin-bottom:12px">📧 Review Request Email Template</h4>
+          <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;font-size:0.85rem;line-height:1.7;position:relative">
+            <button class="btn btn-sm btn-secondary" onclick="copyToClipboard(this.parentElement.querySelector('.template-text').innerText)" style="position:absolute;top:8px;right:8px">📋 Copy</button>
+            <div class="template-text">Subject: How was your Radical Shoots order? 🌱<br><br>Hi [Name],<br><br>Thanks for your recent order! We hope you're enjoying your [product]. As a small Nashville farm, reviews mean the world to us.<br><br>Would you take 30 seconds to leave us a Google review? It helps other Nashville food lovers find us.<br><br>[Review Link]<br><br>Thank you! 🌿<br>— The Radical Shoots Team</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div style="background:#f8f9fa;border-radius:12px;padding:20px">
+            <h4 style="font-size:14px;margin-bottom:12px">😊 Positive Review Response</h4>
+            <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:0.82rem;line-height:1.6;position:relative">
+              <button class="btn btn-sm btn-secondary" onclick="copyToClipboard(this.parentElement.querySelector('.template-text').innerText)" style="position:absolute;top:6px;right:6px;padding:3px 8px;font-size:0.7rem">📋</button>
+              <div class="template-text">Thank you so much, [Name]! 🌱 We're thrilled you love our [product]. It's customers like you that make farming feel rewarding. See you next Monday! — Radical Shoots</div>
+            </div>
+          </div>
+          <div style="background:#f8f9fa;border-radius:12px;padding:20px">
+            <h4 style="font-size:14px;margin-bottom:12px">😔 Negative Review Response</h4>
+            <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:0.82rem;line-height:1.6;position:relative">
+              <button class="btn btn-sm btn-secondary" onclick="copyToClipboard(this.parentElement.querySelector('.template-text').innerText)" style="position:absolute;top:6px;right:6px;padding:3px 8px;font-size:0.7rem">📋</button>
+              <div class="template-text">Hi [Name], we're really sorry about your experience. This isn't the quality we strive for. Please reach out to us at hello@radicalshoots.com so we can make it right. We value your feedback. — Radical Shoots</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>📅 Google Posts — Content Calendar</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Frequency</th><th>Post Type</th><th>Content</th><th>Example</th></tr></thead>
+            <tbody>
+              <tr><td><span class="badge badge-green">Weekly</span></td><td>Monday Drop Update</td><td>Product availability + ordering link</td><td>"🌱 Monday Drop is LIVE! This week: Rainbow Radish, Pea Shoots, Lion's Mane & Sourwood Honey. Order by Sunday 8pm → radicalshoots.com"</td></tr>
+              <tr><td><span class="badge badge-blue">Monthly</span></td><td>What's New</td><td>New products, seasonal highlights</td><td>"NEW! Edible flowers are here for spring 🌸 Perfect for plating, cocktails & salads. Limited availability."</td></tr>
+              <tr><td><span class="badge badge-yellow">Seasonal</span></td><td>Special Offer</td><td>Seasonal bundles, holiday specials</td><td>"🍂 Fall Harvest Box: Mushrooms, aged cheddar, maple syrup & microgreens — $45 (save $12). Pre-order now!"</td></tr>
+              <tr><td><span class="badge badge-gray">As Needed</span></td><td>Event Post</td><td>Farmers market dates, pop-ups</td><td>"Find us at Nashville Farmers Market this Saturday 7am-2pm! 📍 900 Rosa L Parks Blvd. Free samples 🌿"</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- KEYWORDS TAB -->
+    <div id="seoPanelKeywords" style="display:none">
+      <div class="settings-section">
+        <h3>🔑 Target Keywords</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Keyword</th><th>Monthly Volume</th><th>Difficulty</th><th>Current Rank</th><th>Target</th></tr></thead>
+            <tbody>
+              <tr><td><strong>microgreens nashville</strong></td><td>320</td><td><span class="badge badge-green">Low</span></td><td><span class="badge badge-red">Not ranked</span></td><td>Top 3</td></tr>
+              <tr><td><strong>farm to table nashville</strong></td><td>880</td><td><span class="badge badge-yellow">Medium</span></td><td><span class="badge badge-red">Not ranked</span></td><td>Top 10</td></tr>
+              <tr><td><strong>artisan cheese nashville</strong></td><td>210</td><td><span class="badge badge-green">Low</span></td><td><span class="badge badge-red">Not ranked</span></td><td>Top 3</td></tr>
+              <tr><td><strong>raw honey nashville</strong></td><td>390</td><td><span class="badge badge-green">Low</span></td><td><span class="badge badge-red">Not ranked</span></td><td>Top 5</td></tr>
+              <tr><td><strong>lions mane mushroom nashville</strong></td><td>90</td><td><span class="badge badge-blue">Very Low</span></td><td><span class="badge badge-red">Not ranked</span></td><td>Top 1</td></tr>
+              <tr><td><strong>local food delivery nashville</strong></td><td>480</td><td><span class="badge badge-yellow">Medium</span></td><td><span class="badge badge-red">Not ranked</span></td><td>Top 10</td></tr>
+              <tr><td><strong>nashville farmers market vendors</strong></td><td>260</td><td><span class="badge badge-green">Low</span></td><td><span class="badge badge-red">Not ranked</span></td><td>Top 5</td></tr>
+              <tr><td><strong>organic microgreens near me</strong></td><td>720</td><td><span class="badge badge-yellow">Medium</span></td><td><span class="badge badge-red">Not ranked</span></td><td>Top 5</td></tr>
+              <tr><td><strong>unpasteurized cheese tennessee</strong></td><td>70</td><td><span class="badge badge-blue">Very Low</span></td><td><span class="badge badge-red">Not ranked</span></td><td>Top 1</td></tr>
+              <tr><td><strong>edible flowers nashville</strong></td><td>140</td><td><span class="badge badge-green">Low</span></td><td><span class="badge badge-red">Not ranked</span></td><td>Top 3</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-row">
+        <div class="settings-section">
+          <h3>📝 Blog Post Ideas</h3>
+          <div style="display:grid;gap:8px">
+            <div style="padding:10px 14px;background:#f8f9fa;border-radius:8px;font-size:0.85rem"><strong>"5 Ways to Use Microgreens in Your Nashville Kitchen"</strong><br><span style="color:var(--text-light);font-size:0.78rem">Target: microgreens nashville, organic microgreens near me</span></div>
+            <div style="padding:10px 14px;background:#f8f9fa;border-radius:8px;font-size:0.85rem"><strong>"Nashville's Farm-to-Table Movement: Where to Find Local Food"</strong><br><span style="color:var(--text-light);font-size:0.78rem">Target: farm to table nashville, local food delivery nashville</span></div>
+            <div style="padding:10px 14px;background:#f8f9fa;border-radius:8px;font-size:0.85rem"><strong>"Lion's Mane Mushroom Benefits: Nashville's Best Source"</strong><br><span style="color:var(--text-light);font-size:0.78rem">Target: lions mane mushroom nashville</span></div>
+            <div style="padding:10px 14px;background:#f8f9fa;border-radius:8px;font-size:0.85rem"><strong>"Artisan Cheese Guide: Raw, Aged & Handmade in Tennessee"</strong><br><span style="color:var(--text-light);font-size:0.78rem">Target: artisan cheese nashville, unpasteurized cheese tennessee</span></div>
+            <div style="padding:10px 14px;background:#f8f9fa;border-radius:8px;font-size:0.85rem"><strong>"Raw Honey vs. Store-Bought: Why Nashville Beekeepers Do It Better"</strong><br><span style="color:var(--text-light);font-size:0.78rem">Target: raw honey nashville</span></div>
+            <div style="padding:10px 14px;background:#f8f9fa;border-radius:8px;font-size:0.85rem"><strong>"Edible Flowers for Spring Entertaining"</strong><br><span style="color:var(--text-light);font-size:0.78rem">Target: edible flowers nashville</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="settings-section">
+            <h3>📋 Local Citation Sites</h3>
+            <div style="display:grid;gap:6px">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f8f9fa;border-radius:8px;font-size:0.85rem"><span>Yelp</span><span class="badge badge-red">Not listed</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f8f9fa;border-radius:8px;font-size:0.85rem"><span>TripAdvisor</span><span class="badge badge-red">Not listed</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f8f9fa;border-radius:8px;font-size:0.85rem"><span>Nashville.com</span><span class="badge badge-red">Not listed</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f8f9fa;border-radius:8px;font-size:0.85rem"><span>Facebook Business</span><span class="badge badge-red">Not listed</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f8f9fa;border-radius:8px;font-size:0.85rem"><span>Apple Maps</span><span class="badge badge-red">Not listed</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f8f9fa;border-radius:8px;font-size:0.85rem"><span>Bing Places</span><span class="badge badge-red">Not listed</span></div>
+            </div>
+          </div>
+          <div class="settings-section">
+            <h3>🔗 Backlink Opportunities</h3>
+            <div style="display:grid;gap:6px">
+              <div style="padding:8px 12px;background:#f0f7f4;border-radius:8px;font-size:0.85rem"><strong>Edible Nashville</strong> — Feature article or product spotlight<br><span style="color:var(--text-light);font-size:0.78rem">ediblenashville.com • DA 42</span></div>
+              <div style="padding:8px 12px;background:#f0f7f4;border-radius:8px;font-size:0.85rem"><strong>Nashville Scene</strong> — Best Of Nashville nomination<br><span style="color:var(--text-light);font-size:0.78rem">nashvillescene.com • DA 68</span></div>
+              <div style="padding:8px 12px;background:#f0f7f4;border-radius:8px;font-size:0.85rem"><strong>Nashville Food Bloggers</strong> — Product reviews, collabs<br><span style="color:var(--text-light);font-size:0.78rem">Various local blogs • DA 15-35</span></div>
+              <div style="padding:8px 12px;background:#f0f7f4;border-radius:8px;font-size:0.85rem"><strong>Nashville Farmers Market</strong> — Vendor directory listing<br><span style="color:var(--text-light);font-size:0.78rem">nashvillefarmersmarket.org • DA 45</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCHEMA / STRUCTURED DATA TAB -->
+    <div id="seoPanelSchema" style="display:none">
+      <div class="settings-section">
+        <h3>🏢 LocalBusiness Schema</h3>
+        <div style="position:relative">
+          <button class="btn btn-sm btn-secondary" onclick="copyToClipboard(document.getElementById('schemaLocal').textContent)" style="position:absolute;top:-40px;right:0">📋 Copy Schema</button>
+          <pre id="schemaLocal" style="background:#1a1a2e;color:#e8c97a;padding:20px;border-radius:10px;font-size:0.8rem;line-height:1.6;overflow-x:auto">{
+  "@context": "https://schema.org",
+  "@type": ["LocalBusiness", "Farm"],
+  "name": "Radical Shoots",
+  "description": "Nashville's source for fresh microgreens, artisan cheese, raw honey, maple syrup &amp; gourmet mushrooms. Pesticide-free, sustainably grown.",
+  "url": "https://radicalshoots.com",
+  "telephone": "",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Nashville",
+    "addressRegion": "TN",
+    "addressCountry": "US"
+  },
+  "geo": {
+    "@type": "GeoCoordinates"
+  },
+  "openingHours": ["Mo-Fr 08:00-17:00", "Sa 07:00-14:00"],
+  "priceRange": "$-$$",
+  "sameAs": ["https://instagram.com/radical.shoots"]
+}</pre>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>📦 Product Schema</h3>
+        <div style="display:grid;gap:16px" id="productSchemas">
+          <div style="position:relative">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h4 style="font-size:0.9rem;font-family:'DM Sans',sans-serif">Amaranth Microgreen</h4><button class="btn btn-sm btn-secondary" onclick="copyToClipboard(this.closest('div[style]').querySelector('pre').textContent)">📋 Copy</button></div>
+            <pre style="background:#1a1a2e;color:#e8c97a;padding:16px;border-radius:10px;font-size:0.78rem;line-height:1.5;overflow-x:auto">{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Amaranth Microgreen",
+  "description": "Fresh, vibrant amaranth microgreens. Pesticide-free, sustainably grown in Nashville.",
+  "brand": { "@type": "Brand", "name": "Radical Shoots" },
+  "offers": {
+    "@type": "Offer",
+    "price": "8.50",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/InStock"
+  }
+}</pre>
+          </div>
+          <div style="position:relative">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h4 style="font-size:0.9rem;font-family:'DM Sans',sans-serif">Rainbow Radish Microgreen</h4><button class="btn btn-sm btn-secondary" onclick="copyToClipboard(this.closest('div[style]').querySelector('pre').textContent)">📋 Copy</button></div>
+            <pre style="background:#1a1a2e;color:#e8c97a;padding:16px;border-radius:10px;font-size:0.78rem;line-height:1.5;overflow-x:auto">{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Rainbow Radish Microgreen",
+  "description": "Colorful, peppery radish microgreens. Perfect for salads and garnishing.",
+  "brand": { "@type": "Brand", "name": "Radical Shoots" },
+  "offers": {
+    "@type": "Offer",
+    "price": "14.00",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/InStock"
+  }
+}</pre>
+          </div>
+          <div style="position:relative">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h4 style="font-size:0.9rem;font-family:'DM Sans',sans-serif">Lion's Mane Mushroom</h4><button class="btn btn-sm btn-secondary" onclick="copyToClipboard(this.closest('div[style]').querySelector('pre').textContent)">📋 Copy</button></div>
+            <pre style="background:#1a1a2e;color:#e8c97a;padding:16px;border-radius:10px;font-size:0.78rem;line-height:1.5;overflow-x:auto">{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Lion's Mane Mushroom",
+  "description": "Fresh Lion's Mane mushrooms. Known for cognitive benefits, sustainably grown.",
+  "brand": { "@type": "Brand", "name": "Radical Shoots" },
+  "offers": {
+    "@type": "Offer",
+    "price": "9.00",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/InStock"
+  }
+}</pre>
+          </div>
+          <div style="position:relative">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h4 style="font-size:0.9rem;font-family:'DM Sans',sans-serif">Raw Sourwood Honey (16oz)</h4><button class="btn btn-sm btn-secondary" onclick="copyToClipboard(this.closest('div[style]').querySelector('pre').textContent)">📋 Copy</button></div>
+            <pre style="background:#1a1a2e;color:#e8c97a;padding:16px;border-radius:10px;font-size:0.78rem;line-height:1.5;overflow-x:auto">{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Raw Sourwood Honey (16oz)",
+  "description": "Pure, raw sourwood honey harvested in Tennessee. Unfiltered, unpasteurized.",
+  "brand": { "@type": "Brand", "name": "Radical Shoots" },
+  "offers": {
+    "@type": "Offer",
+    "price": "13.00",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/InStock"
+  }
+}</pre>
+          </div>
+          <div style="position:relative">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h4 style="font-size:0.9rem;font-family:'DM Sans',sans-serif">Aged Cheddar Cheese</h4><button class="btn btn-sm btn-secondary" onclick="copyToClipboard(this.closest('div[style]').querySelector('pre').textContent)">📋 Copy</button></div>
+            <pre style="background:#1a1a2e;color:#e8c97a;padding:16px;border-radius:10px;font-size:0.78rem;line-height:1.5;overflow-x:auto">{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Aged Cheddar Cheese",
+  "description": "Artisan cheddar cheese, handcrafted in small batches in Nashville, TN.",
+  "brand": { "@type": "Brand", "name": "Radical Shoots" },
+  "offers": {
+    "@type": "Offer",
+    "price": "8.00",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/InStock"
+  }
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>❓ FAQPage Schema</h3>
+        <div style="position:relative">
+          <button class="btn btn-sm btn-secondary" onclick="copyToClipboard(document.getElementById('schemaFAQ').textContent)" style="position:absolute;top:-40px;right:0">📋 Copy Schema</button>
+          <pre id="schemaFAQ" style="background:#1a1a2e;color:#e8c97a;padding:20px;border-radius:10px;font-size:0.8rem;line-height:1.6;overflow-x:auto">{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What are microgreens?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Microgreens are young vegetable greens harvested 7-14 days after germination. They're packed with nutrients — often 4-40x more concentrated than mature plants — and add intense flavor and color to dishes."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How long do microgreens last?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Our microgreens typically last 7-10 days when stored properly in the refrigerator. Keep them in the clamshell container, lightly misted, between 38-42°F."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do you deliver?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes! We offer weekly Monday Drops throughout the Nashville metro area (Davidson County). Order by Sunday 8pm for Monday delivery. We also offer farmers market pickup on Saturdays."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Are your products organic?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "While we are not certified organic, all our microgreens are grown pesticide-free using organic seeds and sustainable growing practices. Our honey is raw and unfiltered, and our cheeses are handcrafted with natural ingredients."
+      }
+    }
+  ]
+}</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- TECHNICAL SEO TAB -->
+    <div id="seoPanelTechnical" style="display:none">
+      <div class="settings-section">
+        <h3>🏷️ Meta Tags Generator</h3>
+        <div class="form-row"><label>Title Tag</label><div style="flex:1;max-width:400px"><input class="input" id="metaTitle" value="Radical Shoots — Fresh Microgreens & Artisan Food | Nashville" oninput="updateMetaPreview()" style="width:100%"><div style="font-size:0.75rem;color:var(--text-light);margin-top:4px"><span id="metaTitleCount">55</span>/60 characters</div></div></div>
+        <div class="form-row" style="align-items:start"><label>Meta Description</label><div style="flex:1;max-width:400px"><textarea class="input" id="metaDesc" rows="2" oninput="updateMetaPreview()" style="width:100%">Nashville's source for fresh microgreens, artisan cheese, raw honey & gourmet mushrooms. Pesticide-free, weekly Monday delivery.</textarea><div style="font-size:0.75rem;color:var(--text-light);margin-top:4px"><span id="metaDescCount">131</span>/160 characters</div></div></div>
+        <div class="form-row"><label>OG Title</label><input class="input" id="ogTitle" value="Radical Shoots — Farm Fresh Nashville" oninput="updateMetaPreview()" style="max-width:400px"></div>
+        <div class="form-row"><label>OG Description</label><input class="input" id="ogDesc" value="Microgreens, cheese, honey & mushrooms. Sustainably grown in Nashville." oninput="updateMetaPreview()" style="max-width:400px"></div>
+        <div class="form-row"><label>OG Image URL</label><input class="input" id="ogImage" placeholder="https://radicalshoots.com/og-image.jpg" style="max-width:400px"></div>
+        <div class="form-row"><label>Twitter Card</label><select class="select" id="twitterCard" style="max-width:200px"><option value="summary">Summary</option><option value="summary_large_image" selected>Summary Large Image</option></select></div>
+
+        <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div style="background:#f8f9fa;border-radius:12px;padding:20px">
+            <h4 style="font-size:13px;margin-bottom:12px;color:var(--text-light)">Google Search Preview</h4>
+            <div style="font-family:Arial,sans-serif">
+              <div id="previewTitle" style="font-size:18px;color:#1a0dab;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Radical Shoots — Fresh Microgreens & Artisan Food | Nashville</div>
+              <div style="font-size:13px;color:#006621;margin-bottom:4px">https://radicalshoots.com</div>
+              <div id="previewDesc" style="font-size:13px;color:#545454;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">Nashville's source for fresh microgreens, artisan cheese, raw honey & gourmet mushrooms. Pesticide-free, weekly Monday delivery.</div>
+            </div>
+          </div>
+          <div style="background:#f8f9fa;border-radius:12px;padding:20px">
+            <h4 style="font-size:13px;margin-bottom:12px;color:var(--text-light)">Social Share Preview</h4>
+            <div style="border:1px solid #ddd;border-radius:8px;overflow:hidden;background:#fff">
+              <div style="height:120px;background:linear-gradient(135deg,#2d6a4f,#40916c);display:flex;align-items:center;justify-content:center;color:white;font-size:2rem">🌱</div>
+              <div style="padding:12px">
+                <div style="font-size:11px;color:#999;text-transform:uppercase">radicalshoots.com</div>
+                <div id="previewOGTitle" style="font-size:14px;font-weight:600;margin:4px 0">Radical Shoots — Farm Fresh Nashville</div>
+                <div id="previewOGDesc" style="font-size:12px;color:#666">Microgreens, cheese, honey & mushrooms. Sustainably grown in Nashville.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>🤖 robots.txt</h3>
+        <div style="position:relative">
+          <button class="btn btn-sm btn-secondary" onclick="copyToClipboard(document.getElementById('robotsTxt').textContent)" style="position:absolute;top:-40px;right:0">📋 Copy</button>
+          <pre id="robotsTxt" style="background:#1a1a2e;color:#e8c97a;padding:20px;border-radius:10px;font-size:0.85rem;line-height:1.8">User-agent: *
+Allow: /
+Sitemap: https://radicalshoots.com/sitemap.xml</pre>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>🗺️ Sitemap XML</h3>
+        <div style="position:relative">
+          <button class="btn btn-sm btn-secondary" onclick="copyToClipboard(document.getElementById('sitemapXml').textContent)" style="position:absolute;top:-40px;right:0">📋 Copy</button>
+          <pre id="sitemapXml" style="background:#1a1a2e;color:#e8c97a;padding:20px;border-radius:10px;font-size:0.78rem;line-height:1.6;overflow-x:auto">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"&gt;
+  &lt;url&gt;&lt;loc&gt;https://radicalshoots.com/&lt;/loc&gt;&lt;priority&gt;1.0&lt;/priority&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://radicalshoots.com/shop&lt;/loc&gt;&lt;priority&gt;0.9&lt;/priority&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://radicalshoots.com/microgreens&lt;/loc&gt;&lt;priority&gt;0.8&lt;/priority&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://radicalshoots.com/cheese&lt;/loc&gt;&lt;priority&gt;0.8&lt;/priority&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://radicalshoots.com/honey&lt;/loc&gt;&lt;priority&gt;0.8&lt;/priority&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://radicalshoots.com/mushrooms&lt;/loc&gt;&lt;priority&gt;0.8&lt;/priority&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://radicalshoots.com/about&lt;/loc&gt;&lt;priority&gt;0.6&lt;/priority&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://radicalshoots.com/contact&lt;/loc&gt;&lt;priority&gt;0.5&lt;/priority&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://radicalshoots.com/rewards&lt;/loc&gt;&lt;priority&gt;0.7&lt;/priority&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://radicalshoots.com/faq&lt;/loc&gt;&lt;priority&gt;0.5&lt;/priority&gt;&lt;/url&gt;
+&lt;/urlset&gt;</pre>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>🚀 Page Speed Recommendations</h3>
+        <div style="display:grid;gap:10px">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#f8f9fa;border-radius:8px">
+            <span style="font-size:1.2rem">🖼️</span>
+            <div><strong style="font-size:0.88rem">Compress Images</strong><div style="font-size:0.78rem;color:var(--text-light)">Use WebP format. Compress product photos to &lt;200KB each. Use srcset for responsive images.</div></div>
+            <span class="badge badge-red" style="margin-left:auto;white-space:nowrap">High Impact</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#f8f9fa;border-radius:8px">
+            <span style="font-size:1.2rem">⏳</span>
+            <div><strong style="font-size:0.88rem">Enable Lazy Loading</strong><div style="font-size:0.78rem;color:var(--text-light)">Add loading="lazy" to all product images below the fold. Reduces initial page weight.</div></div>
+            <span class="badge badge-red" style="margin-left:auto;white-space:nowrap">High Impact</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#f8f9fa;border-radius:8px">
+            <span style="font-size:1.2rem">📦</span>
+            <div><strong style="font-size:0.88rem">Minify CSS/JS</strong><div style="font-size:0.78rem;color:var(--text-light)">Minify stylesheets and scripts. Remove unused CSS. Bundle critical CSS inline.</div></div>
+            <span class="badge badge-yellow" style="margin-left:auto;white-space:nowrap">Medium Impact</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#f8f9fa;border-radius:8px">
+            <span style="font-size:1.2rem">💾</span>
+            <div><strong style="font-size:0.88rem">Enable Browser Caching</strong><div style="font-size:0.78rem;color:var(--text-light)">Set Cache-Control headers. Static assets should cache for 1 year with content hashing.</div></div>
+            <span class="badge badge-yellow" style="margin-left:auto;white-space:nowrap">Medium Impact</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#f8f9fa;border-radius:8px">
+            <span style="font-size:1.2rem">🌐</span>
+            <div><strong style="font-size:0.88rem">Use CDN for Static Assets</strong><div style="font-size:0.78rem;color:var(--text-light)">Serve images and fonts from a CDN (Cloudflare, Bunny.net). Reduces latency for Nashville users.</div></div>
+            <span class="badge badge-green" style="margin-left:auto;white-space:nowrap">Low Impact</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -1063,82 +1590,59 @@ function setStore(data) {
 }
 
 function generateSampleData() {
+  // REAL Nashville prospects — restaurants, stores, buyers sourced from Thrillist, Eater Nashville, Nashville Farmers Market
   const customers = [
-    { id:1, name:"Sarah Mitchell", email:"sarah.mitchell@gmail.com", phone:"(615) 555-0123", joined:"2025-09-14", points:1240, orders:12, ltv:412.50, tags:["Regular"], interests:["Microgreens","Cheese"], useCase:"Home Cooking", dietary:"Vegetarian", notes:"Loves the Rainbow Radish. Orders every Monday." },
-    { id:2, name:"Chef Marcus Brown", email:"marcus@brownsbistro.com", phone:"(615) 555-0198", joined:"2025-06-02", points:5420, orders:34, ltv:2890.00, tags:["Chef","VIP","Wholesale"], interests:["Microgreens","Mushrooms"], useCase:"Restaurant", dietary:"", notes:"Head chef at Brown's Bistro on 12th Ave. Bulk orders weekly." },
-    { id:3, name:"Emma Thompson", email:"emma.t@outlook.com", phone:"(615) 555-0156", joined:"2025-11-20", points:680, orders:6, ltv:178.50, tags:["Regular"], interests:["Microgreens"], useCase:"Home Cooking", dietary:"Keto", notes:"" },
-    { id:4, name:"James Whitfield", email:"james.w@yahoo.com", phone:"(615) 555-0177", joined:"2025-08-10", points:890, orders:8, ltv:298.00, tags:["Regular"], interests:["Honey","Cheese"], useCase:"Home Cooking", dietary:"", notes:"Buys honey as gifts regularly." },
-    { id:5, name:"Chef Priya Patel", email:"priya@nashvilleSpice.com", phone:"(615) 555-0211", joined:"2025-07-15", points:3150, orders:22, ltv:1680.00, tags:["Chef","Wholesale"], interests:["Microgreens","Mushrooms"], useCase:"Restaurant", dietary:"", notes:"Nashville Spice Kitchen. Loves Lion's Mane for curries." },
-    { id:6, name:"Lauren Davis", email:"lauren.d@icloud.com", phone:"(615) 555-0133", joined:"2026-01-05", points:320, orders:3, ltv:94.50, tags:["New"], interests:["Microgreens","Honey"], useCase:"Health & Wellness", dietary:"Vegan", notes:"Found us on Instagram." },
-    { id:7, name:"Robert Chen", email:"rob.chen@gmail.com", phone:"(615) 555-0244", joined:"2025-10-22", points:1560, orders:14, ltv:486.00, tags:["Regular"], interests:["Cheese","Syrup"], useCase:"Home Cooking", dietary:"", notes:"Loves the cheddar. Always adds syrup." },
-    { id:8, name:"Ashley Monroe", email:"ashley.m@hotmail.com", phone:"(615) 555-0189", joined:"2025-12-01", points:440, orders:4, ltv:136.00, tags:["Regular"], interests:["Microgreens"], useCase:"Home Cooking", dietary:"Gluten-Free", notes:"" },
-    { id:9, name:"Chef David Kim", email:"david@eastnashtable.com", phone:"(615) 555-0267", joined:"2025-05-18", points:4890, orders:28, ltv:2240.00, tags:["Chef","VIP"], interests:["Microgreens","Mushrooms","Honey"], useCase:"Restaurant", dietary:"", notes:"East Nash Table. Our biggest restaurant account." },
-    { id:10, name:"Megan Foster", email:"megan.foster@gmail.com", phone:"(615) 555-0299", joined:"2026-02-14", points:150, orders:2, ltv:57.00, tags:["New"], interests:["Cheese","Honey"], useCase:"Gift Buyer", dietary:"", notes:"Bought Valentine's gift box." },
-    { id:11, name:"Tyler Jackson", email:"tyler.j@gmail.com", phone:"(615) 555-0311", joined:"2025-09-30", points:920, orders:9, ltv:310.50, tags:["Regular"], interests:["Mushrooms","Microgreens"], useCase:"Health & Wellness", dietary:"Paleo", notes:"Big on Lion's Mane for focus." },
-    { id:12, name:"Hannah Brooks", email:"hannah.b@outlook.com", phone:"(615) 555-0322", joined:"2025-11-08", points:560, orders:5, ltv:162.00, tags:["Regular"], interests:["Microgreens","Cheese"], useCase:"Home Cooking", dietary:"", notes:"" },
-    { id:13, name:"Chef Maria Santos", email:"maria@lacocina615.com", phone:"(615) 555-0345", joined:"2025-08-25", points:2780, orders:19, ltv:1420.00, tags:["Chef"], interests:["Microgreens","Honey"], useCase:"Restaurant", dietary:"", notes:"La Cocina Nashville. Uses our honey in desserts." },
-    { id:14, name:"Daniel Wright", email:"dan.wright@gmail.com", phone:"(615) 555-0378", joined:"2025-10-05", points:1100, orders:10, ltv:345.00, tags:["Regular"], interests:["Honey","Syrup"], useCase:"Home Cooking", dietary:"", notes:"Pancake enthusiast. Loves the maple syrup." },
-    { id:15, name:"Olivia Harper", email:"olivia.h@icloud.com", phone:"(615) 555-0389", joined:"2026-01-20", points:280, orders:3, ltv:87.00, tags:["New"], interests:["Microgreens"], useCase:"Health & Wellness", dietary:"Keto", notes:"Referred by Sarah Mitchell." },
-    { id:16, name:"Nathan Reed", email:"nathan.r@yahoo.com", phone:"(615) 555-0401", joined:"2025-07-28", points:1880, orders:16, ltv:548.00, tags:["Regular"], interests:["Cheese","Mushrooms","Microgreens"], useCase:"Home Cooking", dietary:"", notes:"Orders the biggest variety. Loves trying new products." },
-    { id:17, name:"Jessica Coleman", email:"jess.c@gmail.com", phone:"(615) 555-0423", joined:"2025-12-15", points:380, orders:3, ltv:102.00, tags:["Regular"], interests:["Honey"], useCase:"Gift Buyer", dietary:"", notes:"Holiday gift orders." },
-    { id:18, name:"Chris Patterson", email:"chris.p@outlook.com", phone:"(615) 555-0445", joined:"2026-03-01", points:100, orders:1, ltv:28.50, tags:["New"], interests:["Microgreens"], useCase:"Home Cooking", dietary:"", notes:"Just signed up via QR code at farmers market." },
-    { id:19, name:"Amanda Sullivan", email:"amanda.s@gmail.com", phone:"(615) 555-0467", joined:"2025-10-18", points:760, orders:7, ltv:238.00, tags:["Regular"], interests:["Microgreens","Cheese","Honey"], useCase:"Home Cooking", dietary:"Vegetarian", notes:"" },
-    { id:20, name:"Kevin Nguyen", email:"kevin.n@hotmail.com", phone:"(615) 555-0489", joined:"2025-11-30", points:520, orders:5, ltv:165.00, tags:["Regular"], interests:["Mushrooms","Microgreens"], useCase:"Health & Wellness", dietary:"", notes:"Interested in medicinal mushroom benefits." },
+    // === RESTAURANTS (Farm-to-Table / Fine Dining) ===
+    { id:1, name:"Rolf & Daughters", email:"info@rolfanddaughters.com", phone:"(615) 866-9897", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Restaurant","Farm-to-Table"], interests:["Microgreens","Mushrooms"], useCase:"Restaurant", dietary:"", notes:"Germantown. Chef Philip Krajeck. Eclectic small plates, fermented/pickled ingredients. Uses seasonal produce heavily. TOP TARGET — would use microgreens in every dish. rolfanddaughters.com" },
+    { id:2, name:"Audrey (Sean Brock)", email:"info@audreynashville.com", phone:"(615) 763-5007", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Restaurant","Fine Dining"], interests:["Microgreens","Mushrooms","Honey"], useCase:"Restaurant", dietary:"", notes:"East Nashville. Chef Sean Brock — nationally acclaimed. Tasting menu highlighting Appalachian ingredients. PERFECT FIT for heirloom microgreens + honey. audreynashville.com" },
+    { id:3, name:"Husk Nashville", email:"info@husknashville.com", phone:"(615) 256-6565", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Restaurant","Farm-to-Table"], interests:["Microgreens","Honey","Cheese"], useCase:"Restaurant", dietary:"", notes:"Rutledge Hill. Chef Ben Norton. Puritanical dedication to seasonal regional ingredients. Seasonal veg plate is a signature — would feature our microgreens. husknashville.com" },
+    { id:4, name:"Butcher & Bee Nashville", email:"nashville@butcherandbee.com", phone:"(615) 226-3322", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Restaurant","Mediterranean"], interests:["Microgreens","Honey","Cheese"], useCase:"Restaurant", dietary:"", notes:"East Nashville. Mediterranean + Southern. Whipped feta with fermented honey is their signature — our raw honey would be perfect. Small plates, family-style. butcherandbee.com" },
+    { id:5, name:"Henrietta Red", email:"info@henriettared.com", phone:"(615) 490-8042", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Restaurant","Seafood"], interests:["Microgreens"], useCase:"Restaurant", dietary:"", notes:"Germantown. Chef Julia Sullivan. Best seafood in Nashville. Microgreens as garnish on every plate. Elegant but not fussy. henriettared.com" },
+    { id:6, name:"Lockeland Table", email:"info@lockelandtable.com", phone:"(615) 228-4864", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Restaurant","Farm-to-Table"], interests:["Microgreens","Cheese","Honey"], useCase:"Restaurant", dietary:"", notes:"East Nashville. Southern fare with international accents. Wood-fired pizza + dry-aged steak. Community-focused — perfect for local supplier story. lockelandtable.com" },
+    { id:7, name:"Bastion / Josh Habiger", email:"info@bastionnashville.com", phone:"(615) 490-8434", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Restaurant","Fine Dining"], interests:["Microgreens","Mushrooms"], useCase:"Restaurant", dietary:"", notes:"Wedgewood-Houston. James Beard-nominated chef Josh Habiger. Intimate chef's table + bar. Thoughtful small plates — microgreens and Lion's Mane would shine here. bastionnashville.com" },
+    { id:8, name:"Locust (Trevor Moran)", email:"info@locustnashville.com", phone:"(615) 925-3902", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Restaurant","Fine Dining"], interests:["Microgreens"], useCase:"Restaurant", dietary:"", notes:"12 South. Named BEST restaurant in US by Food & Wine 2022. Chef Trevor Moran. Dumplings + small plates. Very limited menu = needs premium garnishes. locustnashville.com" },
+    { id:9, name:"Margot Cafe & Bar", email:"info@margotcafe.com", phone:"(615) 227-4668", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Restaurant","French-Southern"], interests:["Microgreens","Mushrooms","Cheese"], useCase:"Restaurant", dietary:"", notes:"East Nashville Five Points. Changes menu DAILY based on fresh produce. 20+ years. Chef sources the best ingredients — we should be one. margotcafe.com" },
+    { id:10, name:"Tailor Nashville (Vivek Surti)", email:"info@tailornashville.com", phone:"(615) 942-8438", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Restaurant","Fine Dining"], interests:["Microgreens","Honey"], useCase:"Restaurant", dietary:"", notes:"Germantown. Prix-fixe Indian-inspired. First-gen American chef. Intimate dinner party format. Would use microgreens as garnish + honey in sauces. tailornashville.com" },
+    { id:11, name:"Drusie & Darr (Jean-Georges)", email:"dining@thehermitagehotel.com", phone:"(615) 345-7116", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Restaurant","Hotel Fine Dining"], interests:["Microgreens","Honey","Mushrooms"], useCase:"Restaurant", dietary:"", notes:"Downtown Hermitage Hotel. Jean-Georges Vongerichten. Partners with a LOCAL FARM. Uses TN agricultural bounty. IMMEDIATE fit — they already want local suppliers. jean-georges.com" },
+    { id:12, name:"Etch (Deb Paquette)", email:"info@etchrestaurant.com", phone:"(615) 522-0685", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Restaurant"], interests:["Microgreens"], useCase:"Restaurant", dietary:"", notes:"SoBro. Chef Deb Paquette — decades of Nashville dining. International flavors. Roasted cauliflower is cult classic. Microgreens would elevate every plate. etchrestaurant.com" },
+    { id:13, name:"Lyra", email:"info@lyranashville.com", phone:"(615) 928-8040", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Restaurant","Middle Eastern"], interests:["Microgreens","Honey"], useCase:"Restaurant", dietary:"", notes:"East Nashville Cleveland Park. Chef Hrant Arakelian. Lebanese roots, seasonal menu. Elevated hummus, roasted veg. Microgreens + honey fit perfectly. lyranashville.com" },
+    { id:14, name:"Peninsula", email:"info@peninsulanashville.com", phone:"(615) 679-0077", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Restaurant","Spanish"], interests:["Microgreens","Cheese"], useCase:"Restaurant", dietary:"", notes:"East Nashville. Iberian tapas, small plates, natural wines. Fresh ingredients simply described. Our cheese + microgreens would be tapas-perfect. peninsulanashville.com" },
+    { id:15, name:"Present Tense", email:"info@liveinthepresenttense.com", phone:"", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Restaurant","Japanese"], interests:["Microgreens","Mushrooms"], useCase:"Restaurant", dietary:"", notes:"Wedgewood-Houston. Modern Japanese izakaya. Omakase experience. Own sake company. Microgreens for sushi garnish, Lion's Mane for hot dishes. liveinthepresenttense.com" },
+    { id:16, name:"Kisser", email:"info@kisserrestaurant.com", phone:"", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Restaurant","Japanese"], interests:["Microgreens"], useCase:"Restaurant", dietary:"", notes:"East Nashville. Tiny lunch-only spot, line out the door daily. Japanese comfort food. Husband-wife team Brian Lea & Leina Horii. Microgreen garnish on every plate. kisserrestaurant.com" },
+    { id:17, name:"Bad Idea (Colby Rasavong)", email:"info@badideanashville.com", phone:"", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Restaurant","Laotian"], interests:["Microgreens","Mushrooms"], useCase:"Restaurant", dietary:"", notes:"East Nashville. Laotian cuisine. Late-night menu for industry workers. Young sommelier founder. Microgreens + mushrooms fit Asian-inspired menu. badideanashville.com" },
+    { id:18, name:"iggy's (Ryan & Matthew Poli)", email:"info@iggysnashville.com", phone:"", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Restaurant","Italian"], interests:["Microgreens","Cheese","Mushrooms"], useCase:"Restaurant", dietary:"", notes:"Wedgewood-Houston. Italian, house-made pasta. Leans on LOCAL PURVEYORS. 'No Decision Sunday' — chef's choice. We should be a supplier. iggysnashville.com" },
+    // === STORES & MARKETS ===
+    { id:19, name:"Nashville Farmers Market", email:"info@nashvillefarmersmarket.org", phone:"(615) 476-1062", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Market","Vendor Opportunity"], interests:["Microgreens","Cheese","Honey","Mushrooms"], useCase:"Vendor", dietary:"", notes:"900 Rosa L Parks Blvd. APPLY TO SELL HERE. Outdoor farm sheds + indoor Market House. SNAP/Fresh Bucks program. Major foot traffic. nashvillefarmersmarket.org" },
+    { id:20, name:"Nashville Food Co-op", email:"info@nashvillefood.coop", phone:"", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Retail","Co-op"], interests:["Microgreens","Cheese","Honey","Mushrooms"], useCase:"Retail Distribution", dietary:"", notes:"Community-owned co-op. Local focus. Our products fit their mission perfectly. Distribution channel for recurring revenue. nashvillefood.coop" },
+    { id:21, name:"Turnip Truck (Natural Grocers)", email:"info@turniptrucknashville.com", phone:"(615) 650-3600", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Retail","Health Food"], interests:["Microgreens","Honey","Mushrooms"], useCase:"Retail Distribution", dietary:"", notes:"Nashville's local natural/organic grocer. Multiple locations (East Nashville, Charlotte Pike, Gulch). High-end local food buyers. MAJOR distribution target." },
+    { id:22, name:"Produce Place", email:"info@theproduceplace.com", phone:"(615) 242-4264", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Retail","Specialty"], interests:["Microgreens","Cheese","Mushrooms"], useCase:"Retail Distribution", dietary:"", notes:"Nashville's premier specialty produce market since 1978. Sources locally. Perfect fit for our microgreens + mushrooms. theproduceplace.com" },
+    // === PRESS / INFLUENCER PROSPECTS ===
+    { id:23, name:"Edible Nashville Magazine", email:"editor@ediblenashville.com", phone:"", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Press","Magazine"], interests:["Microgreens","Cheese","Honey"], useCase:"Press Coverage", dietary:"", notes:"19.1K IG followers. Covers 'farmers, artisans, chefs' — WE ARE their beat. Pitch for farm feature story. ediblenashville.com" },
+    { id:24, name:"Angela Roberts (Spinach Tiger)", email:"angela@spinachtiger.com", phone:"", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Influencer","Micro"], interests:["Microgreens","Cheese"], useCase:"Influencer Partnership", dietary:"", notes:"15.3K IG followers @spinachtiger. Nashville food blogger & recipe dev. Send Radical Box for review. Recipe collab potential. spinachtiger.com" },
+    { id:25, name:"Nashville Food Project", email:"info@thenashvillefoodproject.org", phone:"", joined:"", points:0, orders:0, ltv:0, tags:["Prospect","Nonprofit","Community"], interests:["Microgreens"], useCase:"Community Partnership", dietary:"", notes:"17.5K IG followers. Community food + gardening nonprofit. Partnership, sponsorship, or donation opportunity. Aligned mission. thenashvillefoodproject.org" },
   ];
 
   const products = [
+    { name:"Amaranth Microgreen", cat:"Microgreen", price:25.00 },
     { name:"Rainbow Radish", cat:"Microgreen", price:14.00 },
+    { name:"Daikon Radish", cat:"Microgreen", price:14.00 },
+    { name:"China Rose Radish", cat:"Microgreen", price:14.00 },
+    { name:"Leek Microgreens", cat:"Microgreen", price:14.00 },
     { name:"Dill Microgreens", cat:"Microgreen", price:14.00 },
-    { name:"Sunflower Shoots", cat:"Microgreen", price:12.00 },
-    { name:"Pea Shoots", cat:"Microgreen", price:12.00 },
-    { name:"Broccoli Microgreens", cat:"Microgreen", price:14.00 },
+    { name:"Chervil Microgreens", cat:"Microgreen", price:14.00 },
     { name:"Cheddar Cheese", cat:"Cheese", price:8.00 },
-    { name:"Gouda Cheese", cat:"Cheese", price:9.00 },
-    { name:"Pepper Jack", cat:"Cheese", price:8.50 },
-    { name:"Raw Honey (Sourwood 16oz)", cat:"Honey", price:13.00 },
-    { name:"Raw Honey (Wildflower 8oz)", cat:"Honey", price:8.00 },
-    { name:"Lion's Mane", cat:"Mushroom", price:9.00 },
-    { name:"Shiitake", cat:"Mushroom", price:8.00 },
-    { name:"Maple Syrup (8oz)", cat:"Syrup", price:12.00 },
+    { name:"Garlic Herb Cheese", cat:"Cheese", price:8.00 },
+    { name:"Lamb Bush Cheese", cat:"Cheese", price:8.00 },
+    { name:"Gouda Cheese", cat:"Cheese", price:8.00 },
+    { name:"Pepper Jack Cheese", cat:"Cheese", price:8.00 },
+    { name:"Chipotle Cheddar", cat:"Cheese", price:8.00 },
+    { name:"Raw TN Honey (16oz)", cat:"Honey", price:13.00 },
+    { name:"Pure Maple Syrup", cat:"Syrup", price:12.00 },
+    { name:"Lion's Mane (8oz)", cat:"Mushroom", price:9.00 },
   ];
 
-  // Generate 50 orders
-  const statuses = ["Fulfilled","Fulfilled","Fulfilled","Fulfilled","Pending","Pending","Cancelled"];
-  const methods = ["Pickup","Pickup","Pickup","Delivery"];
+  // No fake orders — start clean. Real orders come from Shopify sync.
   const orders = [];
-  const now = new Date('2026-03-23');
-  for (let i = 1; i <= 50; i++) {
-    const daysAgo = Math.floor(Math.random() * 90);
-    const d = new Date(now); d.setDate(d.getDate() - daysAgo);
-    const cust = customers[Math.floor(Math.random() * customers.length)];
-    const numItems = 1 + Math.floor(Math.random() * 4);
-    const items = [];
-    const usedProducts = new Set();
-    for (let j = 0; j < numItems; j++) {
-      let p;
-      do { p = products[Math.floor(Math.random() * products.length)]; } while (usedProducts.has(p.name) && usedProducts.size < products.length);
-      usedProducts.add(p.name);
-      const qty = 1 + Math.floor(Math.random() * 3);
-      items.push({ name: p.name, cat: p.cat, price: p.price, qty });
-    }
-    let subtotal = items.reduce((s,it) => s + it.price * it.qty, 0);
-    const hasDiscount = Math.random() < 0.15;
-    const discount = hasDiscount ? +(subtotal * 0.15).toFixed(2) : 0;
-    const total = +(subtotal - discount).toFixed(2);
-    orders.push({
-      id: 1000 + i,
-      date: d.toISOString().split('T')[0],
-      customerId: cust.id,
-      customerName: cust.name,
-      items, subtotal: +subtotal.toFixed(2), discount, total,
-      status: daysAgo < 5 ? (Math.random() < 0.5 ? "Pending" : "Fulfilled") : statuses[Math.floor(Math.random() * statuses.length)],
-      method: methods[Math.floor(Math.random() * methods.length)],
-      points: Math.round(total * 10),
-      discountCode: hasDiscount ? "RADICAL15" : "",
-      notes: ""
-    });
-  }
-  orders.sort((a,b) => b.date.localeCompare(a.date));
 
   return { customers, orders, products, emailConfig: {}, campaigns: generateCampaigns() };
 }
@@ -1189,11 +1693,12 @@ function applyHash() {
   // Close sidebar on mobile
   document.getElementById('sidebar').classList.remove('open');
   // Render view data
-  if (hash === 'customers') renderCustomers();
+  if (hash === 'customers') { renderCustomers(); renderInfluencers(); }
   if (hash === 'orders') renderOrders();
   if (hash === 'rewards') renderRewards();
   if (hash === 'email') renderEmail();
   if (hash === 'social') renderSocialCalendar();
+  if (hash === 'seo') renderSEO();
   if (hash === 'products') renderProducts();
   if (hash === 'dashboard') renderDashboard();
 }
@@ -2631,6 +3136,7 @@ function formatDate(d) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+const showToast = (msg, type) => toast(msg, type);
 function toast(msg, type = 'info') {
   const container = document.getElementById('toastContainer');
   const el = document.createElement('div');
@@ -2645,6 +3151,171 @@ function regenerateQR() {
   const ts = Date.now();
   document.getElementById('posQR').src = `https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=https://radicalshoots.com/signup?ref=pos&t=${ts}`;
   toast('QR code regenerated', 'success');
+}
+
+// ========================================
+// SEO VIEW
+// ========================================
+function switchSeoTab(tab) {
+  const tabs = { dashboard:'seoTabDash', gbp:'seoTabGBP', keywords:'seoTabKW', schema:'seoTabSchema', technical:'seoTabTech' };
+  const panels = { dashboard:'seoPanelDashboard', gbp:'seoPanelGBP', keywords:'seoPanelKeywords', schema:'seoPanelSchema', technical:'seoPanelTechnical' };
+  Object.values(panels).forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
+  Object.values(tabs).forEach(id => { const el = document.getElementById(id); if(el){ el.className='btn btn-sm btn-secondary'; el.style.borderBottom='none'; el.style.fontWeight=''; } });
+  const panel = document.getElementById(panels[tab]);
+  const tabBtn = document.getElementById(tabs[tab]);
+  if(panel) panel.style.display = 'block';
+  if(tabBtn){ tabBtn.className='btn btn-sm'; tabBtn.style.borderBottom='2px solid var(--primary)'; tabBtn.style.fontWeight='600'; }
+}
+
+function renderSEO() {
+  loadGBPData();
+  updateMetaPreview();
+  renderInfluencers();
+}
+
+function saveGBPData() {
+  const data = {};
+  ['gbpName','gbpCategory','gbpAddress','gbpCity','gbpServiceArea','gbpPhone','gbpWebsite','gbpHours','gbpDescription'].forEach(id => {
+    const el = document.getElementById(id); if(el) data[id] = el.value;
+  });
+  localStorage.setItem('rs_gbp_data', JSON.stringify(data));
+}
+
+function loadGBPData() {
+  try {
+    const data = JSON.parse(localStorage.getItem('rs_gbp_data'));
+    if(!data) return;
+    Object.keys(data).forEach(id => { const el = document.getElementById(id); if(el) el.value = data[id]; });
+  } catch(e){}
+}
+
+function updateMetaPreview() {
+  const title = document.getElementById('metaTitle');
+  const desc = document.getElementById('metaDesc');
+  const ogTitle = document.getElementById('ogTitle');
+  const ogDesc = document.getElementById('ogDesc');
+  if(!title) return;
+  const tc = document.getElementById('metaTitleCount');
+  const dc = document.getElementById('metaDescCount');
+  if(tc) { tc.textContent = title.value.length; tc.style.color = title.value.length > 60 ? '#e74c3c' : 'var(--text-light)'; }
+  if(dc) { dc.textContent = desc.value.length; dc.style.color = desc.value.length > 160 ? '#e74c3c' : 'var(--text-light)'; }
+  const pt = document.getElementById('previewTitle'); if(pt) pt.textContent = title.value;
+  const pd = document.getElementById('previewDesc'); if(pd) pd.textContent = desc.value;
+  const pot = document.getElementById('previewOGTitle'); if(pot) pot.textContent = ogTitle?.value || '';
+  const pod = document.getElementById('previewOGDesc'); if(pod) pod.textContent = ogDesc?.value || '';
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!','success')).catch(() => {
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    showToast('Copied to clipboard!','success');
+  });
+}
+
+// ========================================
+// MICRO-INFLUENCER DATABASE
+// ========================================
+const INFLUENCER_LS_KEY = 'rs_influencers';
+
+function getDefaultInfluencers() {
+  return [
+    { id:1, name:'Angela Roberts', handle:'@spinachtiger', followers:'15.3K', category:'Food Blogger', fitScore:95, status:'Not Contacted', contact:'spinachtiger.com', notes:'' },
+    { id:2, name:'Catherine Courtney', handle:'@blondevoyagebna', followers:'14.5K', category:'Food + Travel', fitScore:90, status:'Not Contacted', contact:'blondevoyagenashville.com', notes:'' },
+    { id:3, name:'The Nashville Edit', handle:'@nashvilleedit', followers:'14.8K', category:'Lifestyle', fitScore:85, status:'Not Contacted', contact:'nashvilleedit.com', notes:'' },
+    { id:4, name:'Edible Nashville', handle:'@ediblenashville', followers:'19.1K', category:'Food Magazine', fitScore:95, status:'Not Contacted', contact:'ediblenashville.com', notes:'' },
+    { id:5, name:'Nashville Scene', handle:'@nashvillescene', followers:'169.7K', category:'Alt-Weekly', fitScore:90, status:'Not Contacted', contact:'nashvillescene.com', notes:'' },
+    { id:6, name:'Nashville Lifestyles', handle:'@nashvillelifestyles', followers:'129.2K', category:'Lifestyle Mag', fitScore:85, status:'Not Contacted', contact:'nashvillelifestyles.com', notes:'' },
+    { id:7, name:'Nashville Food Project', handle:'@thenashvillefoodproject', followers:'17.5K', category:'Nonprofit', fitScore:80, status:'Not Contacted', contact:'thenashvillefoodproject.org', notes:'' },
+    { id:8, name:'Nashville Food Co-op', handle:'@nashvillefoodcoop', followers:'~2K', category:'Co-op', fitScore:85, status:'Not Contacted', contact:'nashvillefood.coop', notes:'' },
+    { id:9, name:'Scarlet Paolicchi', handle:'@familyfocusblog', followers:'20.4K', category:'Mom/Family', fitScore:75, status:'Not Contacted', contact:'familyfocusblog.com', notes:'' },
+    { id:10, name:'Over The Fire Cooking', handle:'@overthefirecooking', followers:'3.7M', category:'Outdoor Cooking', fitScore:70, status:'Not Contacted', contact:'overthefirecooking.com', notes:'' }
+  ];
+}
+
+function getInfluencers() {
+  try { const d = JSON.parse(localStorage.getItem(INFLUENCER_LS_KEY)); return d && d.length ? d : getDefaultInfluencers(); } catch { return getDefaultInfluencers(); }
+}
+
+function saveInfluencers(data) { localStorage.setItem(INFLUENCER_LS_KEY, JSON.stringify(data)); }
+
+function renderInfluencers() {
+  const body = document.getElementById('influencerBody');
+  if(!body) return;
+  const influencers = getInfluencers();
+  const statuses = ['Not Contacted','Reached Out','Responded','Sent Product','Posted','Partnership'];
+  const statusColors = { 'Not Contacted':'badge-gray', 'Reached Out':'badge-blue', 'Responded':'badge-yellow', 'Sent Product':'badge-gold', 'Posted':'badge-green', 'Partnership':'badge-green' };
+  body.innerHTML = influencers.map((inf,i) => {
+    const barColor = inf.fitScore >= 90 ? '#2d6a4f' : inf.fitScore >= 80 ? '#40916c' : inf.fitScore >= 70 ? '#d4a853' : '#e74c3c';
+    return `<tr>
+      <td><strong>${inf.name}</strong></td>
+      <td style="color:var(--primary);font-weight:500">${inf.handle}</td>
+      <td>${inf.followers}</td>
+      <td><span class="tag">${inf.category}</span></td>
+      <td style="min-width:120px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="flex:1;background:#e9ecef;border-radius:4px;height:6px;overflow:hidden"><div style="width:${inf.fitScore}%;height:100%;background:${barColor};border-radius:4px"></div></div>
+          <span style="font-size:0.78rem;font-weight:600;color:${barColor}">${inf.fitScore}</span>
+        </div>
+      </td>
+      <td>
+        <select class="select" style="font-size:0.78rem;padding:4px 8px;min-width:120px" onchange="updateInfluencerStatus(${inf.id},this.value)">
+          ${statuses.map(s => `<option value="${s}" ${s===inf.status?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </td>
+      <td><a href="https://${inf.contact}" target="_blank" style="color:var(--primary);font-size:0.82rem">${inf.contact}</a></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm btn-secondary" onclick="openInfluencerDM(${inf.id})" title="Draft DM">✉️</button>
+        <button class="btn btn-sm btn-secondary" onclick="openInfluencerNotes(${inf.id})" title="Notes">📝</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function updateInfluencerStatus(id, status) {
+  const data = getInfluencers();
+  const inf = data.find(i => i.id === id);
+  if(inf) { inf.status = status; saveInfluencers(data); showToast(`${inf.name} → ${status}`, 'success'); }
+}
+
+function openInfluencerDM(id) {
+  const data = getInfluencers();
+  const inf = data.find(i => i.id === id);
+  if(!inf) return;
+  document.getElementById('dmModalTitle').textContent = `Draft DM — ${inf.name}`;
+  document.getElementById('dmModalText').value = `Hey ${inf.name.split(' ')[0]}! 👋\n\nI'm James from Radical Shoots — we're a Nashville-based urban farm growing pesticide-free microgreens, artisan cheese, raw honey, and gourmet mushrooms.\n\nI love your content on ${inf.category.toLowerCase()} and think our products would be a great fit for your audience. We'd love to send you a complimentary Radical Shoots tasting box with some of our favorites.\n\nWould you be open to trying our products? No strings attached — just great Nashville-grown food. 🌱\n\nLet me know!\n— James, Radical Shoots\nradicalshoots.com`;
+  document.getElementById('influencerDMModal').style.display = 'flex';
+}
+
+let currentInfluencerNoteId = null;
+function openInfluencerNotes(id) {
+  const data = getInfluencers();
+  const inf = data.find(i => i.id === id);
+  if(!inf) return;
+  currentInfluencerNoteId = id;
+  document.getElementById('notesModalTitle').textContent = `Notes — ${inf.name}`;
+  document.getElementById('notesModalText').value = inf.notes || '';
+  document.getElementById('influencerNotesModal').style.display = 'flex';
+}
+
+function saveInfluencerNote() {
+  if(!currentInfluencerNoteId) return;
+  const data = getInfluencers();
+  const inf = data.find(i => i.id === currentInfluencerNoteId);
+  if(inf) {
+    inf.notes = document.getElementById('notesModalText').value;
+    saveInfluencers(data);
+    showToast('Note saved','success');
+  }
+  document.getElementById('influencerNotesModal').style.display = 'none';
+}
+
+function exportInfluencerCSV() {
+  const data = getInfluencers();
+  const headers = ['Name','Handle','Followers','Category','Fit Score','Status','Contact','Notes'];
+  const rows = data.map(i => [i.name,i.handle,i.followers,i.category,i.fitScore,i.status,i.contact,i.notes]);
+  const csv = [headers,...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'radical-shoots-influencers.csv'; a.click();
 }
 
 // ========================================
