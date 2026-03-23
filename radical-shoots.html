@@ -1487,38 +1487,13 @@ function updateRewardsUI(){
   document.getElementById('floatingCta').classList.add('hidden');
 }
 
-// ========== QR CODE (Simple SVG) ==========
+// ========== QR CODE (Google Charts API - real scannable QR) ==========
 function generateQR(){
-  const url = window.location.href + '?ref=pos&receipt=' + Date.now();
-  // Simple visual QR placeholder (actual QR would need a library)
+  const url = 'https://radicalshoots.com/?ref=rewards&utm_source=pos&utm_medium=qr';
   const canvas = document.getElementById('qrCanvas');
-  // Generate a simple dot-matrix pattern that represents a QR visually
-  const size = 21; // QR v1
-  let svg = `<svg viewBox="0 0 ${size+8} ${size+8}" width="160" height="160" xmlns="http://www.w3.org/2000/svg">`;
-  svg += `<rect width="${size+8}" height="${size+8}" fill="#fff"/>`;
-  // Position detection patterns
-  function drawFinder(x,y){
-    svg += `<rect x="${x}" y="${y}" width="7" height="7" fill="#1a1a1a"/>`;
-    svg += `<rect x="${x+1}" y="${y+1}" width="5" height="5" fill="#fff"/>`;
-    svg += `<rect x="${x+2}" y="${y+2}" width="3" height="3" fill="#1a1a1a"/>`;
-  }
-  const o=4; // offset
-  drawFinder(o,o); drawFinder(o+14,o); drawFinder(o,o+14);
-  // Data area (pseudo-random based on URL hash)
-  let hash = 0;
-  for(let i=0;i<url.length;i++){hash=((hash<<5)-hash)+url.charCodeAt(i);hash|=0}
-  for(let y=0;y<size;y++){
-    for(let x=0;x<size;x++){
-      // Skip finder patterns
-      if((x<7&&y<7)||(x>=14&&y<7)||(x<7&&y>=14)) continue;
-      if((hash>>((x*y+x+y)%31))&1){
-        svg += `<rect x="${x+o}" y="${y+o}" width="1" height="1" fill="#1a1a1a"/>`;
-      }
-    }
-  }
-  svg += '</svg>';
-  canvas.innerHTML = svg;
-  canvas.innerHTML += `<p style="font-size:11px;color:var(--muted);margin-top:8px">Scan to join Radical Rewards</p>`;
+  const qrUrl = `https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=${encodeURIComponent(url)}&choe=UTF-8&chld=M|2`;
+  canvas.innerHTML = `<img src="${qrUrl}" alt="Scan to join Radical Rewards" width="160" height="160" style="border-radius:8px;image-rendering:pixelated">`;
+  canvas.innerHTML += `<p style="font-size:11px;color:var(--muted);margin-top:8px">Scan to join Radical Rewards · radicalshoots.com</p>`;
 }
 
 // ========== TOAST ==========
