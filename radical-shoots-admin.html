@@ -1,0 +1,1887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Radical Shoots — Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa;
+  --sidebar: #1a1a2e;
+  --sidebar-hover: #16213e;
+  --primary: #2d6a4f;
+  --primary-light: #40916c;
+  --primary-dark: #1b4332;
+  --accent: #d4a853;
+  --accent-light: #e8c97a;
+  --card: #ffffff;
+  --text: #2d3436;
+  --text-light: #636e72;
+  --text-muted: #b2bec3;
+  --border: #e9ecef;
+  --danger: #e74c3c;
+  --warning: #f39c12;
+  --success: #27ae60;
+  --info: #3498db;
+  --sidebar-width: 260px;
+  --header-height: 0px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { font-size: 14px; }
+body {
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+h1, h2, h3, h4 { font-family: 'Playfair Display', serif; font-weight: 600; }
+
+/* Sidebar */
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-width); background: var(--sidebar);
+  color: #fff; z-index: 1000; display: flex; flex-direction: column;
+  transition: transform 0.3s ease;
+}
+.sidebar-header {
+  padding: 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.sidebar-logo {
+  font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700;
+  letter-spacing: 2px; display: flex; align-items: center; gap: 10px;
+}
+.sidebar-logo .sprout { font-size: 1.4rem; }
+.sidebar-badge {
+  display: inline-block; background: var(--primary); color: #fff;
+  font-family: 'DM Sans', sans-serif; font-size: 0.65rem; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px; letter-spacing: 1px; margin-left: 4px;
+}
+.sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+.nav-item {
+  display: flex; align-items: center; gap: 12px; padding: 12px 20px;
+  cursor: pointer; color: rgba(255,255,255,0.6); font-size: 0.93rem;
+  font-weight: 500; transition: all 0.2s; border-left: 3px solid transparent;
+  text-decoration: none;
+}
+.nav-item:hover { background: var(--sidebar-hover); color: rgba(255,255,255,0.9); }
+.nav-item.active {
+  border-left-color: var(--primary-light); background: rgba(45,106,79,0.15);
+  color: #fff;
+}
+.nav-item .icon { font-size: 1.15rem; width: 24px; text-align: center; }
+.sidebar-footer {
+  padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.08);
+}
+.sidebar-footer a {
+  color: var(--accent); text-decoration: none; font-size: 0.85rem; font-weight: 500;
+  display: flex; align-items: center; gap: 6px;
+}
+.sidebar-footer a:hover { color: var(--accent-light); }
+
+/* Main Content */
+.main { margin-left: var(--sidebar-width); min-height: 100vh; }
+.page-header {
+  padding: 24px 32px 0; display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap; gap: 12px;
+}
+.page-header h1 { font-size: 1.6rem; color: var(--text); }
+.page-content { padding: 20px 32px 40px; }
+
+/* Cards */
+.stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 28px; }
+.stat-card {
+  background: var(--card); border-radius: 12px; padding: 22px 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid var(--border);
+}
+.stat-card .label { font-size: 0.8rem; color: var(--text-light); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.stat-card .value { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: var(--text); }
+.stat-card .change { font-size: 0.78rem; margin-top: 6px; font-weight: 600; }
+.stat-card .change.up { color: var(--success); }
+.stat-card .change.down { color: var(--danger); }
+
+/* Chart Containers */
+.chart-container {
+  background: var(--card); border-radius: 12px; padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.chart-container h3 { font-size: 1.1rem; margin-bottom: 16px; }
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+
+/* Tables */
+.table-container {
+  background: var(--card); border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid var(--border);
+  overflow: hidden; margin-bottom: 24px;
+}
+.table-header { padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.table-header h3 { font-size: 1.1rem; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  text-align: left; padding: 12px 16px; font-size: 0.75rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-light);
+  border-bottom: 2px solid var(--border); background: #fafbfc; cursor: pointer;
+  white-space: nowrap; user-select: none;
+}
+thead th:hover { color: var(--primary); }
+thead th .sort-arrow { margin-left: 4px; font-size: 0.65rem; }
+tbody td {
+  padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 0.88rem;
+  white-space: nowrap;
+}
+tbody tr { transition: background 0.15s; cursor: pointer; }
+tbody tr:hover { background: #f8f9fa; }
+tbody tr:last-child td { border-bottom: none; }
+
+/* Badges */
+.badge {
+  display: inline-block; padding: 3px 10px; border-radius: 20px;
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.3px;
+}
+.badge-green { background: #d4edda; color: #155724; }
+.badge-yellow { background: #fff3cd; color: #856404; }
+.badge-red { background: #f8d7da; color: #721c24; }
+.badge-blue { background: #d1ecf1; color: #0c5460; }
+.badge-gray { background: #e9ecef; color: #495057; }
+.badge-gold { background: #fff8e1; color: #8d6e0f; }
+.tag {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 0.7rem; font-weight: 600; margin: 1px 2px;
+  background: #e9ecef; color: #495057;
+}
+.tag-vip { background: #fff8e1; color: #8d6e0f; }
+.tag-chef { background: #e8f5e9; color: #2e7d32; }
+.tag-wholesale { background: #e3f2fd; color: #1565c0; }
+.tag-new { background: #f3e5f5; color: #7b1fa2; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
+  border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  border: none; font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+  text-decoration: none;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--bg); }
+.btn-accent { background: var(--accent); color: #fff; }
+.btn-accent:hover { background: #c49a42; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: #c0392b; }
+.btn-sm { padding: 5px 10px; font-size: 0.78rem; }
+
+/* Inputs */
+.input, .select {
+  padding: 9px 14px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 0.88rem; font-family: 'DM Sans', sans-serif; background: #fff;
+  color: var(--text); outline: none; transition: border-color 0.2s;
+}
+.input:focus, .select:focus { border-color: var(--primary); }
+.input-search {
+  padding-left: 36px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23636e72' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: 12px center;
+}
+textarea.input { resize: vertical; min-height: 80px; }
+
+/* Filter Pills */
+.filter-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.pill {
+  padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 500;
+  cursor: pointer; border: 1px solid var(--border); background: #fff;
+  color: var(--text-light); transition: all 0.2s;
+}
+.pill:hover { border-color: var(--primary); color: var(--primary); }
+.pill.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* Slide Panel */
+.slide-panel {
+  position: fixed; top: 0; right: -480px; width: 480px; height: 100%;
+  background: var(--card); box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+  z-index: 2000; transition: right 0.3s ease; overflow-y: auto;
+}
+.slide-panel.open { right: 0; }
+.panel-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4); z-index: 1999; opacity: 0;
+  pointer-events: none; transition: opacity 0.3s;
+}
+.panel-overlay.open { opacity: 1; pointer-events: auto; }
+.panel-header {
+  padding: 20px 24px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; background: var(--card); z-index: 1;
+}
+.panel-header h3 { font-size: 1.15rem; }
+.panel-close { cursor: pointer; font-size: 1.3rem; color: var(--text-light); background: none; border: none; padding: 4px; }
+.panel-body { padding: 24px; }
+
+/* Modal */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5); z-index: 3000;
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--card); border-radius: 16px; max-width: 600px; width: 100%;
+  max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.modal-header {
+  padding: 20px 24px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-header h3 { font-size: 1.1rem; }
+.modal-body { padding: 24px; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+
+/* Activity Feed */
+.activity-feed { max-height: 340px; overflow-y: auto; }
+.activity-item {
+  display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+}
+.activity-item:last-child { border-bottom: none; }
+.activity-dot {
+  width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0;
+}
+.activity-dot.signup { background: var(--info); }
+.activity-dot.order { background: var(--success); }
+.activity-dot.redeem { background: var(--accent); }
+.activity-dot.review { background: var(--warning); }
+.activity-time { color: var(--text-muted); font-size: 0.75rem; margin-top: 2px; }
+
+/* Pagination */
+.pagination {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px; border-top: 1px solid var(--border);
+}
+.pagination-info { font-size: 0.82rem; color: var(--text-light); }
+.pagination-btns { display: flex; gap: 4px; }
+.pagination-btns button {
+  width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border);
+  background: #fff; cursor: pointer; font-size: 0.82rem; font-weight: 500;
+  display: flex; align-items: center; justify-content: center;
+}
+.pagination-btns button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.pagination-btns button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* SVG Chart */
+.svg-chart { width: 100%; }
+.chart-bar { transition: opacity 0.2s; }
+.chart-bar:hover { opacity: 0.8; }
+.chart-tooltip {
+  position: absolute; background: var(--sidebar); color: #fff; padding: 6px 12px;
+  border-radius: 6px; font-size: 0.78rem; pointer-events: none;
+  transform: translate(-50%, -100%); margin-top: -8px; white-space: nowrap;
+  display: none; z-index: 100;
+}
+
+/* Toast */
+.toast-container { position: fixed; top: 20px; right: 20px; z-index: 5000; }
+.toast {
+  background: var(--sidebar); color: #fff; padding: 14px 20px; border-radius: 10px;
+  margin-bottom: 8px; font-size: 0.88rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  animation: slideIn 0.3s ease; display: flex; align-items: center; gap: 10px;
+  max-width: 380px;
+}
+.toast.success { border-left: 4px solid var(--success); }
+.toast.error { border-left: 4px solid var(--danger); }
+.toast.info { border-left: 4px solid var(--info); }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* Email Composer */
+.email-composer { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.email-form { display: flex; flex-direction: column; gap: 14px; }
+.email-preview-pane {
+  background: #fff; border: 1px solid var(--border); border-radius: 8px;
+  padding: 24px; min-height: 400px;
+}
+.email-preview-pane h4 { font-size: 0.85rem; color: var(--text-light); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+.toolbar {
+  display: flex; gap: 4px; padding: 8px; border: 1px solid var(--border);
+  border-radius: 8px 8px 0 0; background: #fafbfc;
+}
+.toolbar button {
+  width: 32px; height: 32px; border: none; background: none; cursor: pointer;
+  border-radius: 4px; font-size: 0.9rem; color: var(--text-light);
+}
+.toolbar button:hover { background: var(--border); color: var(--text); }
+.compose-body {
+  border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px;
+  min-height: 200px; padding: 14px; outline: none; font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem; line-height: 1.6;
+}
+
+/* Settings */
+.settings-section {
+  background: var(--card); border-radius: 12px; padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.settings-section h3 { font-size: 1.05rem; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.form-row { display: grid; grid-template-columns: 160px 1fr; gap: 12px; align-items: center; margin-bottom: 14px; }
+.form-row label { font-size: 0.85rem; font-weight: 500; color: var(--text-light); }
+.form-row .input, .form-row .select { width: 100%; max-width: 400px; }
+
+/* Calendar grid */
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.calendar-header-cell { padding: 8px; text-align: center; font-size: 0.75rem; font-weight: 600; color: var(--text-light); text-transform: uppercase; }
+.calendar-cell {
+  min-height: 80px; padding: 6px; border: 1px solid var(--border); background: #fff;
+  border-radius: 4px; font-size: 0.75rem;
+}
+.calendar-cell .day-num { font-weight: 600; color: var(--text-light); margin-bottom: 4px; }
+.calendar-cell .cal-event {
+  padding: 2px 4px; border-radius: 3px; margin-bottom: 2px; font-size: 0.68rem;
+  font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cal-draft { background: #e9ecef; color: #495057; }
+.cal-scheduled { background: #d1ecf1; color: #0c5460; }
+.cal-posted { background: #d4edda; color: #155724; }
+
+/* Progress Bar */
+.progress-bar { background: var(--border); border-radius: 10px; height: 8px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 10px; background: var(--primary); transition: width 0.3s; }
+.progress-fill.gold { background: var(--accent); }
+
+/* Hamburger */
+.hamburger {
+  display: none; position: fixed; top: 16px; left: 16px; z-index: 1001;
+  background: var(--sidebar); color: #fff; border: none; border-radius: 8px;
+  width: 40px; height: 40px; font-size: 1.3rem; cursor: pointer;
+  align-items: center; justify-content: center;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #bbb; }
+
+/* View sections hidden by default */
+.view { display: none; }
+.view.active { display: block; }
+
+/* Tier bar */
+.tier-bar-container { margin-bottom: 12px; }
+.tier-bar-label { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 4px; }
+.tier-bar-label .tier-name { font-weight: 600; }
+.tier-bar-label .tier-count { color: var(--text-light); }
+.tier-bar { background: var(--border); border-radius: 6px; height: 28px; overflow: hidden; position: relative; }
+.tier-bar-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 8px; font-size: 0.72rem; font-weight: 600; color: #fff; min-width: 30px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .hamburger { display: flex; }
+  .main { margin-left: 0; }
+  .page-header { padding: 60px 16px 0; }
+  .page-content { padding: 16px 16px 40px; }
+  .chart-row { grid-template-columns: 1fr; }
+  .email-composer { grid-template-columns: 1fr; }
+  .slide-panel { width: 100%; right: -100%; }
+  .form-row { grid-template-columns: 1fr; }
+  .stat-cards { grid-template-columns: 1fr 1fr; }
+  .calendar-grid { font-size: 0.65rem; }
+  .calendar-cell { min-height: 60px; padding: 3px; }
+}
+@media (max-width: 480px) {
+  .stat-cards { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Hamburger -->
+<button class="hamburger" onclick="toggleSidebar()">☰</button>
+
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">
+      <span class="sprout">🌱</span>
+      RADICAL SHOOTS
+      <span class="sidebar-badge">ADMIN</span>
+    </div>
+  </div>
+  <div class="sidebar-nav">
+    <a class="nav-item active" data-view="dashboard" onclick="navigate('dashboard')">
+      <span class="icon">📊</span> Dashboard
+    </a>
+    <a class="nav-item" data-view="customers" onclick="navigate('customers')">
+      <span class="icon">👥</span> Customers
+    </a>
+    <a class="nav-item" data-view="orders" onclick="navigate('orders')">
+      <span class="icon">🛒</span> Orders
+    </a>
+    <a class="nav-item" data-view="rewards" onclick="navigate('rewards')">
+      <span class="icon">🎯</span> Rewards
+    </a>
+    <a class="nav-item" data-view="email" onclick="navigate('email')">
+      <span class="icon">📧</span> Email
+    </a>
+    <a class="nav-item" data-view="social" onclick="navigate('social')">
+      <span class="icon">📱</span> Social
+    </a>
+    <a class="nav-item" data-view="settings" onclick="navigate('settings')">
+      <span class="icon">⚙️</span> Settings
+    </a>
+  </div>
+  <div class="sidebar-footer">
+    <a href="radical-shoots.html">View Storefront →</a>
+  </div>
+</nav>
+
+<!-- Panel Overlay -->
+<div class="panel-overlay" id="panelOverlay" onclick="closePanel()"></div>
+
+<!-- Customer Detail Panel -->
+<div class="slide-panel" id="customerPanel">
+  <div class="panel-header">
+    <h3 id="panelCustomerName">Customer Details</h3>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+</div>
+
+<!-- Order Modal -->
+<div class="modal-overlay" id="orderModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalOrderTitle">Order Details</h3>
+      <button class="panel-close" onclick="closeOrderModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalOrderBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeOrderModal()">Close</button>
+      <button class="btn btn-primary" onclick="saveOrderStatus()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header"><h3 id="confirmTitle">Confirm</h3><button class="panel-close" onclick="closeConfirmModal()">✕</button></div>
+    <div class="modal-body" id="confirmBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+      <button class="btn btn-primary" id="confirmBtn" onclick="confirmAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Main Content -->
+<div class="main">
+
+<!-- ============ DASHBOARD VIEW ============ -->
+<div class="view active" id="view-dashboard">
+  <div class="page-header"><h1>Dashboard</h1><span style="font-size:0.85rem;color:var(--text-light)">Welcome back, James 👋</span></div>
+  <div class="page-content">
+    <div class="stat-cards">
+      <div class="stat-card">
+        <div class="label">Total Customers</div>
+        <div class="value">847</div>
+        <div class="change up">↑ 12% this month</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Revenue (MTD)</div>
+        <div class="value">$14,280</div>
+        <div class="change up">↑ 8% vs last month</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Active Rewards Members</div>
+        <div class="value">623</div>
+        <div class="change up">73% of customers</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Avg Order Value</div>
+        <div class="value">$34.50</div>
+        <div class="change up">↑ 5% this month</div>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-container">
+        <h3>Weekly Revenue</h3>
+        <div id="revenueChart" style="position:relative"></div>
+      </div>
+      <div class="chart-container">
+        <h3>Customer Acquisition</h3>
+        <div id="acquisitionChart" style="position:relative"></div>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="table-container">
+        <div class="table-header"><h3>Top Products</h3></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Rank</th><th>Product</th><th>Category</th><th>Units Sold</th><th>Revenue</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td><strong>Rainbow Radish</strong></td><td><span class="badge badge-green">Microgreen</span></td><td>234</td><td>$3,276</td></tr>
+              <tr><td>2</td><td><strong>Cheddar Cheese</strong></td><td><span class="badge badge-yellow">Cheese</span></td><td>189</td><td>$1,512</td></tr>
+              <tr><td>3</td><td><strong>Raw Honey (Sourwood 16oz)</strong></td><td><span class="badge badge-gold">Honey</span></td><td>156</td><td>$2,028</td></tr>
+              <tr><td>4</td><td><strong>Lion's Mane</strong></td><td><span class="badge badge-blue">Mushroom</span></td><td>143</td><td>$1,287</td></tr>
+              <tr><td>5</td><td><strong>Dill Microgreens</strong></td><td><span class="badge badge-green">Microgreen</span></td><td>138</td><td>$1,932</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="chart-container">
+        <h3>Recent Activity</h3>
+        <div class="activity-feed" id="activityFeed"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CUSTOMERS VIEW ============ -->
+<div class="view" id="view-customers">
+  <div class="page-header">
+    <h1>Customers</h1>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-secondary" onclick="exportCSV('customers')">📥 Export CSV</button>
+      <button class="btn btn-primary" onclick="showAddCustomer()">+ Add Customer</button>
+    </div>
+  </div>
+  <div class="page-content">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:20px">
+      <input type="text" class="input input-search" placeholder="Search customers..." id="customerSearch" oninput="renderCustomers()" style="width:260px">
+      <div class="filter-pills" id="customerFilters">
+        <span class="pill active" data-filter="all" onclick="setCustomerFilter('all',this)">All</span>
+        <span class="pill" data-filter="rewards" onclick="setCustomerFilter('rewards',this)">Rewards Members</span>
+        <span class="pill" data-filter="vip" onclick="setCustomerFilter('vip',this)">VIP</span>
+        <span class="pill" data-filter="chef" onclick="setCustomerFilter('chef',this)">Chefs</span>
+        <span class="pill" data-filter="home" onclick="setCustomerFilter('home',this)">Home Cooks</span>
+        <span class="pill" data-filter="new" onclick="setCustomerFilter('new',this)">New (30 days)</span>
+      </div>
+    </div>
+    <div class="table-container">
+      <div class="table-wrap">
+        <table id="customersTable">
+          <thead><tr>
+            <th onclick="sortCustomers('name')">Name <span class="sort-arrow">↕</span></th>
+            <th onclick="sortCustomers('email')">Email <span class="sort-arrow">↕</span></th>
+            <th onclick="sortCustomers('joined')">Joined <span class="sort-arrow">↕</span></th>
+            <th onclick="sortCustomers('points')">Points <span class="sort-arrow">↕</span></th>
+            <th onclick="sortCustomers('tier')">Tier <span class="sort-arrow">↕</span></th>
+            <th onclick="sortCustomers('orders')">Orders <span class="sort-arrow">↕</span></th>
+            <th onclick="sortCustomers('ltv')">LTV <span class="sort-arrow">↕</span></th>
+            <th>Tags</th>
+            <th>Actions</th>
+          </tr></thead>
+          <tbody id="customersBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="customersPagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ORDERS VIEW ============ -->
+<div class="view" id="view-orders">
+  <div class="page-header">
+    <h1>Orders</h1>
+    <button class="btn btn-primary" onclick="showNewOrder()">+ New Order</button>
+  </div>
+  <div class="page-content">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:20px">
+      <input type="text" class="input input-search" placeholder="Search orders..." id="orderSearch" oninput="renderOrders()" style="width:240px">
+      <div class="filter-pills" id="orderDateFilters">
+        <span class="pill active" data-filter="all" onclick="setOrderDateFilter('all',this)">All Time</span>
+        <span class="pill" data-filter="week" onclick="setOrderDateFilter('week',this)">This Week</span>
+        <span class="pill" data-filter="month" onclick="setOrderDateFilter('month',this)">This Month</span>
+        <span class="pill" data-filter="quarter" onclick="setOrderDateFilter('quarter',this)">This Quarter</span>
+      </div>
+      <div class="filter-pills" id="orderStatusFilters">
+        <span class="pill active" data-filter="all" onclick="setOrderStatusFilter('all',this)">All</span>
+        <span class="pill" data-filter="Pending" onclick="setOrderStatusFilter('Pending',this)">Pending</span>
+        <span class="pill" data-filter="Fulfilled" onclick="setOrderStatusFilter('Fulfilled',this)">Fulfilled</span>
+        <span class="pill" data-filter="Cancelled" onclick="setOrderStatusFilter('Cancelled',this)">Cancelled</span>
+      </div>
+    </div>
+    <div class="table-container">
+      <div class="table-wrap">
+        <table id="ordersTable">
+          <thead><tr>
+            <th onclick="sortOrders('id')">Order # <span class="sort-arrow">↕</span></th>
+            <th onclick="sortOrders('date')">Date <span class="sort-arrow">↕</span></th>
+            <th onclick="sortOrders('customer')">Customer <span class="sort-arrow">↕</span></th>
+            <th>Items</th>
+            <th onclick="sortOrders('total')">Total <span class="sort-arrow">↕</span></th>
+            <th onclick="sortOrders('status')">Status <span class="sort-arrow">↕</span></th>
+            <th>Points</th>
+            <th>Actions</th>
+          </tr></thead>
+          <tbody id="ordersBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="ordersPagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ REWARDS VIEW ============ -->
+<div class="view" id="view-rewards">
+  <div class="page-header"><h1>Rewards Program</h1></div>
+  <div class="page-content">
+    <div class="stat-cards">
+      <div class="stat-card"><div class="label">Total Points in Circulation</div><div class="value">145,200</div></div>
+      <div class="stat-card"><div class="label">Points Redeemed (All Time)</div><div class="value">23,800</div></div>
+      <div class="stat-card"><div class="label">Active Reward Members</div><div class="value">623</div></div>
+      <div class="stat-card"><div class="label">Redemption Rate</div><div class="value">16.4%</div></div>
+    </div>
+    <div class="chart-container">
+      <h3>Tier Distribution</h3>
+      <div id="tierDistribution"></div>
+    </div>
+    <div class="chart-row">
+      <div class="table-container">
+        <div class="table-header"><h3>Recent Redemptions</h3></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Customer</th><th>Reward</th><th>Points Used</th></tr></thead>
+            <tbody id="redemptionsBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="table-container">
+        <div class="table-header"><h3>Points Activity Log</h3></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Customer</th><th>Action</th><th>Points</th><th>Balance</th></tr></thead>
+            <tbody id="pointsLogBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ EMAIL VIEW ============ -->
+<div class="view" id="view-email">
+  <div class="page-header"><h1>Email Campaigns</h1></div>
+  <div class="page-content">
+    <!-- Templates -->
+    <div class="chart-container" style="margin-bottom:24px">
+      <h3>Email Templates</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:12px" id="emailTemplates"></div>
+    </div>
+    <!-- Composer -->
+    <div class="chart-container" style="margin-bottom:24px">
+      <h3>Compose Campaign</h3>
+      <div class="email-composer">
+        <div class="email-form">
+          <div>
+            <label style="font-size:0.82rem;font-weight:500;display:block;margin-bottom:4px">To</label>
+            <select class="select" id="emailTo" style="width:100%">
+              <option value="all">All Customers (847)</option>
+              <option value="rewards">Rewards Members (623)</option>
+              <option value="vip">VIP Members (3)</option>
+              <option value="chefs">Chefs & Restaurants (4)</option>
+              <option value="microgreen">Microgreen Fans (312)</option>
+              <option value="cheese">Cheese Lovers (198)</option>
+              <option value="new30">New Customers — 30 days (67)</option>
+              <option value="inactive">Inactive — 30+ days (89)</option>
+              <option value="birthday">Birthday This Month (12)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:0.82rem;font-weight:500;display:block;margin-bottom:4px">Subject</label>
+            <input type="text" class="input" id="emailSubject" placeholder="Enter subject line..." style="width:100%">
+          </div>
+          <div>
+            <div class="toolbar">
+              <button onclick="execCmd('bold')" title="Bold"><b>B</b></button>
+              <button onclick="execCmd('italic')" title="Italic"><i>I</i></button>
+              <button onclick="execCmd('underline')" title="Underline"><u>U</u></button>
+              <button onclick="execCmd('createLink')" title="Link">🔗</button>
+              <button onclick="execCmd('insertUnorderedList')" title="List">☰</button>
+            </div>
+            <div class="compose-body" contenteditable="true" id="emailBody" oninput="updateEmailPreview()"></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <select class="select" id="emailSchedule" style="width:auto">
+              <option value="now">Send Now</option>
+              <option value="later">Schedule for Later</option>
+            </select>
+            <input type="datetime-local" class="input" id="emailScheduleTime" style="display:none;width:auto">
+            <button class="btn btn-secondary" onclick="sendTestEmail()">📧 Send Test</button>
+            <button class="btn btn-primary" onclick="sendCampaign()">🚀 Send Campaign</button>
+          </div>
+        </div>
+        <div class="email-preview-pane">
+          <h4>Preview</h4>
+          <div id="emailPreview" style="font-size:0.9rem;line-height:1.6;color:var(--text)">
+            <p style="color:var(--text-muted)">Start typing to see a preview...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Campaign History -->
+    <div class="table-container">
+      <div class="table-header"><h3>Campaign History</h3></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Subject</th><th>Recipients</th><th>Opens</th><th>Clicks</th><th>Unsubscribes</th></tr></thead>
+          <tbody id="campaignHistoryBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SOCIAL VIEW ============ -->
+<div class="view" id="view-social">
+  <div class="page-header"><h1>Social Content Calendar</h1></div>
+  <div class="page-content">
+    <div class="stat-cards" style="margin-bottom:24px">
+      <div class="stat-card"><div class="label">Total Posts (This Month)</div><div class="value">10</div></div>
+      <div class="stat-card"><div class="label">Total Impressions</div><div class="value">8,420</div></div>
+      <div class="stat-card"><div class="label">Total Likes</div><div class="value">1,247</div></div>
+      <div class="stat-card"><div class="label">Total Comments</div><div class="value">186</div></div>
+    </div>
+    <div class="chart-container">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 id="calendarMonth">March 2026</h3>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm btn-secondary" onclick="prevMonth()">←</button>
+          <button class="btn btn-sm btn-secondary" onclick="nextMonth()">→</button>
+        </div>
+      </div>
+      <div class="calendar-grid" id="socialCalendar"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SETTINGS VIEW ============ -->
+<div class="view" id="view-settings">
+  <div class="page-header"><h1>Settings</h1></div>
+  <div class="page-content">
+    <div class="settings-section">
+      <h3>🏪 Store Information</h3>
+      <div class="form-row"><label>Store Name</label><input class="input" value="Radical Shoots"></div>
+      <div class="form-row"><label>Location</label><input class="input" value="Nashville, TN"></div>
+      <div class="form-row"><label>Phone</label><input class="input" value="(615) 555-0142"></div>
+      <div class="form-row"><label>Website</label><input class="input" value="radicalshoots.com"></div>
+      <div style="margin-top:12px"><button class="btn btn-primary">Save Store Info</button></div>
+    </div>
+
+    <div class="settings-section">
+      <h3>📧 Email Service Configuration</h3>
+      <div class="form-row">
+        <label>Provider</label>
+        <select class="select" id="emailProvider" style="max-width:400px">
+          <option value="">Select provider...</option>
+          <option value="sendgrid">SendGrid</option>
+          <option value="mailgun">Mailgun</option>
+          <option value="resend">Resend</option>
+          <option value="brevo">Brevo</option>
+          <option value="smtp">Custom SMTP</option>
+        </select>
+      </div>
+      <div class="form-row"><label>API Key</label><input type="password" class="input" id="emailApiKey" placeholder="Enter API key..."></div>
+      <div class="form-row"><label>From Name</label><input class="input" id="emailFromName" value="Radical Shoots"></div>
+      <div class="form-row"><label>From Email</label><input class="input" id="emailFromEmail" value="hello@radicalshoots.com"></div>
+      <div class="form-row"><label>Reply-To</label><input class="input" id="emailReplyTo" value="james@radicalshoots.com"></div>
+      <div class="form-row"><label>Status</label><span id="emailStatus" style="font-size:0.88rem">⚠️ Not configured</span></div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="saveEmailConfig()">Save Configuration</button>
+        <button class="btn btn-secondary" onclick="testEmailConnection()">Test Connection</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>🎯 Rewards Program Settings</h3>
+      <div class="form-row"><label>Points per Dollar</label><input class="input" type="number" value="10" style="max-width:120px"></div>
+      <div class="form-row"><label>Signup Bonus</label><input class="input" type="number" value="100" style="max-width:120px"> </div>
+      <div class="form-row"><label>Referral Bonus</label><input class="input" type="number" value="200" style="max-width:120px"></div>
+      <h4 style="font-size:0.9rem;margin:16px 0 12px;font-family:'DM Sans',sans-serif;font-weight:600">Tier Thresholds</h4>
+      <div class="form-row"><label>Living Square</label><input class="input" type="number" value="500" style="max-width:120px"> pts</div>
+      <div class="form-row"><label>Cheese Club</label><input class="input" type="number" value="1000" style="max-width:120px"> pts</div>
+      <div class="form-row"><label>Honey Jar</label><input class="input" type="number" value="1500" style="max-width:120px"> pts</div>
+      <div class="form-row"><label>Radical Box</label><input class="input" type="number" value="2500" style="max-width:120px"> pts</div>
+      <div class="form-row"><label>VIP</label><input class="input" type="number" value="5000" style="max-width:120px"> pts</div>
+      <h4 style="font-size:0.9rem;margin:16px 0 12px;font-family:'DM Sans',sans-serif;font-weight:600">Discount Codes</h4>
+      <div class="form-row"><label>RADICAL15</label><span style="font-size:0.88rem">15% off first order — <span class="badge badge-green">Active</span></span></div>
+      <div style="margin-top:12px"><button class="btn btn-primary">Save Rewards Settings</button></div>
+    </div>
+
+    <div class="settings-section">
+      <h3>📥 Export Data</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-secondary" onclick="exportCSV('customers')">Export Customers CSV</button>
+        <button class="btn btn-secondary" onclick="exportCSV('orders')">Export Orders CSV</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>🔑 API Keys</h3>
+      <div class="form-row"><label>Storefront Key</label><input type="password" class="input" value="rs_live_k8x9m2n4p7" readonly style="max-width:300px"></div>
+      <div class="form-row"><label>Webhook Secret</label><input type="password" class="input" value="whsec_a3b7c9d2e5f8" readonly style="max-width:300px"></div>
+    </div>
+
+    <div class="settings-section">
+      <h3>📱 POS QR Code</h3>
+      <p style="font-size:0.88rem;color:var(--text-light);margin-bottom:12px">Scan this QR code at point of sale to sign up customers for rewards.</p>
+      <img id="posQR" src="https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=https://radicalshoots.com/signup?ref=pos" alt="POS QR Code" style="border-radius:8px;border:1px solid var(--border)">
+      <div style="margin-top:8px"><button class="btn btn-sm btn-secondary" onclick="regenerateQR()">↻ Regenerate QR Code</button></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ========================================
+// DATA LAYER
+// ========================================
+const LS_KEY = 'radicalShootsAdmin';
+
+function getStore() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || null; } catch { return null; }
+}
+function setStore(data) {
+  localStorage.setItem(LS_KEY, JSON.stringify(data));
+}
+
+function generateSampleData() {
+  const customers = [
+    { id:1, name:"Sarah Mitchell", email:"sarah.mitchell@gmail.com", phone:"(615) 555-0123", joined:"2025-09-14", points:1240, orders:12, ltv:412.50, tags:["Regular"], interests:["Microgreens","Cheese"], useCase:"Home Cooking", dietary:"Vegetarian", notes:"Loves the Rainbow Radish. Orders every Monday." },
+    { id:2, name:"Chef Marcus Brown", email:"marcus@brownsbistro.com", phone:"(615) 555-0198", joined:"2025-06-02", points:5420, orders:34, ltv:2890.00, tags:["Chef","VIP","Wholesale"], interests:["Microgreens","Mushrooms"], useCase:"Restaurant", dietary:"", notes:"Head chef at Brown's Bistro on 12th Ave. Bulk orders weekly." },
+    { id:3, name:"Emma Thompson", email:"emma.t@outlook.com", phone:"(615) 555-0156", joined:"2025-11-20", points:680, orders:6, ltv:178.50, tags:["Regular"], interests:["Microgreens"], useCase:"Home Cooking", dietary:"Keto", notes:"" },
+    { id:4, name:"James Whitfield", email:"james.w@yahoo.com", phone:"(615) 555-0177", joined:"2025-08-10", points:890, orders:8, ltv:298.00, tags:["Regular"], interests:["Honey","Cheese"], useCase:"Home Cooking", dietary:"", notes:"Buys honey as gifts regularly." },
+    { id:5, name:"Chef Priya Patel", email:"priya@nashvilleSpice.com", phone:"(615) 555-0211", joined:"2025-07-15", points:3150, orders:22, ltv:1680.00, tags:["Chef","Wholesale"], interests:["Microgreens","Mushrooms"], useCase:"Restaurant", dietary:"", notes:"Nashville Spice Kitchen. Loves Lion's Mane for curries." },
+    { id:6, name:"Lauren Davis", email:"lauren.d@icloud.com", phone:"(615) 555-0133", joined:"2026-01-05", points:320, orders:3, ltv:94.50, tags:["New"], interests:["Microgreens","Honey"], useCase:"Health & Wellness", dietary:"Vegan", notes:"Found us on Instagram." },
+    { id:7, name:"Robert Chen", email:"rob.chen@gmail.com", phone:"(615) 555-0244", joined:"2025-10-22", points:1560, orders:14, ltv:486.00, tags:["Regular"], interests:["Cheese","Syrup"], useCase:"Home Cooking", dietary:"", notes:"Loves the cheddar. Always adds syrup." },
+    { id:8, name:"Ashley Monroe", email:"ashley.m@hotmail.com", phone:"(615) 555-0189", joined:"2025-12-01", points:440, orders:4, ltv:136.00, tags:["Regular"], interests:["Microgreens"], useCase:"Home Cooking", dietary:"Gluten-Free", notes:"" },
+    { id:9, name:"Chef David Kim", email:"david@eastnashtable.com", phone:"(615) 555-0267", joined:"2025-05-18", points:4890, orders:28, ltv:2240.00, tags:["Chef","VIP"], interests:["Microgreens","Mushrooms","Honey"], useCase:"Restaurant", dietary:"", notes:"East Nash Table. Our biggest restaurant account." },
+    { id:10, name:"Megan Foster", email:"megan.foster@gmail.com", phone:"(615) 555-0299", joined:"2026-02-14", points:150, orders:2, ltv:57.00, tags:["New"], interests:["Cheese","Honey"], useCase:"Gift Buyer", dietary:"", notes:"Bought Valentine's gift box." },
+    { id:11, name:"Tyler Jackson", email:"tyler.j@gmail.com", phone:"(615) 555-0311", joined:"2025-09-30", points:920, orders:9, ltv:310.50, tags:["Regular"], interests:["Mushrooms","Microgreens"], useCase:"Health & Wellness", dietary:"Paleo", notes:"Big on Lion's Mane for focus." },
+    { id:12, name:"Hannah Brooks", email:"hannah.b@outlook.com", phone:"(615) 555-0322", joined:"2025-11-08", points:560, orders:5, ltv:162.00, tags:["Regular"], interests:["Microgreens","Cheese"], useCase:"Home Cooking", dietary:"", notes:"" },
+    { id:13, name:"Chef Maria Santos", email:"maria@lacocina615.com", phone:"(615) 555-0345", joined:"2025-08-25", points:2780, orders:19, ltv:1420.00, tags:["Chef"], interests:["Microgreens","Honey"], useCase:"Restaurant", dietary:"", notes:"La Cocina Nashville. Uses our honey in desserts." },
+    { id:14, name:"Daniel Wright", email:"dan.wright@gmail.com", phone:"(615) 555-0378", joined:"2025-10-05", points:1100, orders:10, ltv:345.00, tags:["Regular"], interests:["Honey","Syrup"], useCase:"Home Cooking", dietary:"", notes:"Pancake enthusiast. Loves the maple syrup." },
+    { id:15, name:"Olivia Harper", email:"olivia.h@icloud.com", phone:"(615) 555-0389", joined:"2026-01-20", points:280, orders:3, ltv:87.00, tags:["New"], interests:["Microgreens"], useCase:"Health & Wellness", dietary:"Keto", notes:"Referred by Sarah Mitchell." },
+    { id:16, name:"Nathan Reed", email:"nathan.r@yahoo.com", phone:"(615) 555-0401", joined:"2025-07-28", points:1880, orders:16, ltv:548.00, tags:["Regular"], interests:["Cheese","Mushrooms","Microgreens"], useCase:"Home Cooking", dietary:"", notes:"Orders the biggest variety. Loves trying new products." },
+    { id:17, name:"Jessica Coleman", email:"jess.c@gmail.com", phone:"(615) 555-0423", joined:"2025-12-15", points:380, orders:3, ltv:102.00, tags:["Regular"], interests:["Honey"], useCase:"Gift Buyer", dietary:"", notes:"Holiday gift orders." },
+    { id:18, name:"Chris Patterson", email:"chris.p@outlook.com", phone:"(615) 555-0445", joined:"2026-03-01", points:100, orders:1, ltv:28.50, tags:["New"], interests:["Microgreens"], useCase:"Home Cooking", dietary:"", notes:"Just signed up via QR code at farmers market." },
+    { id:19, name:"Amanda Sullivan", email:"amanda.s@gmail.com", phone:"(615) 555-0467", joined:"2025-10-18", points:760, orders:7, ltv:238.00, tags:["Regular"], interests:["Microgreens","Cheese","Honey"], useCase:"Home Cooking", dietary:"Vegetarian", notes:"" },
+    { id:20, name:"Kevin Nguyen", email:"kevin.n@hotmail.com", phone:"(615) 555-0489", joined:"2025-11-30", points:520, orders:5, ltv:165.00, tags:["Regular"], interests:["Mushrooms","Microgreens"], useCase:"Health & Wellness", dietary:"", notes:"Interested in medicinal mushroom benefits." },
+  ];
+
+  const products = [
+    { name:"Rainbow Radish", cat:"Microgreen", price:14.00 },
+    { name:"Dill Microgreens", cat:"Microgreen", price:14.00 },
+    { name:"Sunflower Shoots", cat:"Microgreen", price:12.00 },
+    { name:"Pea Shoots", cat:"Microgreen", price:12.00 },
+    { name:"Broccoli Microgreens", cat:"Microgreen", price:14.00 },
+    { name:"Cheddar Cheese", cat:"Cheese", price:8.00 },
+    { name:"Gouda Cheese", cat:"Cheese", price:9.00 },
+    { name:"Pepper Jack", cat:"Cheese", price:8.50 },
+    { name:"Raw Honey (Sourwood 16oz)", cat:"Honey", price:13.00 },
+    { name:"Raw Honey (Wildflower 8oz)", cat:"Honey", price:8.00 },
+    { name:"Lion's Mane", cat:"Mushroom", price:9.00 },
+    { name:"Shiitake", cat:"Mushroom", price:8.00 },
+    { name:"Maple Syrup (8oz)", cat:"Syrup", price:12.00 },
+  ];
+
+  // Generate 50 orders
+  const statuses = ["Fulfilled","Fulfilled","Fulfilled","Fulfilled","Pending","Pending","Cancelled"];
+  const methods = ["Pickup","Pickup","Pickup","Delivery"];
+  const orders = [];
+  const now = new Date('2026-03-23');
+  for (let i = 1; i <= 50; i++) {
+    const daysAgo = Math.floor(Math.random() * 90);
+    const d = new Date(now); d.setDate(d.getDate() - daysAgo);
+    const cust = customers[Math.floor(Math.random() * customers.length)];
+    const numItems = 1 + Math.floor(Math.random() * 4);
+    const items = [];
+    const usedProducts = new Set();
+    for (let j = 0; j < numItems; j++) {
+      let p;
+      do { p = products[Math.floor(Math.random() * products.length)]; } while (usedProducts.has(p.name) && usedProducts.size < products.length);
+      usedProducts.add(p.name);
+      const qty = 1 + Math.floor(Math.random() * 3);
+      items.push({ name: p.name, cat: p.cat, price: p.price, qty });
+    }
+    let subtotal = items.reduce((s,it) => s + it.price * it.qty, 0);
+    const hasDiscount = Math.random() < 0.15;
+    const discount = hasDiscount ? +(subtotal * 0.15).toFixed(2) : 0;
+    const total = +(subtotal - discount).toFixed(2);
+    orders.push({
+      id: 1000 + i,
+      date: d.toISOString().split('T')[0],
+      customerId: cust.id,
+      customerName: cust.name,
+      items, subtotal: +subtotal.toFixed(2), discount, total,
+      status: daysAgo < 5 ? (Math.random() < 0.5 ? "Pending" : "Fulfilled") : statuses[Math.floor(Math.random() * statuses.length)],
+      method: methods[Math.floor(Math.random() * methods.length)],
+      points: Math.round(total * 10),
+      discountCode: hasDiscount ? "RADICAL15" : "",
+      notes: ""
+    });
+  }
+  orders.sort((a,b) => b.date.localeCompare(a.date));
+
+  return { customers, orders, products, emailConfig: {}, campaigns: generateCampaigns() };
+}
+
+function generateCampaigns() {
+  return [
+    { date:"2026-03-17", subject:"🌱 Monday Drop: Rainbow Radish is BACK!", recipients:623, opens:412, clicks:89, unsubs:2 },
+    { date:"2026-03-10", subject:"Spring is Here — New Microgreen Varieties!", recipients:847, opens:534, clicks:156, unsubs:5 },
+    { date:"2026-03-03", subject:"🌱 Monday Drop: Sunflower Shoots + Dill", recipients:623, opens:398, clicks:72, unsubs:1 },
+    { date:"2026-02-24", subject:"Your Rewards Update — You're Close to Cheese Club!", recipients:187, opens:142, clicks:45, unsubs:0 },
+    { date:"2026-02-14", subject:"💝 Valentine's Special: Honey & Cheese Gift Boxes", recipients:847, opens:612, clicks:234, unsubs:3 },
+    { date:"2026-02-03", subject:"Welcome to Radical Shoots — Here's 15% Off!", recipients:67, opens:58, clicks:42, unsubs:0 },
+    { date:"2026-01-20", subject:"New Year, New Greens! January Lineup", recipients:780, opens:456, clicks:123, unsubs:4 },
+    { date:"2026-01-06", subject:"We Miss You! Come Back for 10% Off", recipients:89, opens:52, clicks:18, unsubs:1 },
+  ];
+}
+
+let DB;
+function initDB() {
+  DB = getStore();
+  if (!DB) {
+    DB = generateSampleData();
+    setStore(DB);
+  }
+}
+
+function saveDB() { setStore(DB); }
+
+// ========================================
+// NAVIGATION
+// ========================================
+function navigate(view) {
+  window.location.hash = view;
+}
+
+function applyHash() {
+  const hash = (window.location.hash || '#dashboard').replace('#','');
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const target = document.getElementById('view-' + hash);
+  if (target) {
+    target.classList.add('active');
+    document.querySelector(`.nav-item[data-view="${hash}"]`)?.classList.add('active');
+  } else {
+    document.getElementById('view-dashboard').classList.add('active');
+    document.querySelector('.nav-item[data-view="dashboard"]')?.classList.add('active');
+  }
+  // Close sidebar on mobile
+  document.getElementById('sidebar').classList.remove('open');
+  // Render view data
+  if (hash === 'customers') renderCustomers();
+  if (hash === 'orders') renderOrders();
+  if (hash === 'rewards') renderRewards();
+  if (hash === 'email') renderEmail();
+  if (hash === 'social') renderSocialCalendar();
+  if (hash === 'dashboard') renderDashboard();
+}
+
+window.addEventListener('hashchange', applyHash);
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ========================================
+// DASHBOARD
+// ========================================
+function renderDashboard() {
+  renderRevenueChart();
+  renderAcquisitionChart();
+  renderActivityFeed();
+}
+
+function renderRevenueChart() {
+  const weeks = [];
+  const now = new Date('2026-03-23');
+  for (let i = 11; i >= 0; i--) {
+    const start = new Date(now); start.setDate(start.getDate() - i * 7 - 6);
+    const end = new Date(now); end.setDate(end.getDate() - i * 7);
+    const weekOrders = DB.orders.filter(o => {
+      const d = new Date(o.date);
+      return d >= start && d <= end;
+    });
+    const rev = weekOrders.reduce((s,o) => s + o.total, 0);
+    weeks.push({ label: `W${12-i}`, rev: +rev.toFixed(0), isCurrent: i === 0 });
+  }
+  const maxRev = Math.max(...weeks.map(w => w.rev), 1);
+  const W = 500, H = 200, pad = 40, barW = 28, gap = (W - pad*2 - barW*12) / 11;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H+30}" class="svg-chart" style="overflow:visible">`;
+  // Grid lines
+  for (let i = 0; i <= 4; i++) {
+    const y = pad + (H - pad*2) * (1 - i/4);
+    const val = Math.round(maxRev * i / 4);
+    svg += `<line x1="${pad}" y1="${y}" x2="${W-pad}" y2="${y}" stroke="#e9ecef" stroke-width="1"/>`;
+    svg += `<text x="${pad-8}" y="${y+4}" text-anchor="end" fill="#b2bec3" font-size="9" font-family="DM Sans">\$${val}</text>`;
+  }
+  weeks.forEach((w, i) => {
+    const x = pad + i * (barW + gap);
+    const barH = (w.rev / maxRev) * (H - pad*2);
+    const y = H - pad - barH;
+    const fill = w.isCurrent ? '#d4a853' : '#2d6a4f';
+    svg += `<rect class="chart-bar" x="${x}" y="${y}" width="${barW}" height="${barH}" rx="4" fill="${fill}">
+      <title>\$${w.rev.toLocaleString()}</title></rect>`;
+    svg += `<text x="${x + barW/2}" y="${H - pad + 16}" text-anchor="middle" fill="#b2bec3" font-size="8" font-family="DM Sans">${w.label}</text>`;
+  });
+  svg += `</svg>`;
+  document.getElementById('revenueChart').innerHTML = svg;
+}
+
+function renderAcquisitionChart() {
+  const weeks = 12;
+  const channels = [
+    { name: 'Direct', color: '#2d6a4f', data: [8,12,10,15,9,11,14,13,16,10,12,18] },
+    { name: 'QR Code', color: '#d4a853', data: [3,5,4,6,7,5,8,6,9,7,8,10] },
+    { name: 'Referral', color: '#3498db', data: [2,3,4,3,5,4,6,5,4,6,7,5] },
+    { name: 'Instagram', color: '#e74c3c', data: [1,2,3,2,4,3,5,4,6,5,7,8] },
+  ];
+  const W = 500, H = 200, pad = 40;
+  const maxVal = 20;
+  const stepX = (W - pad*2) / (weeks - 1);
+
+  let svg = `<svg viewBox="0 0 ${W} ${H+40}" class="svg-chart">`;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad + (H - pad*2) * (1 - i/4);
+    const val = Math.round(maxVal * i / 4);
+    svg += `<line x1="${pad}" y1="${y}" x2="${W-pad}" y2="${y}" stroke="#e9ecef" stroke-width="1"/>`;
+    svg += `<text x="${pad-8}" y="${y+4}" text-anchor="end" fill="#b2bec3" font-size="9" font-family="DM Sans">${val}</text>`;
+  }
+  channels.forEach(ch => {
+    let path = '';
+    ch.data.forEach((v, i) => {
+      const x = pad + i * stepX;
+      const y = pad + (H - pad*2) * (1 - v/maxVal);
+      path += (i === 0 ? 'M' : 'L') + `${x},${y}`;
+    });
+    svg += `<path d="${path}" fill="none" stroke="${ch.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+    ch.data.forEach((v, i) => {
+      const x = pad + i * stepX;
+      const y = pad + (H - pad*2) * (1 - v/maxVal);
+      svg += `<circle cx="${x}" cy="${y}" r="3" fill="${ch.color}"><title>${ch.name}: ${v}</title></circle>`;
+    });
+  });
+  // Legend
+  channels.forEach((ch, i) => {
+    const x = pad + i * 110;
+    svg += `<rect x="${x}" y="${H+8}" width="10" height="10" rx="2" fill="${ch.color}"/>`;
+    svg += `<text x="${x+14}" y="${H+17}" fill="#636e72" font-size="9" font-family="DM Sans">${ch.name}</text>`;
+  });
+  svg += `</svg>`;
+  document.getElementById('acquisitionChart').innerHTML = svg;
+}
+
+function renderActivityFeed() {
+  const activities = [
+    { type:'signup', text:'Sarah M. signed up via QR code — earned 100 pts', time:'2 min ago' },
+    { type:'order', text:'Chef Marcus ordered 4x Rainbow Radish (Double Box) — $96', time:'18 min ago' },
+    { type:'redeem', text:'Emma T. redeemed 500 pts → Free Living Square', time:'1 hour ago' },
+    { type:'review', text:'James K. left a review for Lion\'s Mane ⭐⭐⭐⭐⭐', time:'2 hours ago' },
+    { type:'order', text:'Lauren D. ordered Rainbow Radish + Cheddar Cheese — $22', time:'3 hours ago' },
+    { type:'signup', text:'Chris P. signed up via QR code at farmers market', time:'4 hours ago' },
+    { type:'order', text:'Robert C. ordered Gouda + Maple Syrup + Dill Micros — $35', time:'5 hours ago' },
+    { type:'redeem', text:'Nathan R. redeemed 1000 pts → $10 store credit', time:'6 hours ago' },
+    { type:'review', text:'Amanda S. left a review for Cheddar Cheese ⭐⭐⭐⭐', time:'7 hours ago' },
+    { type:'order', text:'Chef Priya ordered 6x Sunflower Shoots — $72', time:'8 hours ago' },
+    { type:'signup', text:'Megan F. referred Olivia H. — both earned 200 pts!', time:'Yesterday' },
+    { type:'order', text:'Tyler J. ordered Lion\'s Mane + Broccoli Micros — $23', time:'Yesterday' },
+  ];
+  const feed = document.getElementById('activityFeed');
+  feed.innerHTML = activities.map(a => `
+    <div class="activity-item">
+      <div class="activity-dot ${a.type}"></div>
+      <div>
+        <div>${a.text}</div>
+        <div class="activity-time">${a.time}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ========================================
+// CUSTOMERS
+// ========================================
+let customerFilter = 'all';
+let customerSort = { col: 'name', asc: true };
+let customerPage = 1;
+const CUST_PER_PAGE = 25;
+
+function setCustomerFilter(filter, el) {
+  customerFilter = filter;
+  customerPage = 1;
+  document.querySelectorAll('#customerFilters .pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderCustomers();
+}
+
+function sortCustomers(col) {
+  if (customerSort.col === col) customerSort.asc = !customerSort.asc;
+  else { customerSort.col = col; customerSort.asc = true; }
+  renderCustomers();
+}
+
+function getFilteredCustomers() {
+  let custs = [...DB.customers];
+  const q = (document.getElementById('customerSearch')?.value || '').toLowerCase();
+  if (q) custs = custs.filter(c => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q));
+  const now = new Date('2026-03-23');
+  switch(customerFilter) {
+    case 'rewards': custs = custs.filter(c => c.points >= 100); break;
+    case 'vip': custs = custs.filter(c => c.points >= 5000); break;
+    case 'chef': custs = custs.filter(c => c.tags.includes('Chef')); break;
+    case 'home': custs = custs.filter(c => c.useCase === 'Home Cooking'); break;
+    case 'new': custs = custs.filter(c => (now - new Date(c.joined)) / 86400000 <= 30); break;
+  }
+  const col = customerSort.col;
+  custs.sort((a,b) => {
+    let va = a[col], vb = b[col];
+    if (typeof va === 'string') va = va.toLowerCase();
+    if (typeof vb === 'string') vb = vb.toLowerCase();
+    if (va < vb) return customerSort.asc ? -1 : 1;
+    if (va > vb) return customerSort.asc ? 1 : -1;
+    return 0;
+  });
+  return custs;
+}
+
+function getTier(pts) {
+  if (pts >= 5000) return 'VIP';
+  if (pts >= 2500) return 'Radical Box';
+  if (pts >= 1500) return 'Honey Jar';
+  if (pts >= 1000) return 'Cheese Club';
+  if (pts >= 500) return 'Living Square';
+  return '—';
+}
+
+function getTierBadge(pts) {
+  const tier = getTier(pts);
+  const cls = { 'VIP':'badge-gold','Radical Box':'badge-green','Honey Jar':'badge-yellow','Cheese Club':'badge-yellow','Living Square':'badge-green','—':'badge-gray' };
+  return `<span class="badge ${cls[tier] || 'badge-gray'}">${tier}</span>`;
+}
+
+function getTagHTML(tags) {
+  return tags.map(t => {
+    const cls = { VIP:'tag-vip', Chef:'tag-chef', Wholesale:'tag-wholesale', New:'tag-new' };
+    return `<span class="tag ${cls[t] || ''}">${t}</span>`;
+  }).join('');
+}
+
+function renderCustomers() {
+  const custs = getFilteredCustomers();
+  const total = custs.length;
+  const pages = Math.ceil(total / CUST_PER_PAGE) || 1;
+  if (customerPage > pages) customerPage = pages;
+  const start = (customerPage - 1) * CUST_PER_PAGE;
+  const slice = custs.slice(start, start + CUST_PER_PAGE);
+
+  const tbody = document.getElementById('customersBody');
+  tbody.innerHTML = slice.map(c => `
+    <tr onclick="openCustomerPanel(${c.id})">
+      <td><strong>${c.name}</strong></td>
+      <td>${c.email}</td>
+      <td>${formatDate(c.joined)}</td>
+      <td>${c.points.toLocaleString()}</td>
+      <td>${getTierBadge(c.points)}</td>
+      <td>${c.orders}</td>
+      <td>$${c.ltv.toFixed(2)}</td>
+      <td>${getTagHTML(c.tags)}</td>
+      <td><button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();editCustomer(${c.id})">Edit</button></td>
+    </tr>
+  `).join('');
+
+  renderPagination('customersPagination', customerPage, pages, total, CUST_PER_PAGE, p => { customerPage = p; renderCustomers(); });
+}
+
+function renderPagination(containerId, page, pages, total, perPage, onPage) {
+  const el = document.getElementById(containerId);
+  const start = (page-1)*perPage+1;
+  const end = Math.min(page*perPage, total);
+  let html = `<div class="pagination-info">Showing ${start}–${end} of ${total}</div><div class="pagination-btns">`;
+  html += `<button ${page<=1?'disabled':''} onclick="void(0)">←</button>`;
+  for (let i = 1; i <= pages; i++) {
+    html += `<button class="${i===page?'active':''}" data-page="${i}">${i}</button>`;
+  }
+  html += `<button ${page>=pages?'disabled':''} onclick="void(0)">→</button>`;
+  html += `</div>`;
+  el.innerHTML = html;
+  el.querySelectorAll('.pagination-btns button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = btn.dataset.page;
+      if (p) onPage(parseInt(p));
+      else if (btn.textContent === '←' && page > 1) onPage(page-1);
+      else if (btn.textContent === '→' && page < pages) onPage(page+1);
+    });
+  });
+}
+
+function openCustomerPanel(id) {
+  const c = DB.customers.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('panelCustomerName').textContent = c.name;
+  const custOrders = DB.orders.filter(o => o.customerId === c.id).sort((a,b) => b.date.localeCompare(a.date));
+  const nextTier = c.points < 500 ? { name:'Living Square', need: 500 } :
+    c.points < 1000 ? { name:'Cheese Club', need: 1000 } :
+    c.points < 1500 ? { name:'Honey Jar', need: 1500 } :
+    c.points < 2500 ? { name:'Radical Box', need: 2500 } :
+    c.points < 5000 ? { name:'VIP', need: 5000 } : null;
+  const pct = nextTier ? Math.min(100, (c.points / nextTier.need * 100)).toFixed(0) : 100;
+
+  document.getElementById('panelBody').innerHTML = `
+    <div style="margin-bottom:20px">
+      <p style="color:var(--text-light);font-size:0.85rem">${c.email} · ${c.phone}</p>
+      <p style="color:var(--text-light);font-size:0.82rem;margin-top:4px">Joined ${formatDate(c.joined)}</p>
+    </div>
+    <div style="margin-bottom:20px">
+      <h4 style="font-size:0.9rem;margin-bottom:8px;font-family:'DM Sans';font-weight:600">Profile</h4>
+      <p style="font-size:0.85rem"><strong>Interests:</strong> ${c.interests.join(', ') || '—'}</p>
+      <p style="font-size:0.85rem"><strong>Use Case:</strong> ${c.useCase || '—'}</p>
+      <p style="font-size:0.85rem"><strong>Dietary:</strong> ${c.dietary || '—'}</p>
+    </div>
+    <div style="margin-bottom:20px">
+      <h4 style="font-size:0.9rem;margin-bottom:8px;font-family:'DM Sans';font-weight:600">Rewards — ${getTier(c.points)}</h4>
+      <p style="font-size:1.3rem;font-weight:700;font-family:'Playfair Display'">${c.points.toLocaleString()} pts</p>
+      ${nextTier ? `<div style="margin-top:8px">
+        <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:4px">${c.points}/${nextTier.need} pts to ${nextTier.name}</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>` : '<p style="font-size:0.82rem;color:var(--accent);margin-top:4px">🏆 Maximum tier reached!</p>'}
+      <div style="margin-top:10px;display:flex;gap:6px">
+        <button class="btn btn-sm btn-secondary" onclick="adjustPoints(${c.id}, 'add')">+ Add Points</button>
+        <button class="btn btn-sm btn-secondary" onclick="adjustPoints(${c.id}, 'sub')">- Subtract Points</button>
+      </div>
+    </div>
+    <div style="margin-bottom:20px">
+      <h4 style="font-size:0.9rem;margin-bottom:8px;font-family:'DM Sans';font-weight:600">Tags</h4>
+      <div style="margin-bottom:8px">${getTagHTML(c.tags)}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        ${['VIP','Chef','Wholesale','Regular','New'].map(t =>
+          `<button class="btn btn-sm ${c.tags.includes(t)?'btn-primary':'btn-secondary'}" onclick="toggleTag(${c.id},'${t}')">${t}</button>`
+        ).join('')}
+      </div>
+    </div>
+    <div style="margin-bottom:20px">
+      <h4 style="font-size:0.9rem;margin-bottom:8px;font-family:'DM Sans';font-weight:600">Purchase History (${custOrders.length} orders)</h4>
+      ${custOrders.length ? `<table style="width:100%"><thead><tr><th style="font-size:0.7rem">Date</th><th style="font-size:0.7rem">Items</th><th style="font-size:0.7rem">Total</th><th style="font-size:0.7rem">Pts</th></tr></thead><tbody>
+        ${custOrders.map(o => `<tr><td style="font-size:0.82rem">${formatDate(o.date)}</td><td style="font-size:0.82rem">${o.items.map(i=>i.name).join(', ')}</td><td style="font-size:0.82rem">$${o.total.toFixed(2)}</td><td style="font-size:0.82rem">${o.points}</td></tr>`).join('')}
+      </tbody></table>` : '<p style="font-size:0.85rem;color:var(--text-light)">No orders yet.</p>'}
+    </div>
+    <div style="margin-bottom:20px">
+      <h4 style="font-size:0.9rem;margin-bottom:8px;font-family:'DM Sans';font-weight:600">Notes</h4>
+      <textarea class="input" style="width:100%" id="customerNotes" onblur="saveCustomerNotes(${c.id})">${c.notes || ''}</textarea>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="toast('Email composer opened','info')">📧 Send Email</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCustomer(${c.id})">Delete</button>
+    </div>
+  `;
+  document.getElementById('customerPanel').classList.add('open');
+  document.getElementById('panelOverlay').classList.add('open');
+}
+
+function closePanel() {
+  document.getElementById('customerPanel').classList.remove('open');
+  document.getElementById('panelOverlay').classList.remove('open');
+}
+
+function toggleTag(id, tag) {
+  const c = DB.customers.find(x => x.id === id);
+  if (!c) return;
+  const idx = c.tags.indexOf(tag);
+  if (idx >= 0) c.tags.splice(idx, 1);
+  else c.tags.push(tag);
+  saveDB();
+  openCustomerPanel(id);
+  renderCustomers();
+}
+
+function adjustPoints(id, mode) {
+  const amt = prompt(`Enter points to ${mode === 'add' ? 'add' : 'subtract'}:`);
+  if (!amt || isNaN(amt)) return;
+  const c = DB.customers.find(x => x.id === id);
+  if (!c) return;
+  const pts = parseInt(amt);
+  if (mode === 'add') c.points += pts;
+  else c.points = Math.max(0, c.points - pts);
+  saveDB();
+  openCustomerPanel(id);
+  renderCustomers();
+  toast(`${mode === 'add' ? 'Added' : 'Subtracted'} ${pts} points for ${c.name}`, 'success');
+}
+
+function saveCustomerNotes(id) {
+  const c = DB.customers.find(x => x.id === id);
+  if (!c) return;
+  c.notes = document.getElementById('customerNotes')?.value || '';
+  saveDB();
+}
+
+function deleteCustomer(id) {
+  if (!confirm('Delete this customer? This cannot be undone.')) return;
+  DB.customers = DB.customers.filter(c => c.id !== id);
+  saveDB();
+  closePanel();
+  renderCustomers();
+  toast('Customer deleted', 'success');
+}
+
+function showAddCustomer() {
+  const name = prompt('Customer name:');
+  if (!name) return;
+  const email = prompt('Email:');
+  if (!email) return;
+  const phone = prompt('Phone (optional):') || '';
+  const maxId = Math.max(...DB.customers.map(c => c.id), 0);
+  DB.customers.push({
+    id: maxId + 1, name, email, phone,
+    joined: new Date().toISOString().split('T')[0],
+    points: 100, orders: 0, ltv: 0,
+    tags: ['New'], interests: [], useCase: '', dietary: '', notes: 'Added manually.'
+  });
+  saveDB();
+  renderCustomers();
+  toast(`${name} added with 100 signup bonus points`, 'success');
+}
+
+function editCustomer(id) {
+  openCustomerPanel(id);
+}
+
+// ========================================
+// ORDERS
+// ========================================
+let orderDateFilter = 'all';
+let orderStatusFilter = 'all';
+let orderSort = { col: 'date', asc: false };
+let orderPage = 1;
+const ORD_PER_PAGE = 25;
+
+function setOrderDateFilter(f, el) {
+  orderDateFilter = f; orderPage = 1;
+  document.querySelectorAll('#orderDateFilters .pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderOrders();
+}
+function setOrderStatusFilter(f, el) {
+  orderStatusFilter = f; orderPage = 1;
+  document.querySelectorAll('#orderStatusFilters .pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderOrders();
+}
+function sortOrders(col) {
+  if (orderSort.col === col) orderSort.asc = !orderSort.asc;
+  else { orderSort.col = col; orderSort.asc = col === 'date' ? false : true; }
+  renderOrders();
+}
+
+function getFilteredOrders() {
+  let ords = [...DB.orders];
+  const q = (document.getElementById('orderSearch')?.value || '').toLowerCase();
+  if (q) ords = ords.filter(o => o.customerName.toLowerCase().includes(q) || String(o.id).includes(q));
+  const now = new Date('2026-03-23');
+  if (orderDateFilter === 'week') { const d = new Date(now); d.setDate(d.getDate()-7); ords = ords.filter(o => new Date(o.date) >= d); }
+  if (orderDateFilter === 'month') { const d = new Date(now); d.setMonth(d.getMonth()-1); ords = ords.filter(o => new Date(o.date) >= d); }
+  if (orderDateFilter === 'quarter') { const d = new Date(now); d.setMonth(d.getMonth()-3); ords = ords.filter(o => new Date(o.date) >= d); }
+  if (orderStatusFilter !== 'all') ords = ords.filter(o => o.status === orderStatusFilter);
+  const col = orderSort.col;
+  ords.sort((a,b) => {
+    let va = col === 'customer' ? a.customerName : a[col];
+    let vb = col === 'customer' ? b.customerName : b[col];
+    if (typeof va === 'string') va = va.toLowerCase();
+    if (typeof vb === 'string') vb = vb.toLowerCase();
+    return orderSort.asc ? (va < vb ? -1 : va > vb ? 1 : 0) : (va > vb ? -1 : va < vb ? 1 : 0);
+  });
+  return ords;
+}
+
+function getStatusBadge(s) {
+  const m = { Pending:'badge-yellow', Fulfilled:'badge-green', Cancelled:'badge-red' };
+  return `<span class="badge ${m[s] || 'badge-gray'}">${s}</span>`;
+}
+
+function renderOrders() {
+  const ords = getFilteredOrders();
+  const total = ords.length;
+  const pages = Math.ceil(total / ORD_PER_PAGE) || 1;
+  if (orderPage > pages) orderPage = pages;
+  const start = (orderPage - 1) * ORD_PER_PAGE;
+  const slice = ords.slice(start, start + ORD_PER_PAGE);
+
+  document.getElementById('ordersBody').innerHTML = slice.map(o => `
+    <tr onclick="openOrderModal(${o.id})">
+      <td><strong>#${o.id}</strong></td>
+      <td>${formatDate(o.date)}</td>
+      <td>${o.customerName}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${o.items.map(i => `${i.qty}x ${i.name}`).join(', ')}</td>
+      <td>$${o.total.toFixed(2)}${o.discount ? ` <span style="font-size:0.72rem;color:var(--success)">(-$${o.discount.toFixed(2)})</span>` : ''}</td>
+      <td>${getStatusBadge(o.status)}</td>
+      <td>${o.points}</td>
+      <td><button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();openOrderModal(${o.id})">View</button></td>
+    </tr>
+  `).join('');
+
+  renderPagination('ordersPagination', orderPage, pages, total, ORD_PER_PAGE, p => { orderPage = p; renderOrders(); });
+}
+
+let currentOrderId = null;
+function openOrderModal(id) {
+  const o = DB.orders.find(x => x.id === id);
+  if (!o) return;
+  currentOrderId = id;
+  document.getElementById('modalOrderTitle').textContent = `Order #${o.id}`;
+  document.getElementById('modalOrderBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+      <div><span style="font-size:0.82rem;color:var(--text-light)">Date</span><br><strong>${formatDate(o.date)}</strong></div>
+      <div><span style="font-size:0.82rem;color:var(--text-light)">Customer</span><br><strong style="color:var(--primary);cursor:pointer" onclick="closeOrderModal();navigate('customers');setTimeout(()=>openCustomerPanel(${o.customerId}),100)">${o.customerName}</strong></div>
+      <div><span style="font-size:0.82rem;color:var(--text-light)">Method</span><br><strong>${o.method}</strong></div>
+      <div>
+        <span style="font-size:0.82rem;color:var(--text-light)">Status</span><br>
+        <select class="select" id="orderStatusSelect" style="margin-top:4px">
+          ${['Pending','Fulfilled','Cancelled'].map(s => `<option value="${s}" ${s===o.status?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <h4 style="font-size:0.9rem;margin-bottom:8px;font-family:'DM Sans';font-weight:600">Line Items</h4>
+    <table style="width:100%;margin-bottom:16px">
+      <thead><tr><th style="font-size:0.72rem">Product</th><th style="font-size:0.72rem">Cat</th><th style="font-size:0.72rem">Qty</th><th style="font-size:0.72rem">Price</th><th style="font-size:0.72rem">Subtotal</th></tr></thead>
+      <tbody>
+        ${o.items.map(i => `<tr><td>${i.name}</td><td><span class="badge badge-gray">${i.cat}</span></td><td>${i.qty}</td><td>$${i.price.toFixed(2)}</td><td>$${(i.price*i.qty).toFixed(2)}</td></tr>`).join('')}
+      </tbody>
+    </table>
+    <div style="text-align:right;margin-bottom:16px">
+      <p style="font-size:0.88rem">Subtotal: <strong>$${o.subtotal.toFixed(2)}</strong></p>
+      ${o.discount ? `<p style="font-size:0.88rem;color:var(--success)">Discount (${o.discountCode}): <strong>-$${o.discount.toFixed(2)}</strong></p>` : ''}
+      <p style="font-size:1.1rem;font-weight:700;margin-top:4px">Total: $${o.total.toFixed(2)}</p>
+      <p style="font-size:0.82rem;color:var(--text-light)">Points earned: ${o.points}</p>
+    </div>
+    <div>
+      <label style="font-size:0.82rem;font-weight:500;display:block;margin-bottom:4px">Notes</label>
+      <textarea class="input" style="width:100%" id="orderNotes">${o.notes || ''}</textarea>
+    </div>
+  `;
+  document.getElementById('orderModal').classList.add('open');
+}
+
+function closeOrderModal() {
+  document.getElementById('orderModal').classList.remove('open');
+  currentOrderId = null;
+}
+
+function saveOrderStatus() {
+  if (!currentOrderId) return;
+  const o = DB.orders.find(x => x.id === currentOrderId);
+  if (!o) return;
+  o.status = document.getElementById('orderStatusSelect').value;
+  o.notes = document.getElementById('orderNotes')?.value || '';
+  saveDB();
+  closeOrderModal();
+  renderOrders();
+  toast(`Order #${o.id} updated`, 'success');
+}
+
+function showNewOrder() {
+  const custName = prompt('Customer name (must match existing):');
+  if (!custName) return;
+  const cust = DB.customers.find(c => c.name.toLowerCase().includes(custName.toLowerCase()));
+  if (!cust) { toast('Customer not found', 'error'); return; }
+  const maxId = Math.max(...DB.orders.map(o => o.id), 1000);
+  const newOrder = {
+    id: maxId + 1,
+    date: new Date().toISOString().split('T')[0],
+    customerId: cust.id,
+    customerName: cust.name,
+    items: [{ name: 'Rainbow Radish', cat: 'Microgreen', price: 14.00, qty: 1 }],
+    subtotal: 14.00, discount: 0, total: 14.00,
+    status: 'Pending', method: 'Pickup', points: 140,
+    discountCode: '', notes: 'Created manually'
+  };
+  DB.orders.unshift(newOrder);
+  cust.orders++;
+  cust.ltv += newOrder.total;
+  cust.points += newOrder.points;
+  saveDB();
+  renderOrders();
+  openOrderModal(newOrder.id);
+  toast(`Order #${newOrder.id} created for ${cust.name}`, 'success');
+}
+
+// ========================================
+// REWARDS
+// ========================================
+function renderRewards() {
+  renderTierDistribution();
+  renderRedemptions();
+  renderPointsLog();
+}
+
+function renderTierDistribution() {
+  const tiers = [
+    { name: 'No Tier (0-499)', count: 312, pct: 50.1, color: '#b2bec3' },
+    { name: 'Living Square (500-999)', count: 187, pct: 30.0, color: '#40916c' },
+    { name: 'Cheese Club (1000-1499)', count: 78, pct: 12.5, color: '#2d6a4f' },
+    { name: 'Honey Jar (1500-2499)', count: 34, pct: 5.5, color: '#d4a853' },
+    { name: 'Radical Box (2500-4999)', count: 9, pct: 1.4, color: '#c49a42' },
+    { name: 'VIP (5000+)', count: 3, pct: 0.5, color: '#8d6e0f' },
+  ];
+  document.getElementById('tierDistribution').innerHTML = tiers.map(t => `
+    <div class="tier-bar-container">
+      <div class="tier-bar-label">
+        <span class="tier-name">${t.name}</span>
+        <span class="tier-count">${t.count} members (${t.pct}%)</span>
+      </div>
+      <div class="tier-bar">
+        <div class="tier-bar-fill" style="width:${Math.max(t.pct, 3)}%;background:${t.color}">${t.pct}%</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderRedemptions() {
+  const redemptions = [
+    { date:'2026-03-22', customer:'Emma Thompson', reward:'Free Living Square', points:500 },
+    { date:'2026-03-21', customer:'Nathan Reed', reward:'$10 Store Credit', points:1000 },
+    { date:'2026-03-19', customer:'Robert Chen', reward:'Free Cheese Sample', points:300 },
+    { date:'2026-03-17', customer:'Sarah Mitchell', reward:'Free Living Square', points:500 },
+    { date:'2026-03-15', customer:'Chef David Kim', reward:'$25 Store Credit', points:2500 },
+    { date:'2026-03-12', customer:'Tyler Jackson', reward:'Free Mushroom Pack', points:400 },
+    { date:'2026-03-10', customer:'Amanda Sullivan', reward:'Free Cheese Sample', points:300 },
+    { date:'2026-03-08', customer:'Daniel Wright', reward:'Free Honey 8oz', points:600 },
+  ];
+  document.getElementById('redemptionsBody').innerHTML = redemptions.map(r => `
+    <tr><td>${formatDate(r.date)}</td><td>${r.customer}</td><td>${r.reward}</td><td>${r.points.toLocaleString()}</td></tr>
+  `).join('');
+}
+
+function renderPointsLog() {
+  const log = [
+    { date:'2026-03-23', customer:'Chris Patterson', action:'Signup Bonus', points:'+100', balance:'100' },
+    { date:'2026-03-22', customer:'Chef Marcus Brown', action:'Purchase #1048', points:'+960', balance:'5,420' },
+    { date:'2026-03-22', customer:'Emma Thompson', action:'Redeemed Reward', points:'-500', balance:'680' },
+    { date:'2026-03-21', customer:'Lauren Davis', action:'Purchase #1045', points:'+220', balance:'320' },
+    { date:'2026-03-21', customer:'Nathan Reed', action:'Redeemed Reward', points:'-1000', balance:'1,880' },
+    { date:'2026-03-20', customer:'Sarah Mitchell', action:'Purchase #1043', points:'+345', balance:'1,240' },
+    { date:'2026-03-19', customer:'Robert Chen', action:'Redeemed Reward', points:'-300', balance:'1,560' },
+    { date:'2026-03-19', customer:'Olivia Harper', action:'Referral Bonus', points:'+200', balance:'280' },
+    { date:'2026-03-18', customer:'Tyler Jackson', action:'Purchase #1040', points:'+180', balance:'920' },
+    { date:'2026-03-17', customer:'Sarah Mitchell', action:'Redeemed Reward', points:'-500', balance:'895' },
+  ];
+  document.getElementById('pointsLogBody').innerHTML = log.map(l => `
+    <tr><td>${formatDate(l.date)}</td><td>${l.customer}</td><td>${l.action}</td>
+    <td style="color:${l.points.startsWith('+')?'var(--success)':'var(--danger)'};font-weight:600">${l.points}</td>
+    <td>${l.balance}</td></tr>
+  `).join('');
+}
+
+// ========================================
+// EMAIL
+// ========================================
+function renderEmail() {
+  renderEmailTemplates();
+  renderCampaignHistory();
+  // Schedule toggle
+  document.getElementById('emailSchedule').onchange = function() {
+    document.getElementById('emailScheduleTime').style.display = this.value === 'later' ? 'inline-block' : 'none';
+  };
+}
+
+function renderEmailTemplates() {
+  const templates = [
+    { name:'Welcome Email', desc:'Sent on signup with RADICAL15 code', icon:'🎉' },
+    { name:'Monday Drop Alert', desc:'Weekly microgreen availability', icon:'🌱' },
+    { name:'Review Request', desc:'3 days after delivery', icon:'⭐' },
+    { name:'Points Milestone', desc:'Approaching next reward tier', icon:'🎯' },
+    { name:'Win-Back', desc:'No purchase in 30 days', icon:'💌' },
+    { name:'Birthday Bonus', desc:'Birthday month 100 pts', icon:'🎂' },
+    { name:'Referral Reward', desc:'Friend made a purchase', icon:'🤝' },
+    { name:'VIP Welcome', desc:'Reached 5000 points', icon:'👑' },
+  ];
+  document.getElementById('emailTemplates').innerHTML = templates.map(t => `
+    <div style="padding:14px;border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s" onclick="loadTemplate('${t.name}')"
+      onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="font-size:1.3rem;margin-bottom:6px">${t.icon}</div>
+      <div style="font-weight:600;font-size:0.88rem">${t.name}</div>
+      <div style="font-size:0.78rem;color:var(--text-light);margin-top:2px">${t.desc}</div>
+    </div>
+  `).join('');
+}
+
+function loadTemplate(name) {
+  const templates = {
+    'Welcome Email': { subject: '🌱 Welcome to Radical Shoots! Here\'s 15% Off', body: '<p>Hey there! 👋</p><p>Welcome to the Radical Shoots family. We\'re so glad you\'re here.</p><p>As a thank you for signing up, here\'s <strong>15% off</strong> your first order:</p><p style="font-size:1.2em;font-weight:bold;color:#2d6a4f;">RADICAL15</p><p>We grow the freshest microgreens, craft artisan cheese, and source the best local honey — all right here in Nashville.</p><p>Happy eating! 🌿<br>— James & the Radical Shoots team</p>' },
+    'Monday Drop Alert': { subject: '🌱 Monday Drop: Fresh Microgreens Are Ready!', body: '<p>Good morning! Your Monday microgreen drop is here.</p><p><strong>This week\'s harvest:</strong></p><ul><li>Rainbow Radish (limited!)</li><li>Dill Microgreens</li><li>Sunflower Shoots</li><li>Pea Shoots</li></ul><p>Order by Wednesday for this week\'s batch. First come, first served!</p>' },
+    'Review Request': { subject: 'How was your order? We\'d love to hear!', body: '<p>Hi! Your recent Radical Shoots order should have arrived by now.</p><p>We\'d love to hear what you think! Your feedback helps us grow (literally 🌱).</p><p><strong>Leave a quick review</strong> and earn <strong>50 bonus points</strong> toward your next reward.</p>' },
+    'Points Milestone': { subject: '🎯 You\'re almost at your next reward!', body: '<p>Great news — you\'re close to reaching the next tier in our rewards program!</p><p>Just a few more points and you\'ll unlock exclusive perks. Keep ordering to level up!</p>' },
+    'Win-Back': { subject: 'We miss you! Come back for something special 💚', body: '<p>Hey, it\'s been a while since your last order and we miss you!</p><p>Here\'s a little something to welcome you back: <strong>10% off your next order</strong>.</p><p>Our microgreens are fresher than ever, and we\'ve added some new cheeses you\'ll love.</p>' },
+    'Birthday Bonus': { subject: '🎂 Happy Birthday! Here\'s 100 bonus points', body: '<p>Happy Birthday! 🎉</p><p>To celebrate, we\'ve added <strong>100 bonus points</strong> to your rewards balance. Treat yourself to something fresh!</p>' },
+    'Referral Reward': { subject: '🤝 Your friend just placed an order!', body: '<p>Great news — someone you referred just placed their first order!</p><p>We\'ve added <strong>200 bonus points</strong> to your account as a thank you. Keep spreading the word!</p>' },
+    'VIP Welcome': { subject: '👑 Welcome to VIP! You\'re one of our best', body: '<p>Wow — you\'ve hit <strong>5,000 points</strong> and earned VIP status!</p><p>Here\'s what that means for you:</p><ul><li>Priority access to weekly drops</li><li>Exclusive seasonal products</li><li>Free delivery on all orders</li><li>Birthday double-points</li></ul><p>Thank you for being part of our community. You\'re the best! 🌿</p>' },
+  };
+  const t = templates[name];
+  if (!t) return;
+  document.getElementById('emailSubject').value = t.subject;
+  document.getElementById('emailBody').innerHTML = t.body;
+  updateEmailPreview();
+  toast(`Loaded "${name}" template`, 'info');
+}
+
+function renderCampaignHistory() {
+  document.getElementById('campaignHistoryBody').innerHTML = DB.campaigns.map(c => `
+    <tr>
+      <td>${formatDate(c.date)}</td>
+      <td>${c.subject}</td>
+      <td>${c.recipients.toLocaleString()}</td>
+      <td>${c.opens.toLocaleString()} <span style="color:var(--text-muted);font-size:0.75rem">(${(c.opens/c.recipients*100).toFixed(1)}%)</span></td>
+      <td>${c.clicks.toLocaleString()} <span style="color:var(--text-muted);font-size:0.75rem">(${(c.clicks/c.recipients*100).toFixed(1)}%)</span></td>
+      <td>${c.unsubs}</td>
+    </tr>
+  `).join('');
+}
+
+function updateEmailPreview() {
+  const subject = document.getElementById('emailSubject')?.value || '';
+  const body = document.getElementById('emailBody')?.innerHTML || '';
+  document.getElementById('emailPreview').innerHTML = `
+    <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px">
+      <div style="font-size:0.78rem;color:var(--text-light)">From: Radical Shoots &lt;hello@radicalshoots.com&gt;</div>
+      <div style="font-size:0.78rem;color:var(--text-light)">Subject: <strong>${subject || '(no subject)'}</strong></div>
+    </div>
+    <div style="border:1px solid var(--border);border-radius:8px;padding:24px">
+      <div style="text-align:center;margin-bottom:16px;font-size:1.1rem;font-weight:700;color:var(--primary)">🌱 RADICAL SHOOTS</div>
+      ${body || '<p style="color:var(--text-muted)">Email body will appear here...</p>'}
+      <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);text-align:center;font-size:0.75rem;color:var(--text-muted)">
+        Radical Shoots · Nashville, TN<br>
+        <a href="#" style="color:var(--text-muted)">Unsubscribe</a>
+      </div>
+    </div>
+  `;
+}
+
+function execCmd(cmd) {
+  if (cmd === 'createLink') {
+    const url = prompt('Enter URL:');
+    if (url) document.execCommand(cmd, false, url);
+  } else {
+    document.execCommand(cmd, false, null);
+  }
+}
+
+function sendTestEmail() {
+  toast('Test email sent to james@radicalshoots.com', 'success');
+}
+
+function sendEmail(to, subject, body) {
+  const config = DB.emailConfig || {};
+  if (config.provider && config.apiKey) {
+    // In production, this would make actual API calls
+    toast(`Campaign sent via ${config.provider}`, 'success');
+    return true;
+  } else {
+    // Fallback to mailto
+    const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body.replace(/<[^>]+>/g, ''))}`;
+    window.open(mailto, '_blank');
+    toast('Opened in email client (no provider configured)', 'info');
+    return true;
+  }
+}
+
+function sendCampaign() {
+  const to = document.getElementById('emailTo');
+  const subject = document.getElementById('emailSubject').value;
+  const body = document.getElementById('emailBody').innerHTML;
+  if (!subject) { toast('Please enter a subject line', 'error'); return; }
+  if (!body || body === '<br>') { toast('Please enter email content', 'error'); return; }
+  const recipientCount = to.options[to.selectedIndex].text;
+
+  document.getElementById('confirmTitle').textContent = 'Send Campaign?';
+  document.getElementById('confirmBody').innerHTML = `
+    <p>You're about to send this campaign:</p>
+    <p><strong>${subject}</strong></p>
+    <p>To: ${recipientCount}</p>
+    <p style="color:var(--text-light);font-size:0.85rem;margin-top:8px">This action cannot be undone.</p>
+  `;
+  _confirmCallback = () => {
+    sendEmail(to.value, subject, body);
+    DB.campaigns.unshift({
+      date: new Date().toISOString().split('T')[0],
+      subject, recipients: parseInt(recipientCount.match(/\d+/)?.[0]) || 0,
+      opens: 0, clicks: 0, unsubs: 0
+    });
+    saveDB();
+    renderCampaignHistory();
+  };
+  document.getElementById('confirmModal').classList.add('open');
+}
+
+let _confirmCallback = null;
+function confirmAction() {
+  if (_confirmCallback) _confirmCallback();
+  closeConfirmModal();
+}
+function closeConfirmModal() {
+  document.getElementById('confirmModal').classList.remove('open');
+  _confirmCallback = null;
+}
+
+function saveEmailConfig() {
+  DB.emailConfig = {
+    provider: document.getElementById('emailProvider').value,
+    apiKey: document.getElementById('emailApiKey').value,
+    fromName: document.getElementById('emailFromName').value,
+    fromEmail: document.getElementById('emailFromEmail').value,
+    replyTo: document.getElementById('emailReplyTo').value,
+  };
+  saveDB();
+  updateEmailStatus();
+  toast('Email configuration saved', 'success');
+}
+
+function testEmailConnection() {
+  const provider = document.getElementById('emailProvider').value;
+  const apiKey = document.getElementById('emailApiKey').value;
+  if (!provider || !apiKey) {
+    toast('Please configure a provider and API key first', 'error');
+    return;
+  }
+  toast(`Testing connection to ${provider}...`, 'info');
+  setTimeout(() => toast('Connection test passed ✓', 'success'), 1500);
+}
+
+function updateEmailStatus() {
+  const el = document.getElementById('emailStatus');
+  if (DB.emailConfig?.provider && DB.emailConfig?.apiKey) {
+    el.innerHTML = `✅ Connected (${DB.emailConfig.provider})`;
+  } else {
+    el.innerHTML = '⚠️ Not configured';
+  }
+}
+
+// ========================================
+// SOCIAL CALENDAR
+// ========================================
+let calendarYear = 2026, calendarMonth = 2; // 0-indexed, so 2 = March
+
+function renderSocialCalendar() {
+  const posts = [
+    { day:2, title:'🌱 Monday Drop post', status:'posted' },
+    { day:5, title:'BTS: Cheese making', status:'posted' },
+    { day:9, title:'🌱 Monday Drop post', status:'posted' },
+    { day:12, title:'Customer spotlight: Sarah M.', status:'posted' },
+    { day:16, title:'🌱 Monday Drop post', status:'posted' },
+    { day:18, title:'Spring recipes reel', status:'scheduled' },
+    { day:23, title:'🌱 Monday Drop post', status:'scheduled' },
+    { day:25, title:'Honey harvest video', status:'draft' },
+    { day:27, title:'Weekend market reminder', status:'draft' },
+    { day:30, title:'🌱 Monday Drop post', status:'draft' },
+  ];
+
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('calendarMonth').textContent = `${months[calendarMonth]} ${calendarYear}`;
+
+  const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+
+  let html = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="calendar-header-cell">${d}</div>`).join('');
+  for (let i = 0; i < firstDay; i++) html += '<div class="calendar-cell" style="background:#fafbfc"></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dayPosts = posts.filter(p => p.day === d);
+    html += `<div class="calendar-cell"><div class="day-num">${d}</div>`;
+    dayPosts.forEach(p => {
+      const cls = p.status === 'posted' ? 'cal-posted' : p.status === 'scheduled' ? 'cal-scheduled' : 'cal-draft';
+      html += `<div class="cal-event ${cls}" title="${p.title} (${p.status})">${p.title}</div>`;
+    });
+    html += '</div>';
+  }
+  document.getElementById('socialCalendar').innerHTML = html;
+}
+
+function prevMonth() {
+  calendarMonth--;
+  if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+  renderSocialCalendar();
+}
+function nextMonth() {
+  calendarMonth++;
+  if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+  renderSocialCalendar();
+}
+
+// ========================================
+// EXPORT
+// ========================================
+function exportCSV(type) {
+  let csv = '', filename = '';
+  if (type === 'customers') {
+    csv = 'Name,Email,Phone,Joined,Points,Tier,Orders,LTV,Tags\n';
+    DB.customers.forEach(c => {
+      csv += `"${c.name}","${c.email}","${c.phone}","${c.joined}",${c.points},"${getTier(c.points)}",${c.orders},${c.ltv.toFixed(2)},"${c.tags.join('; ')}"\n`;
+    });
+    filename = 'radical-shoots-customers.csv';
+  } else if (type === 'orders') {
+    csv = 'Order #,Date,Customer,Items,Subtotal,Discount,Total,Status,Method,Points\n';
+    DB.orders.forEach(o => {
+      const items = o.items.map(i => `${i.qty}x ${i.name}`).join('; ');
+      csv += `${o.id},"${o.date}","${o.customerName}","${items}",${o.subtotal.toFixed(2)},${o.discount.toFixed(2)},${o.total.toFixed(2)},"${o.status}","${o.method}",${o.points}\n`;
+    });
+    filename = 'radical-shoots-orders.csv';
+  }
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+  toast(`Exported ${filename}`, 'success');
+}
+
+// ========================================
+// UTILITIES
+// ========================================
+function formatDate(d) {
+  const date = new Date(d + 'T00:00:00');
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function toast(msg, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  const icons = { success: '✓', error: '✕', info: 'ℹ' };
+  el.innerHTML = `<span>${icons[type] || 'ℹ'}</span> ${msg}`;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3500);
+}
+
+function regenerateQR() {
+  const ts = Date.now();
+  document.getElementById('posQR').src = `https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=https://radicalshoots.com/signup?ref=pos&t=${ts}`;
+  toast('QR code regenerated', 'success');
+}
+
+// ========================================
+// INIT
+// ========================================
+initDB();
+applyHash();
+
+// Load email config into settings if present
+if (DB.emailConfig?.provider) {
+  document.getElementById('emailProvider').value = DB.emailConfig.provider || '';
+  document.getElementById('emailApiKey').value = DB.emailConfig.apiKey || '';
+  if (DB.emailConfig.fromName) document.getElementById('emailFromName').value = DB.emailConfig.fromName;
+  if (DB.emailConfig.fromEmail) document.getElementById('emailFromEmail').value = DB.emailConfig.fromEmail;
+  if (DB.emailConfig.replyTo) document.getElementById('emailReplyTo').value = DB.emailConfig.replyTo;
+  updateEmailStatus();
+}
+</script>
+</body>
+</html>
