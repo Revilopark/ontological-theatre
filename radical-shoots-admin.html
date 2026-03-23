@@ -742,7 +742,7 @@ textarea.input { resize: vertical; min-height: 80px; }
 
 <!-- ============ SOCIAL VIEW ============ -->
 <div class="view" id="view-social">
-  <div class="page-header"><h1>Social Content Calendar</h1></div>
+  <div class="page-header"><h1>Social Content Calendar</h1><a href="https://revilopark.github.io/ontological-theatre/radical-shoots-social.html" target="_blank" class="btn btn-sm btn-primary" style="margin-left:auto">Open Full Social Pack →</a></div>
   <div class="page-content">
     <div class="stat-cards" style="margin-bottom:24px">
       <div class="stat-card"><div class="label">Total Posts (This Month)</div><div class="value">10</div></div>
@@ -750,7 +750,9 @@ textarea.input { resize: vertical; min-height: 80px; }
       <div class="stat-card"><div class="label">Total Likes</div><div class="value">1,247</div></div>
       <div class="stat-card"><div class="label">Total Comments</div><div class="value">186</div></div>
     </div>
-    <div class="chart-container">
+
+    <!-- Calendar -->
+    <div class="chart-container" style="margin-bottom:24px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <h3 id="calendarMonth">March 2026</h3>
         <div style="display:flex;gap:8px">
@@ -759,6 +761,17 @@ textarea.input { resize: vertical; min-height: 80px; }
         </div>
       </div>
       <div class="calendar-grid" id="socialCalendar"></div>
+    </div>
+
+    <!-- Post Cards Grid -->
+    <h3 style="margin-bottom:16px">📸 Content Pack — 10 Instagram Posts</h3>
+    <div id="socialPostsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px"></div>
+
+    <!-- Post Detail Modal -->
+    <div id="postModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:1000;overflow-y:auto;padding:20px" onclick="if(event.target===this)closePostModal()">
+      <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <div id="postModalContent"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1769,22 +1782,82 @@ function updateEmailStatus() {
 // ========================================
 // SOCIAL CALENDAR
 // ========================================
-let calendarYear = 2026, calendarMonth = 2; // 0-indexed, so 2 = March
+let calendarYear = 2026, calendarMonth = 2;
+
+const SOCIAL_POSTS = [
+  {
+    id:1, day:2, title:'The Drop', emoji:'🌱', status:'posted', type:'Feed',
+    image:'linear-gradient(135deg,#c0392b 0%,#c0392b 25%,#e91e8c 25%,#e91e8c 50%,#4caf50 50%,#4caf50 75%,#66bb6a 75%)',
+    caption:`MONDAY DROP 🌱\n\nThis week's fresh harvest:\n→ Amaranth (ruby red, antioxidant-packed)\n→ Rainbow Radish (pink + purple + white)\n→ Dill (citrusy, perfect on salmon)\n→ Leek (umami bomb for everything)\n\nCut clamshells & living squares available.\nPre-order now → link in bio\n\n📍 Nashville pickup`,
+    hashtags:'#microgreens #nashvillefood #radicalshoots #mondaydrop #freshgreens #farmtotable #nashvillefoodies #microgreenfarm #eatlocal #sustainablefarming #nashvilletn #regenerativefarming #healthyeating #plantbased #growlocal',
+    stats:{impressions:1240,likes:187,comments:23,saves:41}
+  },
+  {
+    id:2, day:5, title:'Meet the Cheese', emoji:'🧀', status:'posted', type:'Carousel',
+    image:'linear-gradient(135deg,#8d6e63,#a0522d)',
+    caption:`Meet our raw, unpasteurized artisan cheese 🧀\n\nMade from our own herd of grass-fed cows:\n🟡 Cheddar — classic, sharp, perfect\n🌿 Garlic Herb — garden fresh\n🐑 Lamb Bush — manchego-style SHEEP milk\n🟠 Gouda — smooth & creamy\n🌶️ Pepper Jack — jalapeño heat\n🔥 Chipotle Cheddar — smoky & bold\n\nAll $8 | All handcrafted | All incredible\n\nAvailable for pickup in Nashville 📍`,
+    hashtags:'#artisancheese #rawcheese #unpasteurized #nashvillecheese #grassfed #farmstead #cheesemaker #handcrafted #radicalshoots #localcheese #nashvillefood #fromthefarm #realfood #cheeselover #tennessee',
+    stats:{impressions:980,likes:156,comments:31,saves:67}
+  },
+  {
+    id:3, day:9, title:'Why Microgreens?', emoji:'📊', status:'posted', type:'Feed',
+    image:'linear-gradient(135deg,#2d6a4f,#40916c)',
+    caption:`Why microgreens? 🤔\n\nTiny plants. MASSIVE nutrition:\n✅ Up to 40x more vitamins than full-grown veggies\n✅ Harvested at peak nutrition (7-14 days)\n✅ Grow year-round — no season limits\n✅ No pesticides, no GMOs, just clean food\n\nOur top picks for beginners:\n🌿 Dill — throw it on everything\n💗 China Rose Radish — peppery + gorgeous\n🔴 Amaranth — the prettiest thing on your plate\n\nTry a Living Square ($8.50) — it keeps growing on your counter 🌱`,
+    hashtags:'#microgreens #nutrition #healthyfood #nashvillefood #radicalshoots #superfoods #plantnutrition #eatyourgreens #microgreen #growathome #sustainablefood #nashville #healthylifestyle #farmfresh #nutrientdense',
+    stats:{impressions:1450,likes:203,comments:18,saves:89}
+  },
+  {
+    id:4, day:12, title:'Honey Heritage', emoji:'🍯', status:'posted', type:'Feed',
+    image:'linear-gradient(135deg,#d4a853,#c17817)',
+    caption:`Since 1983, Strange Honey Farm has kept bees in the Cherokee National Forest 🐝🏔️\n\nThree varieties, one standard: 100% pure, raw, unfiltered.\n\n🍯 Sourwood — rare Appalachian favorite, smooth & light\n🍯 Tennessee Mountain — balanced golden sweetness\n🍯 Dark Wildflower — bold, caramel-like, complex\n\nNever heated. Never filtered. Never fed white sugar.\n\nStarting at $5.25 for a 3oz hex jar.\nBulk & wholesale available.`,
+    hashtags:'#rawhoney #localhoney #tennesseehoney #cherokee #sourwoodhoney #wildflowerhoney #beekeeping #honeybees #nashvillefood #radicalshoots #artisanhoney #purehoney #rawunfiltered #appalachian #strangehoneyfarm',
+    stats:{impressions:890,likes:134,comments:22,saves:45}
+  },
+  {
+    id:5, day:16, title:"Chef's Table", emoji:'🍽️', status:'posted', type:'Feed',
+    image:'linear-gradient(135deg,#1a1a2e,#2d3436)',
+    caption:`We don't grow for grocery stores.\nWe grow for the people who make Nashville taste incredible.\n\n🍽️ Weekly standing orders\n🌱 Custom growing (tell us what you need, we'll plant it)\n🚚 Tuesday & Friday delivery\n📋 Weekly availability list\n\nCurrently serving Nashville's best kitchens.\n\nChefs & restaurants: DM us or email wholesale@radicalshoots.com`,
+    hashtags:'#farmtotable #nashvillechefs #chefsofinstagram #microgreens #nashvillerestaurants #finedining #localfood #cheflife #radicalshoots #culinaryarts #plating #foodart #sustainablechef #nashvillefoodie #farmfresh',
+    stats:{impressions:720,likes:98,comments:14,saves:33}
+  },
+  {
+    id:6, day:19, title:'Living Square', emoji:'🌱', status:'scheduled', type:'Feed',
+    image:'linear-gradient(135deg,#81c784,#4caf50)',
+    caption:`The Living Square 🌱\n\nIt's not a product — it's a tiny farm for your kitchen counter.\n\n→ Dense microgreens growing in a 8x6 tray\n→ Cut what you need, they keep growing\n→ Lasts 2-3 weeks on your counter\n→ $8.50 each (yes, really)\n\nAvailable in: Amaranth, Rainbow Radish, Daikon, China Rose, Leek, Dill, Chervil\n\nThe freshest food you'll ever eat — because you harvest it yourself.\n\nOrder → link in bio`,
+    hashtags:'#microgreens #livingsquare #kitchengarden #growathome #radicalshoots #freshfood #nashville #urbanfarming #microgreen #countertopgarden #healthyliving #eatfresh #growlocal #indoorgarden #freshherbs',
+    stats:{impressions:0,likes:0,comments:0,saves:0}
+  },
+  {
+    id:7, day:21, title:'Maple Trio', emoji:'🍁', status:'scheduled', type:'Feed',
+    image:'linear-gradient(135deg,#a0522d,#6d4c41)',
+    caption:`The gift they actually want 🍁\n\nOur Sampler Syrup Gift Box: $25\n\nThree locally-produced maple syrups:\n🍁 100% Pure — classic, golden perfection\n🍎 Maple Cider — apple meets maple\n🌶️ Chili-Infused — sweet heat that changes everything\n\nPut it on pancakes, in cocktails, on cheese (YES), or straight off a spoon.\n\nPerfect for:\n→ Hosts & hostesses\n→ Food lovers\n→ "Sorry I was late" gifts\n→ Yourself (we won't tell)`,
+    hashtags:'#maplesyrup #nashvillegifts #giftbox #localfood #radicalshoots #foodiegift #artisanfood #tennesseemade #spicysyrup #maplecider #gourmetfood #nashville #handcrafted #supportlocal #foodlover',
+    stats:{impressions:0,likes:0,comments:0,saves:0}
+  },
+  {
+    id:8, day:24, title:"Lion's Mane", emoji:'🍄', status:'draft', type:'Feed',
+    image:'linear-gradient(135deg,#424242,#212121)',
+    caption:`Lion's Mane 🍄\n\nThe mushroom that tastes like crab and feeds your brain.\n\n→ Umami-rich, meaty texture\n→ Subtle seafood-like flavor\n→ Sauté, grill, or add to soups\n→ Research shows neuroprotective potential\n\nGrown to order. 2-week lead time.\n$9 for 8oz of fresh, sustainably grown Lion's Mane.\n\nYour nervous system will thank you.\n\nOrder → link in bio 🧠`,
+    hashtags:'#lionsmane #gourmetmushrooms #mushrooms #brainfood #nashvillefood #radicalshoots #functionalmushrooms #mushroomforaging #umami #healthyfood #plantbased #adaptogens #nashville #sustainablefood #mushroomlover',
+    stats:{impressions:0,likes:0,comments:0,saves:0}
+  },
+  {
+    id:9, day:27, title:'The Radical Difference', emoji:'⚔️', status:'draft', type:'Feed',
+    image:'linear-gradient(90deg,#9e9e9e 0%,#9e9e9e 50%,#2d6a4f 50%)',
+    caption:`There's fresh. Then there's radical. 🌱\n\nWhat you get from us:\n✅ Harvested the morning of delivery\n✅ Grown in pesticide-free environments\n✅ No GMOs, no shortcuts\n✅ 2 miles from our farm to your plate\n✅ Cheese from our own grass-fed herd\n✅ Honey from bees in national forests\n\nWhat you get from the grocery store:\n❌ Picked 2 weeks ago\n❌ Shipped 1,500 miles\n❌ Sprayed with who-knows-what\n❌ Sitting in plastic since Tuesday\n\nIntegrity & flavor. That's the radical difference.`,
+    hashtags:'#eatlocal #farmtotable #radicalshoots #nashvillefood #sustainablefarming #regenerativeagriculture #knowyourfarmer #localfood #realfood #organicfood #healthyeating #nashville #farmfresh #supportlocal #foodintegrity',
+    stats:{impressions:0,likes:0,comments:0,saves:0}
+  },
+  {
+    id:10, day:30, title:'Community', emoji:'💚', status:'draft', type:'Feed',
+    image:'linear-gradient(135deg,#2d6a4f 0%,#d4a853 100%)',
+    caption:`Every Monday we show up.\n\nFresh micro drops.\nHandcrafted cheese.\nRaw honey from the mountains.\nConversations about food that matters.\n\nNashville — you've made this something real.\n\nThank you to every chef, every home cook, every person who's said "I'll try the amaranth."\n\nWe grow because you care.\nSee you at the market 💚\n\n📍 Nashville, TN`,
+    hashtags:'#nashvillefarmersmarket #radicalshoots #nashville #communityfarming #eatlocal #farmersmarket #nashvillefood #supportlocal #smallfarm #localfood #farmlife #nashvilletn #growlocal #communityovercompetition #realfood',
+    stats:{impressions:0,likes:0,comments:0,saves:0}
+  }
+];
 
 function renderSocialCalendar() {
-  const posts = [
-    { day:2, title:'🌱 Monday Drop post', status:'posted' },
-    { day:5, title:'BTS: Cheese making', status:'posted' },
-    { day:9, title:'🌱 Monday Drop post', status:'posted' },
-    { day:12, title:'Customer spotlight: Sarah M.', status:'posted' },
-    { day:16, title:'🌱 Monday Drop post', status:'posted' },
-    { day:18, title:'Spring recipes reel', status:'scheduled' },
-    { day:23, title:'🌱 Monday Drop post', status:'scheduled' },
-    { day:25, title:'Honey harvest video', status:'draft' },
-    { day:27, title:'Weekend market reminder', status:'draft' },
-    { day:30, title:'🌱 Monday Drop post', status:'draft' },
-  ];
-
   const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   document.getElementById('calendarMonth').textContent = `${months[calendarMonth]} ${calendarYear}`;
 
@@ -1794,15 +1867,104 @@ function renderSocialCalendar() {
   let html = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="calendar-header-cell">${d}</div>`).join('');
   for (let i = 0; i < firstDay; i++) html += '<div class="calendar-cell" style="background:#fafbfc"></div>';
   for (let d = 1; d <= daysInMonth; d++) {
-    const dayPosts = posts.filter(p => p.day === d);
+    const dayPosts = SOCIAL_POSTS.filter(p => p.day === d);
     html += `<div class="calendar-cell"><div class="day-num">${d}</div>`;
     dayPosts.forEach(p => {
       const cls = p.status === 'posted' ? 'cal-posted' : p.status === 'scheduled' ? 'cal-scheduled' : 'cal-draft';
-      html += `<div class="cal-event ${cls}" title="${p.title} (${p.status})">${p.title}</div>`;
+      html += `<div class="cal-event ${cls}" style="cursor:pointer;display:flex;align-items:center;gap:4px" onclick="openPostModal(${p.id})" title="${p.title} (${p.status})">
+        <span style="flex-shrink:0">${p.emoji}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.title}</span>
+      </div>`;
     });
     html += '</div>';
   }
   document.getElementById('socialCalendar').innerHTML = html;
+
+  // Render post cards grid
+  renderPostCards();
+}
+
+function renderPostCards() {
+  const grid = document.getElementById('socialPostsGrid');
+  if (!grid) return;
+  grid.innerHTML = SOCIAL_POSTS.map(p => {
+    const statusColor = p.status === 'posted' ? '#2d6a4f' : p.status === 'scheduled' ? '#d4a853' : '#9e9e9e';
+    const statusLabel = p.status.charAt(0).toUpperCase() + p.status.slice(1);
+    const preview = p.caption.split('\n').slice(0,3).join(' ').substring(0,80) + '…';
+    return `
+    <div style="background:#fff;border-radius:12px;overflow:hidden;border:1px solid rgba(0,0,0,0.06);box-shadow:0 2px 8px rgba(0,0,0,0.04);cursor:pointer;transition:all 0.2s" onclick="openPostModal(${p.id})" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.04)'">
+      <div style="aspect-ratio:1;background:${p.image};display:flex;align-items:center;justify-content:center;position:relative">
+        <span style="font-size:48px;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.3))">${p.emoji}</span>
+        <span style="position:absolute;top:8px;right:8px;background:${statusColor};color:#fff;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px">${statusLabel}</span>
+        <span style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.5);color:#fff;font-size:10px;padding:3px 8px;border-radius:20px">${p.type}</span>
+        <span style="position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:8px">Post ${p.id}</span>
+      </div>
+      <div style="padding:14px">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:4px">${p.emoji} ${p.title}</h4>
+        <p style="font-size:12px;color:#777;line-height:1.4;margin-bottom:8px">${preview}</p>
+        <div style="display:flex;gap:12px;font-size:11px;color:#999">
+          ${p.stats.impressions > 0 ? `<span>👁 ${p.stats.impressions.toLocaleString()}</span><span>❤️ ${p.stats.likes}</span><span>💬 ${p.stats.comments}</span><span>🔖 ${p.stats.saves}</span>` : '<span style="color:#ccc">No stats yet</span>'}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openPostModal(id) {
+  const p = SOCIAL_POSTS.find(x => x.id === id);
+  if (!p) return;
+  const statusColor = p.status === 'posted' ? '#2d6a4f' : p.status === 'scheduled' ? '#d4a853' : '#9e9e9e';
+  const captionHtml = p.caption.replace(/\n/g,'<br>');
+  document.getElementById('postModalContent').innerHTML = `
+    <div style="aspect-ratio:1;background:${p.image};display:flex;align-items:center;justify-content:center;position:relative">
+      <span style="font-size:72px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.3))">${p.emoji}</span>
+      <span style="position:absolute;top:12px;right:12px;background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;text-transform:uppercase">${p.status}</span>
+      <span style="position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.5);color:#fff;font-size:11px;padding:4px 10px;border-radius:20px">${p.type} · Post ${p.id}/10</span>
+      <button onclick="closePostModal()" style="position:absolute;top:12px;right:auto;left:auto;right:12px;top:auto;bottom:12px;background:rgba(0,0,0,0.5);color:#fff;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">✕</button>
+    </div>
+    <div style="padding:24px">
+      <h3 style="font-size:18px;margin-bottom:4px">${p.emoji} ${p.title}</h3>
+      <p style="font-size:12px;color:#999;margin-bottom:16px">Scheduled: March ${p.day}, 2026 · ${p.type} Post</p>
+      ${p.stats.impressions > 0 ? `
+      <div style="display:flex;gap:16px;margin-bottom:16px;padding:12px;background:#f8f9fa;border-radius:8px">
+        <div style="text-align:center"><div style="font-weight:700;font-size:16px">${p.stats.impressions.toLocaleString()}</div><div style="font-size:10px;color:#999">Impressions</div></div>
+        <div style="text-align:center"><div style="font-weight:700;font-size:16px">${p.stats.likes}</div><div style="font-size:10px;color:#999">Likes</div></div>
+        <div style="text-align:center"><div style="font-weight:700;font-size:16px">${p.stats.comments}</div><div style="font-size:10px;color:#999">Comments</div></div>
+        <div style="text-align:center"><div style="font-weight:700;font-size:16px">${p.stats.saves}</div><div style="font-size:10px;color:#999">Saves</div></div>
+      </div>` : ''}
+      <div style="margin-bottom:16px">
+        <label style="font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:1px">Caption</label>
+        <div style="margin-top:6px;padding:14px;background:#f8f9fa;border-radius:8px;font-size:13px;line-height:1.7;white-space:pre-wrap;max-height:250px;overflow-y:auto">${captionHtml}</div>
+        <button onclick="copyText(SOCIAL_POSTS[${p.id-1}].caption)" style="margin-top:6px;background:none;border:1px solid #ddd;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;color:#555">📋 Copy Caption</button>
+      </div>
+      <div style="margin-bottom:16px">
+        <label style="font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:1px">Hashtags</label>
+        <div style="margin-top:6px;padding:14px;background:#f0f7f4;border-radius:8px;font-size:12px;line-height:1.8;color:#2d6a4f">${p.hashtags}</div>
+        <button onclick="copyText(SOCIAL_POSTS[${p.id-1}].hashtags)" style="margin-top:6px;background:none;border:1px solid #ddd;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;color:#555">📋 Copy Hashtags</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:20px">
+        <select style="padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;flex:1" onchange="updatePostStatus(${p.id},this.value)">
+          <option value="draft" ${p.status==='draft'?'selected':''}>📝 Draft</option>
+          <option value="scheduled" ${p.status==='scheduled'?'selected':''}>📅 Scheduled</option>
+          <option value="posted" ${p.status==='posted'?'selected':''}>✅ Posted</option>
+        </select>
+      </div>
+    </div>`;
+  document.getElementById('postModal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closePostModal() {
+  document.getElementById('postModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!'));
+}
+
+function updatePostStatus(id, status) {
+  const p = SOCIAL_POSTS.find(x => x.id === id);
+  if (p) { p.status = status; renderSocialCalendar(); showToast(`Post "${p.title}" → ${status}`); }
 }
 
 function prevMonth() {
