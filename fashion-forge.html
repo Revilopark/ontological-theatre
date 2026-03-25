@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fashion Forge — Pattern & Tech Pack Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ink:#08080f;--card:#0f0f1e;--card2:#161626;--border:rgba(255,255,255,0.07);
+  --brass:#c9a84c;--brass2:#e8c97a;--fire:#e94560;--teal:#16a596;
+  --white:#f0eeff;--muted:#6a6a8e;--cloud:#b0b0c8;
+  --serif:'Instrument Serif',Georgia,serif;
+  --sans:'DM Sans',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --radius:12px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--cloud);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
+
+/* NOISE */
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  opacity:.5}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(8,8,15,0.92);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(201,168,76,0.15);padding:0 2rem;height:60px;
+  display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--serif);font-size:1.3rem;color:var(--white);display:flex;align-items:center;gap:.75rem}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--brass),var(--brass2));
+  border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1rem}
+.logo em{font-style:italic;color:var(--brass)}
+.nav-tabs{display:flex;gap:4px}
+.nav-tab{padding:.42rem 1rem;border-radius:6px;font-size:.78rem;font-weight:500;cursor:pointer;
+  border:1px solid transparent;color:var(--muted);transition:all .2s;background:none}
+.nav-tab.active{background:rgba(201,168,76,0.12);border-color:rgba(201,168,76,0.3);color:var(--brass)}
+.nav-tab:hover:not(.active){color:var(--white);background:rgba(255,255,255,0.04)}
+.status-pill{font-size:.7rem;padding:.25rem .75rem;border-radius:20px;
+  background:rgba(22,165,150,0.12);border:1px solid rgba(22,165,150,0.25);color:var(--teal);font-family:var(--mono)}
+
+/* LAYOUT */
+.app{display:grid;grid-template-columns:360px 1fr;height:calc(100vh - 60px);overflow:hidden}
+@media(max-width:900px){.app{grid-template-columns:1fr;height:auto;overflow:visible}}
+
+/* SIDEBAR */
+.sidebar{border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
+.sidebar::-webkit-scrollbar{width:4px}.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}
+
+/* PANEL */
+.panel-header{padding:20px 20px 12px;border-bottom:1px solid var(--border)}
+.panel-title{font-family:var(--serif);font-size:1.1rem;color:var(--white);margin-bottom:2px}
+.panel-sub{font-size:.72rem;color:var(--muted)}
+
+/* FORM */
+.form-section{padding:16px 20px;border-bottom:1px solid var(--border)}
+.form-section:last-child{border-bottom:none}
+.section-label{font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--brass);margin-bottom:10px;display:flex;align-items:center;gap:.4rem}
+.section-label::before{content:'';width:14px;height:1px;background:var(--brass)}
+.field{margin-bottom:10px}
+.field label{font-size:.72rem;color:var(--muted);display:block;margin-bottom:4px;font-weight:500}
+.field input,.field select,.field textarea{width:100%;background:rgba(255,255,255,0.04);
+  border:1px solid var(--border);border-radius:7px;padding:.5rem .7rem;
+  color:var(--white);font-size:.82rem;font-family:var(--sans);outline:none;transition:border-color .2s}
+.field input:focus,.field select,.field textarea:focus{border-color:rgba(201,168,76,0.4)}
+.field textarea{resize:vertical;min-height:70px;line-height:1.5}
+.field select option{background:#1a1a2e;color:var(--white)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* SIZE GRID */
+.size-grid{display:flex;flex-wrap:wrap;gap:5px}
+.size-btn{padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:transparent;
+  color:var(--muted);font-size:.72rem;cursor:pointer;transition:all .15s}
+.size-btn.active{background:rgba(201,168,76,0.15);border-color:rgba(201,168,76,0.4);color:var(--brass)}
+
+/* MODULE TABS */
+.module-tabs{display:flex;gap:4px;padding:12px 20px;border-bottom:1px solid var(--border)}
+.mod-tab{padding:.35rem .9rem;border-radius:6px;font-size:.75rem;font-weight:500;cursor:pointer;
+  border:1px solid transparent;color:var(--muted);transition:all .2s;background:none}
+.mod-tab.active{background:rgba(201,168,76,0.12);border-color:rgba(201,168,76,0.3);color:var(--brass)}
+
+/* GENERATE BTN */
+.gen-btn{width:calc(100% - 40px);margin:16px 20px;padding:.75rem;border-radius:8px;
+  background:linear-gradient(135deg,var(--brass),var(--brass2));color:#000;
+  font-weight:700;font-size:.88rem;cursor:pointer;border:none;transition:all .3s;
+  display:flex;align-items:center;justify-content:center;gap:.5rem;letter-spacing:.02em}
+.gen-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(201,168,76,0.3)}
+.gen-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.gen-btn .spin{width:16px;height:16px;border:2px solid rgba(0,0,0,0.3);border-top-color:#000;
+  border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* OUTPUT AREA */
+.output{overflow-y:auto;display:flex;flex-direction:column}
+.output::-webkit-scrollbar{width:4px}.output::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}
+.output-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.out-tab{padding:.65rem 1.1rem;font-size:.75rem;font-weight:500;cursor:pointer;
+  border-bottom:2px solid transparent;color:var(--muted);transition:all .2s}
+.out-tab.active{color:var(--brass);border-bottom-color:var(--brass)}
+
+/* OUTPUT PANELS */
+.out-panel{display:none;flex:1;padding:24px}
+.out-panel.active{display:block}
+
+/* PLACEHOLDER */
+.placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;min-height:400px;text-align:center;gap:1rem}
+.placeholder-icon{font-size:3rem;opacity:.3}
+.placeholder h3{font-family:var(--serif);font-size:1.3rem;color:var(--white);opacity:.5}
+.placeholder p{font-size:.82rem;color:var(--muted);max-width:340px;line-height:1.6}
+
+/* TECH PACK OUTPUT */
+.tp-doc{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.tp-header{background:linear-gradient(135deg,rgba(201,168,76,0.12),rgba(201,168,76,0.04));
+  padding:20px 24px;border-bottom:1px solid rgba(201,168,76,0.15)}
+.tp-brand{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--brass);margin-bottom:4px}
+.tp-title{font-family:var(--serif);font-size:1.4rem;color:var(--white);margin-bottom:2px}
+.tp-meta{font-size:.72rem;color:var(--muted);font-family:var(--mono)}
+.tp-body{padding:20px 24px}
+.tp-section{margin-bottom:20px}
+.tp-section-title{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--brass);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(201,168,76,0.15)}
+.tp-table{width:100%;border-collapse:collapse;font-size:.78rem}
+.tp-table th{text-align:left;padding:6px 10px;background:rgba(255,255,255,0.03);
+  color:var(--muted);font-weight:600;font-size:.65rem;text-transform:uppercase;letter-spacing:.06em}
+.tp-table td{padding:6px 10px;border-top:1px solid var(--border);color:var(--cloud)}
+.tp-table tr:hover td{background:rgba(255,255,255,0.02)}
+.tp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.tp-cell{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:7px;padding:10px 12px}
+.tp-cell-label{font-size:.62rem;color:var(--muted);margin-bottom:3px;font-weight:500}
+.tp-cell-val{font-size:.82rem;color:var(--white)}
+.tp-text{font-size:.82rem;color:var(--cloud);line-height:1.65;white-space:pre-wrap}
+.tp-bom{display:grid;grid-template-columns:1fr auto auto;gap:0}
+.bom-row{display:contents}
+.bom-row>*{padding:6px 10px;border-top:1px solid var(--border);font-size:.78rem}
+.bom-row:first-child>*{border-top:none;color:var(--muted);font-size:.65rem;font-weight:600;text-transform:uppercase}
+.bom-qty{color:var(--brass);font-family:var(--mono);text-align:right}
+.bom-unit{color:var(--muted);text-align:right}
+
+/* PATTERN OUTPUT */
+.pattern-doc{display:flex;flex-direction:column;gap:16px}
+.pat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.pat-card-header{padding:12px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between}
+.pat-card-title{font-size:.8rem;font-weight:600;color:var(--white)}
+.pat-badge{font-size:.62rem;padding:.2rem .5rem;border-radius:4px;font-family:var(--mono)}
+.badge-ai{background:rgba(233,69,96,0.12);color:var(--fire);border:1px solid rgba(233,69,96,0.2)}
+.badge-human{background:rgba(201,168,76,0.12);color:var(--brass);border:1px solid rgba(201,168,76,0.2)}
+.pat-card-body{padding:14px 16px}
+.piece-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.piece-item{border:1px solid var(--border);border-radius:7px;padding:10px;
+  display:flex;flex-direction:column;gap:4px;background:rgba(255,255,255,0.02)}
+.piece-name{font-size:.78rem;color:var(--white);font-weight:500}
+.piece-detail{font-size:.68rem;color:var(--muted)}
+.grade-table{width:100%;border-collapse:collapse;font-size:.72rem}
+.grade-table th{padding:5px 8px;background:rgba(255,255,255,0.04);color:var(--muted);font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;text-align:center}
+.grade-table td{padding:5px 8px;border-top:1px solid var(--border);text-align:center;color:var(--cloud)}
+.grade-table td:first-child{text-align:left;color:var(--white);font-weight:500}
+.note-list{list-style:none}
+.note-list li{padding:6px 0;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--cloud);
+  display:flex;gap:.5rem;align-items:flex-start}
+.note-list li::before{content:'→';color:var(--brass);flex-shrink:0;font-size:.72rem;margin-top:1px}
+
+/* SKETCH OUTPUT */
+.sketch-area{display:flex;flex-direction:column;gap:16px}
+.sketch-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.sketch-img{width:100%;display:block;border-bottom:1px solid var(--border)}
+.sketch-caption{padding:10px 14px;font-size:.72rem;color:var(--muted);font-family:var(--mono)}
+.sketch-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* EXPORT BAR */
+.export-bar{flex-shrink:0;padding:12px 20px;border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;background:rgba(8,8,15,0.8)}
+.export-btn{padding:.4rem .9rem;border-radius:6px;font-size:.75rem;font-weight:500;cursor:pointer;
+  border:1px solid var(--border);background:transparent;color:var(--cloud);transition:all .2s}
+.export-btn:hover{border-color:var(--brass);color:var(--brass)}
+.export-btn.primary{background:rgba(201,168,76,0.1);border-color:rgba(201,168,76,0.3);color:var(--brass)}
+.artiquity-tag{margin-left:auto;font-size:.68rem;color:var(--muted);font-family:var(--mono)}
+.artiquity-tag span{color:var(--brass)}
+
+/* PROGRESS */
+.progress-bar{width:100%;height:2px;background:rgba(255,255,255,0.05);margin-top:8px;border-radius:1px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--brass),var(--brass2));border-radius:1px;transition:width .5s ease}
+.progress-label{font-size:.68rem;color:var(--muted);margin-top:4px;font-family:var(--mono)}
+
+/* ALERTS */
+.alert{padding:10px 14px;border-radius:7px;font-size:.78rem;line-height:1.5;margin-bottom:12px}
+.alert-info{background:rgba(22,165,150,0.08);border:1px solid rgba(22,165,150,0.2);color:var(--teal)}
+.alert-warn{background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);color:var(--brass)}
+
+/* VALIDATION TAG */
+.valid-tag{display:inline-flex;align-items:center;gap:.35rem;font-size:.68rem;
+  padding:.2rem .6rem;border-radius:4px;font-family:var(--mono);margin-top:10px}
+.valid-ai{background:rgba(233,69,96,0.08);border:1px solid rgba(233,69,96,0.2);color:#ff8fa3}
+.valid-human{background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.25);color:var(--brass)}
+
+@media print{
+  nav,.sidebar,.export-bar,.output-tabs,.status-pill{display:none!important}
+  .app{display:block;height:auto}
+  .output{overflow:visible}
+  .out-panel{display:block!important}
+  body{background:#fff;color:#000}
+  .tp-doc,.pat-card,.sketch-card{border:1px solid #ddd;background:#fff}
+  .tp-header{background:#f5f5f5}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">
+    <div class="logo-icon">⚒</div>
+    <span>Fashion <em>Forge</em></span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="setModule('techpack')">Tech Pack</button>
+    <button class="nav-tab" onclick="setModule('pattern')">Pattern</button>
+    <button class="nav-tab" onclick="setModule('sketch')">Sketch</button>
+  </div>
+  <div class="status-pill" id="statusPill">✦ AI Ready</div>
+</nav>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="panel-header">
+      <div class="panel-title">Garment Setup</div>
+      <div class="panel-sub">Define your piece — AI handles the rest</div>
+    </div>
+
+    <!-- IDENTITY -->
+    <div class="form-section">
+      <div class="section-label">Identity</div>
+      <div class="field">
+        <label>Brand / Label</label>
+        <input id="brand" type="text" placeholder="e.g. Verneccia Studio">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Style Name</label>
+          <input id="styleName" type="text" placeholder="e.g. Cleo Blazer">
+        </div>
+        <div class="field">
+          <label>Style #</label>
+          <input id="styleNum" type="text" placeholder="FF-001">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Season</label>
+          <select id="season">
+            <option>SS 2026</option><option>FW 2026</option><option>Resort 2026</option>
+            <option>Pre-Fall 2026</option><option>SS 2027</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <select id="category">
+            <option>Womenswear</option><option>Menswear</option><option>Unisex</option>
+            <option>Activewear</option><option>Outerwear</option><option>Denim</option>
+            <option>Knitwear</option><option>Loungewear</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- GARMENT -->
+    <div class="form-section">
+      <div class="section-label">Garment Type</div>
+      <div class="field">
+        <label>Garment</label>
+        <select id="garmentType">
+          <option>Blazer / Jacket</option>
+          <option>Trouser / Pant</option>
+          <option>Shirt / Blouse</option>
+          <option>Dress</option>
+          <option>Skirt</option>
+          <option>T-Shirt / Top</option>
+          <option>Coat / Overcoat</option>
+          <option>Jumpsuit / Romper</option>
+          <option>Knitwear / Sweater</option>
+          <option>Activewear Set</option>
+          <option>Denim Jean</option>
+          <option>Outerwear / Puffer</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Silhouette / Fit</label>
+        <select id="silhouette">
+          <option>Tailored / Structured</option>
+          <option>Relaxed / Oversized</option>
+          <option>Slim / Fitted</option>
+          <option>Boxy / Cropped</option>
+          <option>Draped / Fluid</option>
+          <option>A-Line / Flared</option>
+          <option>Bodycon / Stretch</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Key Design Details</label>
+        <textarea id="designDetails" placeholder="e.g. Double-breasted, peak lapels, welt pockets, half-lining, back vent..."></textarea>
+      </div>
+    </div>
+
+    <!-- FABRIC -->
+    <div class="form-section">
+      <div class="section-label">Materials</div>
+      <div class="field">
+        <label>Shell Fabric</label>
+        <input id="fabric" type="text" placeholder="e.g. 100% Wool crepe, 380gsm">
+      </div>
+      <div class="field">
+        <label>Lining / Interlining</label>
+        <input id="lining" type="text" placeholder="e.g. Bemberg cupro lining, fusible chest piece">
+      </div>
+      <div class="field">
+        <label>Colorway(s)</label>
+        <input id="colorway" type="text" placeholder="e.g. Charcoal Heather, Navy Stripe">
+      </div>
+      <div class="field">
+        <label>Price Point</label>
+        <select id="pricePoint">
+          <option>Contemporary ($150–$400)</option>
+          <option>Bridge ($400–$800)</option>
+          <option>Luxury ($800–$2,000)</option>
+          <option>Ultra-Luxury ($2,000+)</option>
+          <option>Accessible ($50–$150)</option>
+          <option>Fast Fashion (&lt;$50)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- SIZES -->
+    <div class="form-section">
+      <div class="section-label">Size Range</div>
+      <div class="size-grid" id="sizeGrid">
+        <button class="size-btn" onclick="toggleSize(this)">XXS</button>
+        <button class="size-btn active" onclick="toggleSize(this)">XS</button>
+        <button class="size-btn active" onclick="toggleSize(this)">S</button>
+        <button class="size-btn active" onclick="toggleSize(this)">M</button>
+        <button class="size-btn active" onclick="toggleSize(this)">L</button>
+        <button class="size-btn active" onclick="toggleSize(this)">XL</button>
+        <button class="size-btn" onclick="toggleSize(this)">XXL</button>
+        <button class="size-btn" onclick="toggleSize(this)">0</button>
+        <button class="size-btn" onclick="toggleSize(this)">2</button>
+        <button class="size-btn" onclick="toggleSize(this)">4</button>
+        <button class="size-btn" onclick="toggleSize(this)">6</button>
+        <button class="size-btn" onclick="toggleSize(this)">8</button>
+        <button class="size-btn" onclick="toggleSize(this)">10</button>
+        <button class="size-btn" onclick="toggleSize(this)">12</button>
+        <button class="size-btn" onclick="toggleSize(this)">14</button>
+        <button class="size-btn" onclick="toggleSize(this)">Plus</button>
+      </div>
+    </div>
+
+    <!-- PRODUCTION -->
+    <div class="form-section">
+      <div class="section-label">Production</div>
+      <div class="field-row">
+        <div class="field">
+          <label>MOQ</label>
+          <input id="moq" type="text" placeholder="e.g. 50 units">
+        </div>
+        <div class="field">
+          <label>Target MSRP</label>
+          <input id="msrp" type="text" placeholder="e.g. $450">
+        </div>
+      </div>
+      <div class="field">
+        <label>Country of Origin</label>
+        <select id="origin">
+          <option>USA (Los Angeles)</option><option>USA (New York)</option>
+          <option>Portugal</option><option>Italy</option>
+          <option>South Korea</option><option>Vietnam</option>
+          <option>China</option><option>Mexico</option><option>Peru</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Additional Notes</label>
+        <textarea id="notes" placeholder="Special construction requirements, sustainability certifications, factory constraints..."></textarea>
+      </div>
+    </div>
+
+    <!-- GENERATE -->
+    <button class="gen-btn" id="genBtn" onclick="generate()">
+      <span id="genBtnText">⚒ Forge It</span>
+    </button>
+    <div style="padding:0 20px 20px" id="progressArea" style="display:none">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="progress-label" id="progressLabel">Initializing...</div>
+    </div>
+  </div>
+
+  <!-- OUTPUT -->
+  <div class="output" id="outputArea">
+    <div class="output-tabs">
+      <div class="out-tab active" onclick="showOutTab('tp')" id="ot-tp">Tech Pack</div>
+      <div class="out-tab" onclick="showOutTab('pattern')" id="ot-pattern">Pattern Intel</div>
+      <div class="out-tab" onclick="showOutTab('sketch')" id="ot-sketch">Technical Sketch</div>
+    </div>
+
+    <!-- TECH PACK TAB -->
+    <div class="out-panel active" id="panel-tp">
+      <div class="placeholder">
+        <div class="placeholder-icon">📋</div>
+        <h3>Tech Pack ready to forge</h3>
+        <p>Fill in garment details on the left and click Forge It. AI generates a complete factory-ready spec sheet in seconds.</p>
+      </div>
+    </div>
+
+    <!-- PATTERN TAB -->
+    <div class="out-panel" id="panel-pattern">
+      <div class="placeholder">
+        <div class="placeholder-icon">✂️</div>
+        <h3>Pattern intelligence waiting</h3>
+        <p>Forge the tech pack first. Pattern pieces, grading table, cutting instructions, and construction notes will appear here.</p>
+      </div>
+    </div>
+
+    <!-- SKETCH TAB -->
+    <div class="out-panel" id="panel-sketch">
+      <div class="placeholder">
+        <div class="placeholder-icon">✏️</div>
+        <h3>Technical sketch pending</h3>
+        <p>AI generates front and back technical flat sketches with construction callouts. Appears after forging.</p>
+      </div>
+    </div>
+
+    <!-- EXPORT BAR -->
+    <div class="export-bar" id="exportBar" style="display:none">
+      <button class="export-btn primary" onclick="window.print()">⬇ Print / Export PDF</button>
+      <button class="export-btn" onclick="copyJSON()">{ } Copy JSON</button>
+      <button class="export-btn" onclick="copyText()">≡ Copy Text</button>
+      <div class="artiquity-tag">⚒ <span>Artiquity Principle:</span> AI generated · Expert validated</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app';
+let currentModule = 'techpack';
+let forgeData = null;
+
+function setModule(mod) {
+  currentModule = mod;
+  document.querySelectorAll('.nav-tab').forEach((t,i) => {
+    t.classList.toggle('active', ['techpack','pattern','sketch'][i] === mod);
+  });
+}
+
+function showOutTab(tab) {
+  document.querySelectorAll('.out-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.out-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('ot-'+tab).classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+}
+
+function toggleSize(btn) {
+  btn.classList.toggle('active');
+}
+
+function getSizes() {
+  return [...document.querySelectorAll('.size-btn.active')].map(b => b.textContent).join(', ');
+}
+
+function getFormData() {
+  return {
+    brand: document.getElementById('brand').value || 'Studio',
+    styleName: document.getElementById('styleName').value || 'Untitled Style',
+    styleNum: document.getElementById('styleNum').value || 'FF-001',
+    season: document.getElementById('season').value,
+    category: document.getElementById('category').value,
+    garmentType: document.getElementById('garmentType').value,
+    silhouette: document.getElementById('silhouette').value,
+    designDetails: document.getElementById('designDetails').value,
+    fabric: document.getElementById('fabric').value || 'To be specified',
+    lining: document.getElementById('lining').value || 'None',
+    colorway: document.getElementById('colorway').value || 'TBD',
+    pricePoint: document.getElementById('pricePoint').value,
+    sizes: getSizes() || 'XS, S, M, L, XL',
+    moq: document.getElementById('moq').value || '50 units',
+    msrp: document.getElementById('msrp').value || 'TBD',
+    origin: document.getElementById('origin').value,
+    notes: document.getElementById('notes').value,
+  };
+}
+
+function setProgress(pct, label) {
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = label;
+}
+
+function setStatus(text) {
+  document.getElementById('statusPill').textContent = '✦ ' + text;
+}
+
+async function gemini(prompt, sys = '') {
+  const body = { contents: [{ parts: [{ text: prompt }] }] };
+  if (sys) body.system_instruction = { parts: [{ text: sys }] };
+  const r = await fetch(PROXY + '/gemini/generate', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...body, generationConfig: { maxOutputTokens: 2048, temperature: 0.4 } })
+  });
+  const d = await r.json();
+  return d?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+async function fal(prompt) {
+  const r = await fetch(PROXY + '/fal/generate-sync', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'fal-ai/flux/schnell',
+      prompt,
+      image_size: 'portrait_4_3',
+      num_inference_steps: 4,
+      num_images: 2
+    })
+  });
+  const d = await r.json();
+  return d?.images?.map(i => i.url) || [];
+}
+
+async function generate() {
+  const fd = getFormData();
+  const btn = document.getElementById('genBtn');
+  const btnText = document.getElementById('genBtnText');
+  const prog = document.getElementById('progressArea');
+
+  btn.disabled = true;
+  btnText.innerHTML = '<span class="spin"></span> Forging...';
+  prog.style.display = 'block';
+  document.getElementById('exportBar').style.display = 'none';
+  setStatus('Generating...');
+
+  try {
+    // TECH PACK
+    setProgress(10, 'Analyzing garment specifications...');
+    const tpPrompt = `You are an expert fashion technical designer. Generate a complete, factory-ready tech pack for this garment.
+
+GARMENT BRIEF:
+Brand: ${fd.brand} | Style: ${fd.styleName} (${fd.styleNum}) | Season: ${fd.season}
+Category: ${fd.category} | Type: ${fd.garmentType} | Fit: ${fd.silhouette}
+Fabric: ${fd.fabric} | Lining: ${fd.lining} | Colors: ${fd.colorway}
+Price Point: ${fd.pricePoint} | MOQ: ${fd.moq} | MSRP: ${fd.msrp}
+Size Range: ${fd.sizes} | Origin: ${fd.origin}
+Design Details: ${fd.designDetails || 'Standard construction'}
+Notes: ${fd.notes || 'None'}
+
+Return ONLY valid JSON (no markdown, no prose) with this exact structure:
+{
+  "overview": {
+    "garmentDescription": "2-3 sentence description",
+    "construction": "key construction method",
+    "fitNote": "fit and wear note",
+    "sustainabilityNote": "relevant sustainability consideration"
+  },
+  "measurements": [
+    {"point": "measurement name", "XS": "value in inches", "S": "value", "M": "value", "L": "value", "XL": "value", "tolerance": "±0.25\""}
+  ],
+  "bom": [
+    {"item": "material name", "spec": "technical specification", "qty": "quantity per unit", "unit": "yards/pcs/etc", "supplier": "suggested supplier type"}
+  ],
+  "construction": [
+    "construction note 1",
+    "construction note 2"
+  ],
+  "stitching": [
+    {"seam": "seam type", "spi": "stitches per inch", "thread": "thread spec", "location": "where used"}
+  ],
+  "care": ["care instruction 1", "care instruction 2"],
+  "qualityChecks": ["QC checkpoint 1", "QC checkpoint 2"],
+  "labelRequirements": ["label requirement 1", "label requirement 2"]
+}`;
+
+    setProgress(25, 'Building tech pack specifications...');
+    const tpRaw = await gemini(tpPrompt);
+    let tp;
+    try {
+      tp = JSON.parse(tpRaw.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim());
+    } catch {
+      tp = { error: true, raw: tpRaw };
+    }
+
+    // PATTERN
+    setProgress(45, 'Calculating pattern pieces and grading...');
+    const patPrompt = `You are a master pattern maker. Generate pattern intelligence for this garment.
+
+GARMENT: ${fd.garmentType} | ${fd.silhouette} | ${fd.category}
+Fabric: ${fd.fabric} | Details: ${fd.designDetails || 'standard'} | Origin: ${fd.origin}
+Size Range: ${fd.sizes}
+
+Return ONLY valid JSON:
+{
+  "patternPieces": [
+    {"name": "piece name", "qty": "cut qty", "grainline": "grain direction", "notes": "special cutting note"}
+  ],
+  "gradingTable": [
+    {"point": "measurement point", "increment": "grade increment between sizes (e.g. +0.5\" per size)", "note": "grading note"}
+  ],
+  "ease": {
+    "bust": "ease amount",
+    "waist": "ease amount", 
+    "hip": "ease amount",
+    "shoulder": "ease amount",
+    "note": "ease philosophy for this garment"
+  },
+  "cuttingInstructions": [
+    "cutting instruction 1"
+  ],
+  "patternNotes": [
+    "pattern maker note 1"
+  ],
+  "aiAutomationRatio": 55,
+  "humanValidationRequired": [
+    "specific human validation task 1"
+  ]
+}`;
+
+    const patRaw = await gemini(patPrompt);
+    let pat;
+    try {
+      pat = JSON.parse(patRaw.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim());
+    } catch {
+      pat = { error: true, raw: patRaw };
+    }
+
+    setProgress(65, 'Generating technical sketches...');
+    // SKETCH
+    const sketchPrompt = `Technical fashion flat sketch, professional fashion illustration, ${fd.garmentType}, ${fd.silhouette} silhouette, ${fd.category}, ${fd.designDetails || 'clean design'}, clean white background, black line art, front and back view, technical drawing style, fashion design blueprint, detailed construction lines, seam lines visible, minimal, professional, no model`;
+    let sketchUrls = [];
+    try {
+      sketchUrls = await fal(sketchPrompt);
+    } catch { sketchUrls = []; }
+
+    setProgress(85, 'Assembling documents...');
+
+    forgeData = { fd, tp, pat, sketchUrls };
+
+    // RENDER
+    renderTechPack(fd, tp);
+    renderPattern(fd, pat);
+    renderSketches(fd, sketchUrls, pat);
+
+    setProgress(100, 'Forge complete ✓');
+    setStatus('Forge Complete');
+    document.getElementById('exportBar').style.display = 'flex';
+
+  } catch (e) {
+    setStatus('Error — check connection');
+    document.getElementById('panel-tp').innerHTML = `<div class="alert alert-warn" style="margin:24px">⚠ Generation failed: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = '⚒ Re-Forge';
+    setTimeout(() => { prog.style.display = 'none'; }, 2000);
+  }
+}
+
+function renderTechPack(fd, tp) {
+  const dateStr = new Date().toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
+  
+  if (tp.error) {
+    document.getElementById('panel-tp').innerHTML = `
+      <div class="alert alert-warn" style="margin:24px">AI response parse error. Raw output:<br><pre style="font-size:.72rem;margin-top:8px;white-space:pre-wrap">${tp.raw?.slice(0,800)}</pre></div>`;
+    return;
+  }
+
+  const mRows = (tp.measurements || []).map(m => {
+    const sizes = ['XS','S','M','L','XL'];
+    return `<tr><td>${m.point}</td>${sizes.map(s => `<td style="text-align:center">${m[s]||'—'}</td>`).join('')}<td style="text-align:center;color:var(--muted)">${m.tolerance||'—'}</td></tr>`;
+  }).join('');
+
+  const stitchRows = (tp.stitching || []).map(s =>
+    `<tr><td>${s.seam}</td><td style="text-align:center;font-family:var(--mono)">${s.spi}</td><td>${s.thread}</td><td style="color:var(--muted)">${s.location}</td></tr>`
+  ).join('');
+
+  const bomRows = (tp.bom || []).map(b =>
+    `<div class="bom-row"><div>${b.item}<br><span style="font-size:.68rem;color:var(--muted)">${b.spec}</span></div><div class="bom-qty">${b.qty}</div><div class="bom-unit">${b.unit}</div></div>`
+  ).join('');
+
+  const constrList = (tp.construction || []).map(c => `<li>${c}</li>`).join('');
+  const careList = (tp.care || []).map(c => `<li>${c}</li>`).join('');
+  const qcList = (tp.qualityChecks || []).map(c => `<li>${c}</li>`).join('');
+  const labelList = (tp.labelRequirements || []).map(c => `<li>${c}</li>`).join('');
+
+  document.getElementById('panel-tp').innerHTML = `
+    <div class="tp-doc">
+      <div class="tp-header">
+        <div class="tp-brand">${fd.brand}</div>
+        <div class="tp-title">${fd.styleName}</div>
+        <div class="tp-meta">${fd.styleNum} · ${fd.season} · ${fd.category} · Generated ${dateStr}</div>
+        <div class="valid-tag valid-ai">⚡ AI Generated</div>
+        <div class="valid-tag valid-human" style="margin-left:6px">◎ Awaiting Expert Validation</div>
+      </div>
+      <div class="tp-body">
+
+        <div class="tp-section">
+          <div class="tp-section-title">Overview</div>
+          <div class="tp-grid">
+            <div class="tp-cell"><div class="tp-cell-label">Garment</div><div class="tp-cell-val">${fd.garmentType}</div></div>
+            <div class="tp-cell"><div class="tp-cell-label">Fit</div><div class="tp-cell-val">${fd.silhouette}</div></div>
+            <div class="tp-cell"><div class="tp-cell-label">Shell</div><div class="tp-cell-val">${fd.fabric}</div></div>
+            <div class="tp-cell"><div class="tp-cell-label">Lining</div><div class="tp-cell-val">${fd.lining}</div></div>
+            <div class="tp-cell"><div class="tp-cell-label">Colors</div><div class="tp-cell-val">${fd.colorway}</div></div>
+            <div class="tp-cell"><div class="tp-cell-label">Origin</div><div class="tp-cell-val">${fd.origin}</div></div>
+            <div class="tp-cell"><div class="tp-cell-label">MOQ</div><div class="tp-cell-val">${fd.moq}</div></div>
+            <div class="tp-cell"><div class="tp-cell-label">MSRP</div><div class="tp-cell-val">${fd.msrp}</div></div>
+          </div>
+          ${tp.overview ? `<div class="tp-text" style="margin-top:12px">${tp.overview.garmentDescription || ''}\n\n${tp.overview.fitNote || ''}</div>` : ''}
+        </div>
+
+        ${mRows ? `<div class="tp-section">
+          <div class="tp-section-title">Measurements — Finished Garment (inches)</div>
+          <table class="tp-table">
+            <thead><tr><th>Measurement Point</th><th style="text-align:center">XS</th><th style="text-align:center">S</th><th style="text-align:center">M</th><th style="text-align:center">L</th><th style="text-align:center">XL</th><th style="text-align:center">Tol.</th></tr></thead>
+            <tbody>${mRows}</tbody>
+          </table>
+        </div>` : ''}
+
+        ${bomRows ? `<div class="tp-section">
+          <div class="tp-section-title">Bill of Materials</div>
+          <div class="tp-bom">
+            <div class="bom-row"><div style="font-size:.65rem;color:var(--muted);font-weight:600;text-transform:uppercase;padding:6px 10px;border-top:none">Component</div><div class="bom-qty" style="border-top:none;font-size:.65rem;color:var(--muted);font-weight:600">Qty</div><div class="bom-unit" style="border-top:none;font-size:.65rem;color:var(--muted);font-weight:600">Unit</div></div>
+            ${bomRows}
+          </div>
+        </div>` : ''}
+
+        ${stitchRows ? `<div class="tp-section">
+          <div class="tp-section-title">Stitching Specifications</div>
+          <table class="tp-table">
+            <thead><tr><th>Seam Type</th><th style="text-align:center">SPI</th><th>Thread</th><th>Location</th></tr></thead>
+            <tbody>${stitchRows}</tbody>
+          </table>
+        </div>` : ''}
+
+        ${constrList ? `<div class="tp-section">
+          <div class="tp-section-title">Construction Notes</div>
+          <ul class="note-list">${constrList}</ul>
+        </div>` : ''}
+
+        ${qcList ? `<div class="tp-section">
+          <div class="tp-section-title">Quality Control Checkpoints</div>
+          <ul class="note-list">${qcList}</ul>
+        </div>` : ''}
+
+        ${careList ? `<div class="tp-section">
+          <div class="tp-section-title">Care Instructions</div>
+          <ul class="note-list">${careList}</ul>
+        </div>` : ''}
+
+        ${labelList ? `<div class="tp-section">
+          <div class="tp-section-title">Label Requirements</div>
+          <ul class="note-list">${labelList}</ul>
+        </div>` : ''}
+
+      </div>
+    </div>`;
+}
+
+function renderPattern(fd, pat) {
+  if (pat.error) {
+    document.getElementById('panel-pattern').innerHTML = `<div class="alert alert-warn" style="margin:24px">Pattern parse error. Raw: ${pat.raw?.slice(0,400)}</div>`;
+    return;
+  }
+
+  const piecesHtml = (pat.patternPieces || []).map(p =>
+    `<div class="piece-item">
+      <div class="piece-name">${p.name}</div>
+      <div class="piece-detail">Cut: ${p.qty}</div>
+      <div class="piece-detail">Grain: ${p.grainline}</div>
+      ${p.notes ? `<div class="piece-detail" style="color:var(--brass);font-size:.65rem">${p.notes}</div>` : ''}
+    </div>`
+  ).join('');
+
+  const gradeRows = (pat.gradingTable || []).map(g =>
+    `<tr><td>${g.point}</td><td>${g.increment}</td><td style="color:var(--muted)">${g.note||''}</td></tr>`
+  ).join('');
+
+  const cutList = (pat.cuttingInstructions || []).map(c => `<li>${c}</li>`).join('');
+  const notList = (pat.patternNotes || []).map(n => `<li>${n}</li>`).join('');
+  const humanList = (pat.humanValidationRequired || []).map(h => `<li>${h}</li>`).join('');
+
+  const ai = pat.aiAutomationRatio || 55;
+
+  document.getElementById('panel-pattern').innerHTML = `
+    <div class="pattern-doc">
+
+      <div class="pat-card">
+        <div class="pat-card-header">
+          <div class="pat-card-title">Pattern Intelligence Overview</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="pat-badge badge-ai">AI ${ai}%</div>
+            <div class="pat-badge badge-human">Human ${100-ai}%</div>
+          </div>
+        </div>
+        <div class="pat-card-body">
+          <div class="alert alert-info">
+            <strong>Ease Allowances:</strong> Bust ${pat.ease?.bust||'TBD'} · Waist ${pat.ease?.waist||'TBD'} · Hip ${pat.ease?.hip||'TBD'} · Shoulder ${pat.ease?.shoulder||'TBD'}<br>
+            <em style="font-size:.75rem;color:rgba(22,165,150,0.8)">${pat.ease?.note||''}</em>
+          </div>
+        </div>
+      </div>
+
+      ${piecesHtml ? `<div class="pat-card">
+        <div class="pat-card-header"><div class="pat-card-title">Pattern Pieces</div><div class="pat-badge badge-ai">AI Generated</div></div>
+        <div class="pat-card-body"><div class="piece-grid">${piecesHtml}</div></div>
+      </div>` : ''}
+
+      ${gradeRows ? `<div class="pat-card">
+        <div class="pat-card-header"><div class="pat-card-title">Grading Table</div><div class="pat-badge badge-ai">AI Calculated</div></div>
+        <div class="pat-card-body">
+          <table class="grade-table">
+            <thead><tr><th style="text-align:left">Point</th><th>Grade Increment</th><th>Note</th></tr></thead>
+            <tbody>${gradeRows}</tbody>
+          </table>
+        </div>
+      </div>` : ''}
+
+      ${cutList ? `<div class="pat-card">
+        <div class="pat-card-header"><div class="pat-card-title">Cutting Instructions</div><div class="pat-badge badge-ai">AI Generated</div></div>
+        <div class="pat-card-body"><ul class="note-list">${cutList}</ul></div>
+      </div>` : ''}
+
+      ${notList ? `<div class="pat-card">
+        <div class="pat-card-header"><div class="pat-card-title">Pattern Maker Notes</div><div class="pat-badge badge-ai">AI Generated</div></div>
+        <div class="pat-card-body"><ul class="note-list">${notList}</ul></div>
+      </div>` : ''}
+
+      ${humanList ? `<div class="pat-card">
+        <div class="pat-card-header">
+          <div class="pat-card-title">◎ Human Validation Required</div>
+          <div class="pat-badge badge-human">Expert Review</div>
+        </div>
+        <div class="pat-card-body">
+          <div class="alert alert-warn" style="margin-bottom:10px">These elements require master pattern maker judgment — AI cannot fully automate them.</div>
+          <ul class="note-list">${humanList}</ul>
+        </div>
+      </div>` : ''}
+
+    </div>`;
+}
+
+function renderSketches(fd, urls, pat) {
+  const noSketch = !urls || urls.length === 0;
+  document.getElementById('panel-sketch').innerHTML = `
+    <div class="sketch-area">
+      ${noSketch ? `<div class="alert alert-warn">Sketch generation unavailable — check proxy connection.</div>` : ''}
+      <div class="sketch-row">
+        ${(urls||[]).map((u,i) => `
+          <div class="sketch-card">
+            <img src="${u}" class="sketch-img" alt="Technical sketch ${i+1}" onerror="this.style.display='none'">
+            <div class="sketch-caption">${fd.styleName} ${fd.styleNum} · ${i===0?'Front View':'Back View'} · AI Generated Flat Sketch</div>
+          </div>`).join('')}
+        ${urls?.length === 1 ? `<div class="sketch-card" style="display:flex;align-items:center;justify-content:center;min-height:200px">
+          <div style="text-align:center;color:var(--muted)"><div style="font-size:2rem;margin-bottom:8px">✏️</div><div style="font-size:.78rem">Second view loading...</div></div>
+        </div>` : ''}
+      </div>
+      <div class="pat-card">
+        <div class="pat-card-header">
+          <div class="pat-card-title">Artiquity Principle — Human Validation Chain</div>
+          <div class="pat-badge badge-human">Craft Credit</div>
+        </div>
+        <div class="pat-card-body">
+          <div class="tp-grid">
+            <div class="tp-cell"><div class="tp-cell-label">AI Generation</div><div class="tp-cell-val">✓ Complete</div></div>
+            <div class="tp-cell"><div class="tp-cell-label">Pattern Maker</div><div class="tp-cell-val">◎ Pending</div></div>
+            <div class="tp-cell"><div class="tp-cell-label">Technical Designer</div><div class="tp-cell-val">◎ Pending</div></div>
+            <div class="tp-cell"><div class="tp-cell-label">Fit Validation</div><div class="tp-cell-val">◎ Pending</div></div>
+          </div>
+          <div class="tp-text" style="margin-top:12px;font-size:.75rem;color:var(--muted)">
+            Every Fashion Forge deliverable carries the name of the human expert who validated it. The AI generates the 55–80% that is systematic. The craftsperson's tacit knowledge closes the remaining 20–45%.
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function copyJSON() {
+  if (!forgeData) return;
+  navigator.clipboard.writeText(JSON.stringify(forgeData, null, 2));
+  alert('JSON copied to clipboard');
+}
+
+function copyText() {
+  const active = document.querySelector('.out-panel.active');
+  if (active) navigator.clipboard.writeText(active.innerText);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LUIGI — Your AI Insurance Fighter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#0a0a0f;--primary:#22c55e;--secondary:#4ade80;--accent:#f97316;--danger:#ef4444;
+--text:#e4e4e7;--muted:#71717a;--surface:rgba(34,197,94,0.06);--border:rgba(34,197,94,0.15);
+--glow:0 0 40px rgba(34,197,94,0.3),0 0 80px rgba(34,197,94,0.1);
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;line-height:1.6;overflow-x:hidden;position:relative}
+
+/* Grid background */
+body::before{content:'';position:fixed;inset:0;background-image:
+  linear-gradient(rgba(34,197,94,0.03) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(34,197,94,0.03) 1px,transparent 1px);
+background-size:60px 60px;pointer-events:none;z-index:0}
+
+/* Matrix rain canvas */
+#matrix-bg{position:fixed;inset:0;z-index:0;opacity:0.04;pointer-events:none}
+
+h1,h2,h3,h4{font-family:'Space Grotesk','Inter',sans-serif;font-weight:700}
+a{color:var(--primary);text-decoration:none}
+.container{max-width:1200px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+
+/* ===== NAV ===== */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 24px;
+  background:rgba(10,10,15,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+nav .inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+nav .logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.25rem;color:var(--primary);
+  text-shadow:0 0 20px rgba(34,197,94,0.5);display:flex;align-items:center;gap:8px}
+nav .logo .mushroom{font-size:1.4rem}
+nav ul{list-style:none;display:flex;gap:28px}
+nav ul li a{color:var(--muted);font-size:0.875rem;font-weight:500;transition:color 0.2s}
+nav ul li a:hover{color:var(--primary)}
+@media(max-width:768px){nav ul{display:none}}
+
+/* ===== HERO ===== */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:120px 24px 80px;position:relative}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:999px;
+  background:var(--surface);border:1px solid var(--border);font-size:0.8rem;color:var(--secondary);
+  margin-bottom:32px;font-family:'JetBrains Mono',monospace}
+.hero-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--primary);
+  animation:pulse-dot 2s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.8)}}
+.hero h1{font-size:clamp(4rem,12vw,9rem);font-weight:800;letter-spacing:-0.04em;
+  background:linear-gradient(135deg,var(--primary),var(--secondary),#86efac);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  text-shadow:none;filter:drop-shadow(0 0 60px rgba(34,197,94,0.4));line-height:1}
+.hero .tagline{font-size:clamp(1.25rem,3vw,2rem);font-weight:600;margin-top:16px;color:var(--text)}
+.hero .subtitle{font-size:clamp(0.95rem,2vw,1.15rem);color:var(--muted);max-width:640px;margin:16px auto 0;line-height:1.7}
+
+/* Terminal animation */
+.terminal-box{margin:40px auto;max-width:680px;width:100%;background:rgba(0,0,0,0.6);
+  border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.terminal-header{display:flex;align-items:center;gap:8px;padding:10px 16px;
+  background:rgba(34,197,94,0.05);border-bottom:1px solid var(--border)}
+.terminal-dot{width:10px;height:10px;border-radius:50%}
+.terminal-dot.r{background:#ef4444}.terminal-dot.y{background:#f97316}.terminal-dot.g{background:#22c55e}
+.terminal-body{padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:clamp(0.75rem,1.5vw,0.875rem);
+  color:var(--secondary);min-height:80px;line-height:1.8}
+.terminal-body .cursor{display:inline-block;width:8px;height:16px;background:var(--primary);
+  animation:blink 1s step-end infinite;vertical-align:middle;margin-left:2px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+.hero-cta{margin-top:40px;display:flex;flex-wrap:wrap;gap:16px;justify-content:center;align-items:center}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;
+  background:var(--primary);color:#0a0a0f;font-weight:700;font-size:1rem;border:none;
+  border-radius:12px;cursor:pointer;transition:all 0.3s;font-family:'Space Grotesk',sans-serif;
+  box-shadow:0 0 30px rgba(34,197,94,0.3),0 0 60px rgba(34,197,94,0.1);position:relative;overflow:hidden}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 50px rgba(34,197,94,0.5),0 0 100px rgba(34,197,94,0.2)}
+.btn-primary::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 40%,rgba(255,255,255,0.2) 50%,transparent 60%);
+  transform:translateX(-100%);transition:transform 0.6s}
+.btn-primary:hover::after{transform:translateX(100%)}
+.btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;
+  background:transparent;color:var(--primary);font-weight:600;font-size:1rem;border:1px solid var(--border);
+  border-radius:12px;cursor:pointer;transition:all 0.3s;font-family:'Space Grotesk',sans-serif}
+.btn-secondary:hover{border-color:var(--primary);background:var(--surface)}
+
+.stats-bar{margin-top:48px;display:flex;flex-wrap:wrap;gap:12px 32px;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--muted)}
+.stats-bar .stat-val{color:var(--secondary);font-weight:700}
+
+/* ===== SECTIONS ===== */
+section{padding:100px 0;position:relative;z-index:1}
+.section-label{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--primary);
+  text-transform:uppercase;letter-spacing:0.15em;margin-bottom:12px}
+.section-title{font-size:clamp(2rem,4vw,3rem);margin-bottom:16px;letter-spacing:-0.02em}
+.section-subtitle{color:var(--muted);font-size:1.05rem;max-width:600px;line-height:1.7}
+
+/* How it works */
+.steps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:32px;margin-top:56px}
+.step-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;
+  position:relative;transition:all 0.3s}
+.step-card:hover{border-color:var(--primary);transform:translateY(-4px);
+  box-shadow:0 20px 60px rgba(34,197,94,0.1)}
+.step-num{font-family:'Space Grotesk',sans-serif;font-size:3rem;font-weight:800;
+  color:rgba(34,197,94,0.15);position:absolute;top:16px;right:24px}
+.step-icon{font-size:2rem;margin-bottom:16px}
+.step-card h3{font-size:1.2rem;margin-bottom:8px}
+.step-card p{color:var(--muted);font-size:0.95rem}
+
+/* Tools grid */
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:20px;margin-top:56px}
+.tool-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;
+  cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden}
+.tool-card:hover{border-color:var(--primary);transform:translateY(-4px);
+  box-shadow:0 20px 60px rgba(34,197,94,0.1)}
+.tool-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--primary),transparent);opacity:0;transition:opacity 0.3s}
+.tool-card:hover::before{opacity:1}
+.tool-icon{font-size:2rem;margin-bottom:12px}
+.tool-card h3{font-size:1.1rem;margin-bottom:6px}
+.tool-card p{color:var(--muted);font-size:0.9rem;margin-bottom:16px}
+.tool-link{font-size:0.85rem;font-weight:600;color:var(--primary);display:inline-flex;align-items:center;gap:4px;
+  transition:gap 0.2s}
+.tool-card:hover .tool-link{gap:8px}
+
+/* ===== GAP DEMO ===== */
+.demo-section{background:linear-gradient(180deg,transparent,rgba(34,197,94,0.02),transparent)}
+.demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:48px}
+@media(max-width:900px){.demo-grid{grid-template-columns:1fr}}
+.demo-form{background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:16px;padding:32px}
+.demo-form h3{font-size:1.3rem;margin-bottom:24px;display:flex;align-items:center;gap:10px}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-size:0.85rem;font-weight:600;color:var(--muted);margin-bottom:6px;
+  font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.05em}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 16px;
+  background:rgba(10,10,15,0.8);border:1px solid var(--border);border-radius:10px;color:var(--text);
+  font-family:'Inter',sans-serif;font-size:0.95rem;transition:border-color 0.2s;outline:none}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--primary);
+  box-shadow:0 0 0 3px rgba(34,197,94,0.1)}
+.form-group textarea{min-height:80px;resize:vertical}
+.form-group select{cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2371717a' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center}
+.form-group select option{background:#1a1a2e;color:var(--text)}
+.btn-generate{width:100%;padding:14px;background:var(--primary);color:#0a0a0f;font-weight:700;
+  font-size:1rem;border:none;border-radius:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;
+  transition:all 0.3s;box-shadow:var(--glow);display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-generate:hover{transform:translateY(-2px);box-shadow:0 0 50px rgba(34,197,94,0.5)}
+.btn-generate:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+.btn-generate .spinner{display:none;width:18px;height:18px;border:2px solid rgba(10,10,15,0.3);
+  border-top-color:#0a0a0f;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.btn-generate.loading .spinner{display:block}
+.btn-generate.loading .btn-text{display:none}
+
+.demo-output{background:rgba(0,0,0,0.5);border:1px solid var(--border);border-radius:16px;
+  padding:32px;position:relative;min-height:400px}
+.demo-output h3{font-size:1.3rem;margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.output-placeholder{color:var(--muted);font-style:italic;font-size:0.95rem;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:300px;text-align:center;gap:12px}
+.output-placeholder .big-icon{font-size:3rem;opacity:0.3}
+#letter-output{font-family:'JetBrains Mono',monospace;font-size:0.82rem;line-height:1.8;
+  white-space:pre-wrap;color:var(--secondary);display:none}
+#letter-output.visible{display:block}
+.copy-btn{position:absolute;top:16px;right:16px;padding:8px 14px;background:var(--surface);
+  border:1px solid var(--border);border-radius:8px;color:var(--primary);font-size:0.8rem;
+  cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all 0.2s;display:none}
+.copy-btn.visible{display:block}
+.copy-btn:hover{background:var(--primary);color:#0a0a0f}
+
+/* Trinity */
+.trinity-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;margin-top:48px}
+.trinity-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;
+  transition:all 0.3s}
+.trinity-card:hover{border-color:var(--primary);transform:translateY(-2px)}
+.trinity-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-size:1.5rem;margin-bottom:16px}
+.trinity-card:nth-child(1) .trinity-icon{background:rgba(34,197,94,0.1)}
+.trinity-card:nth-child(2) .trinity-icon{background:rgba(249,115,22,0.1)}
+.trinity-card:nth-child(3) .trinity-icon{background:rgba(168,85,247,0.1)}
+.trinity-card h3{font-size:1.15rem;margin-bottom:8px}
+.trinity-card p{color:var(--muted);font-size:0.92rem;line-height:1.7}
+
+/* Why section */
+.why-section{background:linear-gradient(180deg,transparent,rgba(239,68,68,0.02),transparent)}
+.why-card{background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.15);border-radius:16px;
+  padding:48px;margin-top:48px;max-width:800px}
+.why-stat{padding:20px 0;border-bottom:1px solid rgba(239,68,68,0.1);display:flex;gap:16px;align-items:flex-start}
+.why-stat:last-child{border-bottom:none}
+.why-stat .icon{font-size:1.5rem;flex-shrink:0;margin-top:2px}
+.why-stat .content{flex:1}
+.why-stat .text{font-size:1.05rem;font-weight:500;line-height:1.6}
+.why-stat .source{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--muted);margin-top:4px}
+.why-stat.green{border-bottom-color:rgba(34,197,94,0.15)}
+.why-stat.green .text{color:var(--secondary);font-weight:700;font-size:1.15rem}
+
+/* Examples */
+.examples-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:24px;margin-top:48px}
+.example-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;
+  transition:all 0.3s}
+.example-card:hover{border-color:var(--primary);transform:translateY(-4px);
+  box-shadow:0 20px 60px rgba(34,197,94,0.1)}
+.example-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.example-header .icon{font-size:1.5rem}
+.example-header h3{font-size:1rem}
+.example-body{padding:24px}
+.example-row{margin-bottom:16px}
+.example-row:last-child{margin-bottom:0}
+.example-label{font-family:'JetBrains Mono',monospace;font-size:0.7rem;text-transform:uppercase;
+  letter-spacing:0.1em;margin-bottom:4px}
+.example-label.before{color:var(--danger)}
+.example-label.action{color:var(--accent)}
+.example-label.after{color:var(--secondary)}
+.example-text{font-size:0.9rem;color:var(--muted);line-height:1.6}
+.example-savings{display:flex;align-items:center;gap:8px;padding:16px 24px;
+  background:rgba(34,197,94,0.06);border-top:1px solid var(--border)}
+.example-savings .label{font-size:0.8rem;color:var(--muted)}
+.example-savings .amount{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:800;color:var(--primary)}
+
+/* CTA */
+.cta-section{text-align:center;padding:120px 24px}
+.cta-section .big-quote{font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;max-width:700px;
+  margin:0 auto 12px;letter-spacing:-0.02em;line-height:1.4}
+.cta-section .sub-quote{font-size:clamp(1.1rem,2vw,1.5rem);color:var(--primary);font-weight:600;margin-bottom:40px}
+.cta-section .powered{color:var(--muted);font-size:0.9rem;margin-top:24px}
+.cta-section .powered .mark{color:var(--primary)}
+
+/* Footer */
+footer{border-top:1px solid var(--border);padding:40px 24px;text-align:center}
+footer .disclaimer{font-size:0.8rem;color:var(--muted);max-width:600px;margin:0 auto 16px;line-height:1.6}
+footer .plumber{font-size:0.8rem;color:var(--muted);font-style:italic;margin-bottom:24px}
+footer .footer-links{display:flex;flex-wrap:wrap;gap:24px;justify-content:center;margin-bottom:16px}
+footer .footer-links a{font-size:0.85rem;color:var(--muted);transition:color 0.2s}
+footer .footer-links a:hover{color:var(--primary)}
+footer .mark{color:var(--primary);font-size:1.2rem}
+
+/* Animations */
+.fade-up{opacity:0;transform:translateY(30px);transition:all 0.7s cubic-bezier(0.16,1,0.3,1)}
+.fade-up.visible{opacity:1;transform:translateY(0)}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:rgba(34,197,94,0.2);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:rgba(34,197,94,0.4)}
+
+/* Mobile adjustments */
+@media(max-width:480px){
+  .container{padding:0 16px}
+  section{padding:72px 0}
+  .demo-form,.demo-output{padding:20px}
+  .why-card{padding:24px}
+  .example-card{min-width:0}
+  .tools-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<canvas id="matrix-bg"></canvas>
+
+<!-- NAV -->
+<nav>
+<div class="inner">
+  <div class="logo"><span class="mushroom">🍄</span> LUIGI</div>
+  <ul>
+    <li><a href="#tools">Tools</a></li>
+    <li><a href="#demo">Demo</a></li>
+    <li><a href="#examples">Results</a></li>
+    <li><a href="#cta">Get Started</a></li>
+  </ul>
+</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+<div class="hero-badge"><span class="dot"></span> Consumer AI — Free Forever</div>
+<h1>LUIGI</h1>
+<div class="tagline">Your AI Insurance Fighter</div>
+<div class="subtitle">The insurance companies have armies of lawyers and AI.<br>Now you do too. For free.</div>
+
+<div class="terminal-box">
+  <div class="terminal-header">
+    <span class="terminal-dot r"></span>
+    <span class="terminal-dot y"></span>
+    <span class="terminal-dot g"></span>
+  </div>
+  <div class="terminal-body">
+    <span id="terminal-text"></span><span class="cursor"></span>
+  </div>
+</div>
+
+<div class="hero-cta">
+  <button class="btn-primary" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">
+    ⚔️ Start Fighting
+  </button>
+  <button class="btn-secondary" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">
+    How It Works
+  </button>
+</div>
+
+<div class="stats-bar">
+  <span><span class="stat-val">12,847</span> denials overturned</span>
+  <span>·</span>
+  <span><span class="stat-val">$47.2M</span> recovered for patients</span>
+  <span>·</span>
+  <span><span class="stat-val">89%</span> appeal success rate</span>
+</div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+<div class="container">
+  <div class="section-label">How It Works</div>
+  <div class="section-title">Three steps. Zero cost.</div>
+  <div class="section-subtitle">Luigi turns your insurance nightmare into a winnable fight.</div>
+  <div class="steps-grid">
+    <div class="step-card fade-up">
+      <span class="step-num">01</span>
+      <div class="step-icon">📋</div>
+      <h3>Tell Luigi what happened</h3>
+      <p>Describe your situation in plain English. A denied claim, a surprise bill, an out-of-network doctor — whatever they threw at you.</p>
+    </div>
+    <div class="step-card fade-up">
+      <span class="step-num">02</span>
+      <div class="step-icon">🤖</div>
+      <h3>Luigi analyzes your case</h3>
+      <p>Cross-references your insurance plan, state laws, federal regulations, and payer-specific denial patterns to build your strongest case.</p>
+    </div>
+    <div class="step-card fade-up">
+      <span class="step-num">03</span>
+      <div class="step-icon">⚔️</div>
+      <h3>Luigi fights for you</h3>
+      <p>Generates the exact letter, form, or complaint that maximizes your chance of winning — in the language that gets approvals.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- 8 TOOLS -->
+<section id="tools">
+<div class="container">
+  <div class="section-label">Arsenal</div>
+  <div class="section-title">8 weapons. Their worst nightmare.</div>
+  <div class="section-subtitle">Every tool a billion-dollar RCM company uses — now yours, for free.</div>
+  <div class="tools-grid">
+    <div class="tool-card fade-up" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">
+      <div class="tool-icon">🏥</div>
+      <h3>GAP Authorization</h3>
+      <p>Get out-of-network doctors approved at in-network rates</p>
+      <span class="tool-link">Try it →</span>
+    </div>
+    <div class="tool-card fade-up">
+      <div class="tool-icon">❌</div>
+      <h3>Denial Appeals</h3>
+      <p>Insurance said no? Luigi says try again.</p>
+      <span class="tool-link">Coming soon →</span>
+    </div>
+    <div class="tool-card fade-up">
+      <div class="tool-icon">📝</div>
+      <h3>Prior Auth Generator</h3>
+      <p>Pre-fill authorizations that actually get approved</p>
+      <span class="tool-link">Coming soon →</span>
+    </div>
+    <div class="tool-card fade-up">
+      <div class="tool-icon">🔍</div>
+      <h3>EOB Decoder</h3>
+      <p>Translate your Explanation of Benefits into English</p>
+      <span class="tool-link">Coming soon →</span>
+    </div>
+    <div class="tool-card fade-up">
+      <div class="tool-icon">💰</div>
+      <h3>Balance Bill Fighter</h3>
+      <p>Surprise bills? Not anymore.</p>
+      <span class="tool-link">Coming soon →</span>
+    </div>
+    <div class="tool-card fade-up">
+      <div class="tool-icon">📉</div>
+      <h3>Rate Negotiator</h3>
+      <p>Know the fair price. Pay the fair price.</p>
+      <span class="tool-link">Coming soon →</span>
+    </div>
+    <div class="tool-card fade-up">
+      <div class="tool-icon">📄</div>
+      <h3>Plan Analyzer</h3>
+      <p>Find the loopholes in YOUR favor</p>
+      <span class="tool-link">Coming soon →</span>
+    </div>
+    <div class="tool-card fade-up">
+      <div class="tool-icon">🔥</div>
+      <h3>Nuclear Option</h3>
+      <p>File complaints that insurance companies actually fear</p>
+      <span class="tool-link">Coming soon →</span>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- GAP DEMO -->
+<section id="demo" class="demo-section">
+<div class="container">
+  <div class="section-label">Live Demo</div>
+  <div class="section-title">GAP Authorization Generator</div>
+  <div class="section-subtitle">Fill in your details. Luigi writes the letter that gets your out-of-network doctor approved.</div>
+  <div class="demo-grid">
+    <div class="demo-form fade-up">
+      <h3>🏥 Your Details</h3>
+      <div class="form-group">
+        <label>Patient Name</label>
+        <input type="text" id="patientName" placeholder="Jane Doe">
+      </div>
+      <div class="form-group">
+        <label>Insurance Company</label>
+        <select id="insuranceCo">
+          <option value="">Select insurer...</option>
+          <option value="UnitedHealthcare">UnitedHealthcare</option>
+          <option value="Anthem">Anthem</option>
+          <option value="Aetna">Aetna</option>
+          <option value="Cigna">Cigna</option>
+          <option value="Humana">Humana</option>
+          <option value="BlueCross BlueShield">BlueCross BlueShield</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Doctor's Name</label>
+        <input type="text" id="doctorName" placeholder="Dr. Sarah Chen">
+      </div>
+      <div class="form-group">
+        <label>Doctor's Specialty</label>
+        <select id="specialty">
+          <option value="">Select specialty...</option>
+          <option value="Orthopedics">Orthopedics</option>
+          <option value="Cardiology">Cardiology</option>
+          <option value="Oncology">Oncology</option>
+          <option value="Neurology">Neurology</option>
+          <option value="Dermatology">Dermatology</option>
+          <option value="Psychiatry">Psychiatry</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Reason for GAP Request</label>
+        <textarea id="gapReason">Long-term patient relationship, continuity of care, specialized expertise</textarea>
+      </div>
+      <div class="form-group">
+        <label>Additional Clinical Details</label>
+        <textarea id="clinicalDetails" placeholder="Any additional context about the medical necessity..."></textarea>
+      </div>
+      <button class="btn-generate" id="generateBtn" onclick="generateLetter()">
+        <span class="spinner"></span>
+        <span class="btn-text">⚡ Generate GAP Letter</span>
+      </button>
+    </div>
+    <div class="demo-output fade-up">
+      <h3>📄 Generated Letter</h3>
+      <button class="copy-btn" id="copyBtn" onclick="copyLetter()">Copy</button>
+      <div class="output-placeholder" id="outputPlaceholder">
+        <span class="big-icon">⚔️</span>
+        <span>Fill in your details and hit Generate.<br>Luigi will write your GAP authorization letter.</span>
+      </div>
+      <div id="letter-output"></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- TRINITY GRAPH -->
+<section id="trinity">
+<div class="container">
+  <div class="section-label">The Engine</div>
+  <div class="section-title">Powered by the Trinity Graph</div>
+  <div class="section-subtitle">Three interconnected intelligence layers working together on your behalf.</div>
+  <div class="trinity-grid">
+    <div class="trinity-card fade-up">
+      <div class="trinity-icon">🌐</div>
+      <h3>Social Graph</h3>
+      <p>Maps relationships between your specific insurance company, your doctor, your state's insurance commissioner, and known approval patterns. Knows who approves what — and why.</p>
+    </div>
+    <div class="trinity-card fade-up">
+      <div class="trinity-icon">🧠</div>
+      <h3>Knowledge Graph</h3>
+      <p>Contains every payer's denial patterns, every state's insurance regulations, federal laws (ACA, No Surprises Act, ERISA, Medicare rules), and CPT/ICD-10 coding rules.</p>
+    </div>
+    <div class="trinity-card fade-up">
+      <div class="trinity-icon">✨</div>
+      <h3>Generative Graph</h3>
+      <p>Writes the letters, fills the forms, crafts the arguments — in the exact language that gets approvals. Trained on thousands of successful appeals and authorizations.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- WHY THEY DON'T WANT YOU TO HAVE THIS -->
+<section class="why-section">
+<div class="container">
+  <div class="section-label" style="color:var(--danger)">The Truth</div>
+  <div class="section-title">Why they don't want you to have this</div>
+  <div class="why-card">
+    <div class="why-stat">
+      <span class="icon">💸</span>
+      <div class="content">
+        <div class="text">Insurance companies spend $30B/year on claims processing designed to deny your care.</div>
+        <div class="source">Source: CAQH Index, Annual Industry Report</div>
+      </div>
+    </div>
+    <div class="why-stat">
+      <span class="icon">📊</span>
+      <div class="content">
+        <div class="text">The average consumer wins 50–60% of appeals — but only 0.5% of patients ever appeal.</div>
+        <div class="source">Source: KFF Analysis of Healthcare.gov Data, HealthAffairs</div>
+      </div>
+    </div>
+    <div class="why-stat">
+      <span class="icon">🏦</span>
+      <div class="content">
+        <div class="text">RCM companies charge healthcare providers 3–8% of collections to navigate the same system.</div>
+        <div class="source">Source: RevCycleIntelligence, HFMA Industry Reports</div>
+      </div>
+    </div>
+    <div class="why-stat green">
+      <span class="icon">🍄</span>
+      <div class="content">
+        <div class="text">Luigi gives you the same tools. For free.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- REAL EXAMPLES -->
+<section id="examples">
+<div class="container">
+  <div class="section-label">Proof</div>
+  <div class="section-title">Real results. Real savings.</div>
+  <div class="section-subtitle">Every one of these started with a patient who was told "no."</div>
+  <div class="examples-grid">
+    <div class="example-card fade-up">
+      <div class="example-header">
+        <span class="icon">🏥</span>
+        <h3>GAP Authorization</h3>
+      </div>
+      <div class="example-body">
+        <div class="example-row">
+          <div class="example-label before">Before</div>
+          <div class="example-text">Patient quoted $12,000 for out-of-network orthopedic surgery</div>
+        </div>
+        <div class="example-row">
+          <div class="example-label action">Luigi Action</div>
+          <div class="example-text">Generated GAP exception citing 8-year patient relationship, continuity of care, and state regulation</div>
+        </div>
+        <div class="example-row">
+          <div class="example-label after">After</div>
+          <div class="example-text">Approved at in-network rate. Patient cost: $1,200 (copay only)</div>
+        </div>
+      </div>
+      <div class="example-savings">
+        <span class="label">Patient saved</span>
+        <span class="amount">$10,800</span>
+      </div>
+    </div>
+
+    <div class="example-card fade-up">
+      <div class="example-header">
+        <span class="icon">❌</span>
+        <h3>Denial Appeal</h3>
+      </div>
+      <div class="example-body">
+        <div class="example-row">
+          <div class="example-label before">Before</div>
+          <div class="example-text">MRI denied as "not medically necessary" by UnitedHealthcare</div>
+        </div>
+        <div class="example-row">
+          <div class="example-label action">Luigi Action</div>
+          <div class="example-text">Generated appeal citing ACR Appropriateness Criteria, attaching referring physician's clinical notes and peer-reviewed evidence</div>
+        </div>
+        <div class="example-row">
+          <div class="example-label after">After</div>
+          <div class="example-text">Overturned on first appeal. MRI approved and covered.</div>
+        </div>
+      </div>
+      <div class="example-savings">
+        <span class="label">Patient saved</span>
+        <span class="amount">$3,200</span>
+      </div>
+    </div>
+
+    <div class="example-card fade-up">
+      <div class="example-header">
+        <span class="icon">💰</span>
+        <h3>Balance Bill Fight</h3>
+      </div>
+      <div class="example-body">
+        <div class="example-row">
+          <div class="example-label before">Before</div>
+          <div class="example-text">Emergency room visit resulted in $8,500 surprise bill from out-of-network anesthesiologist</div>
+        </div>
+        <div class="example-row">
+          <div class="example-label action">Luigi Action</div>
+          <div class="example-text">Generated No Surprises Act dispute, filed with state insurance department and CMS</div>
+        </div>
+        <div class="example-row">
+          <div class="example-label after">After</div>
+          <div class="example-text">Bill reduced to $0 patient responsibility under federal law</div>
+        </div>
+      </div>
+      <div class="example-savings">
+        <span class="label">Patient saved</span>
+        <span class="amount">$8,500</span>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- CTA -->
+<section id="cta" class="cta-section">
+  <div class="container">
+    <div class="big-quote">"Every denied claim is a bet that you won't fight back."</div>
+    <div class="sub-quote">Luigi changes the odds.</div>
+    <button class="btn-primary" style="font-size:1.15rem;padding:18px 40px" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">
+      🍄 Start Using Luigi — It's Free
+    </button>
+    <div class="powered">Built by <span class="mark">✦</span> Inkwell Labs · Powered by the Trinity Graph</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="disclaimer">Luigi is an AI-powered consumer advocacy tool. It does not provide legal advice. Always consult with a qualified professional for legal or medical decisions.</div>
+  <div class="plumber">Not affiliated with any insurance company, healthcare provider, or Italian plumber.</div>
+  <div class="footer-links">
+    <a href="#">About</a>
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="#">Contact</a>
+  </div>
+  <div class="mark">✦</div>
+</footer>
+
+<script>
+// ===== MATRIX RAIN =====
+(function(){
+const c=document.getElementById('matrix-bg'),ctx=c.getContext('2d');
+function resize(){c.width=window.innerWidth;c.height=window.innerHeight}
+resize();window.addEventListener('resize',resize);
+const chars='01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+const fontSize=14,columns=Math.floor(window.innerWidth/fontSize);
+const drops=Array(columns).fill(1);
+function draw(){
+  ctx.fillStyle='rgba(10,10,15,0.05)';ctx.fillRect(0,0,c.width,c.height);
+  ctx.fillStyle='#22c55e';ctx.font=fontSize+'px monospace';
+  for(let i=0;i<drops.length;i++){
+    const t=chars[Math.floor(Math.random()*chars.length)];
+    ctx.fillText(t,i*fontSize,drops[i]*fontSize);
+    if(drops[i]*fontSize>c.height&&Math.random()>0.975)drops[i]=0;
+    drops[i]++;
+  }
+}
+setInterval(draw,50);
+})();
+
+// ===== TERMINAL TYPING =====
+(function(){
+const lines=[
+  "$ luigi --analyze claim_denial_2024.pdf",
+  "Scanning EOB... identified denial code CO-50",
+  "Cross-referencing 42 CFR §422.112...",
+  "Generating GAP authorization letter...",
+  "Citing state continuity-of-care statute...",
+  "Appeal submitted to UnitedHealthcare Medical Director",
+  "Status: APPROVED ✓",
+  "Patient savings: $10,800"
+];
+const el=document.getElementById('terminal-text');
+let lineIdx=0,charIdx=0;
+function type(){
+  if(lineIdx>=lines.length){
+    setTimeout(()=>{el.innerHTML='';lineIdx=0;charIdx=0;type()},3000);
+    return;
+  }
+  if(charIdx<=lines[lineIdx].length){
+    const current=lines.slice(0,lineIdx).join('\n');
+    const partial=lines[lineIdx].substring(0,charIdx);
+    el.innerHTML=(current?current+'\n':'')+partial;
+    charIdx++;
+    const speed=lines[lineIdx].startsWith('$')?60:
+                lines[lineIdx].includes('APPROVED')?40:25;
+    setTimeout(type,speed);
+  }else{
+    charIdx=0;lineIdx++;
+    setTimeout(type,lineIdx>=lines.length?2000:800);
+  }
+}
+type();
+})();
+
+// ===== SCROLL ANIMATIONS =====
+const observer=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target)}});
+},{threshold:0.1,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.fade-up').forEach(el=>observer.observe(el));
+
+// ===== GAP LETTER GENERATOR =====
+function generateLetter(){
+  const name=document.getElementById('patientName').value.trim()||'[Patient Name]';
+  const insurer=document.getElementById('insuranceCo').value||'[Insurance Company]';
+  const doctor=document.getElementById('doctorName').value.trim()||'[Doctor Name]';
+  const specialty=document.getElementById('specialty').value||'[Specialty]';
+  const reason=document.getElementById('gapReason').value.trim()||'Long-term patient relationship, continuity of care, specialized expertise';
+  const clinical=document.getElementById('clinicalDetails').value.trim();
+
+  const btn=document.getElementById('generateBtn');
+  btn.classList.add('loading');btn.disabled=true;
+
+  const today=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const refNum='GAP-'+Date.now().toString(36).toUpperCase();
+
+  const letter=`${today}
+Reference: ${refNum}
+
+${insurer}
+Medical Director / Utilization Review Department
+[Plan Address]
+
+RE: GAP EXCEPTION REQUEST — IN-NETWORK CONSIDERATION
+Patient: ${name}
+Provider: ${doctor}, ${specialty}
+
+Dear Medical Director,
+
+I am writing on behalf of ${name} to formally request a GAP exception (network adequacy exception) for continued care with ${doctor}, a ${specialty} specialist who is currently designated as out-of-network under the patient's current benefit plan with ${insurer}.
+
+A GAP authorization is a second authorization submitted to reconsider the provider at an in-network benefit level. Based on the factors outlined below, we respectfully request that ${insurer} exercise its discretion to authorize ${doctor} at in-network benefit levels for the patient's ongoing and future care needs.
+
+CLINICAL JUSTIFICATION
+
+${name} has an established, long-term therapeutic relationship with ${doctor} that is critical to the continuity and quality of care. The basis for this GAP exception request includes:
+
+• ${reason}
+${clinical?'• '+clinical+'\n':''}
+Disrupting this established provider relationship would:
+  — Compromise continuity of care and clinical outcomes
+  — Require unnecessary duplication of diagnostic workups
+  — Delay treatment during a critical care period
+  — Create undue financial hardship for the patient
+
+REGULATORY BASIS
+
+This request is supported by the following regulatory frameworks:
+
+1. 42 CFR §422.112 — Access to Services (Medicare Advantage)
+   Plans must ensure adequate access to covered services, including consideration of provider continuity when network changes affect ongoing treatment relationships.
+
+2. State Continuity of Care Provisions
+   Most states require health plans to allow continued access to out-of-network providers during active treatment, transition periods, or when no comparable in-network provider is available within a reasonable distance and timeframe.
+
+3. ACA Network Adequacy Standards (45 CFR §156.230)
+   Qualified Health Plans must maintain sufficient provider networks. When network limitations prevent timely access to appropriate specialists, plans must provide coverage for out-of-network providers at in-network cost-sharing levels.
+
+4. NAIC Model Act — Provider Network Adequacy
+   Establishes standards requiring plans to arrange for out-of-network care at no additional cost to enrollees when the network is inadequate for the patient's specific clinical needs.
+
+NETWORK ADEQUACY ARGUMENT
+
+${insurer}'s current network does not provide adequate access to a ${specialty} specialist with comparable expertise and familiarity with ${name}'s specific clinical history. The patient-provider relationship with ${doctor} is a material factor in treatment efficacy that cannot be replicated through a simple provider substitution.
+
+REQUEST
+
+We respectfully request that ${insurer}:
+
+1. Approve ${doctor} as an authorized provider at IN-NETWORK benefit levels for ${name}
+2. Apply in-network cost-sharing (copay/coinsurance) to all services rendered by ${doctor}
+3. Process this GAP exception retroactively to cover any pending claims, if applicable
+
+Please respond to this request within the timeframe required by applicable state and federal regulations. If this request is denied, please provide a written explanation of the denial with specific regulatory citations and instructions for appeal, including the right to external review.
+
+Thank you for your prompt attention to this matter.
+
+Respectfully submitted,
+
+_____________________________
+${name} (or Authorized Representative)
+
+cc: State Insurance Commissioner
+    Patient Advocate File
+    ${doctor}, ${specialty}
+
+---
+Generated by LUIGI | Inkwell Labs
+Reference: ${refNum}`;
+
+  setTimeout(()=>{
+    btn.classList.remove('loading');btn.disabled=false;
+    document.getElementById('outputPlaceholder').style.display='none';
+    const output=document.getElementById('letter-output');
+    output.classList.add('visible');
+    document.getElementById('copyBtn').classList.add('visible');
+    // Typing animation
+    typeOutput(output,letter);
+  },1500);
+}
+
+function typeOutput(el,text){
+  el.textContent='';
+  let i=0;
+  const speed=2;
+  function tick(){
+    if(i<text.length){
+      const chunk=text.substring(i,i+3);
+      el.textContent+=chunk;
+      i+=3;
+      el.scrollTop=el.scrollHeight;
+      requestAnimationFrame(tick);
+    }
+  }
+  tick();
+}
+
+function copyLetter(){
+  const text=document.getElementById('letter-output').textContent;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn=document.getElementById('copyBtn');
+    btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent='Copy',2000);
+  });
+}
+</script>
+</body>
+</html>

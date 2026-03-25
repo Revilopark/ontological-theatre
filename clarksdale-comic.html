@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>The Clarksdale Series — Infinity Comic</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0A0704;--s1:#130E08;--s2:#1C1408;--s3:#2A2010;
+  --gold:#C8973A;--gold2:#E8C87A;--goldg:rgba(200,151,58,.12);
+  --text:#F0E6D0;--muted:#7A6A4A;--border:#2A2010;
+  --fire:#C0392B;--river:#2A5A6A;--soil:#3A2A10;
+  --serif:'Playfair Display',Georgia,serif;
+  --sans:'DM Sans',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --r:6px;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--sans)}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--s3);border-radius:2px}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex-direction:column;height:100%}
+.topbar{height:48px;background:rgba(10,7,4,.95);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;
+  padding:0 16px;gap:12px;flex-shrink:0;z-index:100}
+.logo{font-family:var(--serif);font-size:1.1rem;font-weight:700;
+  color:var(--gold);letter-spacing:.02em}
+.logo em{font-style:italic;font-weight:400;color:var(--muted);font-size:.85rem}
+.top-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.tbtn{padding:.3rem .7rem;border-radius:4px;border:1px solid var(--border);
+  background:var(--s1);color:var(--muted);font-size:.7rem;font-weight:500;
+  cursor:pointer;transition:all .2s;font-family:var(--sans)}
+.tbtn:hover{border-color:var(--gold);color:var(--gold)}
+.tbtn.gold{background:var(--gold);color:#000;border-color:var(--gold);font-weight:700}
+.tbtn.gold:hover{opacity:.9}
+.tbtn:disabled{opacity:.4;cursor:default}
+.ep-tag{font-family:var(--mono);font-size:.6rem;color:var(--gold);
+  padding:.15rem .4rem;background:var(--goldg);border:1px solid rgba(200,151,58,.25);border-radius:3px}
+
+.workspace{flex:1;display:flex;overflow:hidden}
+
+/* ── EPISODE SELECTOR ── */
+.sidebar{width:260px;background:var(--s1);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.sb-hdr{padding:12px 14px;border-bottom:1px solid var(--border);
+  font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.15em}
+.sb-scroll{flex:1;overflow-y:auto;padding:8px}
+.ep-card{padding:12px;border-radius:var(--r);border:1px solid transparent;
+  cursor:pointer;transition:all .2s;margin-bottom:6px}
+.ep-card:hover{background:var(--s2);border-color:var(--border)}
+.ep-card.active{background:var(--goldg);border-color:rgba(200,151,58,.35)}
+.ep-card.double-feature{border:1px solid #d4a017;background:linear-gradient(135deg,rgba(212,160,23,0.08),rgba(212,160,23,0.02))}
+.ep-era{font-size:.55rem;font-weight:700;color:var(--gold);letter-spacing:.15em;text-transform:uppercase;margin-bottom:3px}
+.ep-title{font-family:var(--serif);font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:3px}
+.ep-sub{font-size:.68rem;color:var(--muted);line-height:1.5}
+.ep-meta{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.ep-chip{font-size:.55rem;padding:.15rem .4rem;background:var(--s2);border:1px solid var(--border);
+  border-radius:3px;color:var(--muted)}
+
+/* panel list under selected ep */
+.panel-list{border-top:1px solid var(--border);padding:8px;flex-shrink:0;max-height:240px;overflow-y:auto}
+.pl-item{display:flex;gap:8px;align-items:center;padding:5px 8px;border-radius:4px;
+  cursor:pointer;font-size:.7rem;color:var(--muted);transition:all .15s;margin-bottom:2px}
+.pl-item:hover{background:var(--s2);color:var(--text)}
+.pl-item.active{color:var(--gold);background:var(--goldg)}
+.pl-item.done{color:var(--text)}
+.pl-item.done::before{content:'✓';color:var(--gold);font-size:.6rem;margin-right:2px}
+.pl-thumb{width:32px;height:24px;border-radius:3px;overflow:hidden;background:var(--s3);flex-shrink:0}
+.pl-thumb img{width:100%;height:100%;object-fit:cover}
+.pl-num{font-family:var(--mono);font-size:.6rem;color:var(--gold);width:16px;flex-shrink:0}
+
+/* ── CENTER — PHONE PREVIEW ── */
+.center{flex:1;display:flex;flex-direction:column;align-items:center;
+  background:var(--bg);overflow:hidden;padding:12px 0}
+.gen-bar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;justify-content:center}
+.gen-progress{font-size:.68rem;color:var(--muted);font-family:var(--mono)}
+
+.phone{background:#050403;border-radius:40px;border:3px solid #1a1a16;
+  box-shadow:0 0 0 1px #0a0a06,0 20px 60px rgba(0,0,0,.8),inset 0 0 0 1px rgba(200,151,58,.08);
+  overflow:hidden;position:relative;width:340px;height:640px;flex-shrink:0}
+.phone-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:110px;height:26px;background:#050403;border-radius:0 0 16px 16px;z-index:10}
+.phone-screen{height:100%;overflow-y:scroll;overflow-x:hidden;padding-top:26px;
+  background:#000;scroll-behavior:smooth}
+.phone-screen::-webkit-scrollbar{display:none}
+
+/* STRIP PANELS */
+.strip-title{padding:32px 20px 16px;text-align:center}
+.strip-title .st-era{font-size:.55rem;font-weight:700;color:var(--gold);
+  letter-spacing:.25em;text-transform:uppercase;margin-bottom:6px}
+.strip-title h2{font-family:var(--serif);font-size:1.3rem;color:var(--text);
+  font-weight:900;line-height:1.3;margin-bottom:6px}
+.strip-title .st-sub{font-size:.72rem;color:var(--muted);font-style:italic;
+  font-family:var(--serif)}
+.strip-end{padding:24px 20px 48px;text-align:center}
+.strip-end .se-mark{font-family:var(--serif);font-size:1.2rem;color:var(--gold);font-weight:700;margin-bottom:4px}
+.strip-end .se-sub{font-size:.65rem;color:var(--muted)}
+
+.s-panel{width:100%;position:relative;overflow:hidden}
+.s-panel img{width:100%;display:block}
+.s-panel .s-placeholder{width:100%;display:flex;align-items:center;justify-content:center;
+  background:var(--s2);flex-direction:column;gap:6px}
+.s-panel .s-placeholder .s-ph-num{font-family:var(--mono);font-size:.6rem;color:var(--gold)}
+.s-panel .s-placeholder .s-ph-desc{font-size:.65rem;color:var(--muted);text-align:center;
+  padding:0 20px;line-height:1.5}
+.s-panel .gen-spin{position:absolute;inset:0;background:rgba(0,0,0,.7);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;font-size:.65rem;color:var(--muted)}
+
+/* captions */
+.s-caption{position:absolute;bottom:0;left:0;right:0;padding:10px 14px;
+  background:linear-gradient(transparent,rgba(0,0,0,.85));
+  font-family:var(--serif);font-size:.72rem;color:var(--text);
+  font-style:italic;line-height:1.6}
+.s-caption.top{bottom:auto;top:0;
+  background:linear-gradient(rgba(0,0,0,.85),transparent);font-style:normal}
+.s-caption .cap-tag{font-size:.5rem;font-weight:700;color:var(--gold);
+  letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:3px;font-style:normal;font-family:var(--sans)}
+
+.spin{width:20px;height:20px;border:2px solid rgba(200,151,58,.15);
+  border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── RIGHT — EDITOR ── */
+.editor{width:260px;background:var(--s1);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden}
+.ed-hdr{padding:10px 14px;border-bottom:1px solid var(--border);
+  font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.15em}
+.ed-scroll{flex:1;overflow-y:auto;padding:14px}
+.ed-section{margin-bottom:14px}
+.ed-label{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--muted);margin-bottom:5px}
+.ed-ta{width:100%;padding:.55rem .7rem;border-radius:4px;border:1px solid var(--border);
+  background:var(--s2);color:var(--text);font-size:.78rem;font-family:var(--sans);
+  resize:none;line-height:1.6}
+.ed-ta:focus{outline:none;border-color:rgba(200,151,58,.4)}
+.ed-ta::placeholder{color:var(--muted)}
+.ed-small{font-size:.6rem;color:var(--muted);margin-top:3px;font-style:italic;line-height:1.4}
+.gen-one{width:100%;padding:.55rem;border-radius:4px;border:none;
+  background:var(--gold);color:#000;font-size:.78rem;font-weight:700;
+  cursor:pointer;font-family:var(--sans);transition:all .2s;margin-top:4px}
+.gen-one:hover{opacity:.9}
+.gen-one:disabled{opacity:.4;cursor:default}
+.gen-one.regen{background:var(--s2);color:var(--gold);border:1px solid var(--gold)}
+.gen-one.regen:hover{background:var(--goldg)}
+
+.ed-row{display:flex;gap:6px}
+.ed-row .ed-ta{flex:1}
+.char-chips{display:flex;gap:4px;flex-wrap:wrap}
+.char-chip{padding:.2rem .5rem;border-radius:3px;font-size:.6rem;
+  background:var(--goldg);border:1px solid rgba(200,151,58,.25);color:var(--gold);
+  cursor:pointer;transition:all .15s}
+.char-chip:hover{background:rgba(200,151,58,.25)}
+
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+  background:var(--s2);border:1px solid var(--border);border-radius:6px;
+  padding:.45rem .9rem;font-size:.72rem;color:var(--text);z-index:9999;
+  pointer-events:none;transition:opacity .3s;white-space:nowrap}
+.toast.ok{border-color:rgba(200,151,58,.4);color:var(--gold)}
+.toast.err{border-color:rgba(192,57,43,.4);color:var(--fire)}
+.toast.hide{opacity:0}
+
+/* custom panel edit */
+.custom-controls{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="topbar">
+  <div class="logo">The Clarksdale Series <em>— Infinity Comic</em></div>
+  <div class="top-right">
+    <span class="ep-tag" id="genCount">0 / 0 panels</span>
+    <button class="tbtn gold" id="genAllBtn" onclick="generateAll()">✦ Generate Episode</button>
+    <a href="comic-strip-builder.html" target="_blank"
+      style="padding:.3rem .7rem;border-radius:4px;border:1px solid rgba(200,151,58,.3);
+        background:rgba(200,151,58,.07);color:var(--gold);font-size:.7rem;font-weight:500;
+        text-decoration:none;display:inline-flex;align-items:center;gap:4px">
+      ⊕ OT Builder</a>
+    <button class="tbtn" onclick="exportStrip()">⬇ Export Strip</button>
+  </div>
+</div>
+
+<div class="workspace">
+
+  <!-- SIDEBAR — EPISODES -->
+  <div class="sidebar">
+    <div class="sb-hdr">Episodes</div>
+    <div class="sb-scroll" id="epList"></div>
+    <div class="panel-list" id="panelList"></div>
+  </div>
+
+  <!-- CENTER — PHONE -->
+  <div class="center">
+    <div class="gen-bar">
+      <span class="gen-progress" id="genStatus">Select an episode</span>
+    </div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen" id="phoneScreen"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT — EDITOR -->
+  <div class="editor">
+    <div class="ed-hdr">Panel Editor</div>
+    <div class="ed-scroll" id="edScroll">
+      <div style="padding:30px 0;text-align:center;color:var(--muted);font-size:.78rem;font-family:var(--serif);font-style:italic">
+        Select a panel to edit
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<div class="toast hide" id="toast"></div>
+
+<script>
+const PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app';
+const FAL   = PROXY + '/fal/generate-sync';
+const GEM   = PROXY + '/gemini/generate';
+
+// ── ART STYLE ────────────────────────────────────────────────────────────────
+const STYLE = `sepia-toned documentary photography rendered as graphic novel illustration, Gordon Parks meets Frank Miller, high contrast deep blacks and warm amber highlights, Mississippi Delta landscape, Southern Gothic atmosphere, Black American subjects, period-accurate clothing and architecture, dramatic chiaroscuro lighting, ink wash texture, no text no words no speech bubbles no captions, professional illustration`;
+
+const CHARACTERS = {
+  'Robert Johnson':   'young Black American man, thin face, sharp cheekbones, fedora hat tilted, long fingers on guitar neck, haunted distant eyes, wearing dark suit and white shirt, 1930s Mississippi',
+  'Charley Patton':   'stocky powerful Black American man, broad shoulders, intense wild eyes, open mouth singing with force, wearing overalls and work shirt, knife scar on face, 1920s Delta plantation',
+  'Muddy Waters':     'young muscular Black American man, strong jaw, determined gaze, wearing work clothes transitioning to sharp suit, acoustic guitar becoming electric, 1940s–50s',
+  'Son House':        'tall gaunt Black American man, preacher bearing, tormented expression, eyes half-closed in ecstasy or pain, slide guitar across lap, wearing white shirt dark vest, 1930s church-meets-juke-joint',
+  'Bessie Smith':     'magnificent Black American woman, regal bearing, ornate headpiece, silk dress, commanding presence, 1920s vaudeville glamour meeting Delta dust',
+  'Alan Lomax':       'wiry white man, recording equipment, acetate disc recorder, microphone, sweat-stained shirt, notebooks, 1940s field recording setup, outsider witness',
+  'Ma Rainey':        'powerful Black American woman, gold teeth, elaborate headdress, sequined dress, commanding stage presence, Mother of the Blues, 1920s tent show',
+  'Highway 61':       'long straight road cutting through flat Delta farmland, heat shimmer, cotton fields on both sides, telephone poles receding to vanishing point, mythic American landscape',
+  'Ike Turner':       'young Black American man, late teens, lean build, sharp dressed in pressed slacks and white shirt, intense focused eyes, pianist hands, ambitious determined expression, 1950s Clarksdale Mississippi',
+  'Sam Phillips':     'white man in his thirties, recording engineer, shirt sleeves rolled up, headphones, surrounded by recording equipment and dials, Memphis studio, 1950s',
+  'Sam Cooke':        'handsome Black American man, warm radiant smile, elegant suit, extraordinary charisma and presence, gospel-trained voice, civil rights era, 1950s-60s',
+};
+
+// ── EPISODES ─────────────────────────────────────────────────────────────────
+const EPISODES = [
+  {
+    id:'crossroads', era:'1936 · COAHOMA COUNTY', title:'The Crossroads',
+    sub:'Robert Johnson walks the midnight road where Highway 61 meets Highway 49.',
+    chars:['Robert Johnson','Highway 61'],
+    panels:[
+      {type:'cinematic', desc:'Aerial view of two roads intersecting in flat Mississippi Delta farmland at midnight, crossroads, moonlit cotton fields stretching to horizon, a single figure standing at the junction', caption:'They say the Devil waits where the roads cross. But the Devil is just a word for what you\'re willing to give up.'},
+      {type:'portrait', desc:'Robert Johnson standing alone at the crossroads at midnight, full figure, guitar case at his feet, looking down at the intersection of two dirt roads, dramatic moonlight casting long shadow, dust rising', caption:'Robert Leroy Johnson walked south from Robinsonville with nothing but a guitar he could barely play and a hunger that had no name.'},
+      {type:'standard', desc:'Close-up of Robert Johnson\'s hands opening a guitar case on the dusty crossroads ground, moonlight catching the strings, his long fingers trembling', caption:null},
+      {type:'tall', desc:'A massive dark figure materializing from the shadows at the crossroads, suggestion of a large Black man in a dark suit, hat obscuring face, enormous hands reaching toward the guitar, Robert Johnson looking up in awe and terror', caption:'The figure did not arrive. He was already there. Had always been there. Waiting at the junction of every road anyone ever had to choose.'},
+      {type:'standard', desc:'Robert Johnson\'s face in extreme close-up, eyes wide, sweat on brow, mouth slightly open, the reflection of something supernatural in his pupils, dramatic side lighting', caption:null},
+      {type:'cinematic', desc:'The dark figure\'s massive hands tuning Robert Johnson\'s guitar, precise delicate movements from enormous fingers, sparks of supernatural light along the strings', caption:'He tuned each string like he was remembering something. Like the guitar already knew the songs. It just needed permission.'},
+      {type:'portrait', desc:'Robert Johnson playing guitar at the crossroads with supernatural intensity, body arched back, fingers flying, visible sound waves or energy emanating from the instrument, the dark figure fading into shadow behind him, dust spiraling upward', caption:'When Robert played the first chord, every dog in Coahoma County howled. Every crow went silent. The cotton itself leaned in to listen.'},
+      {type:'cinematic', desc:'Dawn breaking over the empty crossroads, Robert Johnson walking away down Highway 61 with his guitar, small figure against vast Delta landscape, the crossroads behind him glowing faintly', caption:'He walked away a different man. The kind of different you can hear in every note he ever played after that night. Twenty-nine songs. Then gone.'},
+    ]
+  },
+  {
+    id:'saturday', era:'1929 · DOCKERY PLANTATION', title:'Saturday Night at Dockery\'s',
+    sub:'Charley Patton turns a sharecropper\'s porch into the first stage of the Delta Blues.',
+    chars:['Charley Patton','Son House'],
+    panels:[
+      {type:'cinematic', desc:'Wide establishing shot of Dockery Plantation at dusk, rows of sharecropper cabins, cotton fields beyond, warm orange light spilling from one cabin porch, silhouettes of people gathering, Mississippi Delta twilight', caption:'Dockery Plantation. Two thousand acres of someone else\'s cotton. But on Saturday night, the music belonged to everyone.'},
+      {type:'standard', desc:'Charley Patton on a wooden porch, guitar across his body, stomping his foot on the planks, dust rising, people crowded around, lantern light, his face contorted with wild energy as he plays and sings', caption:'Charley Patton didn\'t play the blues. He WAS the blues — every slap on that guitar body was the sound of the Delta fighting back.'},
+      {type:'portrait', desc:'Son House sitting in the corner of the porch watching Charley Patton play, his face a mixture of rapture and conflict, preacher\'s Bible on one side of him and a bottle of whiskey on the other, dramatic shadows', caption:'Son House watched from the corner. Half his soul still belonged to the church. The other half belonged to whatever was happening on that porch.'},
+      {type:'standard', desc:'Close-up of Charley Patton\'s hands on guitar strings, calloused fingers, one hand behind his head playing guitar backwards, crowd cheering, bottle being passed, kinetic energy', caption:null},
+      {type:'tall', desc:'The crowd around the porch growing, Black American men and women in 1920s work clothes and Saturday night finest, dancing, children watching from windows, the music radiating outward like visible energy, Dockery Plantation cabins in background', caption:'Every Saturday, the same miracle. A man with a piece of wood and some wire strings turning suffering into something you could dance to.'},
+      {type:'cinematic', desc:'Dawn light creeping across the plantation, Charley Patton still playing to two or three remaining listeners, Son House asleep against the porch post, empty bottles, the cotton fields beginning to glow gold in sunrise', caption:'Come Monday, they\'d all be back in the fields. But for one night, Dockery\'s porch was the center of the universe. And Charley Patton was its sun.'},
+      {type:'portrait', desc:'Son House walking away from Dockery Plantation at dawn, Bible tucked under one arm, guitar slung over his back, the juke joint porch behind him still smoking with lantern light, Mississippi Delta 1929, first light catching the cotton fields', caption:'Son House walked home with the Bible under one arm and the music under his skin. He told himself he\'d choose one or the other by Sunday. He never did. The Delta doesn\'t ask you to choose — it asks you to carry both.', imageUrl:'https://v3b.fal.media/files/b/0a905835/qHreTn8GdpJkB_SBMruH0_2b703229bb2d43a0ba61b6d2560c7c3a.jpg'},
+    ]
+  },
+  {
+    id:'rocket88', era:'1951 · CLARKSDALE TO MEMPHIS', title:'Rocket 88',
+    sub:'Ike Turner drives from Clarksdale to Memphis. A broken amplifier. The accidental birth of rock and roll.',
+    chars:['Ike Turner','Sam Phillips'],
+    panels:[
+      {type:'cinematic', desc:'Young Ike Turner walking along a quiet Delta town main street at dusk, pressed slacks and white shirt, notebook of sheet music under his arm, movie theatre marquee glowing amber behind him, long shadow on the sidewalk, Clarksdale Mississippi 1950', caption:'Clarksdale, Mississippi. 1950. Ike Turner was born here — and the town was already too small for what was growing inside him.'},
+      {type:'portrait', desc:'Teenage Black boy plays an upright piano in a juke joint corner, completely absorbed, eyes closed, fingers flying across the keys, older men and women crowded around him, kerosene lanterns, sawdust floor, chipped paint piano', caption:'He learned piano from the men who invented it in these parts. By fourteen he was playing juke joints. By eighteen he was running them.'},
+      {type:'standard', desc:'Young Black men loading guitar cases amplifiers and drum kit into a beat-up 1949 Ford at night outside a Clarksdale building, one streetlamp casting a single cone of light, heading somewhere important', caption:'The Kings of Rhythm loaded their equipment into the night like men who know they\'re not coming back the same.'},
+      {type:'standard', desc:'Mississippi highway shoulder 1951, Ford pulled over, trunk open, guitar amplifier fallen with torn speaker cone, young Black man kneeling examining the damage, second man holding crumpled newspaper, empty highway stretching to horizon in pre-dawn darkness', caption:'Between Clarksdale and Memphis, the amplifier fell. The speaker cone tore. Willie Kizart stuffed it with newspaper. The accident would outlive them all.'},
+      {type:'standard', desc:'Memphis Tennessee exterior 1951, small brick recording studio facade, young Black men unloading equipment from a Ford onto the sidewalk in early morning, one carrying damaged amplifier, sense of arrival and uncertainty', caption:'Memphis Recording Service. Sam Phillips had recorded Howlin\' Wolf here. Now these boys from Clarksdale came with their battered equipment and their borrowed confidence.'},
+      {type:'portrait', desc:'Young Black man at upright piano inside recording booth, eyes closed, sweat on brow, headphones around neck, single overhead light illuminating face, fingers pressing keys with complete focus, microphone boom at edge of frame', caption:'Ike Turner at the piano. Eyes closed. Sweat on his brow. He didn\'t know yet what the torn cone was doing to the sound. He was just playing.'},
+      {type:'standard', desc:'White engineer in his thirties leaning forward at recording console covered in dials and VU meters, eyes wide, surprised expression, hearing something extraordinary in headphones, recording booth visible through studio glass, reel-to-reel tape spools turning', caption:'Sam Phillips heard it and knew. Whatever that noise was — electric, raw, distorted, alive — it had never existed before this moment. It would never stop existing.'},
+      {type:'cinematic', desc:'Clarksdale Mississippi 1951 evening, young Black man standing alone on a street corner, same storefronts same streetlamp as the beginning, but he has changed, different posture, wide shot, long blue shadow, he is nineteen years old', caption:'He drove back to Clarksdale. The town was exactly the same. He was not. That is the oldest story the Delta knows how to tell.'},
+    ]
+  },
+  {
+    id:'migration', era:'1943 · STOVALL TO CHICAGO', title:'The Great Migration',
+    sub:'Muddy Waters rides the Illinois Central north, carrying the Delta in his guitar case.',
+    chars:['Muddy Waters','Alan Lomax','Highway 61'],
+    panels:[
+      {type:'cinematic', desc:'The Illinois Central railroad tracks cutting through Mississippi Delta farmland, a steam train in the distance approaching, heat shimmer, cotton fields, telephone poles, sense of departure and destiny', caption:'The Illinois Central didn\'t just carry people north. It carried an entire culture — compressed into suitcases and guitar cases and the memories of everyone who\'d ever picked cotton.'},
+      {type:'standard', desc:'Muddy Waters sitting on his cabin porch at Stovall Plantation, acoustic guitar in lap, looking at a creased photograph of Chicago, determination in his eyes, 1943 work clothes', caption:'McKinley Morganfield — Muddy Waters — had been recorded by Alan Lomax right here on Stovall. Heard himself on a phonograph and knew: if he sounded that good captured, imagine what he\'d sound like free.'},
+      {type:'portrait', desc:'Muddy Waters boarding the Illinois Central train, guitar case in one hand, small bag in other, looking back one last time at the flat Delta landscape, other Black passengers on the platform, steam and smoke, dramatic moment of departure', caption:'Three hundred miles of track between the Delta and Chicago. Between cotton and concrete. Between the old blues and whatever the blues was about to become.'},
+      {type:'cinematic', desc:'View through the train window as Mississippi Delta farmland gives way to small towns then Memphis then open farmland again, Muddy Waters\' reflection ghosted in the glass, landscape blurring', caption:null},
+      {type:'standard', desc:'Muddy Waters arriving at Chicago\'s 12th Street Station, overwhelmed by the city, tall buildings visible through station windows, crowds of Black Americans in city clothes, his guitar case and country clothes marking him as newly arrived', caption:'Chicago hit him like a wall of sound. Car horns and el trains and a million conversations in every accent from every county in Mississippi.'},
+      {type:'tall', desc:'Muddy Waters on Maxwell Street in Chicago, plugging a pickup into his acoustic guitar connected to a small amplifier for the first time, the sound exploding outward, passersby stopping, the moment the Delta Blues went electric, urban Chicago backdrop', caption:'He plugged in. And the sound that came out wasn\'t Mississippi anymore. It wasn\'t Chicago either. It was something brand new — something so loud and raw and electrified that the whole world would eventually hear it and call it rock and roll.'},
+      {type:'cinematic', desc:'Split composition: left side shows Stovall Plantation cabin in Mississippi, right side shows Chicago South Side club neon signs, Muddy Waters\' silhouette bridging both worlds, guitar connecting the two landscapes', caption:'He never stopped being from the Delta. He just taught the Delta how to be from everywhere.'},
+    ]
+  },
+  {
+    id:'lomax', era:'1941 · COAHOMA COUNTY', title:'The Recording',
+    sub:'Alan Lomax arrives with a disc recorder, hunting for the voice of the Delta.',
+    chars:['Alan Lomax','Muddy Waters','Son House'],
+    panels:[
+      {type:'standard', desc:'A dusty car pulling up to a crossroads general store in rural Mississippi, Alan Lomax emerging with heavy recording equipment, locals watching the white stranger with suspicion and curiosity, 1941 Delta', caption:'The Library of Congress sent Alan Lomax south with an acetate disc recorder and a mission: find the voice of the Delta. What he found was a world.'},
+      {type:'portrait', desc:'Alan Lomax setting up his Presto disc recorder in a sharecropper\'s cabin, microphone on a wooden table, acetate disc gleaming, wires everywhere, a young Muddy Waters watching from the doorway with curious intensity, sunlight through gaps in the wall boards', caption:'The machine weighed eighty pounds. It ran on a car battery. It could capture sound on a spinning acetate disc and play it right back. In a cabin with no electricity, it might as well have been magic.'},
+      {type:'standard', desc:'Muddy Waters sitting in front of the microphone, playing guitar and singing, Alan Lomax hunched over the recording equipment watching the needle cut grooves into the spinning disc, intimate cabin interior, dust motes in light beam', caption:null},
+      {type:'cinematic', desc:'Extreme close-up of the needle cutting grooves into the spinning acetate disc, sound made physical, the vibrations of Muddy Waters\' voice becoming visible as ridges in the material', caption:'Sound becoming matter. A voice that had only ever existed in the air above cotton fields, now pressed into wax. Permanent. Portable. Alive.'},
+      {type:'tall', desc:'Alan Lomax playing back the recording for Muddy Waters, both listening intently, Muddy hearing his own voice for the first time, his expression transforming from curiosity to shock to recognition, the phonograph between them, cabin interior', caption:'When Muddy heard himself — really heard himself — his eyes changed. "I can sing," he said. Not a question. A discovery. A man hearing his own power reflected back for the first time.'},
+      {type:'cinematic', desc:'Wide shot of Alan Lomax driving away down a dirt road, leaving Stovall Plantation, the acetate discs carefully packed in the back seat, Muddy Waters a small figure standing at the roadside watching the car disappear, Delta landscape vast around them both', caption:'Lomax drove north with the recordings. Muddy stayed. For now. But something had been set in motion that no plantation could contain.'},
+    ]
+  },
+  {
+    id:'empress', era:'1923 · HIGHWAY 61', title:'The Empress Passes Through',
+    sub:'Bessie Smith\'s touring car breaks down on Highway 61. The Delta meets its queen.',
+    chars:['Bessie Smith','Highway 61','Charley Patton'],
+    panels:[
+      {type:'cinematic', desc:'A magnificent 1920s touring car broken down on Highway 61, steam rising from the hood, vast flat Delta landscape in every direction, Bessie Smith standing beside it in a spectacular dress, incongruous glamour against rural poverty', caption:'Bessie Smith\'s Packard gave out twelve miles south of Clarksdale. The greatest voice in America, stranded in the cotton fields. The Delta didn\'t know who she was. She didn\'t know what the Delta was about to teach her.'},
+      {type:'portrait', desc:'Bessie Smith standing tall beside the broken car, magnificent in her performance dress and jewelry, local Black sharecroppers gathering around, children staring, the contrast between her city glamour and their rural poverty, mutual curiosity and respect', caption:'They\'d never seen anyone like her. She\'d never seen anyone like them. But they recognized something in each other that had no name yet.'},
+      {type:'standard', desc:'A juke joint at night, Bessie Smith singing while Charley Patton plays guitar behind her, the two musical worlds colliding, audience packed in, lantern light, raw energy, vaudeville meets Delta blues', caption:'She sang one song in Henry\'s juke joint. One. And Charley Patton, who feared nobody and nothing on God\'s green earth, set down his guitar and just listened.'},
+      {type:'standard', desc:'Close-up of Bessie Smith\'s face while singing, eyes closed, mouth wide open, tears cutting through her makeup, the power of her voice almost visible, lantern light catching gold jewelry', caption:null},
+      {type:'cinematic', desc:'Dawn, the touring car repaired, Bessie Smith being helped into the back seat by a local mechanic, Charley Patton standing at a distance watching her leave, both changed by the encounter, Highway 61 stretching ahead', caption:'She left at dawn. Charley walked three miles back to Dockery\'s without saying a word. Something had cracked open in the Delta that night. Something that would never quite close again.'},
+    ]
+  },
+  {
+    id:'river', era:'DEEP TIME', title:'The River Remembers',
+    sub:'Ten thousand years of the Mississippi Delta, compressed into silence.',
+    chars:['Highway 61'],
+    panels:[
+      {type:'splash', desc:'Cosmic view of the Mississippi River Delta forming over millennia, time-lapse compression, sediment layers building the land, ancient waters carving channels, geological deep time rendered as epic landscape, no humans, primordial', caption:'Before the blues. Before the cotton. Before the names and the roads and the suffering and the songs. There was the river. There has always been the river.'},
+      {type:'cinematic', desc:'The Mississippi River at dawn, massive and slow, muddy water carrying ten thousand years of topsoil, cypress trees draped in Spanish moss, mist rising, prehistoric atmosphere, no human presence, raw geological power', caption:'The Mississippi doesn\'t flow. It remembers. Every particle of soil carries the memory of mountains a thousand miles away, ground down and carried south grain by grain.'},
+      {type:'tall', desc:'Time-compressed montage: same bend in the river across eras — Chickasaw canoes, then Spanish explorers, then enslaved Africans in chains on a riverboat, then sharecroppers in cotton fields, then a blues guitarist silhouetted against the water, layers of time visible simultaneously', caption:'Every era leaves its sediment. The Chickasaw. The enslaved. The sharecroppers. The musicians. Layer upon layer, pressed into Delta mud that remembers everything.'},
+      {type:'portrait', desc:'A single ancient cypress tree on the riverbank, roots exposed, rings visible in a cross-section, Spanish moss hanging like memory, the tree as witness to centuries, moonlight, timeless and monumental', caption:'This cypress was a sapling when the first African voice carried across this water. It has been listening ever since.'},
+      {type:'cinematic', desc:'The modern Mississippi River at sunset, Highway 61 bridge crossing it, cars and trucks, but the river beneath unchanged and eternal, same muddy water, same patient current, the ancient beneath the modern', caption:'They built a highway over it. Named it 61. Paved it flat and straight. But the river underneath doesn\'t care about highways. It was here before the road. It will be here after.'},
+    ]
+  },
+
+  {
+    id:'spider', era:'800–1600 CE · MOUND ERA', title:'Spider Grandmother',
+    sub:'The Pattern Keeper weaves the web that holds all memory — and passes it forward.',
+    chars:['Spider Grandmother','Weaver Lineage'],
+    panels:[
+      {type:'splash', desc:'Before the people, Spider Grandmother at the center of a vast luminous web in the void, primordial creation, Mississippian cosmology', caption:'Before the people. Before the mounds. Before the corn. There was the web. And in the web, Spider Grandmother — weaving the pattern of everything that would ever be.'},
+      {type:'portrait', desc:'Spider Grandmother carving spider web patterns into clay tablet with bone stylus, firelight, cedar structure, Cahokia 1000 CE', caption:'She pressed the first memory into clay. Not words. Patterns. Because patterns outlast every language ever spoken above them.'},
+      {type:'standard', desc:'Spider Grandmother teaching young Indigenous Mississippian women to weave around a loom, firelight, web pattern emerging in fabric', caption:'The teaching was never about the making. It was about the remembering. The hands know what the mind forgets.'},
+      {type:'cinematic', desc:'Aerial view of Cahokia Mounds at peak, 1050 CE, thousands of people in central plaza, web pattern visible in city layout from above', caption:'Forty thousand people lived here once. More than London. More than Paris. The mounds were the web made earth.'},
+      {type:'portrait', desc:'Spider Grandmother standing on the great mound watching distant strangers approach, 1540 CE, witnessing, web robe glowing', caption:'She had watched the pattern fray before. When things unraveled, you didn\'t chase the thread. You held the center.'},
+      {type:'tall', desc:'Three pairs of hands vertically stacked: Mound era pressing clay, Removal era hiding seeds, Delta era scratching tally marks — connected by glowing thread', caption:'They took everything but the hands. The hands remembered.'},
+      {type:'standard', desc:'Small Black and Indigenous girl, 1940s Delta, watching grandmother bead a web pattern, child\'s finger touching the thread, spark of light', caption:'The child did not know she was being taught. That is how the best teaching works.'},
+      {type:'cinematic', desc:'The full web spanning from ancient Cahokia to modern Delta, one luminous pattern connecting Spider Grandmother to the small girl, still weaving', caption:'The pattern has no beginning. It has no end. Spider Grandmother is still weaving. She is weaving right now.'},
+    ]
+  },
+  {
+    id:'sonhouse', era:'1902–1964 · RIVERTON TO ROCHESTER', title:'The Preacher\'s Fire',
+    sub:'Son House — torn between God and the Devil\'s music, lost and found again.',
+    chars:['Son House'],
+    panels:[
+      {type:'splash', desc:'Black American Baptist preacher standing at pulpit in 1920s rural Mississippi wooden church, dramatic lighting from windows, passionate sermon, Black congregation in pews, graphic novel art style, high contrast ink and watercolor, blues music series', caption:'Eddie James House Jr. stood before his congregation with the fire of God in his throat. He was twenty years old and already saving souls. He didn\'t know yet that a different kind of fire was waiting for him.'},
+      {type:'standard', desc:'Black American man in worn suit holding a Bible outside a juke joint at night 1920s Mississippi Delta, through the open door warm golden light and a blues guitarist playing slide guitar, torn expression on his face, graphic novel illustration', caption:'He heard Willie Brown play slide guitar through an open door one Saturday night. The Bible was still in his hand. His feet were already moving toward the music.'},
+      {type:'standard', desc:'Black American musician playing bottleneck slide guitar with intense emotion, eyes closed, sweat on brow, 1930s Mississippi Delta blues, graphic novel art style, rich blues and earth tones, spiritual intensity', caption:'When Son House played, you couldn\'t tell if he was praying or confessing. Maybe there was never a difference.'},
+      {type:'portrait', desc:'Parchman Farm Mississippi prison 1928, Black American man behind chain-link fence looking out at cotton fields, guards in distance, dramatic stormy sky, graphic novel illustration, blues series', caption:'"I paid for what I did. But the music... the music never left me." Parchman Farm took his freedom. It couldn\'t take the song.'},
+      {type:'cinematic', desc:'Young Black American man sitting on porch steps trying to play guitar while older Black American blues musician watches with skeptical expression, 1930s rural Mississippi, graphic novel art style', caption:'"Boy can\'t play a lick." Son House laughed at young Robert Johnson. The irony would outlive them both.'},
+      {type:'splash', desc:'Black American elderly blues legend age 62 at vintage 1964 recording studio microphone, weathered face full of life and wisdom, playing acoustic guitar, overhead warm studio light, rediscovery moment, graphic novel art style', caption:'1964. Alan Lomax found him in Rochester, New York. Son House didn\'t remember making records. But when he played "Death Letter," the years fell away. The blues remembered him, even when he forgot.'},
+      {type:'portrait', desc:'Son House performing at a 1960s folk festival stage, rediscovered after decades of obscurity, spotlight on weathered face, acoustic guitar, audience watching in awe', caption:'They put him on a stage in front of thousands. White kids who\'d never picked cotton, never preached a sermon, never served time. But when Son House hit that first slide, every soul in the room felt the Delta. The blues doesn\'t need you to understand it. It just needs you to listen.', imageUrl:'https://v3b.fal.media/files/b/0a905835/UX_8n3VGaCdfBnQJp--GF_63140ea1dbb74cf69054436360c54c4f.jpg'},
+    ]
+  },
+  {
+    id:'samcooke', era:'1931–1964 · CLARKSDALE TO HARLEM', title:'A Change Is Gonna Come',
+    sub:'Sam Cooke — from gospel boy to the voice of a movement. Born in Clarksdale. Taken too soon.',
+    chars:['Sam Cooke'],
+    panels:[
+      {type:'splash', desc:'Black American family outside white clapboard Baptist church Clarksdale Mississippi 1930s Sunday morning, reverend father in preacher\'s suit with children including a gifted young boy, warm golden morning light, graphic novel illustration blues music history', caption:'Clarksdale, Mississippi. Sunday morning. Reverend Cook\'s boy Sam sang in the choir before he could read. The voice was a gift. What he did with it would change everything.'},
+      {type:'standard', desc:'Black American gospel quartet performing in 1950s packed church, lead singer in white suit commanding the stage with extraordinary charisma, congregation standing and clapping, dramatic spotlights, graphic novel art style', caption:'At nineteen, Sam joined the Soul Stirrers. Gospel\'s greatest stage. The church mothers wept when he sang. The church fathers worried he was too beautiful for sacred music.'},
+      {type:'portrait', desc:'Black American singer recording in 1950s music studio standing at microphone eyes closed singing with pure joy, engineer visible through glass control room window, warm analog studio atmosphere, graphic novel illustration', caption:'"You Send Me" went to number one. Gospel became soul. The church called it betrayal. Sam called it evolution. The world called it the future.'},
+      {type:'cinematic', desc:'Black American couple being turned away from whites-only motel 1963 nighttime parking lot Louisiana, motel neon sign visible in background, his expression resolute not angry quiet dignity, civil rights era, graphic novel art style', caption:'Shreveport, Louisiana. 1963. A whites-only Holiday Inn turned away the most famous voice in America. Sam didn\'t shout. He went home and wrote a song instead.'},
+      {type:'standard', desc:'Black American musician and civil rights activist sitting at upright piano writing in notebook by warm lamp light 1963 late night, photographs on wall, the weight of artistic creation, graphic novel illustration', caption:'"It\'s been a long time coming, but I know a change is gonna come." He wrote it in one night. It would become the anthem of a movement — and the epitaph of a king.'},
+      {type:'splash', desc:'Black American soul legend performing at packed theater 1964 Harlem, spotlit on stage in elegant dark suit, reaching hands of crowd below, epic concert moment, grand and cinematic, graphic novel splash page art style', caption:'Harlem, 1964. The last great concert. Light caught him like a prophet. Three months later, he was gone. Thirty-three years old. The change he sang about is still coming.'},
+      {type:'portrait', desc:'Sam Cooke standing alone at a microphone in an empty recording studio, eyes closed, one hand raised, recording A Change Is Gonna Come, 1964, dramatic overhead spotlight', caption:'He recorded it in one take. The engineer said the studio went cold. Every word carried the weight of Clarksdale, of every motel that turned him away, of every Sunday morning hymn his father ever sang. Three months later, the voice was silenced. The song kept singing.', imageUrl:'https://v3b.fal.media/files/b/0a905835/NmpBuHAwekkV4kN6QlyVU_b25f30e200ec42c7806ffb89f3399cb9.jpg'},
+    ]
+  },
+  {
+    id:'natedogg', era:'1969–2011 · LONG BEACH TO GLORY', title:'King of Hooks',
+    sub:'Nate Dogg — the gospel voice that defined G-Funk. Church choir to "Regulate" to the stroke that silenced him.',
+    chars:['Nate Dogg','Warren G','Snoop Dogg'],
+    panels:[
+      {type:'splash', desc:'Young Nate Dogg as a teenager in a Black church in Long Beach, singing in the choir, 1980s, his voice clearly special — the adults in the pews can feel it', caption:'Long Beach, California. 1980s. Nathaniel Dwayne Hale sang in the Baptist choir before he ever dreamed of a studio. His father was a minister. The voice was trained on gospel before it touched anything else.', imageUrl:'https://v3b.fal.media/files/b/0a903dbc/J4lEUlURtddF-VIsHx582_08a8222ea14745648b8123ac61c3ee4c.jpg'},
+      {type:'standard', desc:'Three teenagers on a Long Beach street corner — Nate Dogg, Warren G, and Snoop Dogg. Late 1980s. Harmonizing over a beat box.', caption:'Three kids on a Long Beach corner — Nate, Warren G, and Snoop. They called themselves 213. Nobody knew yet that these three would reshape West Coast hip-hop forever.', imageUrl:'https://v3b.fal.media/files/b/0a903dbe/XbUBYry1aYzw0654zGeLq_cfa76fe21a0249d2bf98616a81cb9665.jpg'},
+      {type:'standard', desc:'The "Regulate" recording session, 1994 — Nate behind the mic, Warren G producing, the hook coming together in the booth', caption:'"Regulate," 1994. Warren G laid the beat. Nate opened his mouth and out came a hook so perfect it would define an entire era. Gospel training meeting G-Funk production.', imageUrl:'https://v3b.fal.media/files/b/0a903dbf/IxvKW5p3SwSel66bDetJa_215abcef9dfa4dc796e804aef314739e.jpg'},
+      {type:'cinematic', desc:'Montage-style panel — records stacked, features listed: The Chronic. Doggystyle. Warren G. Ludacris. Eminem. 213. The voice that was everywhere.', caption:'The Chronic. Doggystyle. "Area Codes." "The Next Episode." Hundreds of features. Every time Nate Dogg sang a hook, the song became immortal. The King of Hooks.', imageUrl:'https://v3b.fal.media/files/b/0a903dc0/9zpFToslC3xSK3XhCdxc__d37a17de2d1c449e977512da90b15574.jpg'},
+      {type:'portrait', desc:'2007 — a hospital room. A microphone in the corner that cannot be reached. The stroke took his voice.', caption:'2007. Then 2008. Two strokes. Partial paralysis. The microphone stood in the corner of the room like a monument to everything that had been taken. He never recorded again.', imageUrl:'https://v3b.fal.media/files/b/0a903dc1/0rZfHeU3PUgH8xZemR7pT_ec21138d8a764b73914908ff8a2532c6.jpg'},
+      {type:'splash', desc:'A Black church choir somewhere in the South, 2011, singing one of his hooks. The melody returned to gospel.', caption:'March 15, 2011. Age 41. Gone. But somewhere in a Southern Baptist church, a choir is singing a melody that started in gospel, became G-Funk, and found its way back home. The voice lives in the music even when the man is gone.', imageUrl:'https://v3b.fal.media/files/b/0a903dc2/TVd_LasMWWES3vLJg7PxW_bffd80b9e5f64796ab52f4713c6c9370.jpg'},
+      {type:'portrait', desc:'Nate Dogg in a 1990s recording studio booth, headphones on, eyes closed, singing a hook with deep soulful intensity, Warren G and Snoop Dogg visible through the studio glass', caption:'Every producer in hip-hop knew the formula: if you needed a hook that would live forever, you called Nate Dogg. He\'d step to the mic, close his eyes, and channel every Sunday morning his father ever preached into sixteen bars of pure gold. The church never left him. It just changed venues.', imageUrl:'https://v3b.fal.media/files/b/0a905835/XgKKPuwh-LdkkNnkMaOYE_46ecf7fe149f4604a8d0b76adffbf84f.jpg'},
+    ]
+  },
+  {
+    id:'rickross', era:'1976–PRESENT · CLARKSDALE TO MIAMI', title:'The Clarksdale Weight',
+    sub:'Rick Ross — born in Clarksdale, Mississippi. Carol City to Def Jam. The Delta never left his voice.',
+    chars:['Rick Ross','Clarksdale'],
+    panels:[
+      {type:'splash', desc:'A newborn in a Clarksdale, Mississippi hospital, 1976. Through the window — the flat Delta landscape, cotton fields.', caption:'Clarksdale, Mississippi. January 28, 1976. William Leonard Roberts II entered the world in the same town that made the blues. Through the hospital window — cotton fields, flat Delta horizon, the weight of place already pressing down.', imageUrl:'https://v3b.fal.media/files/b/0a903dc3/koB2hpE4GeXkdu3rPmYRI_359ee0e50ae3490083ec2245848d86d3.jpg'},
+      {type:'standard', desc:'Young William Roberts in Carol City, Miami, 1980s — the streets dangerous, the heat oppressive, watching everything.', caption:'Carol City, Miami Gardens. One of the most dangerous zip codes in America. Crack epidemic. Poverty. Violence. The kid watched everything with intelligent eyes. Clarksdale had taught his blood to pay attention.', imageUrl:'https://v3b.fal.media/files/b/0a903dc3/75zKhj54lCXFxOhHMWeMm_880ce98537164210a5d48b42754dead3.jpg'},
+      {type:'standard', desc:'The football field — Dillard University, New Orleans. A different possible life.', caption:'Dillard University, New Orleans. A football scholarship. A different possible life. He was built for the field. But something heavier than football was pulling him toward the microphone.', imageUrl:'https://v3b.fal.media/files/b/0a903dc4/owmGN5_BQVMuYINOiUAbv_23ea00a53cde416f97449ada5db95d79.jpg'},
+      {type:'portrait', desc:'The recording booth, 2005 — "Hustlin\'" coming together. Enormous in the frame, his voice a physical force.', caption:'"Hustlin\'," 2006. The beat was a statement. The voice was a weather system. Every syllable carried the weight of the Mississippi Delta even in Miami heat. You could hear Clarksdale in every bar.', imageUrl:'https://v3b.fal.media/files/b/0a903dd4/m0yHRGE3X6UNE5BUv_Zdq_4eaffc7c3c524477b4700c81d6c71157.jpg'},
+      {type:'cinematic', desc:'The Mississippi Delta flat horizon morphing into Miami skyline. The two worlds that made him.', caption:'Two worlds. The flat Delta where he was born and the Miami skyline where he was made. The thread between them is invisible to everyone except the man who carries it in his voice.', imageUrl:'https://v3b.fal.media/files/b/0a903dd1/zmJnoSd2KiCWQg-dgiH5J_cee1fc73ae09475d9580c620ef083fc6.jpg'},
+      {type:'splash', desc:'Rick Ross today — Maybach Music empire, the bossiest man in hip-hop, but the Delta never left.', caption:'Maybach Music Group. Def Jam. The bossiest man in hip-hop built his empire on a foundation poured in Clarksdale. The Delta never left his voice. It never will.', imageUrl:'https://v3b.fal.media/files/b/0a903dd2/H1juhI5wrjUDReLfOFwVR_a174e5b0029e4a0cbdde5548af8da66d.jpg'},
+      {type:'portrait', desc:'Rick Ross standing at the edge of a cotton field in Clarksdale Mississippi, looking back at the Delta landscape, wearing modern luxury clothes against the rural backdrop, dramatic golden hour light', caption:'He went back once. Stood at the edge of the same cotton fields his people worked. The Maybach was parked on a dirt road. The contradiction was the point. Every bar he ever spit carried this weight — the distance between where you start and where you end up, measured in Mississippi mud.', imageUrl:'https://v3b.fal.media/files/b/0a905835/yhcKdI8LMF2uEkeTCEHIe_712a1bfa2890477ead0247d961add408.jpg'},
+    ]
+  },
+  {
+    id:'riverside', era:'1924–PRESENT · 615 SUNFLOWER AVENUE', title:'Where the Blues Stayed',
+    sub:'The Riverside Hotel — from the hospital where Bessie Smith died to the Green Book sanctuary where every Delta blues legend slept.',
+    chars:['Bessie Smith','Muddy Waters','Sonny Boy Williamson','Robert Nighthawk','Frank "Rat" Ratliff'],
+    panels:[
+      {type:'splash', desc:'Riverside Hotel building at 615 Sunflower Avenue Clarksdale Mississippi, weathered brick facade, old sign reading RIVERSIDE HOTEL, Black American neighborhood, Delta afternoon light, the weight of history in every detail, graphic novel splash art style, blues music history series', caption:'615 Sunflower Avenue, Clarksdale, Mississippi. The Riverside Hotel. Weather-beaten, crumbling, still standing. Every brick holds a story. Every room has a name. This is where the blues stayed when no one else would take them in.', imageUrl:'https://v3b.fal.media/files/b/0a903e52/-1tZkOro3Tb_pzVZI8ZiE.jpg'},
+      {type:'standard', desc:'Interior of 1920s Black American hospital ward in Mississippi Delta, Black American nurse in white uniform attending to Black American patients, separate but dedicated care, segregation era, dignified and human, warm light, graphic novel illustration', caption:'1924. The G.T. Thomas Afro-American Hospital. The only hospital in the Delta that would treat Black patients. When every other door was closed, this one stayed open. Dignity in the face of everything designed to deny it.', imageUrl:'https://v3b.fal.media/files/b/0a903e52/7FJB9y_muSGLKO21Xlmk-.jpg'},
+      {type:'portrait', desc:'Empty hospital room 1937 Mississippi, early morning light through window, a bed, the weight of loss, this is where Black American blues legend Bessie Smith the Empress of the Blues died, quiet and profound, graphic novel illustration, blues history series', caption:'September 26, 1937. Bessie Smith — the Empress of the Blues — crashed on Highway 61 outside Clarksdale. They brought her here. She died in this room at dawn. She was forty-three. The building held her last breath and never let it go.', imageUrl:'https://v3b.fal.media/files/b/0a903e52/TbDyC-GjTENBtMAErO3SG.jpg'},
+      {type:'standard', desc:'Black American male traveler arriving at Green Book hotel 1940s Mississippi Delta, suitcase in hand, relief on face at finding safe lodging, the worn Green Book travel guide visible, Jim Crow era sanctuary, graphic novel art style', caption:'1944. The hospital became a hotel. The Riverside. Listed in the Green Book — that precious guide that told Black travelers where they could sleep without fear. A sanctuary in hostile territory. The relief on a man\'s face when the door opened.', imageUrl:'https://v3b.fal.media/files/b/0a903e52/XzYN0nZIDGXV84RjLknqc.jpg'},
+      {type:'cinematic', desc:'Hotel corridor 1950s Mississippi, dramatic lighting, silhouettes of Black American blues musicians at different room doors, the greats of the Delta blues all under one roof, atmospheric and cinematic, graphic novel art style', caption:'Muddy Waters slept here. Sonny Boy Williamson. Robert Nighthawk. Ike Turner. Every blues musician who passed through Clarksdale walked this corridor. The same roof that sheltered Bessie Smith\'s last hours sheltered the music\'s future.', imageUrl:'https://v3b.fal.media/files/b/0a903e53/3p65wFK6ormQeZnsTOeKn.jpg'},
+      {type:'standard', desc:'Black American elderly man hotel keeper showing a visitor a historic room in old Mississippi hotel, keys in hand, pride and gravity of being keeper of important Black American history, graphic novel illustration', caption:'Frank "Rat" Ratliff. Third generation of the Wright family. He has the keys to every room. He shows visitors where Bessie died, where Ike Turner was born, where the greats laid their heads. The quiet pride of a man who keeps the whole history breathing.', imageUrl:'https://v3b.fal.media/files/b/0a903e53/EXvyhaEdYwqlLV_nHk-_w.jpg'},
+      {type:'splash', desc:'Riverside Hotel Clarksdale Mississippi exterior golden hour, Sunflower Avenue, Delta sky, Black American music history landmark, the building standing as witness to entire history of Black American music from Bessie Smith to the present day, epic graphic novel splash', caption:'Golden hour on Sunflower Avenue. The Riverside Hotel against a Delta sky. Inside those walls: Bessie Smith\'s last breath, a thousand musicians\' prayers, the entire foundation of American popular music. The building hasn\'t changed much. It doesn\'t need to. It already holds everything.', imageUrl:'https://v3b.fal.media/files/b/0a903e53/LxgDLQFWMKDZOndAAQkJr.jpg'},
+    ]
+  },
+  {
+    id:'firstinvasion', era:'1736–1838 · CHICKASAW & CHOCTAW HOMELAND', title:'The First Invasion',
+    sub:'The British colonial manipulation that emptied the Delta of its first peoples.',
+    chars:['Chickasaw Nation','Choctaw Nation','British Colonial Strategy'],
+    panels:[
+      {type:'cinematic', desc:'A wide Mississippi Delta landscape before colonization. The flat fertile land, the river visible. A Chickasaw village in the distance. The same landscape that will one day be cotton fields and juke joints — but now it is home.', caption:'Before the crossroads. Before the cotton. Before the blues. The Chickasaw and Choctaw people lived on this land for ten thousand years. It was not empty. It was home.', imageUrl:'https://v3b.fal.media/files/b/0a905863/0SuKfwnIh2YzaMKbukHHo.jpg'},
+      {type:'standard', desc:'A British colonial trader meeting Chickasaw leaders. The trader is offering metal tools, guns, cloth. The Chickasaw leaders are noble, wary, evaluating. A moment of dangerous negotiation.', caption:'The British arrived from Carolina with guns and cloth and debt. They needed allies against the French in Louisiana. They found the Chickasaw — the most feared warriors in the Southeast.', imageUrl:'https://v3b.fal.media/files/b/0a905865/PFHm58WrQ2NBw2RvFY2_L.jpg'},
+      {type:'standard', desc:'A battle scene — Chickasaw warriors fighting alongside British-supplied arms against French soldiers and their Choctaw allies. The Mississippi River visible in the background. Violence for other nations\' interests.', caption:'1736. The French tried to destroy the Chickasaw nation. Britain armed them. For 40 years, the two European powers fought their colonial war using Indigenous blood.', imageUrl:'https://v3b.fal.media/files/b/0a905865/heJl4OhnuYCNV1O8v7pSb.jpg'},
+      {type:'standard', desc:'Chickasaw leaders in a British colonial office, signing papers. The faces of the officials are cunning. The Indigenous leaders look like men who know they are being deceived but have few options.', caption:'Guns became debt. Debt became land. \'Trade\' was the word they used for what they were taking.', imageUrl:'https://v3b.fal.media/files/b/0a905865/tAee8ONznjvdfd1AWRH0P.jpg'},
+      {type:'portrait', desc:'A document — the Indian Removal Act of 1830. Andrew Jackson\'s signature visible. Behind it, a map showing the Chickasaw and Choctaw territory in Mississippi — soon to be empty.', caption:'1830. Andrew Jackson signed the Indian Removal Act. The Choctaw had already helped Jackson defeat the Creek. This was their reward.', imageUrl:'https://v3b.fal.media/files/b/0a905865/xOvxNXf9wDTfOOBwVWugf.jpg'},
+      {type:'cinematic', desc:'A long column of Choctaw and Chickasaw people walking west through winter. Children. Elders. The Mississippi winter. Behind them: their homeland. Ahead: Oklahoma Territory.', caption:'1837–1838. The Chickasaw and Choctaw walked to Oklahoma. They called this path \'the trail where they cried.\' The United States called it \'removal.\'', imageUrl:'https://v3b.fal.media/files/b/0a905863/eePdMoQRL76NZnSGmO4sX.jpg'},
+      {type:'cinematic', desc:'The same landscape from Panel 1 — but now: a cotton plantation. Enslaved Black people in the fields. The delta flat and endless. The river the same. Everything else has changed.', caption:'The Chickasaw left. The cotton came. Enslaved Black Americans worked the same soil that the Chickasaw had farmed for generations. The land remembered everything. The nation forgot.', imageUrl:'https://v3b.fal.media/files/b/0a905865/IFkEFyb0S4zqyKcuYzBGN.jpg'},
+      {type:'portrait', desc:'Robert Johnson at the crossroads at night, 1930s. But now we understand: the crossroads stands on Chickasaw land. The road beneath his feet was walked by ten thousand years of people before him.', caption:'Robert Johnson stood at the crossroads. He didn\'t know he stood on Chickasaw land. He only knew he had a guitar and a grief too large for any single generation. He played anyway.', imageUrl:'https://v3b.fal.media/files/b/0a905865/FLHJpuBXVLBKC2fvQCu5V.jpg'},
+    ]
+  },
+  {
+    id:'secondinvasion', era:'1964–1970s · LONDON TO AMERICA', title:'The Second Invasion',
+    sub:'How the British Invasion took the Blues and sold it back to America.',
+    chars:['Muddy Waters','Willie Dixon','The Rolling Stones'],
+    panels:[
+      {type:'portrait', desc:'Muddy Waters at a Chicago blues club, electrified guitar, performing to a Black audience. Vital, powerful. The real thing.', caption:'1960. Muddy Waters was playing Chess Records in Chicago. He had electrified the Delta blues and brought it north. His audience was Black America. He was virtually unknown to white America.', imageUrl:'https://v3b.fal.media/files/b/0a905865/B1jMM9y7V3w9Oz-ddtlHS.jpg'},
+      {type:'standard', desc:'Young British teenagers in a record shop in London, holding Chess Records album by Muddy Waters. Their faces lit up — discovery, excitement.', caption:'In London, four young men from working-class England were discovering records that white American radio wouldn\'t play. The music had to cross an ocean before white people would hear it.', imageUrl:'https://v3b.fal.media/files/b/0a905865/wR8K1LGmNejLvUJ3POYmT.jpg'},
+      {type:'standard', desc:'A British concert poster being designed. The name: \'The Rolling Stones\' — with a small caption noting it comes from Muddy Waters\' song. The attribution: gone.', caption:'They named themselves after a Muddy Waters song. They didn\'t put that on the album.', imageUrl:'https://v3b.fal.media/files/b/0a905865/GNI_h-5accXc31VA5ZCxB.jpg'},
+      {type:'cinematic', desc:'The British Invasion landing at JFK airport, 1964. Thousands of screaming white American fans. Split panel showing a Black blues club in Chicago — same music, different audience.', caption:'February 7, 1964. The British Invasion landed at JFK. American teenagers were screaming for music that had started in a Mississippi Delta juke joint. The journey had been: Robert Johnson to Chuck Berry to the Rolling Stones to Ed Sullivan.', imageUrl:'https://v3b.fal.media/files/b/0a905863/lm7lLpDxPE6KEZZ0fFXNi.jpg'},
+      {type:'standard', desc:'A recording contract. An accounting ledger. The Rolling Stones\' royalty statement vs. Willie Dixon\'s royalty statement for the same song. The numbers tell the story.', caption:'Willie Dixon wrote \'Hoochie Coochie Man.\' \'Little Red Rooster.\' \'I Just Want to Make Love to You.\' The Rolling Stones made millions from his songs. Dixon spent years in court to be paid.', imageUrl:'https://v3b.fal.media/files/b/0a905865/zwKlO4GWOwtETqWzR8McS.jpg'},
+      {type:'portrait', desc:'A blues festival stage. White rock stars standing next to an elderly Muddy Waters. The rock stars look reverent. Muddy Waters looks like a man who has been made to wait too long.', caption:'Eventually some of them said it out loud. \'We learned everything from Muddy Waters.\' \'Robert Johnson is the most important artist who ever lived.\' They said it at their Rock and Roll Hall of Fame inductions. By then most of the original artists were dead.', imageUrl:'https://v3b.fal.media/files/b/0a905865/zFbstH0K9jFPaN2R7nuG6.jpg'},
+      {type:'splash', desc:'The crossroads at night. A palimpsest — layers of history visible simultaneously: the Chickasaw homeland, the cotton fields, Robert Johnson, Muddy Waters, the British invasion — all at once. One place. Ten thousand years of extraction and resilience.', caption:'The crossroads. Where the British took Native land. Where slavery made cotton. Where the Blues was born. Where the British came back for the music. The crossroads has been stolen from twice. It is still standing.', imageUrl:'https://v3b.fal.media/files/b/0a905863/Me3dFqj3OVd5bLqt41Q6n.jpg'},
+    ]
+  },
+  {
+    id:'first27', era:'1938 · GREENWOOD, MISSISSIPPI', title:'The First 27',
+    sub:'Robert Johnson\'s death — the founding of the 27 Club. ⚡ DOUBLE FEATURE',
+    chars:['Robert Johnson','Sonny Boy Williamson II'],
+    audioUrl:'https://v3b.fal.media/files/b/0a90589e/OgHH7CIL-6JovF9dRV-AF_tmpyr_bv379.wav',
+    doubleFeature: true,
+    panels:[
+      {type:'cinematic', desc:'Robert Johnson on Highway 61, night, 1938. Guitar case in hand. The road stretches to darkness.', caption:'August 1938. Robert Johnson was 27 years old. He had recorded 29 songs. He had no idea he was about to become the most mythologized man in the history of American music.', imageUrl:'https://v3b.fal.media/files/b/0a905865/W8EimQf7iPlE9kk9aue7H_0cc4a1bdf0c64e5e97d6675f4f542cb9.jpg'},
+      {type:'standard', desc:'The Three Forks juke joint exterior, rural Mississippi night. Lanterns in windows.', caption:'The Three Forks juke joint, Greenwood, Mississippi. Saturday night. He played three sets. People came from miles.', imageUrl:'https://v3b.fal.media/files/b/0a905865/rm3TFd2Qa-Kx6WSlpDDGr_3bf6d8165a534eddb3a41d6cc90f5e41.jpg'},
+      {type:'portrait', desc:'Close on a glass of whiskey on a weathered wooden bar, a hand offering it. Dark, ominous.', caption:'Sonny Boy Williamson II said later: \'I told him not to drink it.\' Johnson looked at him and drank it anyway.', imageUrl:'https://v3b.fal.media/files/b/0a905865/s44PZ18yBn_5N1CoR5e1G_5732de320e3544c3a6f0ceb36bd18e8e.jpg'},
+      {type:'standard', desc:'Robert Johnson bent over his guitar on a small stage, sweat on his brow, playing with everything he has.', caption:'He played like a man who knew. Every note pulled from somewhere deep. The crowd fell silent without understanding why.', imageUrl:'https://v3b.fal.media/files/b/0a905865/-4S_OggQrnrV47GO6ILaP_416dd86047b84a7aa70b774d98ee6c22.jpg'},
+      {type:'portrait', desc:'Three days later. A small room. Robert Johnson, feverish and dying. Dawn through the window.', caption:'Three days of suffering. August 16, 1938. He was 27 years old. The coroner wrote: \'cause unknown.\'', imageUrl:'https://v3b.fal.media/files/b/0a905865/k3zpSKC82FcKWwrWAJMNh_0c6184b65b984a278c14e43d0bba2196.jpg'},
+      {type:'cinematic', desc:'A headstone. Simple. The Mississippi sun blazing. The crossroads visible in the distance.', caption:'They buried him in a field. No one agreed on where. Three grave markers claim him in Mississippi. The crossroads claimed him first.', imageUrl:'https://v3b.fal.media/files/b/0a905865/ACVGI1Ovli4gSVsYqmsoC_b0cd54b5f56d4d85a310d48437784453.jpg'},
+      {type:'splash', desc:'The number 27, stylized, burning gold against black. Faint silhouettes of future musicians behind it.', caption:'He was the first. He would not be the last. The number 27 had become a door.', imageUrl:'https://v3b.fal.media/files/b/0a905865/p0VKOJDQ6WdAetPf9xyYv_949e2822936c445d9fb615fe9c3ab67b.jpg'},
+    ]
+  },
+  {
+    id:'shiver27', era:'1938–2011 · THE 27 CLUB', title:'The Shiver — The 27 Club',
+    sub:'The unbroken shiver through musical history. Seven artists. One number. ⚡ DOUBLE FEATURE',
+    chars:['Brian Jones','Jimi Hendrix','Janis Joplin','Jim Morrison','Kurt Cobain','Amy Winehouse','Robert Johnson'],
+    audioUrl:'https://v3b.fal.media/files/b/0a90589e/OgHH7CIL-6JovF9dRV-AF_tmpyr_bv379.wav',
+    doubleFeature: true,
+    panels:[
+      {type:'splash', desc:'A crossroads at night, six shadows crossing toward a single point. The number 27 glowing at the intersection.', caption:'Robert Johnson died in 1938. Then it happened again. And again. Six more artists. Six more decades. Always 27. The music world began to call it the 27 Club.', imageUrl:'https://v3b.fal.media/files/b/0a905866/e-3-u_sb-XYd_HHj27jsh_f373eb7f02de439d9955b07bd7bb58de.jpg'},
+      {type:'portrait', desc:'Brian Jones — young white British man with long blond hair, drowned, 1969. Pool scene, darkness.', caption:'Brian Jones. Co-founder of the Rolling Stones. July 3, 1969. Found at the bottom of his swimming pool. Age 27.', imageUrl:'https://v3b.fal.media/files/b/0a905866/mA9ZTZfIy192Lhm7pZa3P_a41fc56165c747fe9f17cd947d04cfaa.jpg'},
+      {type:'standard', desc:'Jimi Hendrix on stage. Guitar raised. Incandescent performance, 1970.', caption:'Jimi Hendrix. September 18, 1970. The man who rewired what a guitar could do. 27.', imageUrl:'https://v3b.fal.media/files/b/0a905865/VrZavF3cVxYwsy6MHVfLt_617c8f31a14b4305abcbec289adf53b6.jpg'},
+      {type:'cinematic', desc:'Janis Joplin and Jim Morrison as a diptych — two panels showing them performing. Raw, powerful, early 70s.', caption:'Janis Joplin. October 4, 1970. Jim Morrison. July 3, 1971. Fourteen days apart, in different cities, one year later. Both 27.', imageUrl:'https://v3b.fal.media/files/b/0a905875/5fMCiu2lS4Zm8Gm84L_wJ_8313b056034a4f43b1b18decd2af74ba.jpg'},
+      {type:'portrait', desc:'Kurt Cobain — 1994, grunge era, Seattle. The weight of a generation.', caption:'Kurt Cobain. April 5, 1994. He wrote in his note: \'It\'s better to burn out than to fade away.\' He was quoting Neil Young. He was 27.', imageUrl:'https://v3b.fal.media/files/b/0a905865/JKWPvtfNv9NVv68CN0ucO_83fb6eb53a3c442391be2ec4c545e428.jpg'},
+      {type:'portrait', desc:'Amy Winehouse — Black British woman with beehive hair, extraordinary voice, 2011.', caption:'Amy Winehouse. July 23, 2011. Her voice sounded like it came from another century — perhaps because it did. 27.', imageUrl:'https://v3b.fal.media/files/b/0a905865/ChAIVuL55XAuXM0Vbimb5_250d9028c9194518a73c77522ffba83c.jpg'},
+      {type:'cinematic', desc:'Robert Johnson\'s crossroads with six more roads converging. Seven roads meeting at one point.', caption:'Seven artists. Seven roads. All of them leading back to a juke joint in Mississippi where a man named Robert Johnson played his last set in 1938.', imageUrl:'https://v3b.fal.media/files/b/0a905865/oIU1giI-kq9DL2oWOgqcT_d6326d14835f467e8d0974fceddbdc54.jpg'},
+      {type:'splash', desc:'A wide Mississippi Delta horizon at dawn.', caption:'The 27 Club has no membership form, no dues, no meeting times. It only has a number. And a crossroads. And a question no one can answer.', imageUrl:'https://v3b.fal.media/files/b/0a905865/_VHZ8NsBwmmHqvoatfN5T_b03d58c9aece4a4495892bb5e01362ad.jpg'},
+    ]
+  },
+  {
+    id:'custom', era:'YOUR STORY', title:'Custom Episode',
+    sub:'Write your own chapter of the Clarksdale Series.',
+    chars:[],
+    panels:[
+      {type:'cinematic', desc:'', caption:null},
+      {type:'standard', desc:'', caption:null},
+      {type:'portrait', desc:'', caption:null},
+      {type:'standard', desc:'', caption:null},
+      {type:'cinematic', desc:'', caption:null},
+    ]
+  }
+];
+
+const PANEL_TYPES = {
+  standard:  {h:240, ratio:'4:3',  fal:'landscape_4_3'},
+  portrait:  {h:426, ratio:'3:4',  fal:'portrait_4_3'},
+  cinematic: {h:152, ratio:'21:9', fal:'landscape_16_9'},
+  tall:      {h:480, ratio:'2:3',  fal:'portrait_16_9'},
+  splash:    {h:560, ratio:'9:16', fal:'portrait_16_9'},
+  square:    {h:340, ratio:'1:1',  fal:'square_hd'},
+};
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let st = {
+  epIdx: 0,
+  selPanel: 0,
+  panels: [], // {desc, caption, type, imageUrl, generating}
+  generating: false,
+};
+
+function curEp(){ return EPISODES[st.epIdx]; }
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+function init(){
+  renderEpList();
+  selectEp(0);
+}
+
+const SONHOUSE_URLS = ["https://v3b.fal.media/files/b/0a903a12/_K38WW6h3BoMO9AoEzWdS_9dba08cb01f24f29b30dcdc04466ab8a.jpg","https://v3b.fal.media/files/b/0a903a14/1oNLz8Q0Xkua6nVjUklAg_0eac7799f8834452a73e56c182844f6e.jpg","https://v3b.fal.media/files/b/0a903a15/hTOilvEO7gIbuCwmjCGo9_c5b02bc3d8144140aad060ed84a76593.jpg","https://v3b.fal.media/files/b/0a903a16/xUGXvWp9U2XDGTtX70Xvv_ec97d09a877d47ea9706d4af593219c4.jpg","https://v3b.fal.media/files/b/0a903a17/2QVfyjPdqbKz-dbSphXT3_843291e2253c40ad8287f8b6942f8aea.jpg","https://v3b.fal.media/files/b/0a903a18/LSKMyZW3uX4Poo6d6_CPr_f2ac65787f834e84ae3addda78b2ac1a.jpg"];
+const SAMCOOKE_URLS = ["https://v3b.fal.media/files/b/0a903a19/FAKHYXLpHngLB7yBywgSr_9aa75d053e724faf8c87006b040946d8.jpg","https://v3b.fal.media/files/b/0a903a1a/TnjnQi-L5V0_-2o6YgB28_754def04e6e0443e8740bac26dae3872.jpg","https://v3b.fal.media/files/b/0a903a1b/lAVvZjDd7rmafax0KCB9U_199c87f680764e468dde99ac70352839.jpg","https://v3b.fal.media/files/b/0a903a1c/b4hMVaWc2ec-5FqOdifGP_e5c3d6cd36004038a42269e7eb9571e7.jpg","https://v3b.fal.media/files/b/0a903a1d/Tx7hYo2nyu1wRuo1cuyWm_2d25affad03b4f7fb55ee9437b339e23.jpg","https://v3b.fal.media/files/b/0a903a1e/MZMN2dAsXvC9ma0R9N-1I_ae76f11a8a634279b4b93108437f968e.jpg"];
+const DOCKERY_URLS = ["https://v3b.fal.media/files/b/0a900f82/I4NPyLW-0HOgBR1W3Yum1.jpg", "https://v3b.fal.media/files/b/0a900f83/KZyIj2qiaHhjhsEUS9l_s.jpg", "https://v3b.fal.media/files/b/0a900f83/p7CC27aEaaWy7P2h15aeG.jpg", "https://v3b.fal.media/files/b/0a900f83/nTaZ3-lSAnEXAeABnYXu5.jpg", "https://v3b.fal.media/files/b/0a900f83/CH7UFaJAS99Uf1BZsaP4E.jpg", "https://v3b.fal.media/files/b/0a900f83/o69uRtbcoIGoP8KRVtueU.jpg"];
+const CROSSROADS_URLS = ["https://v3b.fal.media/files/b/0a900f5d/Amu7C1Z-XexpccN_S7Kw3.jpg", "https://v3b.fal.media/files/b/0a900f5d/9q1hY6Vy7zKvcOT3t0LYX.jpg", "https://v3b.fal.media/files/b/0a900f5d/cgE-0MP9O8gUOOi_jBlLj.jpg", "https://v3b.fal.media/files/b/0a900f5d/-Df3ywepByhh6iou8d60O.jpg", "https://v3b.fal.media/files/b/0a900f5d/q9SHcz8e3VirVPq-SUF-3.jpg", "https://v3b.fal.media/files/b/0a900f5d/Ycah0T4RnLPFPCWUki8Zi.jpg", "https://v3b.fal.media/files/b/0a900f5d/q3knQ9T_eEIWqzeAT3Jrh.jpg", "https://v3b.fal.media/files/b/0a900f5d/n0U2n3JI1H7ce6qZgPIS1.jpg"];
+const IKE_URLS = ["https://v3b.fal.media/files/b/0a901d78/xQhwlZCCoOrCPOvb5UfGj_a1bf9daeeb494559a8562958d7df8323.jpg","https://v3b.fal.media/files/b/0a901d78/xVhL2z6gnP4eQAg2rvTEM_72dd4bbcc261457396abfb7f4d3fcffb.jpg","https://v3b.fal.media/files/b/0a901d78/-uJhSlYSHsC38uKSHeaGB_60d5a018aaa34bdd8e2ad2947b935b17.jpg","https://v3b.fal.media/files/b/0a901d78/Ga4LZhYqws8h2GKEli5FN_f7a63fe7a38843c2bf6184eacb7a8cbf.jpg","https://v3b.fal.media/files/b/0a901d78/1dA9WOSFYoBTICzDNEnO__7fea8c19cbf14f418f858a7247fb983e.jpg","https://v3b.fal.media/files/b/0a901d78/DHhh8nYhXSQi-UewKQcuR_cdfdf6c01564489697965fbe94474f92.jpg","https://v3b.fal.media/files/b/0a901d78/gB4dq5pNz1cKw51BOTIBo_6ae11d08e3b34b2e80e5f956fd943e8a.jpg","https://v3b.fal.media/files/b/0a901d78/4WYRKbYNsZkN8yg6MRHt7_f8140e5415d643b48c78275893f7a054.jpg"];
+const SPIDER_URLS = ["https://v3b.fal.media/files/b/0a9003c0/j1Soh27U4UaUDxYm9OSYx.jpg", "https://v3b.fal.media/files/b/0a9003c0/4wfz0F2MN0xOn8CzC8lOr.jpg", "https://v3b.fal.media/files/b/0a9003c0/Ehou45EZsG-FDlbz1p24E.jpg", "https://v3b.fal.media/files/b/0a9003c0/rRgunV-ZFicB3POtVdPB4.jpg", "https://v3b.fal.media/files/b/0a9003c0/A-MQKPsWUjGG-AtVVKffq.jpg", "https://v3b.fal.media/files/b/0a9003c0/FHFbt5Wz8616fNQaI5wl_.jpg", "https://v3b.fal.media/files/b/0a9003c0/QCJBte59eaCHsJjnLDMWp.jpg", "https://v3b.fal.media/files/b/0a9003c0/CL7thRWKFbVHUNurW3u7k.jpg"];
+
+function selectEp(idx){
+  st.epIdx = idx;
+  const ep = curEp();
+  const urlMap = {spider:SPIDER_URLS, crossroads:CROSSROADS_URLS, saturday:DOCKERY_URLS, rocket88:IKE_URLS, sonhouse:SONHOUSE_URLS, samcooke:SAMCOOKE_URLS};
+  const preUrls = urlMap[ep.id];
+  st.panels = ep.panels.map((p,i)=>({
+    desc: p.desc, caption: p.caption, type: p.type,
+    imageUrl: preUrls ? preUrls[i] : null, generating: false
+  }));
+  st.selPanel = 0;
+  renderAll();
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+function renderAll(){
+  renderEpList();
+  renderPanelList();
+  renderPhone();
+  renderEditor();
+  updateCounts();
+}
+
+function renderEpList(){
+  const el = document.getElementById('epList');
+  el.innerHTML = EPISODES.map((ep,i)=>`
+    <div class="ep-card ${i===st.epIdx?'active':''} ${ep.doubleFeature?'double-feature':''}" onclick="selectEp(${i})">
+      ${ep.doubleFeature?'<div style="font-size:.55rem;font-weight:700;color:#d4a017;letter-spacing:1.5px;margin-bottom:2px">⚡ DOUBLE FEATURE</div>':''}
+      <div class="ep-era">${ep.era}</div>
+      <div class="ep-title">${ep.title}</div>
+      <div class="ep-sub">${ep.sub}</div>
+      <div class="ep-meta">
+        ${ep.chars.map(c=>`<span class="ep-chip">${c}</span>`).join('')}
+        <span class="ep-chip">${ep.panels.length} panels</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderPanelList(){
+  const el = document.getElementById('panelList');
+  el.innerHTML = st.panels.map((p,i)=>`
+    <div class="pl-item ${i===st.selPanel?'active':''} ${p.imageUrl?'done':''}" onclick="selectPanelIdx(${i})">
+      <span class="pl-num">${i+1}</span>
+      <div class="pl-thumb">${p.imageUrl?`<img src="${p.imageUrl}">`:'<div style="width:100%;height:100%;background:var(--s3)"></div>'}</div>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.desc.slice(0,40)||'(empty)'}</span>
+    </div>`).join('');
+}
+
+function renderPhone(){
+  const ep = curEp();
+  const screen = document.getElementById('phoneScreen');
+  let html = `<div class="strip-title">
+    <div class="st-era">${ep.era}</div>
+    <h2>${ep.title}</h2>
+    <div class="st-sub">${ep.sub}</div>
+  </div>`;
+
+  st.panels.forEach((p,i)=>{
+    const pt = PANEL_TYPES[p.type]||PANEL_TYPES.standard;
+    const h = pt.h;
+    html += `<div class="s-panel" id="sp-${i}" style="cursor:pointer" onclick="selectPanelIdx(${i})">`;
+    if(p.generating){
+      html += `<div class="s-placeholder" style="height:${h}px"></div>`;
+      html += `<div class="gen-spin"><div class="spin"></div><span>Generating panel ${i+1}…</span></div>`;
+    } else if(p.imageUrl){
+      html += `<img src="${p.imageUrl}" style="min-height:${h*.6}px">`;
+    } else {
+      html += `<div class="s-placeholder" style="height:${h}px">
+        <div class="s-ph-num">Panel ${i+1} · ${pt.ratio}</div>
+        <div class="s-ph-desc">${p.desc.slice(0,80)||'Describe this scene…'}</div>
+      </div>`;
+    }
+    if(p.caption && (p.imageUrl||p.generating)){
+      const isFirst = i===0;
+      html += `<div class="s-caption${isFirst?' top':''}">
+        ${isFirst?'<span class="cap-tag">Narration</span>':''}
+        ${p.caption}
+      </div>`;
+    }
+    html += `</div>`;
+  });
+
+  html += `<div class="strip-end">
+    <div class="se-mark">◆</div>
+    <div class="se-sub">${ep.title} — The Clarksdale Series</div>
+  </div>`;
+  screen.innerHTML = html;
+}
+
+function renderEditor(){
+  const ed = document.getElementById('edScroll');
+  if(!st.panels.length){
+    ed.innerHTML='<div style="padding:30px 0;text-align:center;color:var(--muted);font-size:.78rem;font-family:var(--serif);font-style:italic">No panels</div>';
+    return;
+  }
+  const p = st.panels[st.selPanel];
+  const ep = curEp();
+  const pt = PANEL_TYPES[p.type]||PANEL_TYPES.standard;
+
+  ed.innerHTML = `
+    <div class="ed-section">
+      <div class="ed-label">Panel ${st.selPanel+1} of ${st.panels.length} · ${pt.ratio}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
+        ${Object.entries(PANEL_TYPES).map(([k,t])=>`
+          <span class="char-chip" style="${p.type===k?'background:var(--gold);color:#000;border-color:var(--gold)':''}"
+            onclick="setPanelType(${st.selPanel},'${k}')">${k} ${t.ratio}</span>
+        `).join('')}
+      </div>
+    </div>
+    <div class="ed-section">
+      <div class="ed-label">Scene Description</div>
+      <textarea class="ed-ta" rows="5" id="ed-desc"
+        placeholder="Describe what happens in this panel…"
+        oninput="st.panels[${st.selPanel}].desc=this.value">${esc(p.desc)}</textarea>
+      ${ep.chars.length?`<div style="margin-top:5px"><div class="ed-label">Characters</div>
+        <div class="char-chips">${ep.chars.map(c=>`<span class="char-chip" onclick="injectChar('${esc(c)}')">${c}</span>`).join('')}</div></div>`:''}
+    </div>
+    <div class="ed-section">
+      <div class="ed-label">Caption / Narration</div>
+      <textarea class="ed-ta" rows="3" id="ed-cap"
+        placeholder="Optional narration text overlay…"
+        oninput="st.panels[${st.selPanel}].caption=this.value||null">${esc(p.caption||'')}</textarea>
+      <button class="tbtn" style="margin-top:4px;width:100%" onclick="aiCaption(${st.selPanel})">✦ AI Write Caption</button>
+    </div>
+    <div class="ed-section">
+      <button class="gen-one ${p.imageUrl?'regen':''}" onclick="generateOne(${st.selPanel})" ${p.generating?'disabled':''}>
+        ${p.generating?'Generating…':p.imageUrl?'↻ Regenerate':'✦ Generate This Panel'}
+      </button>
+    </div>
+    <div class="ed-section" style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="tbtn" onclick="addPanelAt(${st.selPanel})">+ Insert Before</button>
+      <button class="tbtn" onclick="addPanelAt(${st.selPanel+1})">+ Insert After</button>
+      <button class="tbtn" onclick="removePanelAt(${st.selPanel})" style="color:var(--fire)">× Remove</button>
+    </div>`;
+}
+
+function updateCounts(){
+  const done = st.panels.filter(p=>p.imageUrl).length;
+  document.getElementById('genCount').textContent = `${done} / ${st.panels.length} panels`;
+  document.getElementById('genStatus').textContent = st.generating
+    ? 'Generating…' : done===st.panels.length&&done>0
+    ? `${curEp().title} — Complete ✓` : `${curEp().title}`;
+}
+
+// ── ACTIONS ──────────────────────────────────────────────────────────────────
+function selectPanelIdx(i){
+  st.selPanel = i;
+  renderPanelList();
+  renderEditor();
+  // highlight in phone
+  document.querySelectorAll('.s-panel').forEach((el,j)=>{
+    el.style.outline = j===i ? '2px solid var(--gold)' : 'none';
+  });
+  const el = document.getElementById('sp-'+i);
+  if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function setPanelType(i,type){
+  st.panels[i].type = type;
+  renderAll();
+}
+
+function injectChar(name){
+  const ta = document.getElementById('ed-desc');
+  if(!ta) return;
+  const add = st.panels[st.selPanel].desc ? `, ${name}` : name;
+  ta.value += add;
+  st.panels[st.selPanel].desc = ta.value;
+}
+
+function addPanelAt(i){
+  st.panels.splice(i,0,{desc:'',caption:null,type:'standard',imageUrl:null,generating:false});
+  st.selPanel = i;
+  renderAll();
+}
+
+function removePanelAt(i){
+  if(st.panels.length<=1) return;
+  st.panels.splice(i,1);
+  if(st.selPanel>=st.panels.length) st.selPanel = st.panels.length-1;
+  renderAll();
+}
+
+// ── GENERATE ─────────────────────────────────────────────────────────────────
+function buildFalPrompt(panel){
+  const ep = curEp();
+  // Inject character appearances
+  let charDescs = '';
+  for(const name of ep.chars){
+    if(panel.desc.toLowerCase().includes(name.toLowerCase().split(' ')[0]) && CHARACTERS[name]){
+      charDescs += CHARACTERS[name] + ', ';
+    }
+  }
+  return `${STYLE}, ${charDescs}${panel.desc}`;
+}
+
+async function generateOne(i){
+  const p = st.panels[i];
+  if(!p.desc.trim()){ toast('Write a scene description first','err'); return; }
+  p.generating = true;
+  renderAll();
+  try{
+    const pt = PANEL_TYPES[p.type]||PANEL_TYPES.standard;
+    const r = await fetch(FAL,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'fal-ai/flux/schnell',
+        prompt: buildFalPrompt(p),
+        image_size: pt.fal,
+        num_inference_steps: 4,
+      })
+    });
+    const data = await r.json();
+    const url = data?.images?.[0]?.url;
+    if(url){ p.imageUrl = url; toast('Panel generated ✓','ok'); }
+    else throw new Error(data?.detail||'No image');
+  } catch(e){ toast('Failed: '+e.message,'err'); }
+  p.generating = false;
+  renderAll();
+}
+
+async function generateAll(){
+  if(st.generating) return;
+  const empty = st.panels.filter(p=>!p.imageUrl && p.desc.trim());
+  if(!empty.length){ toast('All panels generated or no descriptions','err'); return; }
+  st.generating = true;
+  document.getElementById('genAllBtn').disabled = true;
+  renderAll();
+  for(let i=0;i<st.panels.length;i++){
+    const p = st.panels[i];
+    if(p.imageUrl || !p.desc.trim()) continue;
+    document.getElementById('genStatus').textContent = `Generating panel ${i+1} of ${st.panels.length}…`;
+    await generateOne(i);
+    await new Promise(r=>setTimeout(r,300));
+  }
+  st.generating = false;
+  document.getElementById('genAllBtn').disabled = false;
+  renderAll();
+  toast('Episode complete ✓','ok');
+}
+
+// ── AI CAPTION ───────────────────────────────────────────────────────────────
+async function aiCaption(i){
+  const p = st.panels[i];
+  if(!p.desc.trim()){ toast('Write a scene description first','err'); return; }
+  toast('Writing caption…');
+  try{
+    const ep = curEp();
+    const r = await fetch(GEM,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        system_instruction:{parts:[{text:`You are the Griot — the narrator of The Clarksdale Series, an infinity comic about the Mississippi Delta blues. Write in a literary, evocative voice. One or two sentences maximum. Poetic but grounded. Think Toni Morrison meets a Delta blues liner note. No clichés. No generic poetic language. Be specific to this scene and this place. Always center Black American experience with dignity and power.`}]},
+        contents:[{parts:[{text:`Episode: "${ep.title}" — ${ep.era}\nScene description: ${p.desc}\n\nWrite a single caption (1-2 sentences) for this comic panel. Narration, not dialogue.`}]}]
+      })
+    });
+    const data = await r.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if(text){
+      p.caption = text.replace(/^["']|["']$/g,'').trim();
+      document.getElementById('ed-cap').value = p.caption;
+      renderPhone();
+      toast('Caption written ✓','ok');
+    } else throw new Error('No text');
+  } catch(e){ toast('Caption failed: '+e.message,'err'); }
+}
+
+// ── EXPORT ───────────────────────────────────────────────────────────────────
+async function exportStrip(){
+  const generated = st.panels.filter(p=>p.imageUrl);
+  if(!generated.length){ toast('Generate some panels first','err'); return; }
+  toast('Building strip…');
+  const W = 340;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  let totalH = 80; // title area
+  const items = [];
+  for(const p of generated){
+    const pt = PANEL_TYPES[p.type]||PANEL_TYPES.standard;
+    const img = new Image(); img.crossOrigin = 'anonymous';
+    await new Promise(r=>{img.onload=r;img.onerror=r;img.src=p.imageUrl;});
+    const h = Math.round(W * (pt.h / 340));
+    items.push({img,h,panel:p});
+    totalH += h;
+  }
+  totalH += 60; // end
+  canvas.height = totalH;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#0A0704';
+  ctx.fillRect(0,0,W,totalH);
+  // Title
+  ctx.fillStyle = '#C8973A';
+  ctx.font = '700 9px "DM Sans"';
+  ctx.textAlign = 'center';
+  ctx.fillText(curEp().era, W/2, 28);
+  ctx.fillStyle = '#F0E6D0';
+  ctx.font = '900 22px "Playfair Display",Georgia,serif';
+  ctx.fillText(curEp().title, W/2, 52);
+  ctx.fillStyle = '#7A6A4A';
+  ctx.font = 'italic 11px "Playfair Display",Georgia,serif';
+  ctx.fillText(curEp().sub.slice(0,50), W/2, 68);
+  let y = 80;
+  for(const {img,h,panel} of items){
+    ctx.drawImage(img,0,y,W,h);
+    if(panel.caption){
+      const grad = ctx.createLinearGradient(0,y+h-50,0,y+h);
+      grad.addColorStop(0,'transparent');
+      grad.addColorStop(1,'rgba(0,0,0,0.85)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0,y+h-50,W,50);
+      ctx.fillStyle = '#F0E6D0';
+      ctx.font = 'italic 10px "Playfair Display",Georgia,serif';
+      ctx.textAlign = 'left';
+      wrapText(ctx, panel.caption, 14, y+h-18, W-28, 12);
+      ctx.textAlign = 'center';
+    }
+    y += h;
+  }
+  ctx.fillStyle = '#C8973A';
+  ctx.font = '700 16px "Playfair Display",Georgia,serif';
+  ctx.fillText('◆', W/2, y+24);
+  ctx.fillStyle = '#7A6A4A';
+  ctx.font = '9px "DM Sans"';
+  ctx.fillText(curEp().title+' — The Clarksdale Series', W/2, y+40);
+
+  const link = document.createElement('a');
+  link.download = 'clarksdale-' + curEp().id + '.jpg';
+  link.href = canvas.toDataURL('image/jpeg',.92);
+  link.click();
+  toast('Strip exported ✓','ok');
+}
+
+function wrapText(ctx,text,x,y,maxW,lineH){
+  const words = text.split(' ');
+  let line = '';
+  for(const w of words){
+    const test = line + w + ' ';
+    if(ctx.measureText(test).width > maxW && line){
+      ctx.fillText(line.trim(),x,y);
+      line = w + ' ';
+      y += lineH;
+    } else line = test;
+  }
+  if(line) ctx.fillText(line.trim(),x,y);
+}
+
+// ── UTILS ────────────────────────────────────────────────────────────────────
+function esc(s){ return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+let _tt;
+function toast(msg,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='toast '+(type||'');
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.add('hide'),3000);
+}
+
+init();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     COMIC VIDEO PLAYER — Mobile video experience overlay
+     Injected via JS, does NOT modify existing editor structure
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
+<style>
+/* ── VIDEO PLAYER STYLES ── */
+.cv-overlay{position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .4s;pointer-events:none}
+.cv-overlay.active{opacity:1;pointer-events:all}
+.cv-close{position:fixed;top:16px;right:16px;z-index:10001;width:40px;height:40px;border-radius:50%;background:rgba(30,30,30,.8);border:1px solid #333;color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s}
+.cv-close:hover{transform:scale(1.15)}
+.cv-phone{width:min(390px,100vw);height:min(844px,100vh);background:#0a0a0a;border-radius:40px;border:3px solid #333;box-shadow:0 0 40px rgba(0,0,0,.8),inset 0 0 20px rgba(255,255,255,.03);overflow:hidden;position:relative}
+.cv-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:28px;background:#0a0a0a;border-radius:0 0 20px 20px;z-index:10}
+.cv-screen{width:100%;height:100%;background:#111;overflow:hidden;position:relative}
+.cv-panel-container{position:absolute;inset:0;display:flex;flex-direction:column}
+.cv-img-wrap{flex:1;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;background:#000}
+.cv-panel-img{width:100%;height:100%;object-fit:cover;will-change:transform}
+.cv-panel-video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;z-index:2}
+.cv-halftone{position:absolute;inset:0;background:radial-gradient(circle,transparent 40%,rgba(0,0,0,.15) 41%);background-size:4px 4px;pointer-events:none;opacity:.3;z-index:3}
+.cv-sfx{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0) rotate(-5deg);font-family:'Bangers',cursive;font-size:64px;color:#FF3D5A;text-shadow:3px 3px 0 #000,-1px -1px 0 #000;z-index:5;pointer-events:none;opacity:0;transition:none;letter-spacing:4px}
+.cv-sfx.show{animation:cvSfxPop .6s ease-out forwards}
+@keyframes cvSfxPop{0%{transform:translate(-50%,-50%) scale(0) rotate(-12deg);opacity:0}30%{transform:translate(-50%,-50%) scale(1.3) rotate(3deg);opacity:1}60%{transform:translate(-50%,-50%) scale(.95) rotate(-1deg);opacity:1}100%{transform:translate(-50%,-50%) scale(1) rotate(0deg);opacity:0}}
+.cv-caption-box{position:absolute;bottom:80px;left:12px;right:12px;background:rgba(10,7,4,.88);border:2px solid rgba(200,151,58,.4);border-radius:6px;padding:14px 16px;z-index:4;min-height:60px}
+.cv-caption-tag{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:700;color:#C8973A;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+.cv-caption-text{font-family:'Playfair Display',serif;font-size:14px;color:#F0E6D0;line-height:1.6;font-style:italic}
+.cv-caption-cursor{display:inline-block;width:2px;height:14px;background:#C8973A;margin-left:2px;animation:cvBlink .6s infinite}
+@keyframes cvBlink{0%,100%{opacity:1}50%{opacity:0}}
+.cv-progress{position:absolute;bottom:20px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:8px;z-index:6}
+.cv-dot{width:8px;height:8px;border-radius:50%;background:rgba(200,151,58,.25);transition:all .3s}
+.cv-dot.active{background:#C8973A;box-shadow:0 0 8px rgba(200,151,58,.6);animation:cvPulse 1.5s infinite}
+.cv-dot.done{background:rgba(200,151,58,.6)}
+@keyframes cvPulse{0%,100%{box-shadow:0 0 8px rgba(200,151,58,.4)}50%{box-shadow:0 0 16px rgba(200,151,58,.8)}}
+.cv-controls{position:absolute;bottom:44px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:20px;z-index:6}
+.cv-ctrl-btn{width:36px;height:36px;border-radius:50%;border:1px solid rgba(200,151,58,.3);background:rgba(10,7,4,.7);color:#C8973A;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
+.cv-ctrl-btn:hover{background:rgba(200,151,58,.15);border-color:#C8973A}
+.cv-panel-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(200,151,58,.6)}
+.cv-audio-toggle{position:absolute;top:36px;right:12px;z-index:10;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.5);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.cv-ep-title{position:absolute;top:36px;left:12px;z-index:10}
+.cv-ep-title .cv-et-era{font-family:'DM Sans',sans-serif;font-size:8px;font-weight:700;color:#C8973A;letter-spacing:2px;text-transform:uppercase}
+.cv-ep-title .cv-et-name{font-family:'Playfair Display',serif;font-size:16px;font-weight:900;color:#F0E6D0;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+.cv-generate-bar{position:absolute;top:80px;right:12px;z-index:10}
+.cv-gen-btn{padding:6px 12px;border-radius:4px;border:1px solid rgba(200,151,58,.3);background:rgba(10,7,4,.8);color:#C8973A;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+.cv-gen-btn:hover{background:rgba(200,151,58,.15);border-color:#C8973A}
+.cv-gen-btn:disabled{opacity:.4;cursor:default}
+.cv-gen-status{position:absolute;top:110px;right:12px;z-index:10;display:flex;flex-direction:column;gap:3px;align-items:flex-end}
+.cv-gs-item{font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(200,151,58,.5)}
+
+/* Ken Burns animations */
+@keyframes cvKB1{from{transform:scale(1) translate(0,0)}to{transform:scale(1.15) translate(-2%,-1%)}}
+@keyframes cvKB2{from{transform:scale(1.1) translate(-3%,0)}to{transform:scale(1) translate(3%,2%)}}
+@keyframes cvKB3{from{transform:scale(1) translate(0,-2%)}to{transform:scale(1.12) translate(1%,2%)}}
+@keyframes cvKB4{from{transform:scale(1.08) translate(2%,-1%)}to{transform:scale(1) translate(-1%,1%)}}
+@keyframes cvKB5{from{transform:scale(1) translate(-1%,1%)}to{transform:scale(1.1) translate(2%,-2%)}}
+
+/* Panel entrance */
+@keyframes cvSlideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.cv-entering{animation:cvSlideUp .5s ease-out forwards}
+
+/* WATCH button */
+.cv-watch-btn{background:linear-gradient(135deg,#FF6B35,#FF3D5A);color:#fff;border:3px solid #000;font-family:'Bangers',cursive;font-size:18px;letter-spacing:2px;padding:12px 24px;border-radius:4px;cursor:pointer;box-shadow:4px 4px 0 #000;transition:transform .1s;margin-top:10px;display:inline-block}
+.cv-watch-btn:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 #000}
+.cv-watch-btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #000}
+
+@media(max-width:500px){
+  .cv-phone{border-radius:0;border:none;width:100vw;height:100vh}
+}
+</style>
+
+<div id="cv-overlay" class="cv-overlay">
+  <div class="cv-close" onclick="cvClose()">✕</div>
+  <div class="cv-phone">
+    <div class="cv-notch"></div>
+    <div class="cv-screen" id="cv-screen-player">
+      <div class="cv-ep-title">
+        <div class="cv-et-era" id="cv-era"></div>
+        <div class="cv-et-name" id="cv-title"></div>
+      </div>
+      <div class="cv-audio-toggle" id="cv-audio-btn" onclick="cvToggleAudio()">🔇</div>
+      <div class="cv-generate-bar"><button class="cv-gen-btn" id="cv-gen-btn" onclick="cvGenerateAll()">✨ ANIMATE</button></div>
+      <div class="cv-gen-status" id="cv-gen-status"></div>
+      <div class="cv-panel-container cv-entering" id="cv-panel-ctr">
+        <div class="cv-img-wrap" id="cv-img-wrap">
+          <img id="cv-panel-img" class="cv-panel-img" alt="">
+          <video id="cv-panel-vid" class="cv-panel-video" style="display:none" muted playsinline></video>
+          <div class="cv-halftone"></div>
+        </div>
+        <div class="cv-sfx" id="cv-sfx"></div>
+        <div class="cv-caption-box">
+          <div class="cv-caption-tag">Narration</div>
+          <div class="cv-caption-text" id="cv-caption"></div>
+        </div>
+      </div>
+      <div class="cv-controls">
+        <div class="cv-ctrl-btn" onclick="cvPrev()">‹</div>
+        <span class="cv-panel-num" id="cv-panel-num"></span>
+        <div class="cv-ctrl-btn" onclick="cvNext()">›</div>
+      </div>
+      <div class="cv-progress" id="cv-progress"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ── SFX MAP ──
+  const CV_SFX = {
+    sonhouse:   ['CRACK!','SNAP!','SOUL!','PREACH!','BLUES!','AMEN!'],
+    samcooke:   ['SING!','SOAR!','CHANGE!','FREEDOM!','YES!','SOUL!'],
+    natedogg:   ['REGULATE!','HOOK!','GOSPEL!','SMOOTH!','WEST!','GLORY!'],
+    rickross:   ['CLARKSDALE!','BOSS!','DEEP!','HEAVY!','RISE!','EMPIRE!'],
+    riverside:  ['HISTORY!','SACRED!','REMEMBER!','BLUES!','SHELTER!','REST!'],
+    crossroads: ['MIDNIGHT!','DEAL!','STRINGS!','SOUL!','HOWL!','GONE!'],
+    saturday:   ['STOMP!','HOLLER!','BLUES!','SHAKE!','DAWN!','PLAY!'],
+    rocket88:   ['DRIVE!','CRASH!','FUZZ!','RECORD!','FIRE!','BORN!'],
+    migration:  ['NORTH!','ELECTRIC!','FREE!','PLUG!','THUNDER!','ROAR!'],
+    lomax:      ['LISTEN!','CAPTURE!','SPIN!','VOICE!','WAX!','POWER!'],
+    empress:    ['QUEEN!','VOICE!','CRACK!','SILK!','ROAR!','DAWN!'],
+    river:      ['FLOW!','DEEP!','TIME!','ANCIENT!','MUD!','ETERNAL!'],
+    spider:     ['WEAVE!','PATTERN!','THREAD!','REMEMBER!','HOLD!','WEB!'],
+    custom:     ['CREATE!','WRITE!','DREAM!','BUILD!','TELL!','BORN!']
+  };
+
+  const KB_ANIMS = ['cvKB1','cvKB2','cvKB3','cvKB4','cvKB5'];
+
+  // ── VIDEO PLAYER STATE ──
+  let cvEp = null;
+  let cvPanels = [];
+  let cvIdx = 0;
+  let cvAudio = null;
+  let cvAudioOn = false;
+  let cvAutoTimer = null;
+  let cvTypeTimer = null;
+  let cvParallaxActive = false;
+  let cvGenVideos = {}; // localStorage cache: {epId: {panelIdx: videoUrl}}
+
+  // Load persisted video generation status
+  try { cvGenVideos = JSON.parse(localStorage.getItem('cv_gen_videos') || '{}'); } catch(e){}
+  function cvSaveGen(){ try { localStorage.setItem('cv_gen_videos', JSON.stringify(cvGenVideos)); } catch(e){} }
+
+  // ── EPISODE DATA RESOLVER ──
+  function cvGetPanels(ep){
+    const urlMap = {spider:SPIDER_URLS, crossroads:CROSSROADS_URLS, saturday:DOCKERY_URLS, rocket88:IKE_URLS, sonhouse:SONHOUSE_URLS, samcooke:SAMCOOKE_URLS};
+    const preUrls = urlMap[ep.id];
+    return ep.panels.map((p,i)=>({
+      imageUrl: p.imageUrl || (preUrls ? preUrls[i] : null),
+      narration: p.caption || '',
+      sfx: (CV_SFX[ep.id]||CV_SFX.custom)[i % (CV_SFX[ep.id]||CV_SFX.custom).length]
+    })).filter(p => p.imageUrl);
+  }
+
+  // ── OPEN / CLOSE ──
+  window.cvOpen = function(ep){
+    cvEp = ep;
+    cvPanels = cvGetPanels(ep);
+    if(!cvPanels.length) return;
+    cvIdx = 0;
+    document.getElementById('cv-era').textContent = ep.era;
+    document.getElementById('cv-title').textContent = ep.title;
+    document.getElementById('cv-overlay').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    cvRenderProgress();
+    cvShowPanel(0);
+    cvStartParallax();
+    cvUpdateGenStatus();
+  };
+
+  window.cvClose = function(){
+    document.getElementById('cv-overlay').classList.remove('active');
+    document.body.style.overflow = '';
+    cvStopAuto();
+    cvStopType();
+    if(cvAudio){ cvAudio.pause(); cvAudio = null; }
+    cvStopParallax();
+  };
+
+  // ── SHOW PANEL ──
+  function cvShowPanel(idx){
+    cvStopAuto();
+    cvStopType();
+    cvIdx = idx;
+    const p = cvPanels[idx];
+    const img = document.getElementById('cv-panel-img');
+    const vid = document.getElementById('cv-panel-vid');
+    const ctr = document.getElementById('cv-panel-ctr');
+    const sfxEl = document.getElementById('cv-sfx');
+
+    // Entrance animation
+    ctr.classList.remove('cv-entering');
+    void ctr.offsetWidth;
+    ctr.classList.add('cv-entering');
+
+    // Check for generated video
+    const genUrl = cvGenVideos[cvEp.id] && cvGenVideos[cvEp.id][idx];
+    if(genUrl){
+      img.style.display = 'none';
+      vid.style.display = 'block';
+      vid.src = genUrl;
+      vid.play().catch(()=>{});
+    } else {
+      vid.style.display = 'none';
+      vid.pause();
+      img.style.display = 'block';
+      img.src = p.imageUrl;
+      // Ken Burns
+      const kb = KB_ANIMS[idx % KB_ANIMS.length];
+      img.style.animation = 'none';
+      void img.offsetWidth;
+      img.style.animation = `${kb} 6s ease-in-out forwards`;
+    }
+
+    // SFX flash
+    sfxEl.classList.remove('show');
+    sfxEl.textContent = p.sfx;
+    void sfxEl.offsetWidth;
+    sfxEl.classList.add('show');
+
+    // Caption typewriter
+    const capEl = document.getElementById('cv-caption');
+    capEl.innerHTML = '';
+    if(p.narration){
+      cvTypeText(capEl, p.narration);
+    }
+
+    // Update progress
+    document.getElementById('cv-panel-num').textContent = `${idx+1} / ${cvPanels.length}`;
+    cvRenderProgress();
+
+    // Auto-advance after 5s
+    cvAutoTimer = setTimeout(()=>{
+      if(cvIdx < cvPanels.length - 1) cvShowPanel(cvIdx + 1);
+    }, 5500);
+  }
+
+  // ── TYPEWRITER ──
+  function cvTypeText(el, text){
+    let i = 0;
+    el.innerHTML = '<span class="cv-caption-cursor"></span>';
+    cvTypeTimer = setInterval(()=>{
+      if(i >= text.length){ clearInterval(cvTypeTimer); cvTypeTimer = null; return; }
+      const cursor = el.querySelector('.cv-caption-cursor');
+      const span = document.createTextNode(text[i]);
+      el.insertBefore(span, cursor);
+      i++;
+    }, 30);
+  }
+  function cvStopType(){ if(cvTypeTimer){ clearInterval(cvTypeTimer); cvTypeTimer = null; } }
+  function cvStopAuto(){ if(cvAutoTimer){ clearTimeout(cvAutoTimer); cvAutoTimer = null; } }
+
+  // ── CONTROLS ──
+  window.cvPrev = function(){ if(cvIdx > 0) cvShowPanel(cvIdx - 1); };
+  window.cvNext = function(){ if(cvIdx < cvPanels.length - 1) cvShowPanel(cvIdx + 1); };
+
+  // ── PROGRESS DOTS ──
+  function cvRenderProgress(){
+    const el = document.getElementById('cv-progress');
+    el.innerHTML = cvPanels.map((_,i)=>{
+      const cls = i === cvIdx ? 'active' : i < cvIdx ? 'done' : '';
+      return `<div class="cv-dot ${cls}"></div>`;
+    }).join('');
+  }
+
+  // ── AUDIO ──
+  window.cvToggleAudio = function(){
+    cvAudioOn = !cvAudioOn;
+    document.getElementById('cv-audio-btn').textContent = cvAudioOn ? '🔊' : '🔇';
+    if(cvAudioOn && !cvAudio){
+      // Placeholder - episodes with audioUrl would play here
+      if(cvEp.audioUrl){
+        cvAudio = new Audio(cvEp.audioUrl);
+        cvAudio.loop = true;
+        cvAudio.volume = 0.4;
+        cvAudio.play().catch(()=>{});
+      }
+    } else if(!cvAudioOn && cvAudio){
+      cvAudio.pause();
+      cvAudio = null;
+    }
+  };
+
+  // ── PARALLAX (mouse + gyroscope) ──
+  function cvParallaxMove(x, y){
+    const img = document.getElementById('cv-panel-img');
+    if(img && img.style.display !== 'none'){
+      img.style.transform = `scale(1.1) translate(${x}px, ${y}px)`;
+    }
+  }
+  function cvMouseHandler(e){
+    const x = (e.clientX / window.innerWidth - 0.5) * 20;
+    const y = (e.clientY / window.innerHeight - 0.5) * 20;
+    cvParallaxMove(x, y);
+  }
+  function cvGyroHandler(e){
+    const x = (e.gamma || 0) * 0.3;
+    const y = (e.beta || 0) * 0.2;
+    cvParallaxMove(x, y);
+  }
+  function cvStartParallax(){
+    if(cvParallaxActive) return;
+    cvParallaxActive = true;
+    window.addEventListener('mousemove', cvMouseHandler);
+    window.addEventListener('deviceorientation', cvGyroHandler);
+  }
+  function cvStopParallax(){
+    cvParallaxActive = false;
+    window.removeEventListener('mousemove', cvMouseHandler);
+    window.removeEventListener('deviceorientation', cvGyroHandler);
+  }
+
+  // ── TOUCH GESTURES ──
+  let cvTouchX = 0;
+  document.getElementById('cv-screen-player').addEventListener('touchstart', e => { cvTouchX = e.touches[0].clientX; }, {passive:true});
+  document.getElementById('cv-screen-player').addEventListener('touchend', e => {
+    const diff = cvTouchX - e.changedTouches[0].clientX;
+    if(Math.abs(diff) > 50){ diff > 0 ? cvNext() : cvPrev(); }
+  }, {passive:true});
+
+  // ── KEYBOARD ──
+  document.addEventListener('keydown', e => {
+    if(!document.getElementById('cv-overlay').classList.contains('active')) return;
+    if(e.key === 'Escape') cvClose();
+    if(e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); cvNext(); }
+    if(e.key === 'ArrowLeft') { e.preventDefault(); cvPrev(); }
+  });
+
+  // ── FAL VIDEO GENERATION ──
+  const CV_FAL_GEN = 'https://awareness-proxy-328246068140.us-central1.run.app/fal/generate';
+  const CV_FAL_STATUS = 'https://awareness-proxy-328246068140.us-central1.run.app/fal/status/';
+  const CV_FAL_RESULT = 'https://awareness-proxy-328246068140.us-central1.run.app/fal/result/';
+  const CV_GEMINI = 'https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+
+  let cvGenerating = false;
+
+  async function cvGetStyleCard(ep, panels){
+    try {
+      const r = await fetch(CV_GEMINI, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          system_instruction:{parts:[{text:'You generate concise visual style guides for video generation.'}]},
+          contents:[{parts:[{text:`Episode: "${ep.title}" about ${ep.sub}. Panels: ${panels.map(p=>p.narration).join(' | ')}\n\nGenerate a 50-word visual consistency guide for image-to-video generation. Include: lighting style, color palette, camera movement style, mood/atmosphere, era-appropriate visual elements. Output only the guide text.`}]}]
+        })
+      });
+      const d = await r.json();
+      return d?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    } catch(e){ return ''; }
+  }
+
+  async function cvGenPanel(imageUrl, narration, styleCard, panelIdx){
+    try {
+      const prompt = `subtle comic book panel animation, parallax camera drift, cinematic breathing motion, blues music era, graphic novel style, ${narration.slice(0,100)}${styleCard ? ', ' + styleCard.slice(0,150) : ''}`;
+      const startRes = await fetch(CV_FAL_GEN, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:'fal-ai/kling-video/v1.6/standard/image-to-video',
+          image_url: imageUrl,
+          prompt, duration:'5', aspect_ratio:'9:16'
+        })
+      });
+      const { request_id } = await startRes.json();
+      if(!request_id) return null;
+
+      // Poll
+      for(let attempt = 0; attempt < 60; attempt++){
+        await new Promise(r=>setTimeout(r,3000));
+        const statusRes = await fetch(CV_FAL_STATUS + request_id + '?model=fal-ai/kling-video/v1.6/standard');
+        const status = await statusRes.json();
+        if(status.status === 'COMPLETED'){
+          const resultRes = await fetch(CV_FAL_RESULT + request_id + '?model=fal-ai/kling-video/v1.6/standard');
+          const result = await resultRes.json();
+          return result?.video?.url || null;
+        }
+        if(status.status === 'FAILED') return null;
+      }
+      return null;
+    } catch(e){ return null; }
+  }
+
+  window.cvGenerateAll = async function(){
+    if(cvGenerating || !cvEp) return;
+    cvGenerating = true;
+    document.getElementById('cv-gen-btn').disabled = true;
+    document.getElementById('cv-gen-btn').textContent = '⏳ Generating...';
+    if(!cvGenVideos[cvEp.id]) cvGenVideos[cvEp.id] = {};
+
+    const styleCard = await cvGetStyleCard(cvEp, cvPanels);
+    cvUpdateGenStatus();
+
+    for(let i = 0; i < cvPanels.length; i++){
+      if(cvGenVideos[cvEp.id][i]) continue; // already done
+      cvGenVideos[cvEp.id][i] = 'generating';
+      cvSaveGen();
+      cvUpdateGenStatus();
+
+      const url = await cvGenPanel(cvPanels[i].imageUrl, cvPanels[i].narration, styleCard, i);
+      if(url){
+        cvGenVideos[cvEp.id][i] = url;
+        // If currently viewing this panel, swap to video
+        if(cvIdx === i){
+          const vid = document.getElementById('cv-panel-vid');
+          const img = document.getElementById('cv-panel-img');
+          img.style.display = 'none';
+          vid.style.display = 'block';
+          vid.src = url;
+          vid.play().catch(()=>{});
+        }
+      } else {
+        delete cvGenVideos[cvEp.id][i];
+      }
+      cvSaveGen();
+      cvUpdateGenStatus();
+    }
+
+    cvGenerating = false;
+    document.getElementById('cv-gen-btn').disabled = false;
+    document.getElementById('cv-gen-btn').textContent = '✨ ANIMATE';
+  };
+
+  function cvUpdateGenStatus(){
+    const el = document.getElementById('cv-gen-status');
+    if(!cvEp || !cvGenVideos[cvEp.id]){ el.innerHTML = ''; return; }
+    const g = cvGenVideos[cvEp.id];
+    el.innerHTML = cvPanels.map((_,i)=>{
+      const v = g[i];
+      const icon = !v ? '⬜' : v === 'generating' ? '🔄' : '✅';
+      return `<div class="cv-gs-item">${icon} Panel ${i+1}</div>`;
+    }).join('');
+  }
+
+  // ── INJECT WATCH BUTTONS ──
+  function cvInjectButtons(){
+    EPISODES.forEach((ep, idx) => {
+      if(ep.id === 'custom') return;
+      const panels = cvGetPanels(ep);
+      if(!panels.length) return;
+
+      // Find the ep-card in sidebar
+      const cards = document.querySelectorAll('.ep-card');
+      if(cards[idx]){
+        const existing = cards[idx].querySelector('.cv-watch-btn');
+        if(existing) return;
+        const btn = document.createElement('button');
+        btn.className = 'cv-watch-btn';
+        btn.innerHTML = `▶ WATCH`;
+        btn.onclick = function(e){
+          e.stopPropagation();
+          cvOpen(ep);
+        };
+        cards[idx].appendChild(btn);
+      }
+    });
+  }
+
+  // Re-inject after renders (MutationObserver on sidebar)
+  const cvObs = new MutationObserver(()=> setTimeout(cvInjectButtons, 50));
+  const sbEl = document.getElementById('epList');
+  if(sbEl) cvObs.observe(sbEl, {childList:true});
+
+  // Initial injection after a tick
+  setTimeout(cvInjectButtons, 200);
+
+})();
+</script>
+<a href="clarksdale-series.html#knowledge-graph" onclick="window.location='clarksdale-series.html';setTimeout(()=>window.toggleKnowledgeGraph&&toggleKnowledgeGraph(),500);return true;" style="position:fixed;top:16px;right:16px;z-index:9999;padding:8px 16px;border-radius:8px;background:rgba(26,26,26,.9);border:1px solid #2a2a2a;color:#D4AF37;font-size:12px;font-weight:600;text-decoration:none;font-family:'Inter',sans-serif;cursor:pointer;backdrop-filter:blur(8px);">🕸 Knowledge Graph</a>
+</body>
+</html>

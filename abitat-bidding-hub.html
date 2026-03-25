@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abitat AI Bidding Hub</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#b01c1c;--red-dark:#8a1515;--red-light:#c93030;
+  --orange:#ff8c00;--orange-light:#ffa333;
+  --bg:#f0f2f5;--white:#ffffff;--surface:#fafafa;
+  --border:#e2e5ea;--border2:#d0d4db;
+  --text:#1a1d23;--text-2:#4a5568;--text-3:#718096;
+  --success:#16a34a;--warning:#d97706;--danger:#dc2626;--info:#2563eb;
+  --sidebar:220px;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+
+/* ── Sidebar ── */
+.sidebar{width:var(--sidebar);background:var(--red-dark);min-height:100vh;display:flex;flex-direction:column;flex-shrink:0;position:fixed;left:0;top:0;bottom:0;z-index:50;overflow-y:auto}
+.sidebar-brand{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.brand-icon{width:36px;height:36px;background:var(--orange);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;margin-bottom:8px;letter-spacing:-0.5px}
+.brand-name{font-size:13px;font-weight:700;color:#fff;line-height:1.2}
+.brand-sub{font-size:10px;color:rgba(255,255,255,0.55);margin-top:2px;letter-spacing:0.04em;text-transform:uppercase}
+.sidebar-section{padding:12px 0 4px}
+.sidebar-section-label{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.4);padding:0 14px;margin-bottom:4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;transition:all 0.15s;border-radius:0;font-size:12px;color:rgba(255,255,255,0.7);font-weight:500;border-left:2px solid transparent}
+.nav-item:hover{background:rgba(255,255,255,0.08);color:#fff}
+.nav-item.active{background:rgba(255,140,0,0.2);color:#fff;border-left-color:var(--orange);font-weight:600}
+.nav-item .icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid rgba(255,255,255,0.1)}
+.sidebar-footer-text{font-size:10px;color:rgba(255,255,255,0.4);line-height:1.5}
+
+/* ── Main ── */
+.main{margin-left:var(--sidebar);flex:1;min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:40}
+.topbar-title{font-size:15px;font-weight:700;color:var(--text)}
+.topbar-sub{font-size:12px;color:var(--text-3);margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-badge{font-size:10px;background:rgba(176,28,28,0.1);color:var(--red);padding:3px 10px;border-radius:10px;border:1px solid rgba(176,28,28,0.2);font-weight:600}
+.content{flex:1;padding:28px}
+
+/* ── Panels ── */
+.panel{display:none}
+.panel.active{display:block}
+
+/* ── Cards ── */
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
+.card-sm{padding:16px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:14px;font-weight:700;color:var(--text)}
+.card-sub{font-size:11px;color:var(--text-3);margin-top:2px}
+
+/* ── Stat cards ── */
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.stat-card-label{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-3);margin-bottom:6px}
+.stat-card-val{font-size:26px;font-weight:800;line-height:1;color:var(--text)}
+.stat-card-change{font-size:11px;margin-top:5px;font-weight:500}
+.stat-card-change.up{color:var(--success)}
+.stat-card-change.down{color:var(--danger)}
+.stat-card-change.neutral{color:var(--text-3)}
+
+/* ── Chart grid ── */
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.chart-wrap{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px}
+.chart-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
+.chart-sub{font-size:11px;color:var(--text-3);margin-bottom:16px}
+.chart-container{position:relative;height:220px}
+
+/* ── Abitat Advantage ── */
+.advantage-box{background:linear-gradient(135deg,rgba(176,28,28,0.06),rgba(255,140,0,0.06));border:1px solid rgba(176,28,28,0.2);border-radius:10px;padding:16px 20px;margin-bottom:16px;border-left:3px solid var(--red)}
+.advantage-title{font-size:12px;font-weight:700;color:var(--red);display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.advantage-body{font-size:12px;color:var(--text-2);line-height:1.6}
+
+/* ── Upload area ── */
+.upload-area{border:2px dashed var(--border2);border-radius:10px;padding:40px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface);margin-bottom:20px}
+.upload-area:hover{border-color:var(--red);background:rgba(176,28,28,0.02)}
+.upload-icon{font-size:32px;margin-bottom:10px;opacity:0.5}
+.upload-text{font-size:13px;color:var(--text-2);margin-bottom:4px}
+.upload-sub{font-size:11px;color:var(--text-3)}
+#rfp-input{display:none}
+
+/* ── AI output card ── */
+.ai-output{background:#f8faff;border:1px solid #c7d7f5;border-radius:10px;padding:20px;margin-bottom:16px}
+.ai-output-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.ai-label{font-size:10px;background:#2563eb;color:#fff;padding:2px 8px;border-radius:8px;font-weight:600;letter-spacing:0.05em}
+.ai-output-title{font-size:13px;font-weight:700;color:var(--text)}
+.ai-output-body{font-size:12px;color:var(--text-2);line-height:1.7}
+
+/* ── Risk cards ── */
+.risk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px}
+.risk-card{border-radius:10px;padding:18px;border:1px solid}
+.risk-card.high{background:rgba(220,38,38,0.06);border-color:rgba(220,38,38,0.25)}
+.risk-card.medium{background:rgba(217,119,6,0.06);border-color:rgba(217,119,6,0.25)}
+.risk-card.low{background:rgba(22,163,74,0.06);border-color:rgba(22,163,74,0.25)}
+.risk-level{font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px}
+.risk-card.high .risk-level{color:var(--danger)}
+.risk-card.medium .risk-level{color:var(--warning)}
+.risk-card.low .risk-level{color:var(--success)}
+.risk-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px}
+.risk-body{font-size:11px;color:var(--text-2);line-height:1.6}
+.risk-score{font-size:22px;font-weight:800;margin-top:10px}
+.risk-card.high .risk-score{color:var(--danger)}
+.risk-card.medium .risk-score{color:var(--warning)}
+.risk-card.low .risk-score{color:var(--success)}
+
+/* ── Table ── */
+.data-table{width:100%;border-collapse:collapse;font-size:12px}
+.data-table th{background:#f7f8fa;color:var(--text-2);font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;padding:10px 14px;text-align:left;border-bottom:1px solid var(--border)}
+.data-table td{padding:10px 14px;border-bottom:1px solid rgba(0,0,0,0.04);color:var(--text-2)}
+.data-table tr:hover td{background:#f9fafb}
+.data-table td:first-child{color:var(--text);font-weight:500}
+.highlight-row td{background:rgba(176,28,28,0.04);font-weight:600}
+.highlight-row td:first-child{color:var(--red)}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;font-family:'Inter',sans-serif}
+.btn-primary{background:var(--red);color:#fff}
+.btn-primary:hover{background:var(--red-dark)}
+.btn-secondary{background:var(--white);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--red);color:var(--red)}
+.btn-orange{background:var(--orange);color:#fff}
+.btn-orange:hover{background:#e67e00}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+
+/* ── Progress bar ── */
+.progress-wrap{margin-bottom:12px}
+.progress-label{display:flex;justify-content:space-between;margin-bottom:4px;font-size:11px}
+.progress-label span:first-child{color:var(--text-2);font-weight:500}
+.progress-label span:last-child{color:var(--text-3)}
+.progress-bar{height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;transition:width 0.8s ease}
+
+/* ── Tag ── */
+.tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:8px;font-weight:600}
+.tag-red{background:rgba(176,28,28,0.1);color:var(--red)}
+.tag-orange{background:rgba(255,140,0,0.1);color:var(--orange)}
+.tag-green{background:rgba(22,163,74,0.1);color:var(--success)}
+.tag-blue{background:rgba(37,99,235,0.1);color:var(--info)}
+.tag-gray{background:#f0f2f5;color:var(--text-3)}
+
+/* ── Line items ── */
+.line-items{border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.line-item-header{display:grid;grid-template-columns:2fr 80px 120px 80px 120px 100px;gap:8px;background:#f7f8fa;padding:10px 14px;font-size:10px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid var(--border)}
+.line-item-row{display:grid;grid-template-columns:2fr 80px 120px 80px 120px 100px;gap:8px;padding:10px 14px;border-bottom:1px solid rgba(0,0,0,0.04);font-size:12px;transition:background 0.1s;align-items:center}
+.line-item-row:hover{background:#f9fafb}
+.line-item-row:last-child{border-bottom:none}
+.line-item-section{background:rgba(176,28,28,0.04);padding:8px 14px;font-size:11px;font-weight:700;color:var(--red);border-bottom:1px solid rgba(176,28,28,0.1);border-top:1px solid rgba(176,28,28,0.1)}
+.line-item-total{display:grid;grid-template-columns:2fr 80px 120px 80px 120px 100px;gap:8px;padding:12px 14px;background:#1a1d23;color:#fff;font-size:12px;font-weight:700}
+
+/* ── Document card ── */
+.doc-card{display:flex;align-items:center;gap:14px;padding:14px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;background:var(--white)}
+.doc-icon{width:40px;height:40px;background:rgba(176,28,28,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.doc-info{flex:1}
+.doc-name{font-size:13px;font-weight:600;color:var(--text)}
+.doc-meta{font-size:11px;color:var(--text-3);margin-top:2px}
+.doc-tags{display:flex;gap:6px;margin-top:6px}
+
+/* ── Bid package output ── */
+.bid-output{display:none;margin-top:20px}
+.bid-output.visible{display:block}
+.bid-output-header{background:var(--red);color:#fff;border-radius:10px 10px 0 0;padding:20px 24px;display:flex;justify-content:space-between;align-items:center}
+.bid-output-title{font-size:16px;font-weight:700}
+.bid-output-meta{font-size:11px;opacity:0.7}
+.bid-output-body{background:var(--white);border:1px solid var(--border);border-radius:0 0 10px 10px;padding:24px}
+.bid-section{margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+.bid-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.bid-section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--red);margin-bottom:12px}
+.bid-section-body{font-size:12px;color:var(--text-2);line-height:1.8}
+
+/* ── Competitor table ── */
+.comp-rank{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;margin-right:6px}
+.rank-1{background:var(--red);color:#fff}
+.rank-2{background:var(--orange);color:#fff}
+.rank-3{background:#f59e0b;color:#fff}
+.rank-other{background:#e5e7eb;color:var(--text-3)}
+
+/* ── Compliance ── */
+.compliance-item{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;background:var(--white)}
+.compliance-left{display:flex;align-items:center;gap:12px}
+.compliance-icon{font-size:18px}
+.compliance-name{font-size:13px;font-weight:600;color:var(--text)}
+.compliance-agency{font-size:11px;color:var(--text-3)}
+.compliance-status{display:flex;align-items:center;gap:8px}
+.status-dot{width:8px;height:8px;border-radius:50%}
+.status-dot.pass{background:var(--success)}
+.status-dot.warn{background:var(--warning)}
+.status-dot.fail{background:var(--danger)}
+.status-text{font-size:11px;font-weight:500}
+.status-text.pass{color:var(--success)}
+.status-text.warn{color:var(--warning)}
+.status-text.fail{color:var(--danger)}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">A</div>
+    <div class="brand-name">Abitat AI Hub</div>
+    <div class="brand-sub">Bidding Intelligence</div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Overview</div>
+    <div class="nav-item active" onclick="showPanel('dashboard')"><span class="icon">📊</span>Dashboard</div>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Pre-Bid</div>
+    <div class="nav-item" onclick="showPanel('documents')"><span class="icon">📄</span>Document Analysis</div>
+    <div class="nav-item" onclick="showPanel('risk')"><span class="icon">⚠️</span>Risk Assessment</div>
+    <div class="nav-item" onclick="showPanel('repository')"><span class="icon">🗂️</span>Document Repository</div>
+    <div class="nav-item" onclick="showPanel('compliance')"><span class="icon">✅</span>Compliance</div>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Bid Development</div>
+    <div class="nav-item" onclick="showPanel('competitive')"><span class="icon">🏆</span>Competitive Analysis</div>
+    <div class="nav-item" onclick="showPanel('detailed-bid')"><span class="icon">📋</span>Detailed Bid</div>
+    <div class="nav-item" onclick="showPanel('generate')"><span class="icon">⚡</span>Generate Bid Package</div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-footer-text">Abitat Construction Solutions<br>Mexico Operations · 2026</div>
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-sub" id="topbar-sub">Active bids and pipeline overview</div>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-badge">🇲🇽 Mexico Market</span>
+      <button class="btn btn-primary" onclick="showPanel('generate')">⚡ Generate Bid</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ── DASHBOARD ── -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-card-label">Active Bids</div>
+          <div class="stat-card-val">12</div>
+          <div class="stat-card-change up">↑ 3 from last month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Win Rate</div>
+          <div class="stat-card-val">68%</div>
+          <div class="stat-card-change up">↑ 4% vs. industry avg</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Pipeline Value</div>
+          <div class="stat-card-val">$84M</div>
+          <div class="stat-card-change neutral">MXN equivalent: $1.68B</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Risk Score</div>
+          <div class="stat-card-val" style="color:var(--warning)">6.2</div>
+          <div class="stat-card-change down">↑ Tariff exposure elevated</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Avg Margin</div>
+          <div class="stat-card-val">14.2%</div>
+          <div class="stat-card-change up">↑ Above 12% target</div>
+        </div>
+      </div>
+
+      <div class="chart-row">
+        <div class="chart-wrap">
+          <div class="chart-title">Competitor Win Probability</div>
+          <div class="chart-sub">Current RFP — Pharmaceutical Facility, Monterrey</div>
+          <div class="chart-container"><canvas id="compChart"></canvas></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">Bid Pipeline by Sector</div>
+          <div class="chart-sub">Active opportunities (USD millions)</div>
+          <div class="chart-container"><canvas id="pipelineChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="chart-row">
+        <div class="chart-wrap">
+          <div class="chart-title">Benchmark Cost Analysis</div>
+          <div class="chart-sub">$/sqft vs. market comparables — Pharmaceutical construction</div>
+          <div class="chart-container"><canvas id="benchmarkChart"></canvas></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">Risk Trend — Last 6 Months</div>
+          <div class="chart-sub">Composite risk score (weather + supply chain + regulatory)</div>
+          <div class="chart-container"><canvas id="riskTrendChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="advantage-box">
+        <div class="advantage-title">🏆 Abitat Advantage — Current Bid</div>
+        <div class="advantage-body">Abitat holds the strongest position among regional bidders for this pharmaceutical project. Your patented MEP coordination process reduces install time by 22% vs. local competitors, and your existing Monterrey subcontractor network gives you a 15% materials cost advantage. AI Win Probability: <strong>68%</strong> — highest in competitive set.</div>
+      </div>
+    </div>
+
+    <!-- ── DOCUMENT ANALYSIS ── -->
+    <div class="panel" id="panel-documents">
+      <div class="upload-area" onclick="document.getElementById('rfp-input').click()" id="upload-area">
+        <input type="file" id="rfp-input" accept=".pdf,.docx,.xlsx" onchange="handleUpload(this)">
+        <div class="upload-icon">📁</div>
+        <div class="upload-text">Drop RFP documents here or click to upload</div>
+        <div class="upload-sub">PDF, DOCX, XLSX — AI extracts scope, requirements, and bid criteria automatically</div>
+      </div>
+
+      <div id="rfp-results" style="display:none">
+        <div class="ai-output">
+          <div class="ai-output-header">
+            <span class="ai-label">AI EXTRACTED</span>
+            <span class="ai-output-title">RFP Analysis — Pharmaceutical Manufacturing Facility</span>
+          </div>
+          <div class="ai-output-body">
+            <strong>Project:</strong> GMP Pharmaceutical Manufacturing Facility, Monterrey, NL<br>
+            <strong>Owner:</strong> Laboratorios Genomma Lab Internacional<br>
+            <strong>Estimated Value:</strong> $18–24M USD<br>
+            <strong>Bid Deadline:</strong> March 28, 2026 · 5:00 PM CST<br>
+            <strong>Project Duration:</strong> 18 months from NTP<br><br>
+            <strong>Key Requirements Extracted:</strong>
+            <ul style="margin:8px 0 0 16px;line-height:2">
+              <li>ISO Class 8 cleanroom (12,000 SF) with HVAC redundancy</li>
+              <li>COFEPRIS-compliant GMP documentation protocol</li>
+              <li>Class 8 hazmat storage — UN 1950 compliant</li>
+              <li>Seismic Zone D construction per NOM-006-CONAVI</li>
+              <li>25% local subcontractor requirement (Nuevo León)</li>
+              <li>Performance bond: 10% contract value</li>
+              <li>MBE/WBE documentation required</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Scope Extraction Summary</div><div class="card-sub">AI-identified bid items from RFP documents</div></div>
+            <span class="tag tag-blue">94% confidence</span>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>Scope Item</th><th>Spec Section</th><th>Estimated Cost</th><th>Abitat Capability</th></tr></thead>
+            <tbody>
+              <tr><td>Site Work & Earthwork</td><td>02 00 00</td><td>$1.2M</td><td><span class="tag tag-green">✓ Core</span></td></tr>
+              <tr><td>Concrete — GMP Slab</td><td>03 30 00</td><td>$2.8M</td><td><span class="tag tag-green">✓ Core</span></td></tr>
+              <tr><td>Structural Steel</td><td>05 10 00</td><td>$3.1M</td><td><span class="tag tag-green">✓ Core</span></td></tr>
+              <tr><td>Cleanroom Construction</td><td>13 24 00</td><td>$4.2M</td><td><span class="tag tag-orange">◐ Partner</span></td></tr>
+              <tr><td>MEP — HVAC (Cleanroom)</td><td>23 09 00</td><td>$3.8M</td><td><span class="tag tag-green">✓ Core</span></td></tr>
+              <tr><td>Electrical — Class I Div 2</td><td>26 20 00</td><td>$1.9M</td><td><span class="tag tag-green">✓ Core</span></td></tr>
+              <tr><td>Plumbing — WFI/PW Systems</td><td>22 67 00</td><td>$1.4M</td><td><span class="tag tag-orange">◐ Partner</span></td></tr>
+              <tr><td>Finishes — ESD/Vinyl</td><td>09 65 00</td><td>$0.9M</td><td><span class="tag tag-green">✓ Core</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="advantage-box" style="display:none" id="doc-advantage">
+        <div class="advantage-title">🏆 Abitat Advantage — Document Analysis</div>
+        <div class="advantage-body">Your team has completed 6 COFEPRIS-compliant pharmaceutical projects in the past 4 years — more than any other regional bidder. AI confidence in scope coverage: 94%. Two specialty items (cleanroom, WFI systems) recommend pre-qualified partner engagement before submission.</div>
+      </div>
+    </div>
+
+    <!-- ── RISK ASSESSMENT ── -->
+    <div class="panel" id="panel-risk">
+      <div class="risk-grid">
+        <div class="risk-card high">
+          <div class="risk-level">HIGH RISK</div>
+          <div class="risk-title">Trump Tariff Impact</div>
+          <div class="risk-body">US 25% tariffs on Mexican steel and aluminum exports create material cost volatility. Rebar: +18–22% price exposure. Structural steel: +24%. Aluminum cladding: +31%. Tariff escalation clause required in bid.</div>
+          <div class="risk-score">8.4/10</div>
+        </div>
+        <div class="risk-card high">
+          <div class="risk-level">HIGH RISK</div>
+          <div class="risk-title">Supply Chain Disruption</div>
+          <div class="risk-body">HVAC equipment lead times extended to 20–26 weeks (vs. 12-week standard). Cleanroom modular panels: 16-week lead time from Guadalajara. Recommend early procurement authorization in bid schedule.</div>
+          <div class="risk-score">7.9/10</div>
+        </div>
+        <div class="risk-card medium">
+          <div class="risk-level">MEDIUM RISK</div>
+          <div class="risk-title">Weather — Monterrey</div>
+          <div class="risk-body">Hurricane season June–November. Historical flood events in Arroyo Topo Chico corridor affect site access. Recommend 15-day weather contingency buffer. Seismic Zone D requires enhanced foundation spec.</div>
+          <div class="risk-score">5.2/10</div>
+        </div>
+        <div class="risk-card medium">
+          <div class="risk-level">MEDIUM RISK</div>
+          <div class="risk-title">FX Volatility — MXN/USD</div>
+          <div class="risk-body">Peso has experienced 8–12% swings YTD. With an 18-month project duration, currency exposure on USD-denominated materials is significant. Recommend USD denominated contract for imported materials.</div>
+          <div class="risk-score">5.8/10</div>
+        </div>
+        <div class="risk-card medium">
+          <div class="risk-level">MEDIUM RISK</div>
+          <div class="risk-title">Labor Availability</div>
+          <div class="risk-body">Skilled trades (cleanroom construction, GMP commissioning) are concentrated in Monterrey and Guadalajara. Two competing pharmaceutical projects are currently active in the same labor market.</div>
+          <div class="risk-score">4.9/10</div>
+        </div>
+        <div class="risk-card low">
+          <div class="risk-level">LOW RISK</div>
+          <div class="risk-title">Permitting — CONAVI/IMSS</div>
+          <div class="risk-body">NL State Industrial Permit process averages 45 days. Abitat's established relationship with municipal authorities in San Pedro Garza García reduces approval risk. COFEPRIS validation: standard 60-day pathway.</div>
+          <div class="risk-score">2.1/10</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Tariff Exposure Calculator</div><div class="card-sub">Trump 25% tariff impact on bid materials</div></div>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Material</th><th>Base Cost</th><th>Tariff Rate</th><th>Adjusted Cost</th><th>Exposure</th></tr></thead>
+          <tbody>
+            <tr><td>Structural Steel (US origin)</td><td>$1,240,000</td><td>25%</td><td>$1,550,000</td><td><span class="tag tag-red">+$310K</span></td></tr>
+            <tr><td>Aluminum Curtainwall</td><td>$380,000</td><td>25%</td><td>$475,000</td><td><span class="tag tag-red">+$95K</span></td></tr>
+            <tr><td>HVAC Equipment (US mfg)</td><td>$890,000</td><td>25%</td><td>$1,112,500</td><td><span class="tag tag-red">+$222K</span></td></tr>
+            <tr><td>Electrical Gear (partial)</td><td>$340,000</td><td>15%</td><td>$391,000</td><td><span class="tag tag-orange">+$51K</span></td></tr>
+            <tr class="highlight-row"><td>Total Tariff Exposure</td><td>$2,850,000</td><td>—</td><td>$3,528,500</td><td><strong>+$678K</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="advantage-box">
+        <div class="advantage-title">🏆 Abitat Advantage — Risk Mitigation</div>
+        <div class="advantage-body">Abitat's established supply relationships with domestic Mexican manufacturers (Grupo Ternium, Vitro) mitigate tariff exposure by 40–60% vs. competitors relying on US-import materials. Recommended bid strategy: <strong>include tariff escalation clause capped at 5%</strong>, with domestic material substitution schedule attached. This positions Abitat as both competitive and risk-aware.</div>
+      </div>
+    </div>
+
+    <!-- ── DOCUMENT REPOSITORY ── -->
+    <div class="panel" id="panel-repository">
+      <div class="ai-output" style="margin-bottom:20px">
+        <div class="ai-output-header">
+          <span class="ai-label">AI INSIGHTS</span>
+          <span class="ai-output-title">Repository Intelligence — 47 Documents Indexed</span>
+        </div>
+        <div class="ai-output-body">
+          Your document repository contains 6 completed pharmaceutical projects (total value: $89M), 14 industrial facility bids, and 27 support documents. AI pattern analysis identifies: <strong>3 spec sections</strong> where your previous bids have been consistently underbid by competitors, and <strong>2 Abitat process innovations</strong> that have generated measurable schedule savings in past pharmaceutical projects. Use this intelligence to position the current bid.
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="queryRepo()">🔍 Ask AI About Repository</button>
+        <button class="btn btn-secondary">📤 Upload Document</button>
+        <button class="btn btn-secondary">🗃️ Browse All</button>
+      </div>
+
+      <div id="repo-query-result" style="display:none;margin-bottom:20px" class="ai-output">
+        <div class="ai-output-header">
+          <span class="ai-label">AI RESPONSE</span>
+          <span class="ai-output-title">Query Result</span>
+        </div>
+        <div class="ai-output-body" id="repo-query-text"></div>
+      </div>
+
+      <div class="doc-card">
+        <div class="doc-icon">🏭</div>
+        <div class="doc-info">
+          <div class="doc-name">Genomma Lab — Toluca Facility (Final Bid)</div>
+          <div class="doc-meta">Completed 2024 · $14.2M · Won · 18 months</div>
+          <div class="doc-tags"><span class="tag tag-green">Pharmaceutical</span><span class="tag tag-blue">GMP</span><span class="tag tag-orange">Cleanroom</span></div>
+        </div>
+        <button class="btn btn-secondary" style="flex-shrink:0">View</button>
+      </div>
+      <div class="doc-card">
+        <div class="doc-icon">🏭</div>
+        <div class="doc-info">
+          <div class="doc-name">Pisa Farmacéutica — Guadalajara Expansion</div>
+          <div class="doc-meta">Completed 2023 · $22.8M · Won · 24 months</div>
+          <div class="doc-tags"><span class="tag tag-green">Pharmaceutical</span><span class="tag tag-blue">GMP</span></div>
+        </div>
+        <button class="btn btn-secondary" style="flex-shrink:0">View</button>
+      </div>
+      <div class="doc-card">
+        <div class="doc-icon">📋</div>
+        <div class="doc-info">
+          <div class="doc-name">Monterrey Industrial Zone — COFEPRIS Standards (2025)</div>
+          <div class="doc-meta">Regulatory Reference · Updated Jan 2026</div>
+          <div class="doc-tags"><span class="tag tag-gray">Compliance</span><span class="tag tag-gray">Regulatory</span></div>
+        </div>
+        <button class="btn btn-secondary" style="flex-shrink:0">View</button>
+      </div>
+      <div class="doc-card">
+        <div class="doc-icon">📊</div>
+        <div class="doc-info">
+          <div class="doc-name">Pharmaceutical Construction Cost Benchmarks — NL 2025–2026</div>
+          <div class="doc-meta">Market Intelligence · 28 comparable projects</div>
+          <div class="doc-tags"><span class="tag tag-blue">Benchmarks</span><span class="tag tag-orange">Pricing</span></div>
+        </div>
+        <button class="btn btn-secondary" style="flex-shrink:0">View</button>
+      </div>
+    </div>
+
+    <!-- ── COMPLIANCE ── -->
+    <div class="panel" id="panel-compliance">
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="runCompliance()">🔄 Run Compliance Check</button>
+        <button class="btn btn-secondary">📋 Export Compliance Report</button>
+        <button class="btn btn-secondary">📎 Attach to Bid</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Regulatory Compliance Status</div><div class="card-sub">Pharmaceutical Manufacturing Facility — Monterrey, NL</div></div>
+          <span class="tag tag-orange">2 Items Pending</span>
+        </div>
+
+        <div class="compliance-item">
+          <div class="compliance-left">
+            <div class="compliance-icon">🏗️</div>
+            <div><div class="compliance-name">NOM-006-CONAVI — Seismic Design</div><div class="compliance-agency">CONAVI / Federal</div></div>
+          </div>
+          <div class="compliance-status"><div class="status-dot pass"></div><span class="status-text pass">Compliant</span></div>
+        </div>
+        <div class="compliance-item">
+          <div class="compliance-left">
+            <div class="compliance-icon">💊</div>
+            <div><div class="compliance-name">COFEPRIS BPM — GMP Standards</div><div class="compliance-agency">COFEPRIS / Federal</div></div>
+          </div>
+          <div class="compliance-status"><div class="status-dot pass"></div><span class="status-text pass">Compliant</span></div>
+        </div>
+        <div class="compliance-item">
+          <div class="compliance-left">
+            <div class="compliance-icon">🔥</div>
+            <div><div class="compliance-name">NOM-002-STPS — Fire Prevention</div><div class="compliance-agency">STPS / Federal</div></div>
+          </div>
+          <div class="compliance-status"><div class="status-dot pass"></div><span class="status-text pass">Compliant</span></div>
+        </div>
+        <div class="compliance-item">
+          <div class="compliance-left">
+            <div class="compliance-icon">♻️</div>
+            <div><div class="compliance-name">NOM-052-SEMARNAT — Hazardous Waste</div><div class="compliance-agency">SEMARNAT / Federal</div></div>
+          </div>
+          <div class="compliance-status"><div class="status-dot warn"></div><span class="status-text warn">Review Required</span></div>
+        </div>
+        <div class="compliance-item">
+          <div class="compliance-left">
+            <div class="compliance-icon">🏙️</div>
+            <div><div class="compliance-name">Nuevo León Industrial Zoning — H3 Use</div><div class="compliance-agency">Municipio de Monterrey</div></div>
+          </div>
+          <div class="compliance-status"><div class="status-dot pass"></div><span class="status-text pass">Compliant</span></div>
+        </div>
+        <div class="compliance-item">
+          <div class="compliance-left">
+            <div class="compliance-icon">💧</div>
+            <div><div class="compliance-name">SADM — Industrial Water Discharge</div><div class="compliance-agency">Servicios de Agua y Drenaje de Monterrey</div></div>
+          </div>
+          <div class="compliance-status"><div class="status-dot warn"></div><span class="status-text warn">Permit Pending</span></div>
+        </div>
+        <div class="compliance-item">
+          <div class="compliance-left">
+            <div class="compliance-icon">⚡</div>
+            <div><div class="compliance-name">CFE — Industrial Power Connection Spec</div><div class="compliance-agency">Comisión Federal de Electricidad</div></div>
+          </div>
+          <div class="compliance-status"><div class="status-dot pass"></div><span class="status-text pass">Compliant</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── COMPETITIVE ANALYSIS ── -->
+    <div class="panel" id="panel-competitive">
+      <div class="chart-row">
+        <div class="chart-wrap">
+          <div class="chart-title">Win Probability — Current RFP</div>
+          <div class="chart-sub">AI probability model based on past projects, pricing, and capabilities</div>
+          <div class="chart-container"><canvas id="compDetailChart"></canvas></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">Pricing Position</div>
+          <div class="chart-sub">Estimated bid ranges vs. Abitat target</div>
+          <div class="chart-container"><canvas id="pricingChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Competitor Intelligence Matrix</div><div class="card-sub">Pharmaceutical construction — Mexico regional market</div></div>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Rank</th><th>Competitor</th><th>Est. Bid</th><th>Win Prob</th><th>Strength</th><th>Weakness</th></tr></thead>
+          <tbody>
+            <tr class="highlight-row">
+              <td><span class="comp-rank rank-1">1</span>Abitat</td>
+              <td>$18.4M</td><td>68%</td>
+              <td><span class="tag tag-green">GMP Experience</span></td>
+              <td>Highest local pharma track record</td>
+            </tr>
+            <tr>
+              <td><span class="comp-rank rank-2">2</span>IDEC Constructora</td>
+              <td>$17.1M</td><td>42%</td>
+              <td><span class="tag tag-blue">Low Price</span></td>
+              <td>No COFEPRIS validation history</td>
+            </tr>
+            <tr>
+              <td><span class="comp-rank rank-3">3</span>GFC Industrial</td>
+              <td>$19.8M</td><td>28%</td>
+              <td><span class="tag tag-blue">Brand</span></td>
+              <td>NL subcontractor network limited</td>
+            </tr>
+            <tr>
+              <td><span class="comp-rank rank-other">4</span>Vicon Construcciones</td>
+              <td>$21.2M</td><td>14%</td>
+              <td><span class="tag tag-gray">Scale</span></td>
+              <td>No pharmaceutical specialty</td>
+            </tr>
+            <tr>
+              <td><span class="comp-rank rank-other">5</span>Grupo INDI</td>
+              <td>$20.5M</td><td>11%</td>
+              <td><span class="tag tag-gray">Price</span></td>
+              <td>No GMP documentation process</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Global Market Context</div><div class="card-sub">Pre-construction AI landscape — competitive positioning for Abitat tech stack</div></div>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Company</th><th>Focus</th><th>Funding</th><th>Mexico Presence</th></tr></thead>
+          <tbody>
+            <tr><td>Procore (PCOR)</td><td>Full lifecycle, AI Copilot</td><td>Public</td><td><span class="tag tag-red">Competitor</span></td></tr>
+            <tr><td>Autodesk / BuildingConnected</td><td>Bid network, prequalification</td><td>$275M acq.</td><td><span class="tag tag-red">Competitor</span></td></tr>
+            <tr><td>PlanHub</td><td>GC↔Sub bid network</td><td>$41M</td><td><span class="tag tag-orange">Limited</span></td></tr>
+            <tr><td>ALICE Technologies</td><td>AI optioneering, scheduling</td><td>$61M</td><td><span class="tag tag-gray">None</span></td></tr>
+            <tr><td>Togal.AI</td><td>AI takeoffs</td><td>$5M</td><td><span class="tag tag-gray">None</span></td></tr>
+            <tr class="highlight-row"><td>Abitat AI Hub</td><td>Mexico pharma specialist</td><td>Proprietary</td><td><span class="tag tag-green">✓ Native</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="advantage-box">
+        <div class="advantage-title">🏆 Abitat Advantage — Competitive Position</div>
+        <div class="advantage-body">No global PreCon AI platform has a Mexico-native offering with COFEPRIS compliance intelligence, NOM standards integration, or tariff-adjusted cost modeling. <strong>Abitat's AI Hub is the only platform built for the Mexican construction regulatory environment.</strong> This is the moat. Lean into COFEPRIS experience, local subcontractor network depth, and the tariff escalation methodology as bid differentiators.</div>
+      </div>
+    </div>
+
+    <!-- ── DETAILED BID ── -->
+    <div class="panel" id="panel-detailed-bid">
+      <div class="btn-row">
+        <button class="btn btn-primary">⬇ Import BIM Model</button>
+        <button class="btn btn-secondary">✏️ Manual Entry</button>
+        <button class="btn btn-secondary">📊 Export to Excel</button>
+      </div>
+
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <div><div class="card-title">Smart Inventory — Take-Off</div><div class="card-sub">AI-assisted quantity take-off from uploaded documents</div></div>
+          <span class="tag tag-blue">AI Assisted</span>
+        </div>
+
+        <div class="line-items">
+          <div class="line-item-header">
+            <span>Description</span><span>Unit</span><span>Quantity</span><span>Unit Cost</span><span>Total Cost</span><span>Margin</span>
+          </div>
+
+          <div class="line-item-section">01 — SITE WORK</div>
+          <div class="line-item-row"><span>Clear & Grub (1.8 acres)</span><span>AC</span><span>1.8</span><span>$12,400</span><span>$22,320</span><span class="tag tag-green">14%</span></div>
+          <div class="line-item-row"><span>Mass Excavation</span><span>CY</span><span>4,200</span><span>$18.50</span><span>$77,700</span><span class="tag tag-green">14%</span></div>
+          <div class="line-item-row"><span>Engineered Fill, Compact</span><span>CY</span><span>2,800</span><span>$22.00</span><span>$61,600</span><span class="tag tag-green">14%</span></div>
+          <div class="line-item-row"><span>Paving — Heavy Industrial</span><span>SF</span><span>42,000</span><span>$8.20</span><span>$344,400</span><span class="tag tag-green">12%</span></div>
+
+          <div class="line-item-section">03 — CONCRETE</div>
+          <div class="line-item-row"><span>Drilled Piers (Zone D Seismic)</span><span>EA</span><span>84</span><span>$3,800</span><span>$319,200</span><span class="tag tag-orange">11%</span></div>
+          <div class="line-item-row"><span>GMP Slab-on-Grade (8" FC=350)</span><span>SF</span><span>62,000</span><span>$28.00</span><span>$1,736,000</span><span class="tag tag-green">13%</span></div>
+          <div class="line-item-row"><span>Tilt-Up Panels (8")</span><span>SF</span><span>38,400</span><span>$42.00</span><span>$1,612,800</span><span class="tag tag-green">14%</span></div>
+
+          <div class="line-item-section">05 — METALS</div>
+          <div class="line-item-row"><span>Structural Steel (Ternium — domestic)</span><span>TON</span><span>380</span><span>$3,200</span><span>$1,216,000</span><span class="tag tag-green">15%</span></div>
+          <div class="line-item-row"><span>Metal Deck 3" — 20ga</span><span>SF</span><span>62,000</span><span>$4.80</span><span>$297,600</span><span class="tag tag-green">14%</span></div>
+
+          <div class="line-item-section">13 — CLEANROOM</div>
+          <div class="line-item-row"><span>ISO Class 8 Modular Wall Sys.</span><span>SF</span><span>12,000</span><span>$185.00</span><span>$2,220,000</span><span class="tag tag-orange">10%</span></div>
+          <div class="line-item-row"><span>HEPA Filtration — Fan Filter Units</span><span>EA</span><span>96</span><span>$4,200</span><span>$403,200</span><span class="tag tag-orange">11%</span></div>
+          <div class="line-item-row"><span>Cleanroom Flooring — ESD Vinyl</span><span>SF</span><span>12,000</span><span>$22.00</span><span>$264,000</span><span class="tag tag-green">14%</span></div>
+
+          <div class="line-item-section">23 — HVAC (Abitat MEP Process)</div>
+          <div class="line-item-row"><span>AHU — 100% OA Cleanroom Units (N+1)</span><span>EA</span><span>4</span><span>$285,000</span><span>$1,140,000</span><span class="tag tag-green">16%</span></div>
+          <div class="line-item-row"><span>BAS/BMS — Validated (GAMP5)</span><span>LS</span><span>1</span><span>$420,000</span><span>$420,000</span><span class="tag tag-green">18%</span></div>
+          <div class="line-item-row"><span>Ductwork — Stainless (GMP)</span><span>LB</span><span>28,000</span><span>$18.50</span><span>$518,000</span><span class="tag tag-green">15%</span></div>
+
+          <div class="line-item-section">26 — ELECTRICAL</div>
+          <div class="line-item-row"><span>MV Transformer 1500 KVA</span><span>EA</span><span>2</span><span>$124,000</span><span>$248,000</span><span class="tag tag-green">13%</span></div>
+          <div class="line-item-row"><span>Emergency Generator 500 KW</span><span>EA</span><span>2</span><span>$89,000</span><span>$178,000</span><span class="tag tag-green">12%</span></div>
+          <div class="line-item-row"><span>Distribution — Class I Div 2 Zones</span><span>LS</span><span>1</span><span>$680,000</span><span>$680,000</span><span class="tag tag-green">14%</span></div>
+
+          <div class="line-item-section">SOFT COSTS</div>
+          <div class="line-item-row"><span>General Conditions (7%)</span><span>LS</span><span>1</span><span>—</span><span>$1,288,000</span><span class="tag tag-gray">GC</span></div>
+          <div class="line-item-row"><span>Tariff Escalation Reserve (3.5%)</span><span>LS</span><span>1</span><span>—</span><span>$644,000</span><span class="tag tag-orange">Risk</span></div>
+          <div class="line-item-row"><span>Performance Bond (1%)</span><span>LS</span><span>1</span><span>—</span><span>$184,000</span><span class="tag tag-gray">—</span></div>
+
+          <div class="line-item-total">
+            <span>TOTAL BID — PHARMACEUTICAL FACILITY, MONTERREY</span>
+            <span></span><span></span><span></span>
+            <span>$18,400,000</span>
+            <span style="color:var(--orange)">13.8% avg</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── GENERATE BID PACKAGE ── -->
+    <div class="panel" id="panel-generate">
+      <div class="btn-row">
+        <button class="btn btn-primary btn-orange" onclick="generateBid()" style="font-size:14px;padding:12px 28px">⚡ Generate Complete Bid Package</button>
+        <button class="btn btn-secondary">📧 Email to Owner</button>
+        <button class="btn btn-secondary">🖨️ Print</button>
+      </div>
+
+      <div class="bid-output" id="bid-output">
+        <div class="bid-output-header">
+          <div>
+            <div class="bid-output-title">ABITAT CONSTRUCTION SOLUTIONS — BID PROPOSAL</div>
+            <div class="bid-output-meta">Genomma Lab Pharmaceutical Facility · Monterrey, NL · Submitted March 2026</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:22px;font-weight:800">$18,400,000 USD</div>
+            <div style="font-size:11px;opacity:0.7">Total Lump Sum Bid</div>
+          </div>
+        </div>
+        <div class="bid-output-body">
+          <div class="bid-section">
+            <div class="bid-section-title">Executive Summary</div>
+            <div class="bid-section-body">Abitat Construction Solutions is pleased to submit this comprehensive bid for the construction of a GMP Pharmaceutical Manufacturing Facility for Genomma Lab Internacional in Monterrey, Nuevo León. Our bid reflects Abitat's unmatched experience with COFEPRIS-validated pharmaceutical construction in Mexico — having delivered 6 compliant facilities totaling $89M over the past 4 years — combined with a competitive pricing strategy informed by deep local subcontractor relationships that mitigate current tariff exposure.</div>
+          </div>
+          <div class="bid-section">
+            <div class="bid-section-title">The Abitat Advantage</div>
+            <div class="bid-section-body">
+              <strong>Regulatory Expertise:</strong> Our in-house COFEPRIS validation team eliminates the need for third-party QA consultants, saving the owner $280K–$380K in validation costs.<br><br>
+              <strong>MEP Coordination Process:</strong> Abitat's patented BIM-coordinated MEP installation process reduces cleanroom HVAC installation time by 22%, directly accelerating the commissioning schedule.<br><br>
+              <strong>Tariff Mitigation:</strong> We have pre-negotiated supply agreements with Grupo Ternium and Vitro Vidrio (domestic suppliers) that reduce tariff exposure by 58% relative to import-dependent bidders. Our bid includes a capped escalation clause (5% max) providing owner certainty.
+            </div>
+          </div>
+          <div class="bid-section">
+            <div class="bid-section-title">Schedule</div>
+            <div class="bid-section-body">
+              <strong>NTP to Substantial Completion:</strong> 18 months<br>
+              <strong>Cleanroom Commissioning:</strong> Month 15–17<br>
+              <strong>COFEPRIS Validation Support:</strong> Month 16–18<br>
+              <strong>Final Completion:</strong> Month 18<br><br>
+              <em>Schedule includes 15-day weather contingency buffer for hurricane season and 20-day HVAC equipment procurement lead time buffer.</em>
+            </div>
+          </div>
+          <div class="bid-section">
+            <div class="bid-section-title">Bid Summary</div>
+            <div class="bid-section-body">
+              Site Work &amp; Earthwork: $505,020<br>
+              Concrete &amp; Foundations: $3,668,000<br>
+              Structural Steel: $1,513,600<br>
+              Cleanroom Construction: $2,887,200<br>
+              HVAC &amp; BAS: $2,078,000<br>
+              Electrical: $1,106,000<br>
+              Plumbing (WFI/PW): $1,400,000<br>
+              Finishes &amp; Specialties: $900,000<br>
+              General Conditions: $1,288,000<br>
+              Tariff Escalation Reserve: $644,000<br>
+              Performance Bond: $184,000<br>
+              <strong>TOTAL LUMP SUM: $18,400,000 USD</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- content -->
+</div><!-- main -->
+
+<script>
+// ── Nav ─────────────────────────────────────────────────────────────────
+const titles = {
+  dashboard: ['Dashboard','Active bids and pipeline overview'],
+  documents: ['Document Analysis','RFP upload and AI scope extraction'],
+  risk: ['Risk Assessment','Weather, tariff, and supply chain intelligence'],
+  repository: ['Document Repository','AI-indexed project archive'],
+  compliance: ['Compliance & Regulations','NOM, COFEPRIS, and permit status'],
+  competitive: ['Competitive Analysis','Win probability and market positioning'],
+  'detailed-bid': ['Detailed Bid','Smart inventory and take-off'],
+  generate: ['Generate Bid Package','AI-assembled bid documents']
+};
+
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick')?.includes(id)) n.classList.add('active');
+  });
+  if (titles[id]) {
+    document.getElementById('topbar-title').textContent = titles[id][0];
+    document.getElementById('topbar-sub').textContent = titles[id][1];
+  }
+  if (id === 'competitive' && !document.getElementById('compDetailChart')._chart) initCompDetailCharts();
+}
+
+// ── Charts ──────────────────────────────────────────────────────────────
+const chartOpts = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{ legend:{ labels:{ font:{size:11}, padding:12 } } },
+  scales:{ x:{grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:10}}},
+           y:{grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:10}}} }
+};
+
+window.addEventListener('load', () => {
+  // Win probability donut
+  new Chart(document.getElementById('compChart'), { type:'doughnut',
+    data:{ labels:['Abitat','IDEC','GFC','Vicon','Grupo INDI'],
+      datasets:[{data:[68,42,28,14,11], backgroundColor:['#b01c1c','#ff8c00','#f59e0b','#6b7280','#9ca3af'],
+        borderWidth:2, borderColor:'#fff'}]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'right', labels:{ font:{size:11}, padding:10 } } } }});
+
+  // Pipeline bar
+  new Chart(document.getElementById('pipelineChart'), { type:'bar',
+    data:{ labels:['Pharma','Industrial','Commercial','Logistics','Healthcare'],
+      datasets:[{label:'Value ($M)', data:[42,18,12,8,4],
+        backgroundColor:['#b01c1c','#ff8c00','#f59e0b','#3b82f6','#8b5cf6'],
+        borderRadius:6}]},
+    options:{...chartOpts, plugins:{legend:{display:false}}}});
+
+  // Benchmark bar
+  new Chart(document.getElementById('benchmarkChart'), { type:'bar',
+    data:{ labels:['Site','Concrete','Steel','Cleanroom','HVAC','Elec','Plumb'],
+      datasets:[
+        {label:'Market Avg $/SF', data:[8.5,44,24,185,32,18,22], backgroundColor:'rgba(107,114,128,0.4)', borderRadius:4},
+        {label:'Abitat $/SF', data:[8.1,42,21,185,29,17,22], backgroundColor:'rgba(176,28,28,0.8)', borderRadius:4}
+      ]},
+    options:{...chartOpts}});
+
+  // Risk trend
+  new Chart(document.getElementById('riskTrendChart'), { type:'line',
+    data:{ labels:['Sep','Oct','Nov','Dec','Jan','Feb','Mar'],
+      datasets:[
+        {label:'Tariff Risk', data:[3.2,3.8,5.1,6.8,7.9,8.2,8.4], borderColor:'#b01c1c', tension:0.4, pointRadius:3},
+        {label:'Weather Risk', data:[6.1,5.8,4.2,2.8,2.2,3.1,5.2], borderColor:'#3b82f6', tension:0.4, pointRadius:3},
+        {label:'Supply Chain', data:[4.1,5.2,6.0,7.2,7.8,7.5,7.9], borderColor:'#ff8c00', tension:0.4, pointRadius:3}
+      ]},
+    options:{...chartOpts}});
+});
+
+function initCompDetailCharts() {
+  new Chart(document.getElementById('compDetailChart'), { type:'horizontalBar'||'bar',
+    indexAxis:'y',
+    data:{ labels:['Abitat','IDEC Constructora','GFC Industrial','Vicon','Grupo INDI'],
+      datasets:[{label:'Win Probability %', data:[68,42,28,14,11],
+        backgroundColor:['#b01c1c','#ff8c00','#f59e0b','#6b7280','#9ca3af'],
+        borderRadius:4}]},
+    options:{...chartOpts, indexAxis:'y', plugins:{legend:{display:false}}}});
+  new Chart(document.getElementById('pricingChart'), { type:'bar',
+    data:{ labels:['IDEC','Abitat','GFC','Grupo INDI','Vicon'],
+      datasets:[{label:'Est. Bid ($M)', data:[17.1,18.4,19.8,20.5,21.2],
+        backgroundColor:['#6b7280','#b01c1c','#6b7280','#6b7280','#6b7280'],
+        borderRadius:4}]},
+    options:{...chartOpts, plugins:{legend:{display:false}},
+      scales:{...chartOpts.scales, y:{...chartOpts.scales.y,
+        ticks:{...chartOpts.scales.y.ticks, callback:v=>'$'+v+'M'}}}}});
+  document.getElementById('compDetailChart')._chart = true;
+}
+
+// ── Upload ──────────────────────────────────────────────────────────────
+function handleUpload(input) {
+  if (!input.files[0]) return;
+  document.getElementById('upload-area').innerHTML = `<div style="color:#16a34a;font-size:14px;font-weight:600">✓ ${input.files[0].name} uploaded — analyzing…</div>`;
+  setTimeout(() => {
+    document.getElementById('rfp-results').style.display = 'block';
+    document.getElementById('doc-advantage').style.display = 'block';
+    document.getElementById('upload-area').innerHTML = `<div style="color:#16a34a;font-size:13px;font-weight:600">✓ RFP analyzed — 94% confidence · 8 scope items extracted</div>`;
+  }, 1800);
+}
+
+// ── Repo query ──────────────────────────────────────────────────────────
+function queryRepo() {
+  const el = document.getElementById('repo-query-result');
+  el.style.display = 'block';
+  document.getElementById('repo-query-text').innerHTML = `
+    Based on your repository of 47 documents, here are the most relevant insights for the current Genomma Lab bid:<br><br>
+    <strong>1. COFEPRIS Validation Experience:</strong> Your Toluca Genomma Lab project (2024) used identical cleanroom spec (ISO Class 8, 12,000 SF). BAS validation took 47 days — budget accordingly.<br>
+    <strong>2. Pricing Pattern:</strong> In your last 3 pharmaceutical wins, the margin on HVAC was consistently 16–18%. Current estimate is 16% — aligned.<br>
+    <strong>3. Competitor IDEC Pattern:</strong> IDEC won a project at 6.8% below market in 2023 but delivered 4 months late. Owner is aware — reference this in your qualifications.
+  `;
+}
+
+// ── Compliance run ──────────────────────────────────────────────────────
+function runCompliance() {
+  setTimeout(() => alert('Compliance check complete: 5 items compliant, 2 pending. SEMARNAT hazmat permit application auto-drafted.'), 1200);
+}
+
+// ── Generate bid ────────────────────────────────────────────────────────
+function generateBid() {
+  const btn = event.target;
+  btn.textContent = '⚙️ Generating…';
+  btn.disabled = true;
+  setTimeout(() => {
+    document.getElementById('bid-output').classList.add('visible');
+    btn.textContent = '✓ Bid Package Generated';
+    btn.style.background = '#16a34a';
+    document.getElementById('bid-output').scrollIntoView({behavior:'smooth', block:'start'});
+  }, 2000);
+}
+</script>
+</body>
+</html>

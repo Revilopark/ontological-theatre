@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Probe — Document Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<style>
+  :root {
+    --bg-primary: #0a0e1a;
+    --bg-glass: rgba(255,255,255,0.04);
+    --bg-glass-hover: rgba(255,255,255,0.08);
+    --border-glass: rgba(255,255,255,0.1);
+    --accent-cyan: #00d4ff;
+    --accent-blue: #4facfe;
+    --accent-gold: #D4AF37;
+    --grad-primary: linear-gradient(135deg, #667eea, #764ba2);
+    --grad-cyan: linear-gradient(135deg, #00d4ff, #4facfe);
+  }
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html,body,#root { height: 100%; margin: 0; padding: 0; }
+  body { background: #0C0C0E; min-height: 100dvh; overflow-x: hidden; font-family: 'Inter', -apple-system, sans-serif; }
+  input, select, textarea { font-size: 16px !important; }
+  /* Mobile bottom nav */
+  .probe-mobile-nav {
+    display: none;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    z-index: 9999;
+    background: rgba(12,12,14,0.94);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  @media (max-width: 768px) {
+    .probe-mobile-nav { display: flex; }
+    #root { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+  }
+  .probe-mn-tab {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 56px; border: none; background: none; cursor: pointer;
+    color: rgba(255,255,255,0.4); font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 9px; font-weight: 700; gap: 4px; padding: 8px 4px;
+    text-transform: uppercase; letter-spacing: 0.06em; transition: color 0.2s;
+  }
+  .probe-mn-tab.active, .probe-mn-tab:hover { color: #6C63FF; }
+  .probe-mn-tab svg { opacity: 0.5; transition: opacity 0.2s; }
+  .probe-mn-tab.active svg { opacity: 1; }
+  /* Responsive analysis layout */
+  @media (max-width: 768px) {
+    .probe-analysis-layout { flex-direction: column !important; height: auto !important; }
+    .probe-analysis-main { border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+    .probe-chat-panel { width: 100% !important; max-height: 50vh; }
+  }
+  @media (max-width: 480px) {
+    .probe-mn-tab { font-size: 8px; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Probe mobile bottom nav -->
+<nav class="probe-mobile-nav" aria-label="Main navigation">
+  <button id="probe-mn-0" class="probe-mn-tab active" onclick="probeMobileNav(0)">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <span>Upload</span>
+  </button>
+  <button id="probe-mn-1" class="probe-mn-tab" onclick="probeMobileNav(1)">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <span>Analyze</span>
+  </button>
+  <button id="probe-mn-2" class="probe-mn-tab" onclick="probeMobileNav(2)">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+    <span>Results</span>
+  </button>
+  <button id="probe-mn-3" class="probe-mn-tab" onclick="probeMobileNav(3)">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    <span>Settings</span>
+  </button>
+</nav>
+<script>
+function probeMobileNav(idx) {
+  document.querySelectorAll('.probe-mn-tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  if(idx===0 && window.__probeReset) window.__probeReset();
+  if(idx===1 && window.__probeSetView) window.__probeSetView('analysis');
+  if(idx===2 && window.__probeSetView) window.__probeSetView('bookmarks');
+  if(idx===3 && window.__probeToggleChallenge) window.__probeToggleChallenge();
+}
+</script>
+
+<script>
+const { useState, useEffect, useCallback, useRef, useMemo } = React;
+const C = {
+  bg: "#0C0C0E",
+  surface: "#161619",
+  card: "#1C1C20",
+  raised: "#222228",
+  border: "#2A2A32",
+  borderLight: "#35353F",
+  text: "#EDEDEF",
+  textMd: "#A0A0AB",
+  textDim: "#6B6B78",
+  textFaint: "#45454F",
+  accent: "#6C63FF",
+  accentDim: "#5A52D9",
+  accentGlow: "#6C63FF30",
+  red: "#EF4444",
+  redDim: "#7F1D1D",
+  redGlow: "#EF444420",
+  amber: "#F59E0B",
+  amberDim: "#78350F",
+  amberGlow: "#F59E0B20",
+  green: "#22C55E",
+  greenDim: "#14532D",
+  greenGlow: "#22C55E20",
+  cyan: "#06B6D4",
+  cyanDim: "#164E63",
+  white: "#FFFFFF",
+  black: "#000000"
+};
+const F = {
+  display: "'Instrument Serif', Georgia, serif",
+  body: "'S\xF6hne', 'Helvetica Neue', system-ui, sans-serif",
+  mono: "'Berkeley Mono', 'JetBrains Mono', monospace"
+};
+const FONTS_URL = "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap";
+const GLOBAL_CSS = `
+@import url('${FONTS_URL}');
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: ${C.bg}; color: ${C.text}; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: ${C.borderLight}; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pulse { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes slideIn { from { opacity:0; transform: translateX(8px); } to { opacity:1; transform: translateX(0); } }
+@keyframes gradientShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+::selection { background: ${C.accent}40; color: ${C.white}; }
+input, textarea { font-family: ${F.body}; }
+input:focus, textarea:focus { outline: none; border-color: ${C.accent} !important; box-shadow: 0 0 0 3px ${C.accentGlow}; }
+`;
+const storage = {
+  get: async (key) => {
+    const v = localStorage.getItem(key);
+    return v ? { value: v } : null;
+  },
+  set: async (key, val) => {
+    localStorage.setItem(key, val);
+  },
+  delete: async (key) => {
+    localStorage.removeItem(key);
+  }
+};
+const PROXY = "https://awareness-proxy-328246068140.us-central1.run.app";
+async function ask(prompt, system, maxTokens = 1500) {
+  for (let i = 0; i < 3; i++) {
+    try {
+      const body = { contents: [{ parts: [{ text: prompt }] }] };
+      if (system) body.system_instruction = { parts: [{ text: system }] };
+      const r = await fetch(PROXY + "/gemini/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (r.status === 429) {
+        await new Promise((ok) => setTimeout(ok, 2e3 * (i + 1)));
+        continue;
+      }
+      if (!r.ok) {
+        const e = await r.json().catch(() => ({}));
+        return { err: e.error?.message || `Error ${r.status}` };
+      }
+      const d = await r.json();
+      if (d.error) return { err: d.error.message };
+      return { text: d?.candidates?.[0]?.content?.parts?.[0]?.text || "" };
+    } catch (e) {
+      if (i === 2) return { err: e.message };
+      await new Promise((ok) => setTimeout(ok, 1500 * (i + 1)));
+    }
+  }
+  return { err: "Failed after retries" };
+}
+async function askJSON(prompt, system, maxTokens = 3e3) {
+  const r = await ask(prompt + "\n\nReturn ONLY valid JSON. No markdown fences, no commentary.", system, maxTokens);
+  if (r.err) return { err: r.err };
+  try {
+    let t = r.text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+    try {
+      return { data: JSON.parse(t) };
+    } catch {
+    }
+    const s = t.indexOf("{");
+    const a = t.indexOf("[");
+    const start = s === -1 ? a : a === -1 ? s : Math.min(s, a);
+    if (start === -1) return { err: "No JSON found" };
+    let raw = t.slice(start);
+    try {
+      return { data: JSON.parse(raw) };
+    } catch {
+    }
+    const lastGood = Math.max(raw.lastIndexOf('",'), raw.lastIndexOf("},"), raw.lastIndexOf("],"));
+    if (lastGood > raw.length * 0.3) raw = raw.slice(0, lastGood + 1);
+    let br = 0, sq = 0, inS = false, esc = false;
+    for (const c of raw) {
+      if (esc) {
+        esc = false;
+        continue;
+      }
+      if (c === "\\") {
+        esc = true;
+        continue;
+      }
+      if (c === '"') {
+        inS = !inS;
+        continue;
+      }
+      if (inS) continue;
+      if (c === "{") br++;
+      if (c === "}") br--;
+      if (c === "[") sq++;
+      if (c === "]") sq--;
+    }
+    if (inS) raw += '"';
+    while (sq-- > 0) raw += "]";
+    while (br-- > 0) raw += "}";
+    return { data: JSON.parse(raw) };
+  } catch (e) {
+    return { err: "Parse error" };
+  }
+}
+function Md({ text }) {
+  if (!text) return null;
+  const lines = text.split("\n");
+  const els = [];
+  let i = 0;
+  while (i < lines.length) {
+    const l = lines[i];
+    if (l.startsWith("### ")) {
+      els.push(/* @__PURE__ */ React.createElement("div", { key: i, style: { fontSize: 13, fontWeight: 700, color: C.text, marginTop: 10, marginBottom: 4 } }, l.slice(4)));
+    } else if (l.startsWith("## ")) {
+      els.push(/* @__PURE__ */ React.createElement("div", { key: i, style: { fontSize: 14, fontWeight: 700, color: C.text, marginTop: 12, marginBottom: 4 } }, l.slice(3)));
+    } else if (l.startsWith("**") && l.endsWith("**")) {
+      els.push(/* @__PURE__ */ React.createElement("div", { key: i, style: { fontSize: 13, fontWeight: 600, color: C.text, marginTop: 6 } }, l.slice(2, -2)));
+    } else if (l.startsWith("- ") || l.startsWith("\u2022 ")) {
+      els.push(/* @__PURE__ */ React.createElement("div", { key: i, style: { fontSize: 13, color: C.textMd, paddingLeft: 16, position: "relative", lineHeight: 1.6 } }, /* @__PURE__ */ React.createElement("span", { style: { position: "absolute", left: 4, color: C.accent } }, "\xB7"), inline(l.slice(2))));
+    } else if (/^\d+\.\s/.test(l)) {
+      const m = l.match(/^(\d+)\.\s(.*)/);
+      els.push(/* @__PURE__ */ React.createElement("div", { key: i, style: { fontSize: 13, color: C.textMd, paddingLeft: 20, position: "relative", lineHeight: 1.6 } }, /* @__PURE__ */ React.createElement("span", { style: { position: "absolute", left: 0, color: C.accent, fontFamily: F.mono, fontSize: 11 } }, m[1], "."), inline(m[2])));
+    } else if (l.trim() === "") {
+      els.push(/* @__PURE__ */ React.createElement("div", { key: i, style: { height: 6 } }));
+    } else {
+      els.push(/* @__PURE__ */ React.createElement("div", { key: i, style: { fontSize: 13, color: C.textMd, lineHeight: 1.7 } }, inline(l)));
+    }
+    i++;
+  }
+  return /* @__PURE__ */ React.createElement(React.Fragment, null, els);
+}
+function inline(t) {
+  return t.split(/(\*\*[^*]+\*\*)/g).map(
+    (seg, i) => seg.startsWith("**") && seg.endsWith("**") ? /* @__PURE__ */ React.createElement("span", { key: i, style: { fontWeight: 600, color: C.text } }, seg.slice(2, -2)) : seg
+  );
+}
+function Upload({ onReady, pendingReExamine, onPendingConsumed }) {
+  const [text, setText] = useState("");
+  const [name, setName] = useState("");
+  const [status, setStatus] = useState(null);
+  const [err, setErr] = useState("");
+  const [drag, setDrag] = useState(false);
+  const [step, setStep] = useState("");
+  const ref = useRef(null);
+  const triggered = useRef(false);
+  useEffect(() => {
+    if (pendingReExamine && !triggered.current) {
+      triggered.current = true;
+      setText(pendingReExamine.text);
+      setName(pendingReExamine.name);
+      setTimeout(() => analyze(pendingReExamine.text, pendingReExamine.name, pendingReExamine), 50);
+    }
+  }, [pendingReExamine]);
+  const readFile = useCallback(async (file) => {
+    setName(file.name);
+    setStatus("reading");
+    try {
+      if (file.type === "application/pdf") {
+        const buf = await file.arrayBuffer();
+        const b64 = btoa(new Uint8Array(buf).reduce((s, b) => s + String.fromCharCode(b), ""));
+        setStatus("extracting");
+        setStep("Extracting text from PDF...");
+        const pdfBody = {
+          contents: [{ parts: [
+            { inline_data: { mime_type: "application/pdf", data: b64 } },
+            { text: "Extract ALL text content from this PDF. Preserve structure, headings, lists, tables. Return only the raw text." }
+          ] }]
+        };
+        const pdfR = await fetch(PROXY + "/gemini/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(pdfBody)
+        });
+        const d = await pdfR.json();
+        if (d.error) throw new Error(d.error.message);
+        const t = d?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        setText(t.slice(0, 5e4));
+        setStatus(null);
+      } else {
+        const t = await file.text();
+        if (t.includes("\0")) throw new Error("Binary file detected. Use PDF, TXT, or Markdown.");
+        setText(t.slice(0, 5e4));
+        setStatus(null);
+      }
+    } catch (e) {
+      setErr(e.message);
+      setStatus("error");
+    }
+  }, []);
+  const analyze = useCallback(async (docText, docName, reEx) => {
+    if (!docText?.trim()) return;
+    setStatus("classifying");
+    setStep("Understanding document type and structure...");
+    const p1 = await askJSON(
+      `Classify this document. What kind is it? What stage? What analytical lenses matter?
+
+DOCUMENT: ${docName}
+CONTENT (first 8000 chars):
+${docText.slice(0, 8e3)}
+
+Return JSON:
+{
+  "title": "document title",
+  "type": "pitch_deck|business_plan|technical_spec|strategy_doc|market_analysis|product_spec|financial_model|other",
+  "stage": "idea|pre_revenue|early_revenue|growth|mature",
+  "one_line": "one sentence summary",
+  "relevant_lenses": ["customer_definition", "value_proposition", "competitive_position", "business_model", "go_to_market", "assumptions", "financials", "team", "product_spec", "market_sizing"],
+  "maturity_note": "one sentence on what analysis is appropriate for this stage"
+}
+Only include lenses that genuinely apply.`,
+      "Classify business documents honestly. Skip irrelevant frameworks. Return concise JSON.",
+      1200
+    );
+    if (p1.err) {
+      setErr("Classification failed: " + p1.err);
+      setStatus("error");
+      return;
+    }
+    const cls = p1.data;
+    setStatus("analyzing");
+    setStep("Finding tensions, gaps, and contradictions...");
+    const lenses = (cls.relevant_lenses || []).slice(0, 8).join(", ");
+    const isReEx = !!reEx;
+    const reExNote = isReEx ? `
+
+This is v${(reEx.iteration || 1) + 1}. Previously graded ${reEx.previousVersions?.slice(-1)[0]?.analysis?.document_grade || "?"}. Check if earlier tensions were truly resolved or papered over. Flag new issues.` : "";
+    const p2 = await askJSON(
+      `Document type: ${cls.type}, stage: ${cls.stage}. Lenses: ${lenses}${reExNote}
+
+Find TENSIONS \u2014 contradictions, gaps, unsupported claims, hidden assumptions. Not scores.
+
+DOCUMENT: ${docName}
+CONTENT:
+${docText.slice(0, 25e3)}
+
+Return JSON:
+{
+  "tensions": [
+    {"type":"contradiction|gap|unsupported_claim|hidden_assumption|missing_evidence|strength${isReEx ? "|resolved|new_issue" : ""}","severity":"critical|important|minor|positive","claim":"what the doc says (max 20 words)","challenge":"why it's a tension (max 30 words)","section_hint":"which section","lens":"which lens","suggested_action":"what to do (max 20 words)"}
+  ],
+  "narrative_summary": "3-4 sentence executive summary and biggest blindspots",
+  "top_3_actions": [{"action":"max 12 words","why":"one sentence","urgency":"now|soon|later"}],
+  "document_grade": "A|B|C|D|F",
+  "grade_reason": "one sentence"
+}
+
+5-12 tensions. Include 1-3 strengths.${isReEx ? " Mark resolved tensions and new issues." : ""} Be specific, quote the document, be honest.`,
+      `Sharp venture advisor. Direct, specific, constructive. Stage: ${cls.stage}. Type: ${cls.type}.`,
+      3e3
+    );
+    if (p2.err) {
+      setErr("Analysis failed: " + p2.err);
+      setStatus("error");
+      return;
+    }
+    if (onPendingConsumed) onPendingConsumed();
+    onReady({ name: docName, text: docText, classification: cls, analysis: p2.data, iteration: reEx?.iteration || 1, previousVersions: reEx?.previousVersions || [] });
+  }, [onReady, onPendingConsumed]);
+  const go = useCallback(() => analyze(text, name), [text, name, analyze]);
+  const progress = status === "reading" ? 15 : status === "extracting" ? 30 : status === "classifying" ? 55 : status === "analyzing" ? 80 : 0;
+  return /* @__PURE__ */ React.createElement("div", { style: { minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 } }, /* @__PURE__ */ React.createElement("style", null, GLOBAL_CSS), /* @__PURE__ */ React.createElement("div", { style: { maxWidth: 560, width: "100%", animation: "fadeUp 0.6s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginBottom: 48 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "inline-flex", alignItems: "center", gap: 12, marginBottom: 12 } }, /* @__PURE__ */ React.createElement("div", { style: { width: 40, height: 40, borderRadius: 12, background: `linear-gradient(135deg, ${C.accent}, #8B5CF6)`, display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ React.createElement("svg", { width: "20", height: "20", viewBox: "0 0 24 24", fill: "none", stroke: "white", strokeWidth: "2" }, /* @__PURE__ */ React.createElement("path", { d: "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" }), /* @__PURE__ */ React.createElement("polyline", { points: "14 2 14 8 20 8" }), /* @__PURE__ */ React.createElement("line", { x1: "8", y1: "13", x2: "16", y2: "13" }), /* @__PURE__ */ React.createElement("line", { x1: "8", y1: "17", x2: "16", y2: "17" }))), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 32, fontFamily: F.display, color: C.text, letterSpacing: -0.5 } }, "Probe")), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 15, color: C.textDim, fontFamily: F.body, lineHeight: 1.7, maxWidth: 400, margin: "0 auto" } }, "Upload a document. AI finds what's strong, what's missing, and what contradicts itself.")), !text && !status && /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeUp 0.4s ease 0.1s both" } }, /* @__PURE__ */ React.createElement(
+    "div",
+    {
+      onClick: () => ref.current?.click(),
+      onDragEnter: (e) => {
+        e.preventDefault();
+        setDrag(true);
+      },
+      onDragLeave: () => setDrag(false),
+      onDragOver: (e) => e.preventDefault(),
+      onDrop: (e) => {
+        e.preventDefault();
+        setDrag(false);
+        if (e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);
+      },
+      style: {
+        border: `2px dashed ${drag ? C.accent : C.border}`,
+        borderRadius: 16,
+        padding: "52px 24px",
+        textAlign: "center",
+        cursor: "pointer",
+        background: drag ? C.accentGlow : C.surface,
+        transition: "all 0.2s"
+      }
+    },
+    /* @__PURE__ */ React.createElement("input", { ref, type: "file", accept: ".pdf,.txt,.md,.html,.csv,.doc,.docx", style: { display: "none" }, onChange: (e) => {
+      if (e.target.files[0]) readFile(e.target.files[0]);
+    } }),
+    /* @__PURE__ */ React.createElement("div", { style: { width: 56, height: 56, borderRadius: 16, background: C.raised, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", border: `1px solid ${C.border}` } }, /* @__PURE__ */ React.createElement("svg", { width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: drag ? C.accent : C.textDim, strokeWidth: "1.5" }, /* @__PURE__ */ React.createElement("path", { d: "M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" }), /* @__PURE__ */ React.createElement("polyline", { points: "17 8 12 3 7 8" }), /* @__PURE__ */ React.createElement("line", { x1: "12", y1: "3", x2: "12", y2: "15" }))),
+    /* @__PURE__ */ React.createElement("div", { style: { fontSize: 15, fontWeight: 600, color: drag ? C.accent : C.text, fontFamily: F.body, marginBottom: 4 } }, drag ? "Drop it here" : "Drop a document or click to browse"),
+    /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, color: C.textDim, fontFamily: F.body } }, "PDF, TXT, Markdown, HTML")
+  ), /* @__PURE__ */ React.createElement("div", { style: { position: "relative", textAlign: "center", margin: "20px 0" } }, /* @__PURE__ */ React.createElement("div", { style: { position: "absolute", top: "50%", left: 0, right: 0, height: 1, background: C.border } }), /* @__PURE__ */ React.createElement("span", { style: { position: "relative", padding: "0 16px", background: C.bg, fontSize: 12, color: C.textFaint, fontFamily: F.body } }, "or paste text directly")), /* @__PURE__ */ React.createElement(
+    "textarea",
+    {
+      placeholder: "Paste your business plan, pitch deck text, product spec...",
+      rows: 4,
+      style: {
+        width: "100%",
+        padding: 16,
+        border: `1px solid ${C.border}`,
+        borderRadius: 12,
+        fontFamily: F.body,
+        fontSize: 14,
+        color: C.text,
+        resize: "vertical",
+        background: C.surface,
+        lineHeight: 1.6
+      },
+      onBlur: (e) => {
+        if (e.target.value.trim().length > 50) {
+          setText(e.target.value.trim());
+          setName("Pasted Document");
+        }
+      }
+    }
+  )), text && !status && /* @__PURE__ */ React.createElement("div", { style: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24, animation: "fadeUp 0.4s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 16 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 16, fontWeight: 600, color: C.text, fontFamily: F.body } }, name), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.textDim, fontFamily: F.mono, marginTop: 2 } }, text.length.toLocaleString(), " characters")), /* @__PURE__ */ React.createElement("button", { onClick: () => {
+    setText("");
+    setName("");
+  }, style: { background: C.raised, border: `1px solid ${C.border}`, color: C.textDim, cursor: "pointer", width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 } }, "\xD7")), /* @__PURE__ */ React.createElement("div", { style: { background: C.card, borderRadius: 10, padding: 14, maxHeight: 96, overflowY: "auto", marginBottom: 20, border: `1px solid ${C.border}` } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, color: C.textDim, fontFamily: F.body, lineHeight: 1.6 } }, text.slice(0, 500), text.length > 500 ? "..." : "")), /* @__PURE__ */ React.createElement("button", { onClick: go, style: { width: "100%", padding: "14px", background: `linear-gradient(135deg, ${C.accent}, #8B5CF6)`, color: C.white, border: "none", borderRadius: 12, fontSize: 15, fontFamily: F.body, fontWeight: 600, cursor: "pointer", letterSpacing: 0.3 } }, "Analyze Document")), status && status !== "error" && /* @__PURE__ */ React.createElement("div", { style: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "36px 28px", textAlign: "center", animation: "fadeIn 0.3s" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 40, height: 40, border: `3px solid ${C.border}`, borderTopColor: C.accent, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 20px" } }), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 15, fontWeight: 600, color: C.text, fontFamily: F.body, marginBottom: 4 } }, step || "Processing..."), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.textDim, fontFamily: F.body, marginBottom: 16 } }, status === "classifying" ? "Pass 1 of 2 \u2014 understanding structure" : status === "analyzing" ? "Pass 2 of 2 \u2014 finding tensions" : ""), /* @__PURE__ */ React.createElement("div", { style: { height: 4, borderRadius: 2, background: C.card, overflow: "hidden" } }, /* @__PURE__ */ React.createElement("div", { style: { width: `${progress}%`, height: "100%", borderRadius: 2, background: `linear-gradient(90deg, ${C.accent}, #8B5CF6)`, transition: "width 0.8s ease" } }))), status === "error" && /* @__PURE__ */ React.createElement("div", { style: { background: C.surface, border: `1px solid ${C.red}30`, borderRadius: 16, padding: "24px 28px", animation: "fadeIn 0.3s" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, alignItems: "start" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 32, height: 32, borderRadius: 8, background: C.redGlow, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 } }, /* @__PURE__ */ React.createElement("span", { style: { color: C.red, fontSize: 16 } }, "!")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, fontWeight: 600, color: C.red, fontFamily: F.body } }, "Analysis failed"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, color: C.textMd, fontFamily: F.body, marginTop: 4, lineHeight: 1.5 } }, err))), /* @__PURE__ */ React.createElement("button", { onClick: () => {
+    setStatus(null);
+    setErr("");
+  }, style: { marginTop: 14, padding: "8px 16px", background: "none", border: `1px solid ${C.red}40`, color: C.red, borderRadius: 8, cursor: "pointer", fontSize: 13, fontFamily: F.body } }, "Try Again")), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginTop: 32, fontSize: 11, color: C.textFaint, fontFamily: F.body } }, "Powered by Claude \xB7 Two-pass adaptive analysis \xB7 Tension-driven insights")));
+}
+function Analysis({ doc, onReset }) {
+  const { name, text, classification: CL, analysis: A } = doc;
+  const [bookmarks, setBookmarks] = useState([]);
+  const [chat, setChat] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(null);
+  const [challenge, setChallenge] = useState(false);
+  const [view, setView] = useState("analysis");
+  const [filter, setFilter] = useState("all");
+  const [merging, setMerging] = useState(false);
+  const [mergePreview, setMergePreview] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const [bookmarked, setBookmarked] = useState(/* @__PURE__ */ new Set());
+  const iteration = doc.iteration || 1;
+  const chatEnd = useRef(null);
+  // Expose to mobile nav
+  useEffect(() => {
+    window.__probeSetView = setView;
+    window.__probeToggleChallenge = () => setChallenge(c => !c);
+    document.querySelectorAll('.probe-mn-tab').forEach((t,i) => t.classList.toggle('active', i === 1));
+  }, [setView]);
+  useEffect(() => {
+    chatEnd.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chat, loading]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await storage.get("probe-bm-" + name);
+        if (r?.value) setBookmarks(JSON.parse(r.value));
+      } catch {
+      }
+    })();
+  }, [name]);
+  const saveBM = useCallback(async (b) => {
+    setBookmarks(b);
+    try {
+      await storage.set("probe-bm-" + name, JSON.stringify(b));
+    } catch {
+    }
+  }, [name]);
+  const chunks = useMemo(() => text.split(/\n{2,}/).filter((c) => c.trim().length > 20), [text]);
+  const ctx = useMemo(() => `"${A.narrative_summary}" Type: ${CL.type}, Stage: ${CL.stage}. Grade: ${A.document_grade}. Key tensions: ${(A.tensions || []).slice(0, 4).map((t) => t.claim + " \u2192 " + t.challenge).join("; ")}`, [A, CL]);
+  const SYS = useMemo(() => `You are a sharp advisor analyzing "${CL.title || name}" (${CL.type}, ${CL.stage}). ${A.narrative_summary || ""}
+Direct, specific, constructive. No framework jargon unless asked. Find tensions, give actionable advice.${challenge ? "\n\nCHALLENGE MODE: Devil's advocate. Push back on every claim. Tough but fair." : ""}`, [CL, A, name, challenge]);
+  const send = useCallback(async (msg, show = true) => {
+    if (show) setChat((h) => [...h, { role: "user", text: msg }]);
+    setLoading(true);
+    const lower = msg.toLowerCase();
+    const relevant = chunks.map((c, i) => ({ c, i, s: lower.split(/\s+/).filter((w) => w.length > 3 && c.toLowerCase().includes(w)).length })).sort((a, b) => b.s - a.s).slice(0, 4).map((x) => x.c).join("\n---\n");
+    const r = await ask(`${msg}
+
+DOCUMENT EXCERPTS:
+${relevant.slice(0, 6e3)}
+
+CONTEXT:
+${ctx}`, SYS, 1200);
+    const reply = r.err ? `Error: ${r.err}` : r.text;
+    if (show) setChat((h) => [...h, { role: "ai", text: reply, ok: !r.err }]);
+    setLoading(false);
+    return reply;
+  }, [chunks, ctx, SYS]);
+  const addBookmark = useCallback((text2, label) => {
+    const bm = { id: Date.now(), text: text2, label: label || "Insight", ts: (/* @__PURE__ */ new Date()).toISOString() };
+    saveBM([...bookmarks, bm]);
+    setBookmarked((s) => /* @__PURE__ */ new Set([...s, text2.slice(0, 50)]));
+  }, [bookmarks, saveBM]);
+  const tensions = A.tensions || [];
+  const filtered = filter === "all" ? tensions : filter === "critical" ? tensions.filter((t) => t.severity === "critical" || t.severity === "important") : filter === "gaps" ? tensions.filter((t) => ["gap", "unsupported_claim", "missing_evidence", "hidden_assumption"].includes(t.type)) : tensions.filter((t) => t.severity === "positive" || t.type === "strength" || t.type === "resolved");
+  const gradeColor = (g) => g === "A" || g === "B" ? C.green : g === "C" ? C.amber : C.red;
+  const sevColor = (s) => s === "critical" ? C.red : s === "important" ? C.amber : s === "positive" ? C.green : C.textDim;
+  const typeIcon = (t) => t === "resolved" ? "\u2713" : t === "new_issue" ? "\u2605" : t === "strength" ? "\u25C6" : t === "contradiction" ? "\u21C4" : t === "gap" ? "\u25CB" : t === "hidden_assumption" ? "?" : "\u25B3";
+  const typeLabel = (t) => t === "resolved" ? "Resolved" : t === "new_issue" ? "New Issue" : (t || "").replace(/_/g, " ");
+  const merge = useCallback(async () => {
+    setMerging(true);
+    const insBlock = bookmarks.map((b) => `[${b.label}]: ${b.text}`).join("\n\n");
+    const r = await ask(
+      `Merge these bookmarked insights into the original document. Weave them naturally \u2014 don't append. Fix gaps, strengthen weak sections, keep the original voice.
+
+ORIGINAL:
+${text.slice(0, 2e4)}
+
+INSIGHTS:
+${insBlock.slice(0, 8e3)}
+
+Return ONLY the improved document.`,
+      "Skilled editor. Merge insights naturally. Preserve voice. Output only the document.",
+      4e3
+    );
+    setMerging(false);
+    if (!r.err) setMergePreview(r.text);
+  }, [text, bookmarks]);
+  const reExamine = useCallback(async (merged) => {
+    setMergePreview(null);
+    saveBM([]);
+    setChat([]);
+    try {
+      await storage.delete("probe-doc");
+    } catch {
+    }
+    onReset({ name, text: merged, iteration: iteration + 1, previousVersions: [...doc.previousVersions || [], { text, classification: CL, analysis: A, bookmarks: [...bookmarks], iteration }] });
+  }, [name, text, CL, A, bookmarks, iteration, doc, saveBM, onReset]);
+  const copyMd = useCallback(() => {
+    let md = `# ${CL.title || name}
+
+> Grade: ${A.document_grade} \u2014 ${A.grade_reason}
+
+${A.narrative_summary}
+
+---
+
+## Insights
+
+`;
+    bookmarks.forEach((b) => {
+      md += `### ${b.label}
+
+${b.text}
+
+`;
+    });
+    navigator.clipboard?.writeText(md);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2e3);
+  }, [CL, A, bookmarks, name]);
+  return /* @__PURE__ */ React.createElement("div", { className: "probe-analysis-layout", style: { display: "flex", height: "100vh", background: C.bg } }, /* @__PURE__ */ React.createElement("style", null, GLOBAL_CSS), /* @__PURE__ */ React.createElement("div", { className: "probe-analysis-main", style: { flex: 1, overflowY: "auto", borderRight: `1px solid ${C.border}` } }, /* @__PURE__ */ React.createElement("div", { style: { maxWidth: 680, margin: "0 auto", padding: "28px 32px 60px" } }, /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeUp 0.5s ease", marginBottom: 28 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "start" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ React.createElement("div", { style: { width: 32, height: 32, borderRadius: 10, background: `linear-gradient(135deg, ${C.accent}, #8B5CF6)`, display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ React.createElement("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "white", strokeWidth: "2.5" }, /* @__PURE__ */ React.createElement("path", { d: "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" }), /* @__PURE__ */ React.createElement("polyline", { points: "14 2 14 8 20 8" }))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: C.textDim, fontFamily: F.mono, letterSpacing: 1 } }, CL.type?.replace(/_/g, " ").toUpperCase(), " \xB7 ", CL.stage?.replace(/_/g, " ").toUpperCase(), iteration > 1 ? ` \xB7 V${iteration}` : ""), /* @__PURE__ */ React.createElement("h1", { style: { fontSize: 24, fontFamily: F.display, color: C.text, margin: 0, letterSpacing: -0.3 } }, CL.title || name))), /* @__PURE__ */ React.createElement("button", { onClick: () => onReset(), style: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 12px", fontSize: 12, color: C.textDim, cursor: "pointer", fontFamily: F.body } }, "New doc")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 14, marginTop: 16, alignItems: "start" } }, /* @__PURE__ */ React.createElement("div", { style: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    border: `2px solid ${gradeColor(A.document_grade)}`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 24,
+    fontWeight: 700,
+    fontFamily: F.display,
+    color: gradeColor(A.document_grade),
+    background: `${gradeColor(A.document_grade)}10`,
+    flexShrink: 0
+  } }, A.document_grade || "?"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, color: C.textMd, fontFamily: F.body, lineHeight: 1.6, marginBottom: 4 } }, A.grade_reason), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, color: C.text, fontFamily: F.body, lineHeight: 1.7 } }, A.narrative_summary)))), A.top_3_actions && /* @__PURE__ */ React.createElement("div", { style: { background: C.surface, borderRadius: 14, border: `1px solid ${C.border}`, padding: "18px 20px", marginBottom: 24, animation: "fadeUp 0.5s ease 0.1s both" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, fontWeight: 600, color: C.textDim, fontFamily: F.mono, letterSpacing: 1, marginBottom: 12 } }, "RECOMMENDED ACTIONS"), A.top_3_actions.map((a, i) => /* @__PURE__ */ React.createElement(
+    "div",
+    {
+      key: i,
+      onClick: () => send(`Help me with: "${a.action}". Context: "${a.why}". Give specific next steps \u2014 what to write, research, or decide.`),
+      style: {
+        display: "flex",
+        gap: 12,
+        alignItems: "start",
+        padding: "10px 12px",
+        marginBottom: 4,
+        borderRadius: 10,
+        cursor: "pointer",
+        transition: "background 0.15s",
+        background: "transparent"
+      },
+      onMouseEnter: (e) => e.currentTarget.style.background = C.card,
+      onMouseLeave: (e) => e.currentTarget.style.background = "transparent"
+    },
+    /* @__PURE__ */ React.createElement("div", { style: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      marginTop: 7,
+      flexShrink: 0,
+      background: a.urgency === "now" ? C.red : a.urgency === "soon" ? C.amber : C.textDim
+    } }),
+    /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, fontWeight: 500, color: C.text, fontFamily: F.body } }, a.action), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.textDim, fontFamily: F.body, marginTop: 1 } }, a.why)),
+    /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, fontFamily: F.mono, color: a.urgency === "now" ? C.red : a.urgency === "soon" ? C.amber : C.textDim, flexShrink: 0, marginTop: 3 } }, (a.urgency || "").toUpperCase())
+  ))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, animation: "fadeUp 0.5s ease 0.15s both" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 2, background: C.surface, borderRadius: 10, padding: 3, border: `1px solid ${C.border}` } }, [["analysis", "Analysis"], ["bookmarks", `Saved (${bookmarks.length})`], ["evolved", "Evolve"]].map(([v, l]) => /* @__PURE__ */ React.createElement("button", { key: v, onClick: () => setView(v), style: {
+    padding: "5px 14px",
+    fontSize: 12,
+    fontFamily: F.body,
+    fontWeight: view === v ? 600 : 400,
+    color: view === v ? C.text : C.textDim,
+    background: view === v ? C.raised : "transparent",
+    border: "none",
+    borderRadius: 8,
+    cursor: "pointer",
+    transition: "all 0.15s"
+  } }, l))), view === "analysis" && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 4 } }, [["all", "All"], ["critical", "Critical"], ["gaps", "Gaps"], ["strengths", "Strengths"]].map(([f, l]) => /* @__PURE__ */ React.createElement("button", { key: f, onClick: () => setFilter(f), style: {
+    padding: "4px 10px",
+    fontSize: 11,
+    fontFamily: F.body,
+    color: filter === f ? C.accent : C.textDim,
+    background: filter === f ? C.accentGlow : "transparent",
+    border: `1px solid ${filter === f ? C.accent + "40" : "transparent"}`,
+    borderRadius: 6,
+    cursor: "pointer"
+  } }, l))), /* @__PURE__ */ React.createElement("button", { onClick: () => setChallenge(!challenge), style: {
+    padding: "5px 12px",
+    fontSize: 11,
+    fontFamily: F.body,
+    fontWeight: 600,
+    color: challenge ? C.red : C.textDim,
+    background: challenge ? C.redGlow : "transparent",
+    border: `1px solid ${challenge ? C.red + "40" : C.border}`,
+    borderRadius: 8,
+    cursor: "pointer"
+  } }, challenge ? "Challenge ON" : "Challenge me")), view === "analysis" && /* @__PURE__ */ React.createElement("div", null, filtered.map((t, i) => {
+    const isExp = expanded === i;
+    const isResolved = t.type === "resolved";
+    const isNew = t.type === "new_issue";
+    return /* @__PURE__ */ React.createElement(
+      "div",
+      {
+        key: i,
+        onClick: () => {
+          setExpanded(isExp ? null : i);
+          if (!isExp) send(`The document claims: "${t.claim}". Tension: "${t.challenge}". Suggested: "${t.suggested_action}". ${challenge ? "Challenge this hard \u2014 what's the worst case?" : "Help me think through this and resolve it."}`, true);
+        },
+        style: {
+          background: C.surface,
+          borderRadius: 12,
+          border: `1px solid ${isExp ? sevColor(t.severity) + "50" : C.border}`,
+          padding: "14px 16px",
+          marginBottom: 8,
+          cursor: "pointer",
+          transition: "all 0.2s",
+          animation: `fadeUp 0.4s ease ${i * 0.03}s both`,
+          opacity: isResolved ? 0.6 : 1
+        }
+      },
+      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "start" } }, /* @__PURE__ */ React.createElement("div", { style: {
+        width: 22,
+        height: 22,
+        borderRadius: 6,
+        background: `${sevColor(t.severity)}15`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 11,
+        color: isResolved ? C.green : isNew ? C.cyan : sevColor(t.severity),
+        fontFamily: F.mono,
+        flexShrink: 0,
+        marginTop: 1
+      } }, typeIcon(t.type)), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginBottom: 4 } }, /* @__PURE__ */ React.createElement("span", { style: {
+        fontSize: 10,
+        padding: "2px 7px",
+        borderRadius: 6,
+        fontFamily: F.mono,
+        fontWeight: 500,
+        background: isResolved ? C.greenGlow : isNew ? `${C.cyan}20` : `${sevColor(t.severity)}15`,
+        color: isResolved ? C.green : isNew ? C.cyan : sevColor(t.severity)
+      } }, typeLabel(t.type)), t.lens && /* @__PURE__ */ React.createElement("span", { style: { fontSize: 10, color: C.textFaint, fontFamily: F.body } }, t.lens)), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, color: C.text, fontFamily: F.body, lineHeight: 1.5, fontStyle: "italic" } }, '"', t.claim, '"'), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, color: C.textMd, fontFamily: F.body, lineHeight: 1.5, marginTop: 3 } }, "\u2192 ", t.challenge), isExp && t.suggested_action && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8, padding: "8px 12px", background: C.card, borderRadius: 8, fontSize: 12, color: C.accent, fontFamily: F.body, animation: "fadeIn 0.2s" } }, "\u{1F4A1} ", t.suggested_action)))
+    );
+  }), filtered.length === 0 && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", padding: "40px 20px", color: C.textDim, fontFamily: F.body } }, "No tensions match this filter.")), view === "bookmarks" && /* @__PURE__ */ React.createElement("div", null, bookmarks.length === 0 ? /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", padding: "48px 20px" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 48, height: 48, borderRadius: 14, background: C.surface, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" } }, /* @__PURE__ */ React.createElement("svg", { width: "20", height: "20", viewBox: "0 0 24 24", fill: "none", stroke: C.textDim, strokeWidth: "1.5" }, /* @__PURE__ */ React.createElement("path", { d: "M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" }))), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, color: C.textMd, fontFamily: F.body, marginBottom: 4 } }, "No saved insights yet"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, color: C.textDim, fontFamily: F.body } }, "Bookmark AI responses from the conversation panel")) : bookmarks.map((bm, i) => /* @__PURE__ */ React.createElement("div", { key: bm.id, style: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 16px", marginBottom: 6, animation: `fadeUp 0.3s ease ${i * 0.03}s both` } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, fontWeight: 600, color: C.accent, fontFamily: F.body } }, bm.label), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 4, alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 10, color: C.textFaint, fontFamily: F.mono } }, new Date(bm.ts).toLocaleDateString()), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => saveBM(bookmarks.filter((b) => b.id !== bm.id)),
+      style: { background: "none", border: "none", color: C.textFaint, cursor: "pointer", fontSize: 14, padding: "2px 4px" }
+    },
+    "\xD7"
+  ))), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, color: C.textMd, fontFamily: F.body, lineHeight: 1.65 } }, /* @__PURE__ */ React.createElement(Md, { text: bm.text }))))), view === "evolved" && /* @__PURE__ */ React.createElement("div", null, bookmarks.length === 0 && !mergePreview ? /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", padding: "48px 20px" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 48, height: 48, borderRadius: 14, background: C.surface, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" } }, /* @__PURE__ */ React.createElement("svg", { width: "20", height: "20", viewBox: "0 0 24 24", fill: "none", stroke: C.textDim, strokeWidth: "1.5" }, /* @__PURE__ */ React.createElement("path", { d: "M12 2v20M2 12h20" }))), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, color: C.textMd, fontFamily: F.body, marginBottom: 4 } }, "Build your evolved document"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, color: C.textDim, fontFamily: F.body, lineHeight: 1.6, maxWidth: 320, margin: "0 auto" } }, "Explore tensions \u2192 ask questions \u2192 bookmark insights \u2192 merge them back \u2192 re-examine the improved version")) : mergePreview ? /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeUp 0.4s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { background: `${C.accent}10`, borderRadius: 12, border: `1px solid ${C.accent}30`, padding: "14px 18px", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, fontWeight: 600, color: C.accent, fontFamily: F.body } }, "Merged Document Preview"), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 11, color: C.accent, fontFamily: F.mono } }, "v", iteration, " \u2192 v", iteration + 1)), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.textMd, fontFamily: F.body, marginTop: 4 } }, "Review below. Re-examine to run fresh analysis on this improved version.")), /* @__PURE__ */ React.createElement("div", { style: { background: C.surface, borderRadius: 12, border: `1px solid ${C.border}`, padding: "20px 22px", marginBottom: 14, maxHeight: 420, overflowY: "auto" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, color: C.text, fontFamily: F.body, lineHeight: 1.8, whiteSpace: "pre-wrap" } }, mergePreview)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { onClick: () => setMergePreview(null), style: { flex: 1, padding: 12, background: C.surface, color: C.textDim, border: `1px solid ${C.border}`, borderRadius: 10, cursor: "pointer", fontSize: 13, fontFamily: F.body } }, "\u2190 Back"), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => {
+        navigator.clipboard?.writeText(mergePreview);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2e3);
+      },
+      style: { padding: "12px 18px", background: C.surface, color: C.text, border: `1px solid ${C.border}`, borderRadius: 10, cursor: "pointer", fontSize: 13, fontFamily: F.body }
+    },
+    copied ? "Copied!" : "Copy"
+  ), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => reExamine(mergePreview),
+      style: { flex: 2, padding: 12, background: `linear-gradient(135deg, ${C.accent}, #8B5CF6)`, color: C.white, border: "none", borderRadius: 10, cursor: "pointer", fontSize: 14, fontFamily: F.body, fontWeight: 600 }
+    },
+    "Re-examine as v",
+    iteration + 1
+  ))) : /* @__PURE__ */ React.createElement("div", { style: { animation: "fadeUp 0.4s ease" } }, /* @__PURE__ */ React.createElement("div", { style: { background: C.surface, borderRadius: 12, border: `1px solid ${C.border}`, padding: "18px 20px", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, fontWeight: 600, color: C.textDim, fontFamily: F.mono, letterSpacing: 1, marginBottom: 12 } }, bookmarks.length, " SAVED INSIGHT", bookmarks.length !== 1 ? "S" : ""), bookmarks.map((bm, i) => /* @__PURE__ */ React.createElement("div", { key: bm.id, style: { padding: "8px 0", borderBottom: i < bookmarks.length - 1 ? `1px solid ${C.border}` : "none" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, fontWeight: 600, color: C.text, fontFamily: F.body } }, bm.label), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.textDim, fontFamily: F.body, lineHeight: 1.5, marginTop: 2 } }, bm.text.length > 150 ? bm.text.slice(0, 150) + "..." : bm.text)))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("button", { onClick: copyMd, style: { flex: 1, padding: 12, background: C.surface, color: C.text, border: `1px solid ${C.border}`, borderRadius: 10, cursor: "pointer", fontSize: 13, fontFamily: F.body } }, copied ? "Copied!" : "Export Markdown"), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: merge,
+      disabled: merging,
+      style: {
+        flex: 2,
+        padding: 12,
+        background: merging ? C.surface : `linear-gradient(135deg, ${C.accent}, #8B5CF6)`,
+        color: C.white,
+        border: "none",
+        borderRadius: 10,
+        cursor: merging ? "default" : "pointer",
+        fontSize: 14,
+        fontFamily: F.body,
+        fontWeight: 600,
+        opacity: merging ? 0.7 : 1
+      }
+    },
+    merging ? "Merging..." : "Merge & Re-examine"
+  )), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.textFaint, fontFamily: F.body, textAlign: "center" } }, "Weaves ", bookmarks.length, " insight", bookmarks.length !== 1 ? "s" : "", " into the original, then re-analyzes"), (doc.previousVersions || []).length > 0 && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 20, paddingTop: 16, borderTop: `1px solid ${C.border}` } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, fontWeight: 600, color: C.textDim, fontFamily: F.mono, letterSpacing: 1, marginBottom: 10 } }, "VERSION HISTORY"), (doc.previousVersions || []).map((pv, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: C.card, borderRadius: 8, marginBottom: 4, border: `1px solid ${C.border}` } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 13, fontWeight: 700, color: gradeColor(pv.analysis?.document_grade), fontFamily: F.display } }, pv.analysis?.document_grade || "?"), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, color: C.textDim, fontFamily: F.body } }, "v", pv.iteration, " \xB7 ", (pv.analysis?.tensions || []).length, " tensions \xB7 ", pv.bookmarks?.length || 0, " bookmarks")), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => send(`Compare v${iteration} against v${pv.iteration}. Earlier grade: ${pv.analysis?.document_grade}. Current grade: ${A.document_grade}. What improved? What regressed? What new tensions emerged?`),
+      style: { background: C.raised, border: `1px solid ${C.border}`, borderRadius: 6, padding: "4px 10px", fontSize: 11, color: C.textDim, cursor: "pointer", fontFamily: F.body }
+    },
+    "Compare"
+  )))))))), /* @__PURE__ */ React.createElement("div", { className: "probe-chat-panel", style: { width: 400, display: "flex", flexDirection: "column", background: C.surface } }, /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 18px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, fontWeight: 600, color: C.text, fontFamily: F.body } }, "Conversation"), challenge && /* @__PURE__ */ React.createElement("span", { style: { fontSize: 10, padding: "3px 8px", borderRadius: 6, background: C.redGlow, color: C.red, fontFamily: F.mono, fontWeight: 600 } }, "CHALLENGE")), chat.length === 0 && /* @__PURE__ */ React.createElement("div", { style: { padding: "18px", animation: "fadeIn 0.5s ease 0.3s both" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.textFaint, fontFamily: F.body, marginBottom: 10 } }, "Start exploring"), ["What's the biggest hole in this plan?", "Help me strengthen my value proposition", "What would an investor challenge?", `Explore: "${(A.tensions?.[0]?.claim || "core thesis").slice(0, 50)}"`].map((q, i) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key: i,
+      onClick: () => send(q),
+      style: {
+        display: "block",
+        width: "100%",
+        textAlign: "left",
+        padding: "10px 14px",
+        marginBottom: 4,
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: 10,
+        fontSize: 13,
+        color: C.textMd,
+        fontFamily: F.body,
+        cursor: "pointer",
+        lineHeight: 1.5,
+        transition: "border-color 0.15s"
+      },
+      onMouseEnter: (e) => e.currentTarget.style.borderColor = C.accent + "50",
+      onMouseLeave: (e) => e.currentTarget.style.borderColor = C.border
+    },
+    q
+  ))), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, overflowY: "auto", padding: "14px 18px" } }, chat.map((m, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: { marginBottom: 14, animation: `slideIn 0.3s ease` } }, m.role === "user" ? /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement("div", { style: {
+    maxWidth: "85%",
+    padding: "10px 14px",
+    borderRadius: "14px 14px 4px 14px",
+    fontSize: 13,
+    fontFamily: F.body,
+    lineHeight: 1.6,
+    background: C.accent,
+    color: C.white
+  } }, m.text)) : /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: {
+    maxWidth: "92%",
+    padding: "12px 14px",
+    borderRadius: "14px 14px 14px 4px",
+    fontSize: 13,
+    fontFamily: F.body,
+    lineHeight: 1.7,
+    background: C.card,
+    border: `1px solid ${C.border}`,
+    color: C.textMd
+  } }, /* @__PURE__ */ React.createElement(Md, { text: m.text })), m.ok && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 4, display: "flex", gap: 4 } }, /* @__PURE__ */ React.createElement("button", { onClick: () => {
+    const label = window.prompt("Label this insight:", "Insight") || "Insight";
+    addBookmark(m.text, label);
+  }, style: {
+    background: bookmarked.has(m.text.slice(0, 50)) ? C.accentGlow : C.surface,
+    border: `1px solid ${bookmarked.has(m.text.slice(0, 50)) ? C.accent + "40" : C.border}`,
+    borderRadius: 6,
+    padding: "3px 10px",
+    fontSize: 10,
+    color: bookmarked.has(m.text.slice(0, 50)) ? C.accent : C.textDim,
+    cursor: "pointer",
+    fontFamily: F.body,
+    fontWeight: 500
+  } }, bookmarked.has(m.text.slice(0, 50)) ? "\u2713 Saved" : "Bookmark"))))), loading && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, padding: "12px 14px", animation: "fadeIn 0.2s" } }, [0, 1, 2].map((j) => /* @__PURE__ */ React.createElement("div", { key: j, style: { width: 7, height: 7, borderRadius: 4, background: C.accent, animation: `pulse 1.2s ${j * 0.15}s infinite` } }))), /* @__PURE__ */ React.createElement("div", { ref: chatEnd })), /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 18px", borderTop: `1px solid ${C.border}` } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      value: input,
+      onChange: (e) => setInput(e.target.value),
+      onKeyDown: (e) => {
+        if (e.key === "Enter" && !e.shiftKey && input.trim()) {
+          e.preventDefault();
+          send(input.trim());
+          setInput("");
+        }
+      },
+      placeholder: challenge ? "I'll push back hard..." : "Ask about your document...",
+      disabled: loading,
+      style: { flex: 1, padding: "11px 16px", border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 14, fontFamily: F.body, color: C.text, background: C.card }
+    }
+  ), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => {
+        if (input.trim()) {
+          send(input.trim());
+          setInput("");
+        }
+      },
+      disabled: loading || !input.trim(),
+      style: {
+        padding: "11px 18px",
+        background: input.trim() && !loading ? `linear-gradient(135deg, ${C.accent}, #8B5CF6)` : C.card,
+        color: input.trim() && !loading ? C.white : C.textDim,
+        border: "none",
+        borderRadius: 10,
+        cursor: input.trim() && !loading ? "pointer" : "default",
+        fontSize: 14,
+        fontFamily: F.body,
+        fontWeight: 600,
+        transition: "all 0.2s"
+      }
+    },
+    "\u2191"
+  )))));
+}
+function App() {
+  const [doc, setDoc] = useState(null);
+  const [pending, setPending] = useState(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await storage.get("probe-doc");
+        if (r?.value) setDoc(JSON.parse(r.value));
+      } catch {
+      }
+    })();
+  }, []);
+  const ready = useCallback(async (d) => {
+    setDoc(d);
+    try {
+      await storage.set("probe-doc", JSON.stringify(d));
+    } catch {
+    }
+  }, []);
+  const reset = useCallback(async (reEx) => {
+    setDoc(null);
+    try {
+      await storage.delete("probe-doc");
+      await storage.delete("probe-bm-" + doc?.name);
+    } catch {
+    }
+    if (reEx) setPending(reEx);
+    document.querySelectorAll('.probe-mn-tab').forEach((t,i) => t.classList.toggle('active', i === 0));
+  }, [doc]);
+  useEffect(() => { window.__probeReset = () => reset(); }, [reset]);
+  if (!doc) return /* @__PURE__ */ React.createElement(Upload, { onReady: ready, pendingReExamine: pending, onPendingConsumed: () => setPending(null) });
+  return /* @__PURE__ */ React.createElement(Analysis, { doc, onReset: reset });
+}
+
+// Mount
+const _root = ReactDOM.createRoot(document.getElementById("root"));
+_root.render(React.createElement(App));
+</script>
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movement Intelligence — OAHM</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#080808;--surface:#111;--surface2:#161616;--cyan:#00D4FF;--gold:#C9A84C;--white:#fff;--gray:#999;--font-head:'Playfair Display',serif;--font-body:'Space Grotesk',sans-serif}
+body{background:var(--bg);color:var(--white);font-family:var(--font-body);line-height:1.6;min-height:100vh}
+.container{max-width:960px;margin:0 auto;padding:24px 16px}
+h1,h2,h3{font-family:var(--font-head);font-weight:700}
+/* HEADER */
+.header{text-align:center;padding:48px 0 32px}
+.header h1{font-size:clamp(28px,5vw,48px);letter-spacing:6px;margin-bottom:8px}
+.header .subtitle{color:var(--gray);font-size:14px;letter-spacing:3px;text-transform:uppercase}
+/* TOPIC GRID */
+.section-label{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gray);margin-bottom:16px}
+.topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:32px}
+.topic-card{background:var(--surface);border:1.5px solid transparent;border-radius:8px;padding:16px;cursor:pointer;transition:all .25s}
+.topic-card:hover{border-color:#333}
+.topic-card.selected{border-color:var(--cyan);box-shadow:0 0 20px rgba(0,212,255,.12)}
+.topic-card svg{width:32px;height:32px;margin-bottom:8px}
+.topic-card .name{font-weight:600;font-size:13px;letter-spacing:1px;margin-bottom:4px}
+.topic-card .desc{font-size:12px;color:var(--gray);line-height:1.4}
+/* SELECTORS */
+.selector-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px}
+.toggle-group{display:flex;gap:0;border:1px solid #333;border-radius:6px;overflow:hidden}
+.toggle-btn{background:var(--surface);border:none;color:var(--gray);padding:10px 18px;font-family:var(--font-body);font-size:12px;cursor:pointer;letter-spacing:1px;transition:all .2s}
+.toggle-btn.active{background:var(--cyan);color:#000;font-weight:600}
+.radio-group{display:flex;gap:16px;align-items:center}
+.radio-group label{font-size:13px;color:var(--gray);cursor:pointer;display:flex;align-items:center;gap:6px}
+.radio-group input{accent-color:var(--cyan)}
+/* GENERATE BTN */
+.gen-btn{width:100%;padding:16px;background:var(--cyan);color:#000;border:none;font-family:var(--font-body);font-size:15px;font-weight:700;letter-spacing:3px;text-transform:uppercase;border-radius:8px;cursor:pointer;transition:all .2s;margin-bottom:32px}
+.gen-btn:hover{opacity:.9;transform:translateY(-1px)}
+.gen-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+/* PROGRESS */
+.progress-wrap{display:none;margin-bottom:32px;text-align:center}
+.progress-wrap.active{display:block}
+.progress-bar{height:3px;background:#222;border-radius:2px;overflow:hidden;margin-bottom:12px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--gold));width:0%;transition:width .8s ease}
+.progress-label{font-size:13px;letter-spacing:2px;color:var(--gray)}
+/* EPISODE */
+.episode-header{text-align:center;padding:40px 0 24px;border-top:1px solid #222}
+.episode-header .ep-label{font-size:11px;letter-spacing:3px;color:var(--gold);margin-bottom:8px}
+.episode-header h2{font-size:clamp(22px,4vw,36px);margin-bottom:8px}
+.episode-header .meta{font-size:12px;color:var(--gray)}
+.panel{background:var(--surface);border-radius:10px;padding:clamp(20px,4vw,40px);margin-bottom:20px;opacity:0;transform:translateY(20px);transition:all .5s ease}
+.panel.visible{opacity:1;transform:translateY(0)}
+.panel-num{font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:4px}
+.panel h3{font-size:clamp(18px,3vw,28px);margin-bottom:16px}
+.panel .content{color:#ccc;font-size:15px;line-height:1.75;margin-bottom:20px}
+.pull-quote{font-family:var(--font-head);font-style:italic;font-size:clamp(18px,2.5vw,24px);color:var(--cyan);border-left:3px solid var(--cyan);padding-left:20px;margin:24px 0;line-height:1.5}
+.principle-card{background:var(--bg);border:1px solid var(--gold);border-radius:6px;padding:20px;margin:20px 0}
+.principle-card .label{font-size:10px;letter-spacing:2px;color:var(--gold);margin-bottom:6px}
+.principle-card p{font-size:14px;font-weight:500;line-height:1.5}
+.data-viz{margin:20px 0}
+.data-bar{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.data-bar .bar-label{font-size:11px;color:var(--gray);width:100px;text-align:right;flex-shrink:0}
+.data-bar .bar{height:6px;border-radius:3px;background:var(--cyan);opacity:.7}
+.svg-diagram{display:flex;justify-content:center;margin:20px 0}
+.svg-diagram svg{max-width:100%;height:auto}
+/* SHARE */
+.share-row{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0 48px}
+.share-btn{background:var(--surface2);border:1px solid #333;color:var(--white);padding:10px 20px;border-radius:6px;font-family:var(--font-body);font-size:12px;letter-spacing:1px;cursor:pointer;transition:all .2s}
+.share-btn:hover{border-color:var(--cyan)}
+.share-btn.copied{border-color:var(--gold);color:var(--gold)}
+.hidden{display:none}
+@media(max-width:600px){.toggle-btn{padding:8px 10px;font-size:11px}.selector-row{flex-direction:column}.topic-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>MOVEMENT INTELLIGENCE</h1>
+    <div class="subtitle">Educational episodes from the OAHM lab</div>
+  </div>
+
+  <div class="section-label">Select Topic</div>
+  <div class="topic-grid" id="topicGrid"></div>
+
+  <div class="section-label">Format</div>
+  <div class="selector-row">
+    <div class="toggle-group" id="formatGroup">
+      <button class="toggle-btn active" data-val="deep">DEEP DIVE</button>
+      <button class="toggle-btn" data-val="quick">QUICK READ</button>
+      <button class="toggle-btn" data-val="social">SOCIAL SERIES</button>
+    </div>
+  </div>
+
+  <div class="section-label">Audience</div>
+  <div class="selector-row">
+    <div class="radio-group">
+      <label><input type="radio" name="audience" value="general" checked> For me</label>
+      <label><input type="radio" name="audience" value="clients"> For clients</label>
+      <label><input type="radio" name="audience" value="professionals"> For professionals</label>
+    </div>
+  </div>
+
+  <button class="gen-btn" id="genBtn" disabled>GENERATE EPISODE</button>
+
+  <div class="progress-wrap" id="progress">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-label" id="progressLabel">READING THE BODY...</div>
+  </div>
+
+  <div id="episodeWrap" class="hidden"></div>
+</div>
+
+<script>
+const TOPICS = [
+  {id:'allostasis',name:'ALLOSTASIS',desc:'Stability through change; how the body learns compensation patterns',icon:'<circle cx="16" cy="16" r="10" fill="none" stroke="#00D4FF" stroke-width="1.5"/><path d="M8 16 Q12 8 16 16 Q20 24 24 16" fill="none" stroke="#00D4FF" stroke-width="1.5"/>'},
+  {id:'force',name:'FORCE MANAGEMENT',desc:'How the muscular system distributes load across the body',icon:'<line x1="16" y1="4" x2="16" y2="28" stroke="#00D4FF" stroke-width="1.5"/><line x1="8" y1="10" x2="24" y2="10" stroke="#00D4FF" stroke-width="1.5"/><line x1="6" y1="22" x2="26" y2="22" stroke="#00D4FF" stroke-width="1.5"/>'},
+  {id:'asymmetry',name:'BILATERAL ASYMMETRY',desc:'Left/right imbalance; why it develops and compounds over time',icon:'<rect x="4" y="8" width="11" height="16" rx="2" fill="none" stroke="#00D4FF" stroke-width="1.5"/><rect x="17" y="11" width="11" height="13" rx="2" fill="none" stroke="#00D4FF" stroke-width="1.5"/>'},
+  {id:'motor',name:'MOTOR CONTROL',desc:'The nervous system\'s role in movement; strength without coordination fails',icon:'<circle cx="16" cy="10" r="4" fill="none" stroke="#00D4FF" stroke-width="1.5"/><line x1="16" y1="14" x2="16" y2="24" stroke="#00D4FF" stroke-width="1.5"/><line x1="10" y1="18" x2="22" y2="18" stroke="#00D4FF" stroke-width="1.5"/><line x1="12" y1="28" x2="16" y2="24" stroke="#00D4FF" stroke-width="1.5"/><line x1="20" y1="28" x2="16" y2="24" stroke="#00D4FF" stroke-width="1.5"/>'},
+  {id:'debt',name:'MOVEMENT DEBT',desc:'The accumulated cost of poor mechanics; surfaces at 40+',icon:'<text x="16" y="22" text-anchor="middle" fill="#00D4FF" font-size="18" font-family="Space Grotesk">$</text>'},
+  {id:'compensation',name:'COMPENSATION PATTERNS',desc:'The body\'s ingenious workarounds and why they become problems',icon:'<polyline points="4,24 10,12 16,20 22,8 28,16" fill="none" stroke="#00D4FF" stroke-width="1.5"/>'},
+  {id:'biomotor',name:'BIO-MOTOR CONFIG',desc:'Reading bone-muscle-nerve relationships as a system',icon:'<circle cx="16" cy="8" r="3" fill="none" stroke="#00D4FF" stroke-width="1.5"/><circle cx="8" cy="24" r="3" fill="none" stroke="#00D4FF" stroke-width="1.5"/><circle cx="24" cy="24" r="3" fill="none" stroke="#00D4FF" stroke-width="1.5"/><line x1="16" y1="11" x2="8" y2="21" stroke="#00D4FF" stroke-width="1"/><line x1="16" y1="11" x2="24" y2="21" stroke="#00D4FF" stroke-width="1"/><line x1="11" y1="24" x2="21" y2="24" stroke="#00D4FF" stroke-width="1"/>'},
+  {id:'transition',name:'THE 40+ TRANSITION',desc:'Why bodies change at this threshold; what it demands differently',icon:'<text x="16" y="22" text-anchor="middle" fill="#00D4FF" font-size="16" font-weight="700" font-family="Space Grotesk">40+</text>'}
+];
+
+const PANELS = {
+  allostasis:["The Body Is Not a Machine","What Homeostasis Gets Wrong","The Allostatic Load","When Adaptation Becomes the Problem","The Clinical Picture","Reading Your Body's Story","The Work Ahead"],
+  force:["Where the Load Goes","The Distribution System","When the System Fails","The Compensation Chain","Measuring Failure","Redistributing Load","The Balanced Body"],
+  asymmetry:["The Body That Leans","How Asymmetry Develops","What You Can't See","The Compounding Effect","Assessment","Correction","The Symmetrical Goal"],
+  motor:["The Nervous System's Role","Strength Without Coordination","Pattern Recognition","Reactive vs. Proactive Control","Training the Controller","Integration","Precision"],
+  debt:["The Invoice","How Debt Accumulates","The 40 Threshold","Common Debts","Reading the Balance Sheet","Debt Restructuring","Zero Balance"],
+  compensation:["The Body's Workaround","Why Compensation Is Brilliant","When Brilliance Becomes a Problem","Common Patterns","Pattern Recognition","Breaking the Pattern","The New Normal"],
+  biomotor:["Reading the System","Bone Structure as Blueprint","Muscular Architecture","The Nerve Network","Where They Intersect","Clinical Application","The Configuration Diagnosis"],
+  transition:["The Threshold","What Changes (And Why)","The Performance Paradox","Movement Debt Surfaces","New Requirements","The Adapted Approach","Your Strongest Decade"]
+};
+
+const FORMAT_CFG = {deep:{count:7,label:'DEEP DIVE',words:'200-400'},quick:{count:4,label:'QUICK READ',words:'100-150'},social:{count:5,label:'SOCIAL SERIES',words:'80-120 optimized for Instagram carousel'}};
+
+let selectedTopic = null, selectedFormat = 'deep';
+
+// Render topic cards
+const grid = document.getElementById('topicGrid');
+TOPICS.forEach(t => {
+  const d = document.createElement('div');
+  d.className = 'topic-card';
+  d.dataset.id = t.id;
+  d.innerHTML = `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">${t.icon}</svg><div class="name">${t.name}</div><div class="desc">${t.desc}</div>`;
+  d.onclick = () => { document.querySelectorAll('.topic-card').forEach(c=>c.classList.remove('selected')); d.classList.add('selected'); selectedTopic=t.id; document.getElementById('genBtn').disabled=false; };
+  grid.appendChild(d);
+});
+
+// Format toggles
+document.querySelectorAll('#formatGroup .toggle-btn').forEach(b => {
+  b.onclick = () => { document.querySelectorAll('#formatGroup .toggle-btn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); selectedFormat=b.dataset.val; };
+});
+
+// Generate
+document.getElementById('genBtn').onclick = generate;
+
+async function generate() {
+  const topic = TOPICS.find(t=>t.id===selectedTopic);
+  const fmt = FORMAT_CFG[selectedFormat];
+  const audience = document.querySelector('input[name="audience"]:checked').value;
+  const audienceMap = {general:'the general public — intelligent adults curious about their bodies',clients:'intermediate fitness clients who understand basic anatomy',professionals:'clinical professionals and advanced practitioners'};
+  const panels = PANELS[selectedTopic].slice(0, fmt.count);
+
+  // Show progress
+  const prog = document.getElementById('progress');
+  const fill = document.getElementById('progressFill');
+  const label = document.getElementById('progressLabel');
+  prog.classList.add('active');
+  document.getElementById('genBtn').disabled = true;
+  document.getElementById('episodeWrap').classList.add('hidden');
+
+  const stages = ['READING THE BODY...','ANALYZING PATTERNS...','ASSEMBLING EPISODE...'];
+  let si=0;
+  fill.style.width='10%'; label.textContent=stages[0];
+  const iv = setInterval(()=>{ si++; if(si<stages.length){fill.style.width=(10+si*30)+'%';label.textContent=stages[si];} },2500);
+
+  try {
+    const prompt = `Generate content for a ${fmt.label} educational episode on "${topic.name}" for ${audienceMap[audience]}. Write content for each of the following ${panels.length} panels. Each panel should have ${fmt.words} words of flowing prose. Return ONLY a JSON array with objects containing keys: panel_number (int), panel_title (string), content (string), pull_quote (a single memorable sentence), key_principle (the one-sentence takeaway). Panels: ${panels.map((p,i)=>`${i+1}. "${p}"`).join(', ')}`;
+
+    const res = await fetch('https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        contents:[{parts:[{text:prompt}]}],
+        system_instruction:{parts:[{text:"You are Yoby Étienne, MS, MATcs — Exercise Scientist and founder of OAHM in West Hollywood. You specialize in bio-motor configuration, allostasis, force management, and movement precision for high-performing men 40+. Your voice is clinical but warm, precise but never cold. You use strong declarative sentences. You treat the reader as an intelligent adult who has tried conventional approaches and found them insufficient. Write each panel as a complete educational section — not a list of bullet points but flowing, authoritative prose. The writing should feel like Nature Medicine meets a great essay writer. Return ONLY valid JSON — no markdown fences, no extra text."}]}
+      })
+    });
+
+    clearInterval(iv);
+    fill.style.width='90%'; label.textContent='PARSING RESPONSE...';
+
+    const data = await res.json();
+    let text = '';
+    if(data.candidates && data.candidates[0]) text = data.candidates[0].content.parts[0].text;
+    else if(data.text) text = data.text;
+    else text = JSON.stringify(data);
+
+    let panelsData;
+    try { panelsData = JSON.parse(text); } catch(e) {
+      const m = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if(m) try { panelsData = JSON.parse(m[1]); } catch(e2) { panelsData = null; }
+    }
+
+    fill.style.width='100%'; label.textContent='DONE';
+    setTimeout(()=>{ prog.classList.remove('active'); }, 800);
+
+    renderEpisode(topic, panelsData, text, panels);
+    // Save to session
+    sessionStorage.setItem('oahm_episode', JSON.stringify({topic,panelsData,rawText:text,panels,format:selectedFormat,audience}));
+
+  } catch(err) {
+    clearInterval(iv);
+    fill.style.width='100%'; label.textContent='ERROR — ' + err.message;
+    document.getElementById('genBtn').disabled = false;
+  }
+}
+
+let episodeCount = parseInt(sessionStorage.getItem('oahm_ep_count')||'0') + 1;
+sessionStorage.setItem('oahm_ep_count', episodeCount);
+
+function renderEpisode(topic, panelsData, rawText, panelTitles) {
+  const wrap = document.getElementById('episodeWrap');
+  wrap.classList.remove('hidden');
+  const date = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+  let html = `<div class="episode-header"><div class="ep-label">MOVEMENT INTELLIGENCE EPISODE ${episodeCount}</div><h2>${topic.name}</h2><div class="meta">${date} · By Yoby Étienne, MS, MATcs · OAHM</div></div>`;
+
+  if(!panelsData) {
+    html += `<div class="panel visible"><div class="content">${rawText.replace(/\n/g,'<br>')}</div></div>`;
+  } else {
+    panelsData.forEach((p, i) => {
+      const visualType = i % 4;
+      let visual = '';
+      if(visualType === 0 && p.pull_quote) {
+        visual = `<div class="pull-quote">"${p.pull_quote}"</div>`;
+      } else if(visualType === 1 && p.key_principle) {
+        visual = `<div class="principle-card"><div class="label">KEY PRINCIPLE</div><p>${p.key_principle}</p></div>`;
+      } else if(visualType === 2) {
+        const bars = [{l:'Impact',w:85},{l:'Prevalence',w:70},{l:'Reversibility',w:55}];
+        visual = `<div class="data-viz">${bars.map(b=>`<div class="data-bar"><span class="bar-label">${b.l}</span><div class="bar" style="width:${b.w}%"></div></div>`).join('')}</div>`;
+      } else if(visualType === 3) {
+        visual = `<div class="svg-diagram"><svg viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="20" fill="none" stroke="#00D4FF" stroke-width="1" opacity=".5"/><circle cx="100" cy="40" r="25" fill="none" stroke="#C9A84C" stroke-width="1" opacity=".5"/><circle cx="160" cy="40" r="18" fill="none" stroke="#00D4FF" stroke-width="1" opacity=".5"/><line x1="60" y1="40" x2="75" y2="40" stroke="#333" stroke-width="1"/><line x1="125" y1="40" x2="142" y2="40" stroke="#333" stroke-width="1"/></svg></div>`;
+      }
+      html += `<div class="panel" style="transition-delay:${i*0.1}s"><div class="panel-num">PANEL ${p.panel_number||i+1}</div><h3>${p.panel_title||panelTitles[i]||''}</h3><div class="content">${p.content||''}</div>${visual}</div>`;
+    });
+  }
+
+  // Share buttons
+  html += `<div class="share-row"><button class="share-btn" onclick="copyNewsletter()">COPY AS NEWSLETTER</button><button class="share-btn" onclick="copyCarousel()">INSTAGRAM CAROUSEL TEXT</button><button class="share-btn" onclick="copyLink()">SHARE LINK</button></div>`;
+
+  wrap.innerHTML = html;
+  // Animate panels in
+  requestAnimationFrame(()=>{setTimeout(()=>{wrap.querySelectorAll('.panel').forEach(p=>p.classList.add('visible'));},50);});
+  wrap.scrollIntoView({behavior:'smooth'});
+}
+
+function getEpisodeData(){ try{return JSON.parse(sessionStorage.getItem('oahm_episode'));}catch(e){return null;} }
+
+window.copyNewsletter = function(){
+  const d=getEpisodeData(); if(!d||!d.panelsData)return;
+  const txt = `MOVEMENT INTELLIGENCE EPISODE ${episodeCount}: ${d.topic.name}\nBy Yoby Étienne, MS, MATcs · OAHM\n\n` + d.panelsData.map(p=>`${p.panel_title}\n${'—'.repeat(30)}\n${p.content}\n\n💡 ${p.key_principle}\n`).join('\n');
+  navigator.clipboard.writeText(txt).then(()=>flashBtn(0));
+};
+window.copyCarousel = function(){
+  const d=getEpisodeData(); if(!d||!d.panelsData)return;
+  const txt = d.panelsData.map((p,i)=>`--- SLIDE ${i+1} ---\n${p.panel_title}\n\n${p.content}\n\n[${p.content.length} chars]`).join('\n\n');
+  navigator.clipboard.writeText(txt).then(()=>flashBtn(1));
+};
+window.copyLink = function(){
+  const d=getEpisodeData();
+  const url = location.href.split('?')[0] + '?topic=' + (d?d.topic.id:'');
+  navigator.clipboard.writeText(url).then(()=>flashBtn(2));
+};
+function flashBtn(i){const b=document.querySelectorAll('.share-btn')[i];if(b){b.classList.add('copied');b.textContent='COPIED ✓';setTimeout(()=>{b.classList.remove('copied');b.textContent=['COPY AS NEWSLETTER','INSTAGRAM CAROUSEL TEXT','SHARE LINK'][i];},1500);}}
+
+// Restore from session
+(function(){
+  const saved = getEpisodeData();
+  if(saved && saved.panelsData) renderEpisode(saved.topic, saved.panelsData, saved.rawText, saved.panels);
+})();
+
+// Scroll reveal observer
+const obs = new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.1});
+new MutationObserver(()=>{document.querySelectorAll('.panel:not(.visible)').forEach(p=>obs.observe(p));}).observe(document.body,{childList:true,subtree:true});
+</script>
+</body>
+</html>

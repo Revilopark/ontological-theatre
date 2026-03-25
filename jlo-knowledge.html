@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JLo Knowledge Graph — Inkwell Awareness Network</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+:root{
+  --bg:#06040C;--bg2:#0D0818;--bg3:#160D24;
+  --gold:#C9943A;--goldb:#F5C842;--red:#C4143C;--cream:#F5ECD7;
+  --cyan:#00E5FF;--teal:#00BCD4;
+  --text:#D4C5A0;--muted:#8A7A5A;
+  --border:rgba(201,148,58,0.2);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:hidden}
+
+/* Top bar */
+#topbar{position:fixed;top:0;left:0;right:0;height:56px;background:rgba(6,4,12,0.92);border-bottom:1px solid var(--border);backdrop-filter:blur(20px);z-index:100;display:flex;align-items:center;padding:0 20px;gap:16px}
+#logo{font-size:15px;font-weight:700;color:var(--gold);letter-spacing:2px}
+#subtitle{font-size:11px;color:var(--muted);letter-spacing:1px}
+#search{flex:1;max-width:300px;margin-left:auto;background:rgba(201,148,58,0.08);border:1px solid var(--border);border-radius:20px;padding:7px 16px;color:var(--cream);font-size:12px;outline:none}
+#search::placeholder{color:var(--muted)}
+#node-count{font-size:11px;color:var(--muted);white-space:nowrap}
+
+/* Filter pills */
+#filters{position:fixed;top:64px;left:20px;z-index:90;display:flex;flex-wrap:wrap;gap:6px;max-width:420px}
+.pill{padding:4px 12px;border-radius:12px;font-size:10px;font-weight:600;letter-spacing:1px;cursor:pointer;border:1px solid;transition:.2s;opacity:0.55}
+.pill.active{opacity:1}
+.pill:hover{opacity:0.85}
+
+/* Main canvas */
+#graph-canvas{position:fixed;inset:0;top:56px}
+svg{width:100%;height:100%}
+
+/* Detail panel */
+#detail{position:fixed;right:0;top:56px;bottom:0;width:320px;background:rgba(13,8,24,0.97);border-left:1px solid var(--border);backdrop-filter:blur(20px);transform:translateX(100%);transition:transform .3s;overflow-y:auto;z-index:80}
+#detail.open{transform:translateX(0)}
+#detail-close{position:absolute;top:16px;right:16px;background:none;border:1px solid var(--border);border-radius:50%;width:28px;height:28px;color:var(--muted);cursor:pointer;font-size:14px}
+#detail-type{font-size:9px;letter-spacing:3px;color:var(--muted);margin:20px 20px 4px;text-transform:uppercase}
+#detail-name{font-size:20px;font-weight:700;color:var(--cream);padding:0 20px;line-height:1.3}
+#detail-body{padding:16px 20px;font-size:13px;line-height:1.7;color:var(--text)}
+.detail-field{margin-bottom:12px}
+.detail-label{font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:3px;text-transform:uppercase}
+.detail-val{font-size:13px;color:var(--cream)}
+.detail-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;margin-right:4px;margin-bottom:4px}
+#connections-list{padding:0 20px 20px}
+.conn-item{padding:8px 12px;background:rgba(201,148,58,0.06);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:.15s}
+.conn-item:hover{background:rgba(201,148,58,0.12)}
+.conn-rel{font-size:9px;letter-spacing:1px;color:var(--muted)}
+.conn-name{font-size:13px;color:var(--cream);margin-top:2px}
+
+/* Legend */
+#legend{position:fixed;bottom:20px;left:20px;z-index:90;background:rgba(13,8,24,0.88);border:1px solid var(--border);border-radius:12px;padding:12px 16px;backdrop-filter:blur(12px)}
+.leg-item{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);margin-bottom:6px}
+.leg-item:last-child{margin-bottom:0}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* Tooltip */
+#tooltip{position:fixed;background:rgba(13,8,24,0.95);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--cream);pointer-events:none;opacity:0;transition:opacity .15s;z-index:200;max-width:200px}
+
+/* Loading */
+#loading{position:fixed;inset:0;top:56px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:500;background:var(--bg)}
+.spinner{width:40px;height:40px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading-text{font-size:12px;color:var(--muted);letter-spacing:2px}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div>
+    <div id="logo">JLo · KNOWLEDGE GRAPH</div>
+    <div id="subtitle">Inkwell Awareness Network · ClawdBot Neural Access</div>
+  </div>
+  <input id="search" type="text" placeholder="Search nodes..." oninput="filterSearch(this.value)">
+  <div id="node-count">Loading...</div>
+</div>
+
+<div id="filters"></div>
+
+<div id="graph-canvas"><svg id="svg"></svg></div>
+
+<div id="detail">
+  <button id="detail-close" onclick="closeDetail()">×</button>
+  <div id="detail-type"></div>
+  <div id="detail-name"></div>
+  <div id="detail-body"></div>
+  <div id="connections-list"></div>
+</div>
+
+<div id="legend"></div>
+<div id="tooltip"></div>
+<div id="loading"><div class="spinner"></div><div id="loading-text">QUERYING NEURAL NETWORK</div></div>
+
+<script>
+const NEO4J = 'https://c779e832.databases.neo4j.io/db/neo4j/query/v2';
+const AUTH  = 'Basic bmVvNGo6WlhPdXB5SUx4RktsTG16SHNtSEk5ckNtQzhlMmRYVGZ5UkQ3U29tR2hQdw==';
+
+const NODE_TYPES = {
+  JLoEra:              { color:'#C9943A', label:'ERA',          size:22 },
+  AudienceSegment:     { color:'#C4143C', label:'AUDIENCE',     size:16 },
+  CulturalThread:      { color:'#00BCD4', label:'CULTURE',      size:14 },
+  ArtistInfluence:     { color:'#9C27B0', label:'ARTIST',       size:14 },
+  StrategicOpportunity:{ color:'#F5C842', label:'STRATEGY',     size:18 },
+  ReputationArc:       { color:'#607D8B', label:'REPUTATION',   size:15 },
+  FanStory:            { color:'#E91E63', label:'FAN STORY',    size:13 },
+  IAMStudent:          { color:'#00E5FF', label:'STUDENT',      size:10 },
+  TrinityNode:         { color:'#4FC3F7', label:'TRINITY',      size:8  },
+  default:             { color:'#546E7A', label:'NODE',         size:10 },
+};
+
+const EDGE_COLORS = {
+  RESONATED_WITH:'rgba(196,20,60,0.5)',
+  GENERATED:'rgba(0,188,212,0.5)',
+  INFLUENCED_BY:'rgba(156,39,176,0.5)',
+  LEADS_TO:'rgba(245,200,66,0.6)',
+  REQUIRES:'rgba(245,200,66,0.4)',
+  REPRESENTS:'rgba(233,30,99,0.5)',
+  CONNECTS_TO:'rgba(201,148,58,0.4)',
+  PARTNERS_WITH:'rgba(201,148,58,0.6)',
+  default:'rgba(201,148,58,0.2)',
+};
+
+let allNodes = [], allLinks = [], simulation, activeFilters = new Set(), searchTerm = '';
+let nodeById = {};
+
+async function query(stmt, params={}) {
+  const r = await fetch(NEO4J, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':AUTH},
+    body: JSON.stringify({statement:stmt, parameters:params})
+  });
+  return r.json();
+}
+
+async function loadGraph() {
+  document.getElementById('loading-text').textContent = 'LOADING JLO NEURAL MAP';
+
+  // Load all JLo-specific nodes
+  const jloLabels = ['JLoEra','AudienceSegment','CulturalThread','ArtistInfluence','StrategicOpportunity','ReputationArc','FanStory'];
+  const nodeLabelFilter = jloLabels.map(l => `n:${l}`).join(' OR ');
+
+  const nd = await query(`
+    MATCH (n) WHERE ${nodeLabelFilter}
+    RETURN id(n) as id, labels(n) as labels, properties(n) as props
+  `);
+
+  const ld = await query(`
+    MATCH (a)-[r]->(b)
+    WHERE (${jloLabels.map(l=>`a:${l}`).join(' OR ')}) AND (${jloLabels.map(l=>`b:${l}`).join(' OR ')})
+    RETURN id(a) as source, id(b) as target, type(r) as rel, properties(r) as props
+  `);
+
+  allNodes = (nd.data?.values || []).map(([id, labels, props]) => ({
+    id, labels, props,
+    type: labels.find(l => NODE_TYPES[l]) || labels[0] || 'default',
+    name: props.name || props.id || `Node ${id}`,
+  }));
+  nodeById = Object.fromEntries(allNodes.map(n => [n.id, n]));
+
+  allLinks = (ld.data?.values || []).filter(([s,t]) => nodeById[s] && nodeById[t]).map(([source,target,rel,props]) => ({
+    source, target, rel, props
+  }));
+
+  buildFilters();
+  renderGraph();
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('node-count').textContent = `${allNodes.length} nodes · ${allLinks.length} edges`;
+}
+
+function getNodeConfig(node) {
+  return NODE_TYPES[node.type] || NODE_TYPES.default;
+}
+
+function buildFilters() {
+  const types = [...new Set(allNodes.map(n => n.type))];
+  const container = document.getElementById('filters');
+  const legend = document.getElementById('legend');
+  types.forEach(type => {
+    const cfg = getNodeConfig({type});
+    activeFilters.add(type);
+    const pill = document.createElement('div');
+    pill.className = 'pill active';
+    pill.textContent = cfg.label;
+    pill.style.color = cfg.color;
+    pill.style.borderColor = cfg.color + '88';
+    pill.style.background = cfg.color + '15';
+    pill.dataset.type = type;
+    pill.onclick = () => toggleFilter(type, pill);
+    container.appendChild(pill);
+
+    const li = document.createElement('div');
+    li.className = 'leg-item';
+    li.innerHTML = `<div class="leg-dot" style="background:${cfg.color}"></div><span>${cfg.label}</span>`;
+    legend.appendChild(li);
+  });
+}
+
+function toggleFilter(type, pill) {
+  if (activeFilters.has(type)) { activeFilters.delete(type); pill.classList.remove('active'); }
+  else { activeFilters.add(type); pill.classList.add('active'); }
+  updateVisibility();
+}
+
+function filterSearch(term) {
+  searchTerm = term.toLowerCase();
+  updateVisibility();
+}
+
+function updateVisibility() {
+  svg.selectAll('.node-group').style('opacity', d => {
+    const matchesFilter = activeFilters.has(d.type);
+    const matchesSearch = !searchTerm || d.name.toLowerCase().includes(searchTerm) || (d.props.desc||'').toLowerCase().includes(searchTerm);
+    return (matchesFilter && matchesSearch) ? 1 : 0.05;
+  });
+  svg.selectAll('.link').style('opacity', d => {
+    const sn = nodeById[typeof d.source === 'object' ? d.source.id : d.source];
+    const tn = nodeById[typeof d.target === 'object' ? d.target.id : d.target];
+    if (!sn || !tn) return 0;
+    return (activeFilters.has(sn.type) && activeFilters.has(tn.type) && !searchTerm) ? 0.6 : 0.03;
+  });
+}
+
+let svg, zoomG;
+function renderGraph() {
+  const el = document.getElementById('svg');
+  const W = el.clientWidth, H = el.clientHeight;
+  svg = d3.select('#svg');
+  svg.selectAll('*').remove();
+
+  const zoom = d3.zoom().scaleExtent([0.1,4]).on('zoom', e => zoomG.attr('transform', e.transform));
+  svg.call(zoom);
+  zoomG = svg.append('g');
+
+  // Arrow markers
+  const defs = svg.append('defs');
+  Object.entries(EDGE_COLORS).forEach(([rel, color]) => {
+    defs.append('marker').attr('id',`arrow-${rel}`).attr('viewBox','0 -5 10 10').attr('refX',20).attr('refY',0).attr('markerWidth',6).attr('markerHeight',6).attr('orient','auto')
+      .append('path').attr('d','M0,-5L10,0L0,5').attr('fill',color);
+  });
+
+  simulation = d3.forceSimulation(allNodes)
+    .force('link', d3.forceLink(allLinks).id(d=>d.id).distance(d => {
+      const sn = nodeById[typeof d.source==='object'?d.source.id:d.source];
+      const tn = nodeById[typeof d.target==='object'?d.target.id:d.target];
+      const baseSize = ((getNodeConfig(sn||{type:'default'}).size||10) + (getNodeConfig(tn||{type:'default'}).size||10)) * 3;
+      return baseSize + 40;
+    }))
+    .force('charge', d3.forceManyBody().strength(d => -getNodeConfig(d).size * 25))
+    .force('center', d3.forceCenter(W/2, H/2))
+    .force('collision', d3.forceCollide(d => getNodeConfig(d).size + 8));
+
+  // Links
+  const link = zoomG.selectAll('.link').data(allLinks).enter().append('line')
+    .attr('class','link')
+    .attr('stroke', d => EDGE_COLORS[d.rel] || EDGE_COLORS.default)
+    .attr('stroke-width', d => d.props?.strength ? Math.max(1, d.props.strength/4) : 1.5)
+    .attr('opacity',0.6)
+    .attr('marker-end', d => `url(#arrow-${d.rel in EDGE_COLORS ? d.rel : 'default'})`);
+
+  // Node groups
+  const node = zoomG.selectAll('.node-group').data(allNodes).enter().append('g')
+    .attr('class','node-group')
+    .style('cursor','pointer')
+    .call(d3.drag()
+      .on('start', (e,d) => { if(!e.active) simulation.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+      .on('drag', (e,d) => { d.fx=e.x; d.fy=e.y; })
+      .on('end', (e,d) => { if(!e.active) simulation.alphaTarget(0); d.fx=null; d.fy=null; }))
+    .on('click', (e,d) => { e.stopPropagation(); showDetail(d); })
+    .on('mouseover', (e,d) => showTooltip(e, d))
+    .on('mouseout', hideTooltip);
+
+  // Glow filter
+  const filter = defs.append('filter').attr('id','glow');
+  filter.append('feGaussianBlur').attr('stdDeviation','3').attr('result','blur');
+  const merge = filter.append('feMerge');
+  merge.append('feMergeNode').attr('in','blur');
+  merge.append('feMergeNode').attr('in','SourceGraphic');
+
+  // Node circles
+  node.append('circle')
+    .attr('r', d => getNodeConfig(d).size)
+    .attr('fill', d => getNodeConfig(d).color + '22')
+    .attr('stroke', d => getNodeConfig(d).color)
+    .attr('stroke-width', d => d.type === 'JLoEra' ? 2.5 : 1.5)
+    .attr('filter', d => d.type === 'JLoEra' || d.type === 'StrategicOpportunity' ? 'url(#glow)' : null);
+
+  // Node labels
+  node.filter(d => getNodeConfig(d).size >= 14).append('text')
+    .attr('text-anchor','middle').attr('dy','0.35em')
+    .attr('font-size', d => Math.min(11, getNodeConfig(d).size * 0.55))
+    .attr('fill', d => getNodeConfig(d).color)
+    .attr('font-weight','600')
+    .attr('pointer-events','none')
+    .text(d => d.name.length > 16 ? d.name.slice(0,14)+'…' : d.name);
+
+  // Type badge
+  node.filter(d => getNodeConfig(d).size >= 16).append('text')
+    .attr('text-anchor','middle').attr('dy', d => getNodeConfig(d).size + 10)
+    .attr('font-size',7).attr('fill', d => getNodeConfig(d).color + '99')
+    .attr('letter-spacing','1').attr('pointer-events','none')
+    .text(d => getNodeConfig(d).label);
+
+  simulation.on('tick', () => {
+    link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+    node.attr('transform',d=>`translate(${d.x},${d.y})`);
+  });
+
+  svg.on('click', closeDetail);
+
+  // Initial center zoom
+  setTimeout(() => {
+    svg.transition().duration(1200).call(zoom.transform, d3.zoomIdentity.translate(W/2, H/2).scale(0.85).translate(-W/2,-H/2));
+  }, 1500);
+}
+
+const tooltip = document.getElementById('tooltip');
+function showTooltip(e, d) {
+  const cfg = getNodeConfig(d);
+  tooltip.innerHTML = `<strong style="color:${cfg.color}">${d.name}</strong><br><span style="font-size:10px;color:#888">${cfg.label}</span>${d.props.keyword ? `<br><span style="color:#C9943A;font-size:10px">${d.props.keyword}</span>` : ''}`;
+  tooltip.style.opacity = 1;
+  tooltip.style.left = (e.clientX + 12) + 'px';
+  tooltip.style.top = (e.clientY - 8) + 'px';
+}
+function hideTooltip() { tooltip.style.opacity = 0; }
+
+async function showDetail(node) {
+  const cfg = getNodeConfig(node);
+  document.getElementById('detail-type').textContent = cfg.label;
+  document.getElementById('detail-type').style.color = cfg.color;
+  document.getElementById('detail-name').textContent = node.name;
+  document.getElementById('detail-name').style.color = cfg.color;
+
+  let body = '';
+  const p = node.props;
+
+  if(p.years || p.period) body += `<div class="detail-field"><div class="detail-label">Period</div><div class="detail-val">${p.years || p.period}</div></div>`;
+  if(p.anthem) body += `<div class="detail-field"><div class="detail-label">Anthem</div><div class="detail-val">${p.anthem}</div></div>`;
+  if(p.keyword) body += `<div class="detail-field"><div class="detail-label">Keyword</div><div class="detail-val"><span class="detail-badge" style="background:${cfg.color}22;color:${cfg.color};border:1px solid ${cfg.color}44">${p.keyword}</span></div></div>`;
+  if(p.desc) body += `<div class="detail-field"><div class="detail-label">Context</div><div class="detail-val">${p.desc}</div></div>`;
+  if(p.size) body += `<div class="detail-field"><div class="detail-label">Audience Size</div><div class="detail-val">${p.size}</div></div>`;
+  if(p.emotional_core) body += `<div class="detail-field"><div class="detail-label">Emotional Core</div><div class="detail-val">${p.emotional_core}</div></div>`;
+  if(p.revenue_model) body += `<div class="detail-field"><div class="detail-label">Revenue Model</div><div class="detail-val">${p.revenue_model}</div></div>`;
+  if(p.partners) body += `<div class="detail-field"><div class="detail-label">Partners</div><div class="detail-val">${p.partners}</div></div>`;
+  if(p.loyalty) body += `<div class="detail-field"><div class="detail-label">Loyalty</div><div class="detail-val"><span class="detail-badge" style="background:${p.loyalty==='ABSOLUTE'?'#C4143C':'#C9943A'}22;color:${p.loyalty==='ABSOLUTE'?'#C4143C':'#C9943A'};border:1px solid">${p.loyalty}</span></div></div>`;
+  if(p.reputation_score !== undefined) {
+    const score = p.reputation_score;
+    const color = score >= 8 ? '#4CAF50' : score >= 5 ? '#C9943A' : '#C4143C';
+    body += `<div class="detail-field"><div class="detail-label">Reputation Score</div><div class="detail-val" style="color:${color}">${score}/10</div></div>`;
+  }
+  if(p.significance) body += `<div class="detail-field"><div class="detail-label">Cultural Weight</div><div class="detail-val">${'█'.repeat(Math.round(p.significance/2))}${'░'.repeat(5-Math.round(p.significance/2))} ${p.significance}/10</div></div>`;
+
+  document.getElementById('detail-body').innerHTML = body;
+
+  // Connections
+  const connected = allLinks.filter(l => {
+    const sid = typeof l.source==='object' ? l.source.id : l.source;
+    const tid = typeof l.target==='object' ? l.target.id : l.target;
+    return sid === node.id || tid === node.id;
+  });
+
+  let connHtml = connected.length ? '<div class="detail-label" style="padding:0 0 8px">Connected Nodes</div>' : '';
+  connected.forEach(l => {
+    const sid = typeof l.source==='object' ? l.source.id : l.source;
+    const tid = typeof l.target==='object' ? l.target.id : l.target;
+    const other = nodeById[sid === node.id ? tid : sid];
+    if (!other) return;
+    const isOut = sid === node.id;
+    const ocfg = getNodeConfig(other);
+    connHtml += `<div class="conn-item" onclick="showDetail(nodeById[${other.id}])">
+      <div class="conn-rel" style="color:${cfg.color}88">${isOut ? '→' : '←'} ${l.rel.replace(/_/g,' ')}</div>
+      <div class="conn-name" style="color:${ocfg.color}">${other.name}</div>
+    </div>`;
+  });
+  document.getElementById('connections-list').innerHTML = connHtml;
+
+  document.getElementById('detail').classList.add('open');
+
+  // Highlight in graph
+  svg.selectAll('.node-group').style('opacity', d => d.id === node.id ? 1 : 0.2);
+  svg.selectAll('.link').style('opacity', d => {
+    const sid = typeof d.source==='object' ? d.source.id : d.source;
+    const tid = typeof d.target==='object' ? d.target.id : d.target;
+    return (sid === node.id || tid === node.id) ? 0.9 : 0.05;
+  });
+  const connectedIds = new Set(connected.flatMap(l => {
+    const sid = typeof l.source==='object' ? l.source.id : l.source;
+    const tid = typeof l.target==='object' ? l.target.id : l.target;
+    return [sid, tid];
+  }));
+  svg.selectAll('.node-group').style('opacity', d => (d.id === node.id || connectedIds.has(d.id)) ? 1 : 0.15);
+}
+
+function closeDetail() {
+  document.getElementById('detail').classList.remove('open');
+  svg.selectAll('.node-group').style('opacity',1);
+  svg.selectAll('.link').style('opacity',0.6);
+}
+
+// Bot API access — expose to ClawdBot network
+window.JLoGraph = {
+  query: async (cypher, params) => {
+    const r = await query(cypher, params);
+    return r.data?.values || [];
+  },
+  findByEra: era => allNodes.filter(n => n.props.connection_era === era || n.props.id === era),
+  findOpportunities: () => allNodes.filter(n => n.type === 'StrategicOpportunity'),
+  findAudience: () => allNodes.filter(n => n.type === 'AudienceSegment'),
+  getConnections: nodeId => allLinks.filter(l => {
+    const s = typeof l.source==='object'?l.source.id:l.source;
+    const t = typeof l.target==='object'?l.target.id:l.target;
+    return s===nodeId || t===nodeId;
+  }),
+  allNodes: () => allNodes,
+  nodeById: id => nodeById[id],
+};
+
+loadGraph();
+</script>
+</body>
+</html>

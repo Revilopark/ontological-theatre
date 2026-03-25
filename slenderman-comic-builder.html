@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>THE OCCURRENCE — A Slenderman Comic</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Creepster&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#04040a;--s1:#0a0a12;--s2:#12121c;--s3:#1a1a28;
+  --red:#8b0000;--red2:#cc1100;--green:#00ff41;--greeng:rgba(0,255,65,.08);
+  --text:#e8e4dc;--muted:#5a5560;--border:#1a1a28;
+  --serif:'Playfair Display',Georgia,serif;
+  --sans:'DM Sans',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --horror:'Special Elite',monospace;
+  --r:6px;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--sans)}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--s3);border-radius:2px}
+
+/* ── SCANLINE OVERLAY ── */
+body::after{
+  content:'';position:fixed;inset:0;z-index:99999;pointer-events:none;
+  background:repeating-linear-gradient(
+    0deg,
+    rgba(0,0,0,0) 0px,
+    rgba(0,0,0,0) 2px,
+    rgba(0,0,0,.08) 2px,
+    rgba(0,0,0,.08) 4px
+  );
+}
+
+/* ── SCREEN FLICKER ── */
+@keyframes flicker{
+  0%,95%,100%{opacity:1}
+  96%{opacity:.92}
+  97%{opacity:.98}
+  98%{opacity:.88}
+  99%{opacity:1}
+}
+body{animation:flicker 8s infinite}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex-direction:column;height:100%}
+.topbar{height:48px;background:rgba(4,4,10,.95);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;
+  padding:0 16px;gap:12px;flex-shrink:0;z-index:100}
+.logo{font-family:'Creepster',cursive;font-size:1.2rem;font-weight:400;
+  color:var(--red);letter-spacing:.08em;text-shadow:0 0 12px rgba(139,0,0,.5)}
+.logo em{font-style:italic;font-weight:400;color:var(--muted);font-size:.75rem;
+  font-family:var(--sans);letter-spacing:0}
+.top-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.tbtn{padding:.3rem .7rem;border-radius:4px;border:1px solid var(--border);
+  background:var(--s1);color:var(--muted);font-size:.7rem;font-weight:500;
+  cursor:pointer;transition:all .2s;font-family:var(--sans)}
+.tbtn:hover{border-color:var(--red);color:var(--red)}
+.tbtn.red{background:var(--red);color:#fff;border-color:var(--red);font-weight:700}
+.tbtn.red:hover{opacity:.9;box-shadow:0 0 12px rgba(139,0,0,.4)}
+.tbtn:disabled{opacity:.4;cursor:default}
+.ep-tag{font-family:var(--mono);font-size:.6rem;color:var(--green);
+  padding:.15rem .4rem;background:var(--greeng);border:1px solid rgba(0,255,65,.2);border-radius:3px}
+
+.workspace{flex:1;display:flex;overflow:hidden}
+
+/* ── EPISODE SELECTOR ── */
+.sidebar{width:260px;background:var(--s1);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.sb-hdr{padding:12px 14px;border-bottom:1px solid var(--border);
+  font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.15em}
+.sb-scroll{flex:1;overflow-y:auto;padding:8px}
+.ep-card{padding:12px;border-radius:var(--r);border:1px solid transparent;
+  cursor:pointer;transition:all .2s;margin-bottom:6px}
+.ep-card:hover{background:var(--s2);border-color:var(--border)}
+.ep-card.active{background:rgba(139,0,0,.08);border-color:rgba(139,0,0,.35)}
+.ep-era{font-size:.55rem;font-weight:700;color:var(--green);letter-spacing:.15em;text-transform:uppercase;margin-bottom:3px;font-family:var(--mono)}
+.ep-title{font-family:var(--horror);font-size:.95rem;font-weight:400;color:var(--text);margin-bottom:3px}
+.ep-sub{font-size:.68rem;color:var(--muted);line-height:1.5}
+.ep-meta{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.ep-chip{font-size:.55rem;padding:.15rem .4rem;background:var(--s2);border:1px solid var(--border);
+  border-radius:3px;color:var(--muted)}
+
+/* panel list under selected ep */
+.panel-list{border-top:1px solid var(--border);padding:8px;flex-shrink:0;max-height:240px;overflow-y:auto}
+.pl-item{display:flex;gap:8px;align-items:center;padding:5px 8px;border-radius:4px;
+  cursor:pointer;font-size:.7rem;color:var(--muted);transition:all .15s;margin-bottom:2px}
+.pl-item:hover{background:var(--s2);color:var(--text)}
+.pl-item.active{color:var(--red);background:rgba(139,0,0,.08)}
+.pl-item.done{color:var(--text)}
+.pl-item.done::before{content:'✓';color:var(--green);font-size:.6rem;margin-right:2px}
+.pl-thumb{width:32px;height:24px;border-radius:3px;overflow:hidden;background:var(--s3);flex-shrink:0}
+.pl-thumb img{width:100%;height:100%;object-fit:cover}
+.pl-num{font-family:var(--mono);font-size:.6rem;color:var(--red);width:16px;flex-shrink:0}
+
+/* ── CENTER — PHONE PREVIEW ── */
+.center{flex:1;display:flex;flex-direction:column;align-items:center;
+  background:var(--bg);overflow:hidden;padding:12px 0}
+.gen-bar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;justify-content:center}
+.gen-progress{font-size:.68rem;color:var(--muted);font-family:var(--mono)}
+
+.phone{background:#020208;border-radius:40px;border:3px solid #111118;
+  box-shadow:0 0 0 1px #060610,0 20px 60px rgba(0,0,0,.9),inset 0 0 0 1px rgba(0,255,65,.04);
+  overflow:hidden;position:relative;width:340px;height:640px;flex-shrink:0}
+.phone-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:110px;height:26px;background:#020208;border-radius:0 0 16px 16px;z-index:10}
+.phone-screen{height:100%;overflow-y:scroll;overflow-x:hidden;padding-top:26px;
+  background:#020206;scroll-behavior:smooth;
+  /* greenish tint */
+  box-shadow:inset 0 0 80px rgba(0,255,65,.03)}
+.phone-screen::-webkit-scrollbar{display:none}
+
+/* STRIP PANELS */
+.strip-title{padding:32px 20px 16px;text-align:center}
+.strip-title .st-era{font-size:.55rem;font-weight:700;color:var(--green);
+  letter-spacing:.25em;text-transform:uppercase;margin-bottom:6px;font-family:var(--mono)}
+.strip-title h2{font-family:'Creepster',cursive;font-size:1.4rem;color:var(--red);
+  font-weight:400;line-height:1.3;margin-bottom:6px;text-shadow:0 0 20px rgba(139,0,0,.3)}
+.strip-title .st-sub{font-size:.72rem;color:var(--muted);font-style:italic;
+  font-family:var(--horror)}
+.strip-end{padding:24px 20px 48px;text-align:center}
+.strip-end .se-mark{font-family:var(--horror);font-size:1.2rem;color:var(--red);font-weight:700;margin-bottom:4px}
+.strip-end .se-sub{font-size:.65rem;color:var(--muted)}
+
+.s-panel{width:100%;position:relative;overflow:hidden}
+.s-panel img{width:100%;display:block;filter:contrast(1.1) saturate(.85)}
+.s-panel .s-placeholder{width:100%;display:flex;align-items:center;justify-content:center;
+  background:var(--s2);flex-direction:column;gap:6px;
+  border:1px dashed rgba(139,0,0,.2)}
+.s-panel .s-placeholder .s-ph-num{font-family:var(--mono);font-size:.6rem;color:var(--red)}
+.s-panel .s-placeholder .s-ph-desc{font-size:.65rem;color:var(--muted);text-align:center;
+  padding:0 20px;line-height:1.5}
+.s-panel .gen-spin{position:absolute;inset:0;background:rgba(0,0,0,.8);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;font-size:.65rem;color:var(--muted)}
+
+/* captions */
+.s-caption{position:absolute;bottom:0;left:0;right:0;padding:10px 14px;
+  background:linear-gradient(transparent,rgba(4,4,10,.9));
+  font-family:var(--horror);font-size:.72rem;color:var(--text);
+  line-height:1.6}
+.s-caption.top{bottom:auto;top:0;
+  background:linear-gradient(rgba(4,4,10,.9),transparent)}
+.s-caption .cap-tag{font-size:.5rem;font-weight:700;color:var(--green);
+  letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:3px;font-family:var(--mono)}
+
+.spin{width:20px;height:20px;border:2px solid rgba(139,0,0,.15);
+  border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── RIGHT — EDITOR ── */
+.editor{width:260px;background:var(--s1);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden}
+.ed-hdr{padding:10px 14px;border-bottom:1px solid var(--border);
+  font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.15em}
+.ed-scroll{flex:1;overflow-y:auto;padding:14px}
+.ed-section{margin-bottom:14px}
+.ed-label{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--muted);margin-bottom:5px}
+.ed-ta{width:100%;padding:.55rem .7rem;border-radius:4px;border:1px solid var(--border);
+  background:var(--s2);color:var(--text);font-size:.78rem;font-family:var(--sans);
+  resize:none;line-height:1.6}
+.ed-ta:focus{outline:none;border-color:rgba(139,0,0,.4)}
+.ed-ta::placeholder{color:var(--muted)}
+.ed-small{font-size:.6rem;color:var(--muted);margin-top:3px;font-style:italic;line-height:1.4}
+.gen-one{width:100%;padding:.55rem;border-radius:4px;border:none;
+  background:var(--red);color:#fff;font-size:.78rem;font-weight:700;
+  cursor:pointer;font-family:var(--sans);transition:all .2s;margin-top:4px}
+.gen-one:hover{opacity:.9;box-shadow:0 0 16px rgba(139,0,0,.4)}
+.gen-one:disabled{opacity:.4;cursor:default}
+.gen-one.regen{background:var(--s2);color:var(--red);border:1px solid var(--red)}
+.gen-one.regen:hover{background:rgba(139,0,0,.08)}
+
+.ed-row{display:flex;gap:6px}
+.ed-row .ed-ta{flex:1}
+.char-chips{display:flex;gap:4px;flex-wrap:wrap}
+.char-chip{padding:.2rem .5rem;border-radius:3px;font-size:.6rem;
+  background:rgba(139,0,0,.08);border:1px solid rgba(139,0,0,.25);color:var(--red);
+  cursor:pointer;transition:all .15s}
+.char-chip:hover{background:rgba(139,0,0,.2)}
+
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+  background:var(--s2);border:1px solid var(--border);border-radius:6px;
+  padding:.45rem .9rem;font-size:.72rem;color:var(--text);z-index:99998;
+  pointer-events:none;transition:opacity .3s;white-space:nowrap}
+.toast.ok{border-color:rgba(0,255,65,.4);color:var(--green)}
+.toast.err{border-color:rgba(139,0,0,.4);color:var(--red2)}
+.toast.hide{opacity:0}
+
+/* ── RANDOM GLITCH EFFECT ── */
+@keyframes glitchH{
+  0%{clip-path:inset(40% 0 60% 0);transform:translate(-2px,0)}
+  20%{clip-path:inset(10% 0 85% 0);transform:translate(2px,0)}
+  40%{clip-path:inset(70% 0 5% 0);transform:translate(-1px,0)}
+  60%{clip-path:inset(50% 0 30% 0);transform:translate(1px,0)}
+  80%{clip-path:inset(20% 0 70% 0);transform:translate(-2px,0)}
+  100%{clip-path:inset(0);transform:translate(0)}
+}
+.glitch-active .phone-screen{animation:glitchH .15s steps(3) 1}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="topbar">
+  <div class="logo">THE OCCURRENCE <em>— found footage</em></div>
+  <div class="top-right">
+    <span class="ep-tag" id="genCount">0 / 0 panels</span>
+    <button class="tbtn red" id="genAllBtn" onclick="generateAll()">✦ Generate Episode</button>
+    <button class="tbtn" onclick="exportStrip()">⬇ Export Strip</button>
+  </div>
+</div>
+
+<div class="workspace">
+
+  <!-- SIDEBAR — EPISODES -->
+  <div class="sidebar">
+    <div class="sb-hdr">Case Files</div>
+    <div class="sb-scroll" id="epList"></div>
+    <div class="panel-list" id="panelList"></div>
+  </div>
+
+  <!-- CENTER — PHONE -->
+  <div class="center">
+    <div class="gen-bar">
+      <span class="gen-progress" id="genStatus">Select a case file</span>
+    </div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen" id="phoneScreen"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT — EDITOR -->
+  <div class="editor">
+    <div class="ed-hdr">Panel Editor</div>
+    <div class="ed-scroll" id="edScroll">
+      <div style="padding:30px 0;text-align:center;color:var(--muted);font-size:.78rem;font-family:var(--horror)">
+        Select a panel to edit
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<div class="toast hide" id="toast"></div>
+
+<script>
+const PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app';
+const FAL   = PROXY + '/fal/generate-sync';
+const GEM   = PROXY + '/gemini/generate';
+
+// ── ART STYLE ────────────────────────────────────────────────────────────────
+const STYLE = `found footage horror photography rendered as graphic novel illustration, analog VHS distortion, film grain, high contrast blacks and sickly greens, Pacific Northwest dense forest, Creepypasta atmospheric horror, subjects shown in documentary style as if captured by security cameras or phone cameras, no text no words no speech bubbles no captions, unsettling liminal spaces, fog and mist, tall unnaturally thin faceless figure in dark suit seen partially or in background, professional horror illustration`;
+
+const CHARACTERS = {
+  'Slenderman': 'impossibly tall unnaturally thin figure in black suit, no face just smooth white featureless head, arms too long reaching past knees, standing perfectly still between trees, partially obscured by fog, seen from distance or partially hidden, never fully clear, Slenderman creepypasta',
+  'Margot Delvane': 'woman in her 30s, glasses, messy ponytail, wearing rumpled academic clothes, surrounded by papers and evidence boards, PhD researcher, intense focused eyes, bags under eyes from sleeplessness, Reddit archivist aesthetic',
+  'Jake Torrance': 'burly construction worker in his 40s, hard hat, high-vis vest, weathered face, holding phone with shaking hands, standing at construction site at dusk, anxious fearful expression',
+  'Elena Vasquez': 'young Latina woman, travel photographer, DSLR camera around neck, bohemian clothes, shown in Instagram-style photos that become increasingly disturbing, last seen in forest clearing',
+  'Dreamcatcher_444': 'teenage girl, 16, dyed hair, bedroom with LED lights and posters, filming herself on phone, unaware of what is visible in the window behind her, TikTok creator aesthetic',
+  'Professor Wren': 'elderly academic, tweed jacket, wild grey hair, surrounded by books and papers about tulpas and collective belief, chalkboard covered in equations and diagrams, occult scholar',
+  'Officer Chen': 'Asian American woman, police uniform, flashlight, professional but increasingly disturbed, standing at edge of woods at night, police cruiser lights in background',
+  'The Child': 'small girl about 6, holding crayon drawing, innocent face, standing in kitchen, the drawing shows a tall faceless figure with too many arms',
+  'Pine Ridge Forest': 'dense Pacific Northwest forest, impossibly tall pine trees, thick fog between trunks, logging roads, something wrong about the shadows, liminal forest space',
+};
+
+// ── EPISODES ─────────────────────────────────────────────────────────────────
+const EPISODES = [
+  {
+    id:'photo', era:'WEEK 1 · PINE RIDGE, OREGON', title:'The Photo',
+    sub:'Jake Torrance takes a photo at work. Something is in the background.',
+    chars:['Jake Torrance','Pine Ridge Forest'],
+    panels:[
+      {type:'cinematic', desc:'Construction site at dusk, Pacific Northwest, orange safety barriers and heavy equipment, pine forest visible in background behind chain link fence, overcast sky with last light bleeding through clouds, security camera perspective from above', caption:'Pine Ridge, Oregon. Population 4,200. Three hardware stores. Two churches. One construction site on the east edge of town where the forest begins.'},
+      {type:'standard', desc:'Burly construction worker in hard hat and high-vis vest taking a selfie with his phone at the construction site, smiling tiredly, pine trees visible behind him, late afternoon light, casual snapshot style', caption:'Jake Torrance. Age 42. Site foreman. He takes the photo at 5:47 PM to send to his daughter. This is documented.'},
+      {type:'portrait', desc:'Phone screen showing the selfie photo, but in the background between the trees there is a tall thin dark figure standing perfectly still, almost invisible at first glance, barely distinguishable from the tree trunks, zoomed slightly', caption:'He does not notice it until 11 PM. He is brushing his teeth. He opens the photo again. He stops brushing.'},
+      {type:'standard', desc:'Close-up of a phone screen showing a digitally zoomed portion of the photo, pixelated, the tall thin figure is clearer now — impossibly tall, black suit, no face, standing between pine trees, the zoom makes it grainy and more disturbing', caption:'The figure is approximately nine feet tall. It has no face. Jake Torrance has never heard of Slenderman.'},
+      {type:'tall', desc:'Man sitting on edge of his bed in the dark, lit only by phone screen glow, scrolling Reddit on his phone, the room is dark and ordinary suburban bedroom, his expression is confused and unsettled', caption:'He posts it to r/weird at 11:23 PM. Title: "wtf is this in my photo." Fourteen upvotes. Two comments. One says "photoshop." One says "run."'},
+      {type:'standard', desc:'View through a car windshield at night, rural road, headlights illuminating pine trees on both sides, rearview mirror visible showing the dark road behind, tense driving scene, found footage style', caption:'He drives home the long way. He checks the rearview mirror nine times. He counts.'},
+      {type:'cinematic', desc:'Dark suburban house at night from across the street, one upstairs window lit, pine trees in the yard casting long shadows, fog beginning to form, a streetlight flickering, the suggestion of something at the edge of the treeline — or maybe not', caption:'That night he locks every door. He has never locked the back door before. His daughter asks why. He says he forgot something at work.'},
+    ]
+  },
+  {
+    id:'archivist', era:'WEEK 2 · PORTLAND, OREGON', title:'The Archivist',
+    sub:'Margot Delvane finds the pattern. She wishes she hadn\'t.',
+    chars:['Margot Delvane','Jake Torrance'],
+    panels:[
+      {type:'cinematic', desc:'Overhead view of a messy apartment living room converted into a research space, papers and printouts covering every surface, red string connecting pinned photos on a corkboard, laptop open with multiple browser tabs, coffee cups everywhere, obsessive research den', caption:'Margot Delvane. PhD candidate, digital folklore. Her dissertation is titled "Manufactured Mythology: Collaborative Fiction as Emergent Belief System." She has been tracking this for eleven months.'},
+      {type:'standard', desc:'Woman in glasses with messy ponytail staring at laptop screen, the Reddit post visible on screen, her face lit by monitor glow, her expression shifting from casual browsing to sharp recognition, bags under her eyes', caption:'She finds Jake\'s post at 2:14 AM on a Tuesday. She is not surprised. She is the opposite of surprised. She has been waiting for this.'},
+      {type:'portrait', desc:'Close-up of a corkboard covered in printed photos, each showing different locations but each with a similar tall thin figure partially visible in the background, red string connecting them, pushpins, handwritten notes with dates and locations', caption:'Forty-seven sightings in the Pacific Northwest since January. Forty-seven photos from forty-seven different people who do not know each other. The figure is always in the background. It is always between trees.'},
+      {type:'standard', desc:'Woman sitting cross-legged on the floor surrounded by printed maps of Oregon with red dots marked on them, concentrating, drawing lines between the dots, the pattern forms a rough spiral centered on one location', caption:'She maps the sightings. They form a spiral. The center of the spiral is Pine Ridge, Oregon. She has never been to Pine Ridge, Oregon.'},
+      {type:'tall', desc:'Split composition showing a phone call — woman in glasses in her cluttered apartment on one side, construction worker in his kitchen on the other side, both lit by harsh overhead light, tense phone conversation', caption:'She calls Jake Torrance. She found his number through his Reddit profile. He almost hangs up. She says: "I believe you." He does not hang up.'},
+      {type:'cinematic', desc:'Wide shot of the evidence wall taking up an entire apartment wall, red strings connecting photos and newspaper clippings, a map in the center, the woman standing back looking at it, the wall is overwhelming and obsessive and terrifying, some photos have the tall figure circled in red', caption:'The wall has forty-seven photos now. By the end of the week it will have sixty-three. Margot Delvane has stopped sleeping. She tells herself this is research.'},
+    ]
+  },
+  {
+    id:'lastpost', era:'WEEK 3 · CENTRAL OREGON', title:'The Last Post',
+    sub:'Elena Vasquez hikes into the forest. Her Instagram tells the rest.',
+    chars:['Elena Vasquez','Pine Ridge Forest','Slenderman'],
+    panels:[
+      {type:'standard', desc:'Instagram-style photo of a young Latina woman with a DSLR camera, smiling at a trailhead sign reading "Pine Ridge Trail", sunny day, backpack, bohemian clothes, travel photographer aesthetic, filtered warm tones, normal happy travel photo', caption:'Elena Vasquez. @elenavshoots. 12,400 followers. She photographs trails. Her last location tag is Pine Ridge State Forest. Posted 10:32 AM, March 14.'},
+      {type:'portrait', desc:'Instagram-style photo of dense forest trail, beautiful dappled sunlight through tall pines, ferns on the ground, the photo is well-composed and professional, but if you look carefully at the far background between two trees there is something that could be a figure — or could be a shadow', caption:'10:58 AM. Caption: "cathedral vibes 🌲✨" Forty-two likes. No one mentions what is visible between the third and fourth tree from the left.'},
+      {type:'standard', desc:'Instagram-style photo of a forest clearing, the light is different now — more overcast, greener, the photographer seems to be deeper in the forest, and in the mid-ground a tall dark shape is more clearly visible standing motionless between trees, still possibly a dead tree but less convincingly', caption:'12:15 PM. Caption: "getting deeper. no cell signal lol." The shape in the mid-ground is not a tree. Trees have branches.'},
+      {type:'cinematic', desc:'Instagram-style selfie of a young woman in the forest, her expression slightly confused, the camera slightly tilted, and directly behind her in the background — close, maybe thirty feet — the tall thin faceless figure stands in sharp focus while the foreground is slightly blurred, the background distortion is wrong', caption:'1:47 PM. Caption: "anyone else feel like they\'re being watched? 😅" This is her last post. The comments fill up over the next 72 hours.'},
+      {type:'standard', desc:'A smartphone lying face-down on a forest trail, cracked screen, pine needles scattered on it, a DSLR camera strap visible nearby on the ground, no person visible, the forest around it empty and still, crime scene evidence marker style', caption:'The phone is found on March 16 by a trail maintenance crew. It is face down. The screen is cracked. The last photo in the camera roll was never posted.'},
+      {type:'tall', desc:'An empty campsite in a forest clearing at dusk, tent still standing but the flap is open, camping supplies neatly arranged as if the person stepped away for a moment, a camp chair facing the treeline, no person present, fog rolling in from the trees, deeply unsettling in its ordinariness', caption:'Her campsite is intact. Her sleeping bag is unzipped. Her book is open to page 143. There are no signs of struggle. There are no signs of anything. Elena Vasquez is not found.'},
+    ]
+  },
+  {
+    id:'views', era:'WEEK 4 · SUBURBAN PORTLAND', title:'2.1 Million Views',
+    sub:'A teenager films a TikTok. The internet sees what she doesn\'t.',
+    chars:['Dreamcatcher_444','Slenderman'],
+    panels:[
+      {type:'portrait', desc:'Teenage girl with dyed purple hair filming herself on phone in her bedroom, LED strip lights casting colored glow, posters on wall, typical gen-z bedroom setup, she is doing a dance trend, phone propped on desk, window behind her showing dark evening outside', caption:'@dreamcatcher_444. Age 16. Portland suburb. She posts three TikToks a day. Average views: 340. She is filming a dance trend at 8:47 PM on a Wednesday.'},
+      {type:'standard', desc:'Screenshot of a TikTok video paused at a specific frame — teenage girl dancing in her bedroom, and in the window behind her, partially visible through the curtain gap, the unmistakable silhouette of an impossibly tall thin figure standing in the backyard, the girl is mid-dance move completely unaware', caption:'She does not see the comments for two hours. By then the video has 200,000 views. The top comment has 14,000 likes. It says: "LOOK AT THE WINDOW."'},
+      {type:'cinematic', desc:'Close-up of phone screen showing TikTok comment section exploding — comments scrolling fast, fire emojis, skull emojis, comments saying "BEHIND YOU" and "is this real" and "check your window NOW", the comment count climbing rapidly', caption:'2.1 million views in twelve hours. The comments are a wall of identical warnings. She reads them at 6 AM. Her hands are shaking when she opens the curtain.'},
+      {type:'standard', desc:'Teenage girl standing at her bedroom window pulling back the curtain, looking out at an empty suburban backyard, morning light, no figure visible, just wet grass and a fence and the neighbor\'s house, her reflection in the glass shows her terrified face', caption:'There is nothing in the backyard. She films herself opening the curtain. She posts it. Caption: "see? nothing there lol." This video gets 400,000 views.'},
+      {type:'portrait', desc:'Screenshot of another TikTok from the same girl, this time she is not dancing, she is sitting on her bed looking directly at camera, scared, behind her the window is visible and the figure is back — closer this time, pressed almost against the glass, the girl does not know', caption:'Her next video. She is talking to camera about the first video. She is explaining that it was just a shadow. In the window behind her, it has returned. Closer. The comments break 50,000 in one hour.'},
+      {type:'cinematic', desc:'Phone screen showing the TikTok account page for @dreamcatcher_444, the most recent video is a black screen, posted 3 days ago, the bio now reads "taking a break", the follower count shows 890,000, the last video has 4.2 million views', caption:'Her last video is a black screen. Nineteen seconds long. If you turn the volume up, you can hear breathing that is not hers. She deletes her account the next day. Her mother files a police report.'},
+    ]
+  },
+  {
+    id:'tulpa', era:'WEEK 6 · UNIVERSITY OF OREGON', title:'The Tulpa Hypothesis',
+    sub:'Professor Wren explains how belief creates reality. Then reconsiders.',
+    chars:['Professor Wren','Margot Delvane'],
+    panels:[
+      {type:'cinematic', desc:'University office filled with books floor to ceiling, an elderly professor with wild grey hair in a tweed jacket standing at a chalkboard covered in diagrams connecting "collective belief" to "manifestation" with arrows, equations, Tibetan Buddhist terminology, occult academic aesthetic', caption:'Professor Arthur Wren. Comparative Religion. He has studied tulpas — thought-forms created by collective belief — for thirty-one years. He has never believed in them. That is about to change.'},
+      {type:'standard', desc:'Close-up of a chalkboard with a diagram showing: "NARRATIVE → BELIEF → OBSERVATION → CONFIRMATION → AMPLIFIED BELIEF → ?" with the question mark circled multiple times, chalk dust on the professor\'s fingers', caption:'The theory is simple. If enough people believe in something with enough intensity, the belief itself becomes a kind of reality. The Tibetans called it tulpa. The internet calls it a meme.'},
+      {type:'portrait', desc:'Professor Wren and a younger woman with glasses sitting in his cluttered office, papers spread between them on the desk, a laptop showing a graph, both looking disturbed, afternoon light through dusty windows', caption:'Margot Delvane arrives on a Tuesday. She brings her data. Wren looks at the graph and his coffee goes cold in his hand.'},
+      {type:'standard', desc:'Laptop screen showing two overlaid line graphs — one labeled "SIGHTING REPORTS" and one labeled "SOCIAL MEDIA ENGAGEMENT" — the lines track each other almost perfectly, both rising exponentially, the correlation is obvious and disturbing', caption:'Every spike in sighting reports corresponds exactly to a spike in social media engagement. The entity becomes more visible as more people look for it. The paradox is immediate.'},
+      {type:'tall', desc:'The professor standing at his window looking out at the university campus, his reflection visible in the glass, behind his reflection the trees on campus seem darker and taller than they should be, his expression is deeply troubled, twilight', caption:'"If observing it makes it more real," Wren says, "then studying it is feeding it. Every paper I write. Every lecture I give. Every student who Googles the word." He pauses. "Every panel in this comic."'},
+      {type:'cinematic', desc:'Wide shot of the professor\'s office from outside, seen through the window, the professor alone at his desk with his head in his hands, surrounded by books about belief and mythology, the campus is dark outside, a single desk lamp illuminating him', caption:'Margot asks what they should do. Wren looks at her for a long time. "The only way to kill a tulpa," he says, "is for everyone to stop believing in it at exactly the same time." He lets that sit. "So. Nothing."'},
+    ]
+  },
+  {
+    id:'casefile', era:'WEEK 7 · PINE RIDGE PD', title:'Case File 2847',
+    sub:'Officer Chen starts investigating. The evidence investigates her back.',
+    chars:['Officer Chen','Jake Torrance','Margot Delvane'],
+    panels:[
+      {type:'standard', desc:'Interior of a small-town police station, fluorescent lights, Officer Chen — an Asian American woman in uniform — sitting at her desk with a stack of manila folders, her expression professional but tired, a whiteboard behind her with photos and reports pinned to it', caption:'Officer Lisa Chen. Pine Ridge PD. Twelve years on the force. She has been assigned Case File 2847: the disappearance of Elena Vasquez. It is her fourteenth missing persons case this year. Pine Ridge usually has two.'},
+      {type:'portrait', desc:'Close-up of a body camera footage frame, frozen, showing a forest at night — flashlight beam cutting through fog between trees, and at the edge of the light there is a visual distortion, like static or digital corruption, where the tall figure should be, the image is glitched exactly where it stands', caption:'The body cam footage from the search team shows 47 minutes of forest. At minute 31, the feed corrupts for exactly 3.7 seconds. The corruption is localized to one area of the frame. Forensic analysis shows no hardware malfunction.'},
+      {type:'standard', desc:'Police officer standing at the edge of a dark forest at night, flashlight in hand, police cruiser behind her with lights on casting red and blue across the trees, the beam of her flashlight entering the dark woods, she is about to step in, professional posture but hesitant', caption:'She goes to the forest herself. She is not the kind of officer who sends someone else. She walks the trail Elena Vasquez walked. Her radio works for the first 400 meters.'},
+      {type:'cinematic', desc:'POV through the trees in a dark forest at night, flashlight beam illuminating fog and tree trunks, and between two large pines something tall and thin stands motionless, not quite in the center of the beam, partially cut off by a tree trunk, the flashlight catches what might be a white featureless surface where a face should be', caption:'At meter 600 she sees it. She does not run. She is a police officer. She reaches for her radio. It produces a sound she has never heard a radio make. She describes it later as "television static shaped like a scream."'},
+      {type:'standard', desc:'Police officer back at her cruiser, sitting in the driver\'s seat with the door open, legs out, writing in a notebook, her hand is shaking slightly, the forest is visible through the windshield, the dashboard clock reads 2:47 AM', caption:'Her report reads: "Visual contact with unknown subject at approximately 600m along Pine Ridge Trail. Subject appeared to be 2.5 to 3 meters tall. No facial features observed. Subject did not move. Radio malfunction at time of contact. Duration of contact: approximately 4 seconds." She does not include the word "Slenderman."'},
+      {type:'portrait', desc:'The whiteboard at the police station now covered in more photos and reports, red lines connecting them, it looks almost exactly like Margot Delvane\'s evidence wall, the officer standing back looking at it with the same expression Margot had', caption:'She calls Margot Delvane the next morning. She says: "I need to understand what I saw." Margot says: "No. You don\'t."'},
+    ]
+  },
+  {
+    id:'drawing', era:'WEEK 8 · PINE RIDGE ELEMENTARY', title:'The Drawing',
+    sub:'A six-year-old draws something she shouldn\'t know about.',
+    chars:['The Child','Slenderman'],
+    panels:[
+      {type:'standard', desc:'Elementary school classroom, colorful and normal, small children at desks drawing with crayons, a teacher walking between desks, one small girl about 6 years old with blonde hair is drawing intently, concentrating hard, her body hunched protectively over her paper', caption:'Lily Arden. Age 6. Pine Ridge Elementary, Mrs. Patterson\'s first grade class. Friday art period. The assignment is "draw your family." Lily does not draw her family.'},
+      {type:'portrait', desc:'Close-up of a child\'s crayon drawing on white paper — a tall black figure with no face, impossibly long arms (six of them radiating from the body like a spider), standing between green crayon trees, the drawing is crude but unmistakable, a small figure (the child herself) is drawn in the corner, very small', caption:'The drawing is done in black crayon. The figure has no face. It has six arms. It stands between trees that the child has drawn in green. In the bottom corner, a tiny figure in pink: herself. The scale is accurate.'},
+      {type:'standard', desc:'A female teacher kneeling beside a child\'s desk, looking at the drawing with concern, the child looking up at her with innocent calm eyes, other children visible in background still drawing happily, the contrast between the normal classroom and the disturbing drawing', caption:'Mrs. Patterson kneels beside the desk. She asks Lily what she drew. Lily says: "The tall man." Mrs. Patterson asks where Lily saw the tall man. Lily says: "He stands outside my window."'},
+      {type:'cinematic', desc:'The child\'s drawing being held up by adult hands in a different room — a principal\'s office or counselor\'s room — the drawing is now under harsh fluorescent light, it looks worse somehow, more deliberate, a phone visible on the desk suggesting someone is about to make a call', caption:'The school counselor confirms: Lily\'s family has no internet at home. No smartphone. No tablet. No television since the antenna broke in February. There is no way she has seen any Slenderman content. The timeline is checked three times.'},
+      {type:'portrait', desc:'Two parents — a man and woman, blue collar, worried — sitting across a desk from Officer Chen in the police station, the father is holding the child\'s drawing, Chen is looking at it, the drawing is now in an evidence bag, the parents look confused and frightened', caption:'Lily\'s parents bring the drawing to Officer Chen on Monday morning. They have found four more drawings in Lily\'s bedroom. Each one shows the figure closer. In the last drawing, it is at the window.'},
+      {type:'tall', desc:'A child\'s bedroom at night seen from outside through the window, a nightlight visible inside, the child sleeping peacefully in her bed, and reflected in the window glass — or standing behind the photographer — the suggestion of something impossibly tall, the image is ambiguous and deeply wrong', caption:'Officer Chen drives past the Arden house that night. She slows the cruiser. She looks at Lily\'s bedroom window. The nightlight is on. The curtains are open. Chen tells herself she is checking on a child. She does not look at the treeline behind the house.'},
+      {type:'cinematic', desc:'The child\'s drawing pinned to Officer Chen\'s whiteboard next to the other evidence — photos, reports, maps — the crude crayon drawing among professional police documents, it is somehow the most disturbing item on the board', caption:'The drawing is logged as evidence item 2847-F. It is pinned to the board between a body cam screenshot and a satellite map. A six-year-old\'s crayon drawing. It is the clearest image of the subject they have.'},
+    ]
+  },
+  {
+    id:'vanishing', era:'WEEK 9 · PINE RIDGE FOREST', title:'The Vanishing',
+    sub:'They all go into the forest. Not all of them come back.',
+    chars:['Margot Delvane','Jake Torrance','Officer Chen','Professor Wren','Slenderman','Pine Ridge Forest'],
+    panels:[
+      {type:'cinematic', desc:'Four figures with flashlights standing at the entrance to a dark forest trail at night, their flashlight beams cutting into the fog, a police cruiser with lights on behind them, the forest ahead is impenetrably dark, they are about to enter, seen from behind as small figures against the massive dark woods', caption:'March 22. 9:47 PM. They meet at the trailhead. Margot Delvane. Jake Torrance. Officer Chen. Professor Wren. Four people who have no business being in a forest at night. They go in anyway.'},
+      {type:'portrait', desc:'Deep in the forest at night, flashlight beams in fog, the trees around them are wrong — subtly bent, leaning inward, the bark twisted in ways that pine trees should not twist, the fog is thick and greenish, the four figures are close together, moving carefully', caption:'At 400 meters, the trees change. They are not bent by wind. They are bent toward something. The bark is warm to the touch. Wren takes his hand away quickly.'},
+      {type:'standard', desc:'Close-up of four faces lit from below by flashlights, each showing a different kind of fear — the researcher\'s analytical terror, the construction worker\'s primal fear, the officer\'s controlled alarm, the professor\'s existential dread — fog swirling around them', caption:'Chen\'s radio stopped working at 300 meters. Margot\'s phone lost signal at 350. Jake\'s compass is spinning. Wren is no longer taking notes. They keep walking.'},
+      {type:'tall', desc:'The forest opening into a massive clearing, fog filling it like a bowl, flashlight beams swallowed by the mist, and at the center of the clearing — finally, fully visible for the first time — Slenderman, impossibly tall, twelve feet or more, black suit, no face, arms extended and multiplied, six or eight arms reaching outward like a terrible tree, the four humans tiny at the edge of the clearing, the scale is devastating', caption:'It is standing in the clearing. It has been standing in every photo, every video, every window, every drawing. But this is the first time it is fully visible. It is taller than they imagined. It is worse than they imagined. It has no face and it is looking at all of them.'},
+      {type:'standard', desc:'Three flashlight beams pointed at the ground — one beam is missing, one of the four people is no longer there, the remaining three are looking around frantically, the clearing is still fog-filled, the entity is no longer where it was standing, the absence is worse than the presence', caption:'Wren is gone. There is no sound. There is no moment of disappearance. He is simply no longer standing where he was standing. His flashlight is on the ground, still on. The beam points at nothing.'},
+      {type:'cinematic', desc:'Dawn breaking over the forest, three people emerging from the trailhead, stumbling, covered in pine needles and mud, the morning light is gray and flat, they look destroyed, a search and rescue team is visible in the background, the forest behind them is just a forest again — ordinary, green, silent', caption:'Three of them walk out at dawn. They are covered in mud. Chen has lost her service weapon. Margot\'s glasses are broken. Jake is carrying Wren\'s flashlight. They do not speak. The search and rescue team finds no trace of Professor Arthur Wren.'},
+      {type:'portrait', desc:'Close-up of a phone screen showing a news article with the headline partially visible, and below it a comment section, and below that a social media feed showing the story going viral — screenshots, theories, more sightings reported, the cycle beginning again, the screen slightly cracked', caption:'The story goes viral in six hours. #TheOccurrence trends for three days. Sighting reports double. Then triple. The spiral on Margot\'s map grows wider. She understands now: they are making it stronger. This comic is making it stronger.'},
+      {type:'cinematic', desc:'Pure black panel, completely dark, no image, no light, only darkness, the void, a black rectangle', caption:'You have been looking at it for the entire time you\'ve been reading this.'},
+    ]
+  },
+  {
+    id:'custom', era:'YOUR CASE FILE', title:'Custom Episode',
+    sub:'Document your own occurrence.',
+    chars:[],
+    panels:[
+      {type:'cinematic', desc:'', caption:null},
+      {type:'standard', desc:'', caption:null},
+      {type:'portrait', desc:'', caption:null},
+      {type:'standard', desc:'', caption:null},
+      {type:'tall', desc:'', caption:null},
+      {type:'cinematic', desc:'', caption:null},
+    ]
+  }
+];
+
+const PANEL_TYPES = {
+  standard:  {h:240, ratio:'4:3',  fal:'landscape_4_3'},
+  cinematic: {h:152, ratio:'21:9', fal:'landscape_16_9'},
+  portrait:  {h:426, ratio:'3:4',  fal:'portrait_4_3'},
+  tall:      {h:480, ratio:'9:16', fal:'portrait_4_3'},
+  square:    {h:340, ratio:'1:1',  fal:'square'},
+};
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let st = {
+  epIdx: 0,
+  selPanel: 0,
+  panels: [],
+  generating: false,
+};
+
+function curEp(){ return EPISODES[st.epIdx]; }
+
+// ── RANDOM GLITCH ────────────────────────────────────────────────────────────
+function triggerGlitch(){
+  document.body.classList.add('glitch-active');
+  setTimeout(()=> document.body.classList.remove('glitch-active'), 200);
+}
+setInterval(()=>{
+  if(Math.random() < 0.15) triggerGlitch();
+}, 5000 + Math.random() * 10000);
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+function init(){
+  renderEpList();
+  selectEp(0);
+}
+
+function selectEp(idx){
+  st.epIdx = idx;
+  const ep = curEp();
+  st.panels = ep.panels.map((p,i)=>({
+    desc: p.desc, caption: p.caption, type: p.type,
+    imageUrl: p.imageUrl || null, generating: false
+  }));
+  st.selPanel = 0;
+  renderAll();
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+function renderAll(){
+  renderEpList();
+  renderPanelList();
+  renderPhone();
+  renderEditor();
+  updateCounts();
+}
+
+function renderEpList(){
+  const el = document.getElementById('epList');
+  el.innerHTML = EPISODES.map((ep,i)=>`
+    <div class="ep-card ${i===st.epIdx?'active':''}" onclick="selectEp(${i})">
+      <div class="ep-era">${ep.era}</div>
+      <div class="ep-title">${ep.title}</div>
+      <div class="ep-sub">${ep.sub}</div>
+      <div class="ep-meta">
+        ${ep.chars.map(c=>`<span class="ep-chip">${c}</span>`).join('')}
+        <span class="ep-chip">${ep.panels.length} panels</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderPanelList(){
+  const el = document.getElementById('panelList');
+  el.innerHTML = st.panels.map((p,i)=>`
+    <div class="pl-item ${i===st.selPanel?'active':''} ${p.imageUrl?'done':''}" onclick="selectPanelIdx(${i})">
+      <span class="pl-num">${i+1}</span>
+      <div class="pl-thumb">${p.imageUrl?`<img src="${p.imageUrl}">`:'<div style="width:100%;height:100%;background:var(--s3)"></div>'}</div>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.desc.slice(0,40)||'(empty)'}</span>
+    </div>`).join('');
+}
+
+function renderPhone(){
+  const ep = curEp();
+  const screen = document.getElementById('phoneScreen');
+  let html = `<div class="strip-title">
+    <div class="st-era">${ep.era}</div>
+    <h2>${ep.title}</h2>
+    <div class="st-sub">${ep.sub}</div>
+  </div>`;
+
+  st.panels.forEach((p,i)=>{
+    const pt = PANEL_TYPES[p.type]||PANEL_TYPES.standard;
+    const h = pt.h;
+    html += `<div class="s-panel" id="sp-${i}" style="cursor:pointer" onclick="selectPanelIdx(${i})">`;
+    if(p.generating){
+      html += `<div class="s-placeholder" style="height:${h}px"></div>`;
+      html += `<div class="gen-spin"><div class="spin"></div><span>Generating panel ${i+1}…</span></div>`;
+    } else if(p.imageUrl){
+      html += `<img src="${p.imageUrl}" style="min-height:${h*.6}px">`;
+    } else {
+      html += `<div class="s-placeholder" style="height:${h}px">
+        <div class="s-ph-num">Panel ${i+1} · ${pt.ratio}</div>
+        <div class="s-ph-desc">${p.desc.slice(0,80)||'Describe this scene…'}</div>
+      </div>`;
+    }
+    if(p.caption && (p.imageUrl||p.generating)){
+      const isFirst = i===0;
+      html += `<div class="s-caption${isFirst?' top':''}">
+        ${isFirst?'<span class="cap-tag">Case File</span>':''}
+        ${p.caption}
+      </div>`;
+    }
+    html += `</div>`;
+  });
+
+  html += `<div class="strip-end">
+    <div class="se-mark">◈</div>
+    <div class="se-sub">${ep.title} — THE OCCURRENCE</div>
+  </div>`;
+  screen.innerHTML = html;
+}
+
+function renderEditor(){
+  const ed = document.getElementById('edScroll');
+  if(!st.panels.length){
+    ed.innerHTML='<div style="padding:30px 0;text-align:center;color:var(--muted);font-size:.78rem;font-family:var(--horror)">No panels</div>';
+    return;
+  }
+  const p = st.panels[st.selPanel];
+  const ep = curEp();
+  const pt = PANEL_TYPES[p.type]||PANEL_TYPES.standard;
+
+  ed.innerHTML = `
+    <div class="ed-section">
+      <div class="ed-label">Panel ${st.selPanel+1} of ${st.panels.length} · ${pt.ratio}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
+        ${Object.entries(PANEL_TYPES).map(([k,t])=>`
+          <span class="char-chip" style="${p.type===k?'background:var(--red);color:#fff;border-color:var(--red)':''}"
+            onclick="setPanelType(${st.selPanel},'${k}')">${k} ${t.ratio}</span>
+        `).join('')}
+      </div>
+    </div>
+    <div class="ed-section">
+      <div class="ed-label">Scene Description</div>
+      <textarea class="ed-ta" rows="5" id="ed-desc"
+        placeholder="Describe what happens in this panel…"
+        oninput="st.panels[${st.selPanel}].desc=this.value">${esc(p.desc)}</textarea>
+      ${ep.chars.length?`<div style="margin-top:5px"><div class="ed-label">Characters</div>
+        <div class="char-chips">${ep.chars.map(c=>`<span class="char-chip" onclick="injectChar('${esc(c)}')">${c}</span>`).join('')}</div></div>`:''}
+    </div>
+    <div class="ed-section">
+      <div class="ed-label">Caption / Narration</div>
+      <textarea class="ed-ta" rows="3" id="ed-cap"
+        placeholder="Optional narration text overlay…"
+        oninput="st.panels[${st.selPanel}].caption=this.value||null">${esc(p.caption||'')}</textarea>
+      <button class="tbtn" style="margin-top:4px;width:100%" onclick="aiCaption(${st.selPanel})">✦ AI Write Caption</button>
+    </div>
+    <div class="ed-section">
+      <button class="gen-one ${p.imageUrl?'regen':''}" onclick="generateOne(${st.selPanel})" ${p.generating?'disabled':''}>
+        ${p.generating?'Generating…':p.imageUrl?'↻ Regenerate':'✦ Generate This Panel'}
+      </button>
+    </div>
+    <div class="ed-section" style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="tbtn" onclick="addPanelAt(${st.selPanel})">+ Insert Before</button>
+      <button class="tbtn" onclick="addPanelAt(${st.selPanel+1})">+ Insert After</button>
+      <button class="tbtn" onclick="removePanelAt(${st.selPanel})" style="color:var(--red2)">× Remove</button>
+    </div>`;
+}
+
+function updateCounts(){
+  const done = st.panels.filter(p=>p.imageUrl).length;
+  document.getElementById('genCount').textContent = `${done} / ${st.panels.length} panels`;
+  document.getElementById('genStatus').textContent = st.generating
+    ? 'Generating…' : done===st.panels.length&&done>0
+    ? `${curEp().title} — Complete ✓` : `${curEp().title}`;
+}
+
+// ── ACTIONS ──────────────────────────────────────────────────────────────────
+function selectPanelIdx(i){
+  st.selPanel = i;
+  renderPanelList();
+  renderEditor();
+  document.querySelectorAll('.s-panel').forEach((el,j)=>{
+    el.style.outline = j===i ? '2px solid var(--red)' : 'none';
+  });
+  const el = document.getElementById('sp-'+i);
+  if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function setPanelType(i,type){
+  st.panels[i].type = type;
+  renderAll();
+}
+
+function injectChar(name){
+  const ta = document.getElementById('ed-desc');
+  if(!ta) return;
+  const add = st.panels[st.selPanel].desc ? `, ${name}` : name;
+  ta.value += add;
+  st.panels[st.selPanel].desc = ta.value;
+}
+
+function addPanelAt(i){
+  st.panels.splice(i,0,{desc:'',caption:null,type:'standard',imageUrl:null,generating:false});
+  st.selPanel = i;
+  renderAll();
+}
+
+function removePanelAt(i){
+  if(st.panels.length<=1) return;
+  st.panels.splice(i,1);
+  if(st.selPanel>=st.panels.length) st.selPanel = st.panels.length-1;
+  renderAll();
+}
+
+// ── GENERATE ─────────────────────────────────────────────────────────────────
+function buildFalPrompt(panel){
+  const ep = curEp();
+  let charDescs = '';
+  for(const name of ep.chars){
+    if(panel.desc.toLowerCase().includes(name.toLowerCase().split(' ')[0]) && CHARACTERS[name]){
+      charDescs += CHARACTERS[name] + ', ';
+    }
+  }
+  return `${STYLE}, ${charDescs}${panel.desc}`;
+}
+
+async function generateOne(i){
+  const p = st.panels[i];
+  if(!p.desc.trim()){ toast('Write a scene description first','err'); return; }
+  p.generating = true;
+  renderAll();
+  try{
+    const pt = PANEL_TYPES[p.type]||PANEL_TYPES.standard;
+    const r = await fetch(FAL,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'fal-ai/flux/schnell',
+        prompt: buildFalPrompt(p),
+        image_size: pt.fal,
+        num_inference_steps: 4,
+      })
+    });
+    const data = await r.json();
+    const url = data?.images?.[0]?.url;
+    if(url){ p.imageUrl = url; toast('Panel generated ✓','ok'); triggerGlitch(); }
+    else throw new Error(data?.detail||'No image');
+  } catch(e){ toast('Failed: '+e.message,'err'); }
+  p.generating = false;
+  renderAll();
+}
+
+async function generateAll(){
+  if(st.generating) return;
+  const empty = st.panels.filter(p=>!p.imageUrl && p.desc.trim());
+  if(!empty.length){ toast('All panels generated or no descriptions','err'); return; }
+  st.generating = true;
+  document.getElementById('genAllBtn').disabled = true;
+  renderAll();
+  for(let i=0;i<st.panels.length;i++){
+    const p = st.panels[i];
+    if(p.imageUrl || !p.desc.trim()) continue;
+    document.getElementById('genStatus').textContent = `Generating panel ${i+1} of ${st.panels.length}…`;
+    await generateOne(i);
+    await new Promise(r=>setTimeout(r,300));
+  }
+  st.generating = false;
+  document.getElementById('genAllBtn').disabled = false;
+  renderAll();
+  toast('Episode complete ✓','ok');
+}
+
+// ── AI CAPTION ───────────────────────────────────────────────────────────────
+async function aiCaption(i){
+  const p = st.panels[i];
+  if(!p.desc.trim()){ toast('Write a scene description first','err'); return; }
+  toast('Writing caption…');
+  try{
+    const ep = curEp();
+    const r = await fetch(GEM,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        system_instruction:{parts:[{text:`You are the Narrator of THE OCCURRENCE — a found-footage horror ARG about Slenderman. Write in a clinical, unsettling documentary voice. Like a police report that slowly loses its objectivity. Short, declarative sentences. Present tense. No flowery language. State facts that feel wrong. One or two sentences maximum. Think: the calm before you realize what you're reading.`}]},
+        contents:[{parts:[{text:`Episode: "${ep.title}" — ${ep.era}\nScene description: ${p.desc}\n\nWrite a single caption (1-2 sentences) for this comic panel. Clinical narration, not dialogue. State facts. Make them wrong.`}]}]
+      })
+    });
+    const data = await r.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if(text){
+      p.caption = text.replace(/^["']|["']$/g,'').trim();
+      document.getElementById('ed-cap').value = p.caption;
+      renderPhone();
+      toast('Caption written ✓','ok');
+    } else throw new Error('No text');
+  } catch(e){ toast('Caption failed: '+e.message,'err'); }
+}
+
+// ── EXPORT ───────────────────────────────────────────────────────────────────
+async function exportStrip(){
+  const generated = st.panels.filter(p=>p.imageUrl);
+  if(!generated.length){ toast('Generate some panels first','err'); return; }
+  toast('Building strip…');
+  const W = 340;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  let totalH = 80;
+  const items = [];
+  for(const p of generated){
+    const pt = PANEL_TYPES[p.type]||PANEL_TYPES.standard;
+    const img = new Image(); img.crossOrigin = 'anonymous';
+    await new Promise(r=>{img.onload=r;img.onerror=r;img.src=p.imageUrl;});
+    const h = Math.round(W * (pt.h / 340));
+    items.push({img,h,panel:p});
+    totalH += h;
+  }
+  totalH += 60;
+  canvas.height = totalH;
+  const ctx = canvas.getContext('2d');
+
+  // Dark background
+  ctx.fillStyle = '#04040a';
+  ctx.fillRect(0,0,W,totalH);
+
+  // Title
+  ctx.fillStyle = '#00ff41';
+  ctx.font = '700 9px "DM Sans"';
+  ctx.textAlign = 'center';
+  ctx.fillText(curEp().era, W/2, 28);
+  ctx.fillStyle = '#8b0000';
+  ctx.font = '900 22px "Creepster",cursive';
+  ctx.fillText(curEp().title, W/2, 52);
+  ctx.fillStyle = '#5a5560';
+  ctx.font = '11px "Special Elite",monospace';
+  ctx.fillText(curEp().sub.slice(0,50), W/2, 68);
+
+  let y = 80;
+  for(const {img,h,panel} of items){
+    ctx.drawImage(img,0,y,W,h);
+    // Add green tint overlay
+    ctx.fillStyle = 'rgba(0,255,65,0.03)';
+    ctx.fillRect(0,y,W,h);
+    if(panel.caption){
+      const grad = ctx.createLinearGradient(0,y+h-50,0,y+h);
+      grad.addColorStop(0,'transparent');
+      grad.addColorStop(1,'rgba(4,4,10,0.9)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0,y+h-50,W,50);
+      ctx.fillStyle = '#e8e4dc';
+      ctx.font = '10px "Special Elite",monospace';
+      ctx.textAlign = 'left';
+      wrapText(ctx, panel.caption, 14, y+h-18, W-28, 12);
+      ctx.textAlign = 'center';
+    }
+    y += h;
+  }
+  // Scanline effect on canvas
+  ctx.fillStyle = 'rgba(0,0,0,0.04)';
+  for(let sy=0; sy<totalH; sy+=4){
+    ctx.fillRect(0,sy,W,2);
+  }
+
+  ctx.fillStyle = '#8b0000';
+  ctx.font = '700 16px "Creepster",cursive';
+  ctx.fillText('◈', W/2, y+24);
+  ctx.fillStyle = '#5a5560';
+  ctx.font = '9px "DM Sans"';
+  ctx.fillText(curEp().title+' — THE OCCURRENCE', W/2, y+40);
+
+  const link = document.createElement('a');
+  link.download = 'occurrence-' + curEp().id + '.jpg';
+  link.href = canvas.toDataURL('image/jpeg',.92);
+  link.click();
+  toast('Strip exported ✓','ok');
+}
+
+function wrapText(ctx,text,x,y,maxW,lineH){
+  const words = text.split(' ');
+  let line = '';
+  for(const w of words){
+    const test = line + w + ' ';
+    if(ctx.measureText(test).width > maxW && line){
+      ctx.fillText(line.trim(),x,y);
+      line = w + ' ';
+      y += lineH;
+    } else line = test;
+  }
+  if(line) ctx.fillText(line.trim(),x,y);
+}
+
+// ── UTILS ────────────────────────────────────────────────────────────────────
+function esc(s){ return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+let _tt;
+function toast(msg,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='toast '+(type||'');
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.add('hide'),3000);
+}
+
+init();
+</script>
+</body>
+</html>

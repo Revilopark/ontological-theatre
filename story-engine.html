@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Story Engine — Ontological Theatre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#CFB87C;--gold-d:rgba(207,184,124,.12);--gold-g:rgba(207,184,124,.28);--gold-b:rgba(207,184,124,.32);
+  --bg:#0a0a0f;--g:rgba(255,255,255,.046);--gh:rgba(255,255,255,.076);--b:rgba(255,255,255,.09);
+  --blur:blur(40px) saturate(1.8);--blur2:blur(20px) saturate(1.5);
+  --t:rgba(255,255,255,.92);--t2:rgba(255,255,255,.55);--t3:rgba(255,255,255,.28);
+  --r:20px;--r2:12px;--r3:8px;--ease:cubic-bezier(.4,0,.2,1);
+}
+html{font-size:16px}
+body{background:var(--bg);color:var(--t);font-family:'Inter',-apple-system,sans-serif;font-weight:300;min-height:100vh;overflow-x:hidden;line-height:1.6}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 70% 50% at 10% 10%,rgba(207,184,124,.07) 0%,transparent 60%),radial-gradient(ellipse 60% 60% at 90% 20%,rgba(139,107,255,.06) 0%,transparent 60%),radial-gradient(ellipse 80% 40% at 50% 90%,rgba(207,184,124,.05) 0%,transparent 60%)}
+.blob{position:fixed;border-radius:50%;filter:blur(100px);opacity:.08;pointer-events:none;z-index:0;animation:fl 25s ease-in-out infinite}
+.b1{width:500px;height:500px;background:var(--gold);top:-150px;left:-100px;animation-delay:0s}
+.b2{width:600px;height:600px;background:#8b6bff;top:30%;right:-200px;animation-delay:-8s}
+.b3{width:400px;height:400px;background:var(--gold);bottom:5%;left:20%;animation-delay:-16s}
+@keyframes fl{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-50px) scale(1.06)}66%{transform:translate(-30px,25px) scale(.94)}}
+
+/* Glass */
+.glass{background:var(--g);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--b);border-radius:var(--r)}
+.glass2{background:var(--g);backdrop-filter:var(--blur2);-webkit-backdrop-filter:var(--blur2);border:1px solid var(--b);border-radius:var(--r2)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--gold-b);border-radius:2px}
+
+/* Header */
+.hdr{position:sticky;top:0;z-index:100;padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between;background:rgba(10,10,15,.78);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-bottom:1px solid var(--b)}
+.hdr-l{display:flex;align-items:center;gap:12px}
+.logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--gold),rgba(207,184,124,.45));display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 4px 16px var(--gold-g)}
+.app-t{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;letter-spacing:.02em}
+.app-s{font-size:.64rem;color:var(--t3);letter-spacing:.14em;text-transform:uppercase}
+.hdr-r{display:flex;align-items:center;gap:16px}
+.nav-a{font-size:.7rem;color:var(--t2);text-decoration:none;letter-spacing:.08em;text-transform:uppercase;padding:4px 8px;transition:color .3s}
+.nav-a:hover{color:var(--gold)}
+.status{display:flex;align-items:center;gap:6px;font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--t2)}
+.dot{width:6px;height:6px;border-radius:50%;background:#444;transition:background .3s}
+.dot.live{background:#4ade80;box-shadow:0 0 8px rgba(74,222,128,.6)}
+
+/* Progress */
+.prog{position:sticky;top:64px;z-index:90;padding:.65rem 2rem;background:rgba(10,10,15,.82);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-bottom:1px solid var(--b);display:flex;align-items:center;gap:1rem}
+.prog-l{font-size:.67rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t2);font-weight:500;flex-shrink:0}
+.prog-tr{flex:1;height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden}
+.prog-fi{height:100%;background:linear-gradient(90deg,var(--gold),rgba(207,184,124,.5));border-radius:2px;transition:width .5s ease;box-shadow:0 0 8px var(--gold-g)}
+.prog-ct{font-size:.72rem;color:var(--gold);font-weight:500;flex-shrink:0}
+
+/* Main */
+.main{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:2rem 2rem 6rem}
+
+/* Hero */
+.hero{text-align:center;padding:3rem 0 2rem}
+.eyebrow{font-size:.67rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;font-weight:500}
+.hero-t{font-family:'Playfair Display',serif;font-size:clamp(2.5rem,5vw,4rem);font-weight:700;line-height:1.1;margin-bottom:1rem}
+.hero-t em{font-style:italic;color:var(--gold)}
+.hero-d{font-size:.95rem;color:var(--t2);max-width:520px;margin:0 auto 2rem;line-height:1.75}
+
+/* Section Card */
+.sc{padding:1.5rem;margin-bottom:1.25rem}
+.sc-t{font-size:.67rem;letter-spacing:.15em;text-transform:uppercase;color:var(--t2);font-weight:500;margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.sc-t::after{content:'';flex:1;height:1px;background:var(--b)}
+.sc-note{font-size:.64rem;letter-spacing:0;text-transform:none;color:var(--t3);font-weight:300}
+
+/* Inputs */
+.inp,.sel{width:100%;padding:.75rem 1rem;background:var(--g);backdrop-filter:var(--blur2);-webkit-backdrop-filter:var(--blur2);border:1px solid var(--b);border-radius:var(--r2);color:var(--t);font-family:'Inter',sans-serif;font-size:.88rem;font-weight:300;outline:none;transition:all .3s;-webkit-appearance:none;appearance:none}
+.inp-lg{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:600;font-style:italic}
+.inp:focus,.sel:focus{border-color:var(--gold-b);background:var(--gh);box-shadow:0 0 0 2px var(--gold-d),0 0 20px var(--gold-d)}
+.inp::placeholder{color:var(--t3);font-style:italic}
+.sel{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M5 6L0 0h10z' fill='rgba(207,184,124,.6)'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 1rem center;padding-right:2.5rem;cursor:pointer}
+.sel option{background:#1a1a2e;color:var(--t)}
+
+/* Field group */
+.fg{display:flex;flex-direction:column;gap:.5rem;margin-bottom:.75rem}
+.fl{font-size:.67rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t2);font-weight:500}
+
+/* Grid */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+@media(max-width:768px){.g2{grid-template-columns:1fr}}
+
+/* Worlds */
+.worlds{display:flex;gap:.65rem;flex-wrap:wrap}
+.world-p{padding:.5rem 1.2rem;background:var(--g);border:1px solid var(--b);border-radius:100px;cursor:pointer;font-size:.84rem;color:var(--t2);transition:all .3s;font-family:'Inter',sans-serif;font-weight:300}
+.world-p:hover{border-color:var(--gold-b);color:var(--t)}
+.world-p.sel{background:var(--gold-d);border-color:var(--gold-b);color:var(--gold);box-shadow:0 0 16px var(--gold-d)}
+
+/* Cast */
+.cast-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.65rem}
+.cc{padding:.8rem 1rem;border-radius:var(--r2);cursor:pointer;transition:all .3s;border:1px solid var(--b);background:var(--g);position:relative}
+.cc:hover{border-color:var(--gold-b);background:var(--gh);transform:translateY(-1px)}
+.cc.sel{background:var(--gold-d);border-color:var(--gold-b);box-shadow:0 0 20px var(--gold-d)}
+.cc.dis{opacity:.38;pointer-events:none}
+.cc-top{display:flex;align-items:flex-start;justify-content:space-between}
+.cc-n{font-family:'Playfair Display',serif;font-size:.88rem;font-weight:600;color:var(--t);margin-bottom:.2rem}
+.cc-b{font-size:.7rem;color:var(--t2);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cc-bar{display:flex;gap:2px;margin-top:.5rem;height:3px;border-radius:2px;overflow:hidden}
+.cc-seg{flex:1;border-radius:2px;background:var(--gold);opacity:.25;transition:opacity .3s}
+.cc-seg.on{opacity:1}
+.cc-g{margin-top:.35rem;font-size:.63rem;color:var(--gold);opacity:.75}
+.cc-chk{position:absolute;top:.65rem;right:.65rem;width:18px;height:18px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:9px;color:#000;opacity:0;transition:opacity .3s}
+.cc.sel .cc-chk{opacity:1}
+
+/* Themes */
+.theme-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:.45rem}
+.tp{padding:.45rem .7rem;background:var(--g);border:1px solid var(--b);border-radius:var(--r3);cursor:pointer;font-size:.76rem;color:var(--t2);transition:all .3s;text-align:center;font-weight:400;letter-spacing:.02em}
+.tp:hover{border-color:var(--gold-b);color:var(--t)}
+.tp.sel{background:var(--gold-d);border-color:var(--gold-b);color:var(--gold)}
+.tp.dis{opacity:.35;pointer-events:none}
+
+/* Spark seeds */
+.seeds-row{display:flex;gap:.75rem;overflow-x:auto;padding-bottom:.4rem}
+.seed-c{flex-shrink:0;padding:.9rem 1.15rem;cursor:pointer;transition:all .3s;min-width:190px}
+.seed-c:hover{background:var(--gh);border-color:var(--gold-b);transform:translateY(-2px)}
+.seed-t{font-family:'Playfair Display',serif;font-size:.88rem;font-weight:600;color:var(--t);margin-bottom:.2rem}
+.seed-ch{font-size:.72rem;color:var(--t2)}
+.seed-badge{display:inline-block;margin-top:.45rem;padding:2px 8px;background:var(--gold-d);border:1px solid var(--gold-b);border-radius:100px;font-size:.62rem;color:var(--gold);letter-spacing:.08em;text-transform:uppercase}
+
+/* Generate bar */
+.gen-bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-top:2rem;padding:1.5rem 2rem;border-radius:var(--r)}
+.gen-sum{font-size:.8rem;color:var(--t2);line-height:1.65}
+.gen-sum strong{color:var(--t);font-weight:500}
+.btn-gen{flex-shrink:0;padding:.95rem 2.25rem;background:linear-gradient(135deg,var(--gold),rgba(207,184,124,.65));border:none;border-radius:var(--r2);color:#0a0a0f;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .3s;box-shadow:0 4px 20px var(--gold-g)}
+.btn-gen:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 30px var(--gold-g)}
+.btn-gen:disabled{opacity:.38;cursor:not-allowed;box-shadow:none}
+
+/* Story header */
+.story-hdr{text-align:center;padding:2rem 0 1rem}
+.story-t{font-family:'Playfair Display',serif;font-size:clamp(2rem,4vw,3.5rem);font-weight:700;font-style:italic;color:var(--t);margin-bottom:.5rem}
+.story-meta{font-size:.78rem;color:var(--t2);display:flex;align-items:center;justify-content:center;gap:.65rem;flex-wrap:wrap;margin-top:.5rem}
+.meta-sep{color:var(--t3)}
+.meta-chip{padding:2px 10px;background:var(--gold-d);border:1px solid var(--gold-b);border-radius:100px;font-size:.66rem;color:var(--gold);letter-spacing:.08em;text-transform:uppercase}
+.cast-disp{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin:1rem 0}
+.cast-chip{padding:3px 12px;background:var(--g);border:1px solid var(--b);border-radius:100px;font-size:.74rem;color:var(--t2)}
+
+/* Acts */
+.acts{display:flex;flex-direction:column;gap:2rem;margin-top:2rem}
+.act-c{border-radius:var(--r);overflow:hidden;opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+.act-c.vis{opacity:1;transform:translateY(0)}
+.act-hdr{display:flex;align-items:center;gap:1rem;padding:1.2rem 1.65rem;border-bottom:1px solid var(--b);background:rgba(207,184,124,.025)}
+.act-num{width:36px;height:36px;border-radius:50%;border:1px solid var(--gold-b);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:600;color:var(--gold);flex-shrink:0}
+.act-names{flex:1}
+.act-n{font-family:'Playfair Display',serif;font-size:1.08rem;font-weight:600;color:var(--t)}
+.act-d{font-size:.72rem;color:var(--t2);margin-top:1px}
+.act-ity{padding:3px 11px;background:var(--gold-d);border:1px solid var(--gold-b);border-radius:100px;font-size:.63rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:500}
+.act-body{padding:1.65rem;display:grid;grid-template-columns:1fr 380px;gap:1.5rem;align-items:start}
+@media(max-width:900px){.act-body{grid-template-columns:1fr}}
+.act-scene{font-family:'Playfair Display',serif;font-size:1rem;line-height:1.9;color:rgba(255,255,255,.84);font-weight:400}
+.act-scene p+p{margin-top:1em}
+.act-ld{display:flex;align-items:center;gap:10px;color:var(--t2);font-size:.8rem;padding:1.5rem 0}
+.spin{width:16px;height:16px;border:2px solid rgba(207,184,124,.2);border-top-color:var(--gold);border-radius:50%;animation:sp .75s linear infinite;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Image container */
+.img-wrap{border-radius:var(--r2);overflow:hidden;aspect-ratio:16/9;background:rgba(255,255,255,.025);border:1px solid var(--b);position:relative;min-height:200px}
+.act-img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .8s ease}
+.act-img.show{opacity:1}
+.img-ld{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(10,10,15,.5)}
+.img-ld-t{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
+.img-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:radial-gradient(ellipse at center,rgba(207,184,124,.07) 0%,transparent 70%)}
+.ph-ity{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:var(--gold);opacity:.4;text-align:center;padding:0 1rem}
+.ph-th{font-size:.68rem;color:var(--t3);text-align:center;letter-spacing:.08em}
+
+/* Export bar */
+.export-bar{
+  position:sticky;bottom:0;z-index:90;margin-top:3rem;
+  padding:.9rem 2rem;background:rgba(10,10,15,.9);
+  backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
+  border-top:1px solid var(--b);
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+}
+.export-lbl{font-size:.68rem;color:var(--t2);letter-spacing:.1em;text-transform:uppercase;font-weight:500}
+.export-acts{display:flex;gap:.65rem;flex-wrap:wrap}
+.btn-e{padding:.55rem 1.15rem;border-radius:var(--r3);font-family:'Inter',sans-serif;font-size:.76rem;font-weight:500;letter-spacing:.05em;cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:5px}
+.btn-gh{background:transparent;border:1px solid var(--b);color:var(--t2)}
+.btn-gh:hover{border-color:var(--gold-b);color:var(--t);background:var(--gh)}
+.btn-gold{background:var(--gold-d);border:1px solid var(--gold-b);color:var(--gold)}
+.btn-gold:hover{background:rgba(207,184,124,.2);box-shadow:0 0 20px var(--gold-d)}
+.btn-solid{background:linear-gradient(135deg,var(--gold),rgba(207,184,124,.65));border:none;color:#0a0a0f}
+.btn-solid:hover{box-shadow:0 4px 20px var(--gold-g);transform:translateY(-1px)}
+
+/* Toast */
+.toasts{position:fixed;bottom:80px;right:2rem;z-index:999;display:flex;flex-direction:column;gap:.45rem}
+.toast{padding:.7rem 1.2rem;border-radius:var(--r2);font-size:.8rem;background:rgba(25,25,40,.96);border:1px solid var(--b);backdrop-filter:var(--blur2);color:var(--t);animation:ti .3s ease;max-width:300px}
+.toast.ok{border-color:rgba(74,222,128,.32)}
+.toast.err{border-color:rgba(255,80,80,.32)}
+.toast.inf{border-color:var(--gold-b)}
+@keyframes ti{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Text reveal */
+@keyframes tr{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.rev{animation:tr .55s ease forwards}
+
+/* Shimmer */
+.shim{background:linear-gradient(90deg,rgba(255,255,255,.03) 25%,rgba(255,255,255,.07) 50%,rgba(255,255,255,.03) 75%);background-size:200% 100%;animation:sh 1.5s infinite}
+@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+.hidden{display:none!important}
+
+/* Print */
+@media print{
+  .hdr,.prog,.export-bar,.blob{display:none!important}
+  body{background:#fff!important;color:#000!important}
+  .glass,.glass2,.sc,.act-c{background:transparent!important;border:1px solid #ddd!important;backdrop-filter:none!important;box-shadow:none!important}
+  .act-scene,.act-n,.story-t{color:#000!important}
+  .act-d,.act-ity,.eyebrow,.meta-sep{color:#555!important}
+  .act-img{width:100%;max-width:500px}
+}
+</style>
+</head>
+<body>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+<div class="blob b3"></div>
+<div class="toasts" id="toasts"></div>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-l">
+    <div class="logo">✦</div>
+    <div>
+      <div class="app-t">Story Engine</div>
+      <div class="app-s">Ontological Theatre</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <a href="spark-maker.html" class="nav-a">Spark Maker</a>
+    <a href="character-studio.html" class="nav-a">Characters</a>
+    <a href="trinity-worlds.html" class="nav-a">Worlds</a>
+    <div class="status">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusLabel">Connecting</span>
+    </div>
+  </div>
+</header>
+
+<!-- PROGRESS BAR -->
+<div class="prog hidden" id="progBar">
+  <div class="prog-l">Generating</div>
+  <div class="prog-tr"><div class="prog-fi" id="progFill" style="width:0%"></div></div>
+  <div class="prog-ct" id="progCt">0 / 14</div>
+</div>
+
+<main class="main" id="main">
+
+<!-- ══════════════ SETUP VIEW ══════════════ -->
+<div id="setupView">
+  <div class="hero">
+    <div class="eyebrow">Omega Protocol · 7-Act Arc</div>
+    <h1 class="hero-t">The <em>Story</em> Engine</h1>
+    <p class="hero-d">Chain characters, places, and garments into a full narrative arc — seven acts of emergence, friction, and transformation drawn from the Trinity Graph.</p>
+  </div>
+
+  <!-- Spark Seeds -->
+  <div id="seedsSec" class="hidden">
+    <div class="sc glass">
+      <div class="sc-t">✦ Expand from an Existing Spark</div>
+      <div class="seeds-row" id="seedsGrid"></div>
+    </div>
+  </div>
+
+  <!-- Story Title -->
+  <div class="sc glass">
+    <div class="sc-t">Story Title</div>
+    <input type="text" class="inp inp-lg" id="titleIn" placeholder="A title will emerge…" maxlength="100">
+  </div>
+
+  <!-- World -->
+  <div class="sc glass">
+    <div class="sc-t">World <span class="sc-note">(from Trinity Graph)</span></div>
+    <div class="worlds" id="worldsRow">
+      <div style="color:var(--t3);font-size:.82rem">Loading worlds…</div>
+    </div>
+  </div>
+
+  <!-- Cast -->
+  <div class="sc glass">
+    <div class="sc-t">Cast <span class="sc-note">(select 2–5 characters)</span></div>
+    <div class="cast-g" id="castGrid">
+      <div style="color:var(--t3);font-size:.82rem">Select a world to load characters…</div>
+    </div>
+  </div>
+
+  <!-- Setting + Arc -->
+  <div class="g2">
+    <div class="sc glass">
+      <div class="sc-t">Setting</div>
+      <div class="fg">
+        <label class="fl">Era / Time Period</label>
+        <input type="text" class="inp" id="eraIn" placeholder="e.g. 1930s Mississippi Delta…">
+      </div>
+      <div class="fg" style="margin-bottom:0">
+        <label class="fl">Primary Location</label>
+        <input type="text" class="inp" id="locIn" placeholder="e.g. Stovall Plantation, Clarksdale…">
+      </div>
+    </div>
+    <div class="sc glass">
+      <div class="sc-t">Story Arc</div>
+      <div class="fg" style="margin-bottom:0">
+        <label class="fl">Narrative Arc Type</label>
+        <select class="sel" id="arcSel">
+          <option value="Discovery">Discovery</option>
+          <option value="Tragedy">Tragedy</option>
+          <option value="Redemption">Redemption</option>
+          <option value="Revolution">Revolution</option>
+          <option value="Love">Love</option>
+          <option value="Betrayal">Betrayal</option>
+          <option value="Legacy">Legacy</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Themes -->
+  <div class="sc glass">
+    <div class="sc-t">Themes <span class="sc-note">(select up to 3 -ity forces)</span></div>
+    <div class="theme-g" id="themeGrid"></div>
+  </div>
+
+  <!-- Generate -->
+  <div class="gen-bar glass" id="genBar">
+    <div class="gen-sum" id="genSum">Configure your story above to generate a 7-act Omega Protocol arc.</div>
+    <button class="btn-gen" id="genBtn" onclick="startGen()" disabled>Generate Story Arc →</button>
+  </div>
+</div>
+
+<!-- ══════════════ STORY VIEW ══════════════ -->
+<div id="storyView" class="hidden">
+  <div class="story-hdr">
+    <div class="eyebrow">Omega Protocol · 7-Act Arc</div>
+    <h1 class="story-t" id="storyTitle">Untitled Story</h1>
+    <div class="story-meta" id="storyMeta"></div>
+    <div class="cast-disp" id="castDisp"></div>
+  </div>
+  <div class="acts" id="actsWrap"></div>
+  <div class="export-bar hidden" id="exportBar">
+    <div class="export-lbl">✦ Story Complete</div>
+    <div class="export-acts">
+      <button class="btn-e btn-gh" onclick="doPDF()">⎙ Export PDF</button>
+      <button class="btn-e btn-gh" onclick="doCopy()">⎘ Copy Text</button>
+      <button class="btn-e btn-gold" onclick="doSave()">✦ Save to Trinity</button>
+      <button class="btn-e btn-gold" onclick="doShare()">⤴ Share</button>
+      <button class="btn-e btn-gh" onclick="doNew()">← New Story</button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script src="trinity-context-engine.js"></script>
+<script>
+// ── CONSTANTS ──────────────────────────────────────────────────
+const API = 'https://trinity-graph-api-328246068140.us-central1.run.app';
+const GEM = 'https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+const FAL = 'https://awareness-proxy-328246068140.us-central1.run.app/fal/generate-sync';
+
+const ACTS = [
+  {n:1, name:'Grounding',   ity:'Materiality',  desc:'Establish the world and its tensions'},
+  {n:2, name:'Awakening',   ity:'Vitality',     desc:'Characters come alive, their essence revealed'},
+  {n:3, name:'Friction',    ity:'Criticality',  desc:'The conflict ignites'},
+  {n:4, name:'Connection',  ity:'Connectivity', desc:'Unexpected bonds form'},
+  {n:5, name:'Convergence', ity:'Lucidity',     desc:'The crisis point — clarity arrives'},
+  {n:6, name:'Omega',       ity:'Totality',     desc:'The transformative moment'},
+  {n:7, name:'Return',      ity:'Continuity',   desc:'The world changed — what remains'},
+];
+
+const THEMES = [
+  'Materiality','Vitality','Interiority','Criticality',
+  'Connectivity','Lucidity','Totality','Continuity',
+  'Authenticity','Luminosity','Viscosity','Spontaneity',
+  'Complexity','Serendipity','Synchronicity','Ubiquity',
+  'Curiosity','Creativity','Intensity','Audacity'
+];
+
+const ITY_NAR = {
+  materiality:'deeply physical, grounded in sensation and place',
+  vitality:'kinetic with energy, breath, and movement',
+  interiority:'rich with inner life and private thought',
+  criticality:'charged with tension at the breaking point',
+  connectivity:'weaving hidden threads between all things',
+  lucidity:'crystalline clear — sharp-edged, unambiguous truth',
+  necessity:'driven by what cannot be avoided',
+  reciprocity:'built on exchange and mutual recognition',
+  totality:'complete transformation — nothing held back',
+  continuity:'echoing deep time — the past alive in the present',
+  authenticity:'confessional and raw — no pretense allowed',
+  luminosity:'radiating beauty — the world lit from within',
+  viscosity:'slow and thick — time moving like honey',
+  spontaneity:'unplanned, surprising, governed by impulse',
+  complexity:'layered with subtext — every word carrying multiples',
+  serendipity:'shaped by unexpected discovery and lucky accident',
+  synchronicity:'meaning-saturated coincidence — the universe conspiring',
+  ubiquity:'everywhere at once — the theme fills every corner',
+  curiosity:'driven by questions — the world strange and wonderful',
+  creativity:'bending reality into new shapes — form-breaking',
+  intensity:'nothing throwaway — every moment at highest stakes',
+  audacity:'bold, transgressive, refusing convention',
+  sagacity:'wisdom-driven — every action considered with depth',
+  felicity:'blessed and fortunate — grace operating in the world',
+  tranquility:'still and spacious — silence as its own language',
+  empathy:'deep emotional attunement — feeling through another',
+  fragility:'delicate — the world breakable, handled with care',
+  melancholy:'tinged with loss — beauty found in impermanence',
+  euphoria:'elevated, ecstatic — ordinary world transcended',
+  anxiety:'taut with dread — the future pressing against the present',
+  nostalgia:'haunted by what was — the past refuses to release',
+};
+
+const ARC_GUIDE = {
+  Discovery:'The story is one of revelation — what was hidden will be found.',
+  Tragedy:'The story moves toward irreversible loss. Dignity in the fall.',
+  Redemption:'The story curves back toward wholeness. Grace is possible.',
+  Revolution:'The story breaks the old order. Change is violent and necessary.',
+  Love:'The story is governed by attraction and the terror of it.',
+  Betrayal:'The story is shaped by broken trust. Every gesture carries risk.',
+  Legacy:'The story is about what persists — what the living owe the dead.',
+};
+
+// ── STATE ───────────────────────────────────────────────────────
+const S = {
+  worlds:[], chars:[], garments:[], sparks:[], places:[],
+  worldId:null, world:null,
+  castIds:new Set(), cast:[],
+  title:'', era:'', loc:'', arc:'Discovery',
+  themes:new Set(),
+  results:[], steps:0, done:false,
+};
+
+// ── LOCAL STORAGE ───────────────────────────────────────────────
+function loadLS() {
+  try {
+    const wid = localStorage.getItem('trinity_active_world_id');
+    if (wid) S.worldId = wid;
+    const c = JSON.parse(localStorage.getItem('trinity_characters')||'null');
+    if (Array.isArray(c)) S.chars = c;
+    const g = JSON.parse(localStorage.getItem('trinity_garments')||'null');
+    if (Array.isArray(g)) S.garments = g;
+    const sp = JSON.parse(localStorage.getItem('trinity_sparks')||'null');
+    if (Array.isArray(sp)) S.sparks = sp;
+    const pl = JSON.parse(localStorage.getItem('trinity_places')||'null');
+    if (Array.isArray(pl)) S.places = pl;
+  } catch(e){ console.warn('LS read:', e); }
+}
+
+// ── WORLD CONTEXT (TrinityContext integration) ──────────────────
+function applyWorldContext() {
+  if (typeof TrinityContext === 'undefined') return;
+  const world = TrinityContext.getWorld();
+  if (!world) return;
+
+  // Pre-fill era
+  const eraIn = document.getElementById('eraIn');
+  if (eraIn && !eraIn.value && world.era) eraIn.value = world.era;
+
+  // Pre-fill location with first suggested place
+  const locIn = document.getElementById('locIn');
+  if (locIn && !locIn.value) {
+    const places = TrinityContext.suggestPlaceTypes();
+    if (places.length > 0) locIn.value = places[0];
+  }
+
+  // Suggest arc from world ity_profile
+  const arcSel = document.getElementById('arcSel');
+  if (arcSel) {
+    const suggestedArc = TrinityContext.suggestArc();
+    // Add as option if not present
+    const arcName = suggestedArc.replace(' Arc','');
+    let found = false;
+    for (const opt of arcSel.options) { if (opt.value === arcName || opt.textContent.includes(arcName)) { found = true; arcSel.value = opt.value; S.arc = opt.value; break; } }
+    if (!found && suggestedArc) {
+      const opt = document.createElement('option');
+      opt.value = arcName;
+      opt.textContent = arcName + ' (World-Recommended)';
+      arcSel.appendChild(opt);
+      arcSel.value = arcName;
+      S.arc = arcName;
+    }
+  }
+
+  // Pre-select world themes in theme grid
+  const worldThemes = TrinityContext.suggestThemes().slice(0, 3);
+  worldThemes.forEach(t => {
+    const matched = THEMES.find(th => th.toLowerCase() === t.toLowerCase());
+    if (matched && S.themes.size < 3) S.themes.add(matched);
+  });
+  renderThemes();
+
+  // Show world context banner
+  const worldsRow = document.getElementById('worldsRow');
+  if (worldsRow) {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'padding:8px 14px;background:rgba(207,184,124,0.1);border:1px solid rgba(207,184,124,0.25);border-radius:10px;font-size:0.75rem;color:rgba(207,184,124,0.8);margin-bottom:10px;width:100%;';
+    banner.innerHTML = `✦ <strong style="color:var(--gold)">${world.name}</strong> — ${world.aesthetic || world.premise || ''} · Arc suggested: <em>${TrinityContext.suggestArc()}</em>`;
+    worldsRow.parentNode.insertBefore(banner, worldsRow);
+  }
+
+  updateSummary();
+}
+
+// ── API ─────────────────────────────────────────────────────────
+async function loadWorlds() {
+  try {
+    const r = await fetch(`${API}/worlds`);
+    if (!r.ok) throw 0;
+    const d = await r.json();
+    S.worlds = d;
+    setStatus(true);
+    return d;
+  } catch(e){ setStatus(false); return []; }
+}
+
+async function loadCharsForWorld(wid) {
+  let apiChars = [];
+  try {
+    const r = await fetch(`${API}/characters?world_id=${wid}`);
+    if (r.ok) apiChars = await r.json();
+  } catch(e){}
+
+  // Merge: localStorage has wardrobe + expressed_ity; API has canonical -ity scores
+  const lsChars = S.chars.filter(c => !c.world_id || c.world_id === wid);
+  const merged = apiChars.map(a => {
+    const ls = lsChars.find(c => c.id === a.id || c.name === a.name);
+    return ls ? {...a, ...ls} : a;
+  });
+  lsChars.forEach(ls => {
+    if (!merged.find(c => c.id === ls.id)) merged.push(ls);
+  });
+  S.chars = merged;
+  return merged;
+}
+
+function setStatus(on) {
+  document.getElementById('statusDot').className = 'dot' + (on?' live':'');
+  document.getElementById('statusLabel').textContent = on ? 'LIVE' : 'OFFLINE';
+}
+
+// ── HELPERS: CHARACTER ─────────────────────────────────────────
+const ITY_KEYS = [
+  'materiality','vitality','interiority','criticality','connectivity','lucidity',
+  'necessity','reciprocity','totality','continuity','authenticity','luminosity',
+  'viscosity','workability','spontaneity','complexity','integrity','serendipity',
+  'clarity','certainty','sagacity','felicity','synchronicity','ubiquity','curiosity',
+  'creativity','empathy','sympathy','tactility','sensuosity','immediacy','tranquility',
+  'intensity','fragility','audacity','melancholy','euphoria','anxiety','nostalgia',
+];
+
+function topIties(char, n=5) {
+  // Prefer expressed_ity list if set
+  if (char.expressed_ity && Array.isArray(char.expressed_ity) && char.expressed_ity.length) {
+    return char.expressed_ity
+      .filter(k => char[k] !== undefined)
+      .map(k => ({k, v:char[k]||.5}))
+      .sort((a,b)=>b.v-a.v)
+      .slice(0,n);
+  }
+  return ITY_KEYS
+    .filter(k => char[k] !== undefined)
+    .map(k => ({k, v:char[k]}))
+    .sort((a,b)=>b.v-a.v)
+    .slice(0,n);
+}
+
+function ityProfile(char) {
+  return topIties(char,5)
+    .filter(({v})=>v>.6)
+    .map(({k,v})=>`${k} ${Math.round(v*100)}% — ${ITY_NAR[k]||k}`)
+    .join('; ') || 'balanced presence';
+}
+
+function getGarment(char) {
+  if (!S.garments.length) return null;
+  if (char.wardrobe && Array.isArray(char.wardrobe)) {
+    for (const item of char.wardrobe) {
+      const id = typeof item==='object'?item.id:item;
+      const g = S.garments.find(g=>g.id===id);
+      if (g) return g;
+    }
+  }
+  const byChar = S.garments.find(g=>g.character_id===char.id);
+  if (byChar) return byChar;
+  if (char.active_garment) {
+    return S.garments.find(g=>g.name===char.active_garment||g.id===char.active_garment)||null;
+  }
+  return null;
+}
+
+function charDesc(char) {
+  const g = getGarment(char);
+  const profile = ityProfile(char);
+  let d = `**${char.name}**: `;
+  if (char.biography) d += char.biography.slice(0,180)+'… ';
+  if (g) {
+    const intent = g.intent||g.description||'undefined intention';
+    d += `Dressed in "${g.name}" — a garment of ${intent}. `;
+  }
+  d += `Core essence: ${profile}.`;
+  return d;
+}
+
+// ── RENDERING ──────────────────────────────────────────────────
+function renderWorlds() {
+  const row = document.getElementById('worldsRow');
+  if (!S.worlds.length) {
+    row.innerHTML = '<div style="color:var(--t3);font-size:.82rem">No worlds found. Create one in Trinity Worlds.</div>';
+    return;
+  }
+  row.innerHTML = S.worlds.map(w=>
+    `<div class="world-p${S.worldId===w.id?' sel':''}" onclick="selWorld('${w.id}')">${w.name}</div>`
+  ).join('');
+}
+
+function renderCast() {
+  const g = document.getElementById('castGrid');
+  if (!S.chars.length) {
+    g.innerHTML = '<div style="color:var(--t3);font-size:.82rem">No characters in this world.</div>';
+    return;
+  }
+  // Sort by world relevance if TrinityContext is available
+  let sortedChars = S.chars;
+  if (typeof TrinityContext !== 'undefined' && TrinityContext.getWorld()) {
+    sortedChars = TrinityContext.rank(S.chars.map(c => ({
+      ...c,
+      tags: c.tags || [],
+      ity_profile: c.ity_profile || c.ity || {},
+      archetype: c.archetype || c.lineage || ''
+    }))).map(r => S.chars.find(c => c.id === r.id) || r);
+  }
+  g.innerHTML = sortedChars.map(c=>{
+    const sel = S.castIds.has(c.id);
+    const maxed = S.castIds.size>=5 && !sel;
+    const gar = getGarment(c);
+    const top = topIties(c,8);
+    return `<div class="cc${sel?' sel':''}${maxed?' dis':''}" onclick="toggleChar('${c.id}')">
+      <div class="cc-top">
+        <div class="cc-n">${c.name}</div>
+        <div class="cc-chk">✓</div>
+      </div>
+      <div class="cc-b">${c.biography||c.description||''}</div>
+      <div class="cc-bar">${top.map(({v})=>`<div class="cc-seg${v>.7?' on':''}" style="opacity:${Math.max(.15,v*.9)}"></div>`).join('')}</div>
+      ${gar?`<div class="cc-g">✦ ${gar.name}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function renderThemes() {
+  const g = document.getElementById('themeGrid');
+  g.innerHTML = THEMES.map(t=>{
+    const sel = S.themes.has(t);
+    const maxed = S.themes.size>=3 && !sel;
+    return `<div class="tp${sel?' sel':''}${maxed?' dis':''}" onclick="toggleTheme('${t}')">${t}</div>`;
+  }).join('');
+}
+
+function renderSeeds() {
+  if (!S.sparks.length) return;
+  document.getElementById('seedsSec').classList.remove('hidden');
+  document.getElementById('seedsGrid').innerHTML = S.sparks.slice(0,6).map((sp,i)=>`
+    <div class="seed-c glass2" onclick="expandSpark(${i})">
+      <div class="seed-t">${sp.title||sp.theme||'Untitled Spark'}</div>
+      <div class="seed-ch">${sparkNames(sp)}</div>
+      <div class="seed-badge">Expand into Story</div>
+    </div>
+  `).join('');
+}
+
+function sparkNames(sp) {
+  if (sp.character_names) return sp.character_names.join(' × ');
+  if (sp.characters) return sp.characters.map(c=>c.name||c).join(' × ');
+  return '—';
+}
+
+function updateSummary() {
+  const cc = S.castIds.size;
+  const valid = cc>=2 && S.worldId;
+  const btn = document.getElementById('genBtn');
+  const sum = document.getElementById('genSum');
+  if (valid) {
+    sum.innerHTML = `<strong>${S.world?.name||'World'}</strong> · <strong>${cc}</strong> character${cc>1?'s':''} · Arc: <strong>${S.arc}</strong> · Themes: <strong>${[...S.themes].join(', ')||'None'}</strong>`;
+    btn.disabled = false;
+  } else {
+    const issues = [];
+    if (!S.worldId) issues.push('select a world');
+    if (cc<2) issues.push(`add ${2-cc} more character${cc===1?'':'s'}`);
+    sum.textContent = 'To generate: ' + issues.join(' and ') + '.';
+    btn.disabled = true;
+  }
+}
+
+// ── ACTIONS ────────────────────────────────────────────────────
+async function selWorld(id) {
+  S.worldId = id;
+  S.world = S.worlds.find(w=>w.id===id)||null;
+  S.castIds.clear(); S.cast = [];
+  renderWorlds();
+  document.getElementById('castGrid').innerHTML = '<div style="color:var(--t3);font-size:.82rem;padding:.5rem 0">Loading characters…</div>';
+  await loadCharsForWorld(id);
+  renderCast(); updateSummary();
+}
+
+function toggleChar(id) {
+  if (S.castIds.has(id)) S.castIds.delete(id);
+  else { if (S.castIds.size>=5) return; S.castIds.add(id); }
+  S.cast = S.chars.filter(c=>S.castIds.has(c.id));
+  renderCast(); updateSummary();
+}
+
+function toggleTheme(t) {
+  if (S.themes.has(t)) S.themes.delete(t);
+  else { if (S.themes.size>=3) return; S.themes.add(t); }
+  renderThemes(); updateSummary();
+}
+
+function expandSpark(i) {
+  const sp = S.sparks[i];
+  if (!sp) return;
+  if (sp.era) document.getElementById('eraIn').value = sp.era;
+  if (sp.location) document.getElementById('locIn').value = sp.location;
+  if (sp.title) document.getElementById('titleIn').value = 'Expanded: '+sp.title;
+  if (sp.theme) {
+    const t = THEMES.find(t=>t.toLowerCase()===sp.theme.toLowerCase());
+    if (t) { S.themes.add(t); renderThemes(); }
+  }
+  if (sp.character_ids) {
+    sp.character_ids.forEach(cid=>{ if (S.castIds.size<5) S.castIds.add(cid); });
+    S.cast = S.chars.filter(c=>S.castIds.has(c.id));
+    renderCast();
+  }
+  updateSummary();
+  toast('Spark expanded into story setup','inf');
+}
+
+// ── GENERATION ─────────────────────────────────────────────────
+async function startGen() {
+  S.title = document.getElementById('titleIn').value.trim() || fallbackTitle();
+  S.era   = document.getElementById('eraIn').value.trim();
+  S.loc   = document.getElementById('locIn').value.trim();
+  S.arc   = document.getElementById('arcSel').value;
+  S.cast  = S.chars.filter(c=>S.castIds.has(c.id));
+  if (S.cast.length<2) { toast('Select at least 2 characters','err'); return; }
+  if (!S.worldId)       { toast('Select a world','err'); return; }
+
+  S.results = []; S.steps = 0; S.done = false;
+
+  // Switch views
+  document.getElementById('setupView').classList.add('hidden');
+  document.getElementById('storyView').classList.remove('hidden');
+  document.getElementById('progBar').classList.remove('hidden');
+
+  // Story header
+  document.getElementById('storyTitle').textContent = S.title;
+  const themeChips = [...S.themes].map(t=>`<span class="meta-chip">${t}</span>`).join('');
+  document.getElementById('storyMeta').innerHTML = `
+    <span>${S.world?.name||'Unknown World'}</span>
+    <span class="meta-sep">·</span><span>${S.era||'Timeless'}</span>
+    <span class="meta-sep">·</span><span>${S.loc||'Unknown Place'}</span>
+    <span class="meta-sep">·</span><span class="meta-chip">${S.arc}</span>${themeChips}
+  `;
+  document.getElementById('castDisp').innerHTML = S.cast.map(c=>`<span class="cast-chip">${c.name}</span>`).join('');
+
+  buildActCards();
+  document.getElementById('exportBar').classList.add('hidden');
+
+  // Sequential generation
+  const summaries = [];
+  for (let i=0; i<7; i++) {
+    // Reveal card
+    const card = document.getElementById('ac'+i);
+    if (card) setTimeout(()=>card.classList.add('vis'), 80);
+
+    // Text
+    const text = await genText(i, summaries);
+    S.results[i] = {text, img:null};
+    showText(i, text);
+    summaries.push(text.slice(0,220));
+    S.steps++; updProg();
+
+    // Image
+    const img = await genImg(i, text);
+    S.results[i].img = img;
+    showImg(i, img);
+    S.steps++; updProg();
+
+    // Scroll to card
+    card?.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+
+  S.done = true;
+  document.getElementById('exportBar').classList.remove('hidden');
+  saveLS(); saveAPI();
+  toast('✦ Story complete — 7 acts generated','ok');
+}
+
+function fallbackTitle() {
+  const m = {
+    Discovery:['The Finding','What Was Hidden','Into the Unknown'],
+    Tragedy:['The Fall','What Was Lost','The Price'],
+    Redemption:['The Way Back','Through the Fire','A Second Chance'],
+    Revolution:['The Rising','What Must Change','The Turning'],
+    Love:['The Meeting','What Binds Us','Two Rivers'],
+    Betrayal:['The Wound','What Was Given','The Breaking'],
+    Legacy:['What Remains','The Thread','After the Storm'],
+  };
+  const opts = m[S.arc]||['The Story'];
+  return opts[Math.floor(Math.random()*opts.length)];
+}
+
+function buildActCards() {
+  document.getElementById('actsWrap').innerHTML = ACTS.map((a,i)=>`
+    <div class="act-c glass" id="ac${i}">
+      <div class="act-hdr">
+        <div class="act-num">${a.n}</div>
+        <div class="act-names">
+          <div class="act-n">${a.name}</div>
+          <div class="act-d">${a.desc}</div>
+        </div>
+        <div class="act-ity">${a.ity}</div>
+      </div>
+      <div class="act-body">
+        <div>
+          <div class="act-ld" id="ald${i}"><div class="spin"></div><span>Generating scene…</span></div>
+          <div class="act-scene hidden" id="atx${i}"></div>
+        </div>
+        <div class="img-wrap">
+          <div class="img-ld" id="ild${i}">
+            <div class="spin"></div>
+            <div class="img-ld-t">Awaiting text…</div>
+          </div>
+          <img class="act-img" id="aimg${i}" src="" alt="" style="display:none">
+          <div class="img-ph hidden" id="aph${i}">
+            <div class="ph-ity">${a.ity}</div>
+            <div class="ph-th">${[...S.themes].join(' · ')||a.name}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showText(i, text) {
+  document.getElementById('ald'+i).classList.add('hidden');
+  const el = document.getElementById('atx'+i);
+  const paras = text.split(/\n\n+/).filter(p=>p.trim());
+  el.innerHTML = paras.map(p=>`<p>${p.trim()}</p>`).join('');
+  el.classList.remove('hidden');
+  el.classList.add('rev');
+  const ild = document.getElementById('ild'+i);
+  if (ild) ild.querySelector('.img-ld-t').textContent = 'Generating image…';
+}
+
+function showImg(i, url) {
+  const ild = document.getElementById('ild'+i);
+  const img = document.getElementById('aimg'+i);
+  const ph  = document.getElementById('aph'+i);
+  if (ild) ild.style.display='none';
+  if (url) {
+    img.style.display='block';
+    img.src = url;
+    img.onload  = ()=>img.classList.add('show');
+    img.onerror = ()=>{ img.style.display='none'; ph?.classList.remove('hidden'); };
+  } else {
+    ph?.classList.remove('hidden');
+  }
+}
+
+function updProg() {
+  const pct = (S.steps/14)*100;
+  document.getElementById('progFill').style.width = pct+'%';
+  document.getElementById('progCt').textContent = `${S.steps} / 14`;
+}
+
+// ── PROMPT BUILDERS ────────────────────────────────────────────
+function buildPrompt(actIdx, summaries) {
+  const act = ACTS[actIdx];
+  const ityKey = act.ity.toLowerCase();
+  const ityNar = ITY_NAR[ityKey]||act.ity;
+
+  // Character block with garments
+  const charBlock = S.cast.map(c=>{
+    const g = getGarment(c);
+    const top3 = topIties(c,3).filter(({v})=>v>.65);
+    let block = `• **${c.name}**`;
+    if (c.biography) block += `: ${c.biography.slice(0,120)}…`;
+    if (g) {
+      const intent = g.intent||g.description||'undefined intention';
+      block += `\n  Wearing "${g.name}" — a garment of ${intent}.`;
+    }
+    if (top3.length) {
+      block += `\n  Core energies: ${top3.map(({k,v})=>`${k} ${Math.round(v*100)}% (${ITY_NAR[k]||k})`).join('; ')}.`;
+    }
+    return block;
+  }).join('\n\n');
+
+  // Garment confrontation framing for acts with tension (3,5,6)
+  let garmentFraming = '';
+  if (actIdx>=2 && S.cast.length>=2) {
+    const pairs = [];
+    for (let i=0; i<Math.min(S.cast.length,3); i++) {
+      const c = S.cast[i]; const g = getGarment(c);
+      const top1 = topIties(c,1)[0];
+      if (g) pairs.push(`${c.name}, dressed in "${g.name}" (a garment of ${g.intent||g.description||'intention'}), carries the energy of ${top1?.k||'presence'}`);
+    }
+    if (pairs.length>1) garmentFraming = `\nCOSTUME INTENTIONS:\n${pairs.join('\n')}\n`;
+  }
+
+  // Previous context
+  const prevCtx = summaries.length
+    ? `\nPREVIOUS ACTS:\n${summaries.map((s,i)=>`Act ${i+1}: ${s}…`).join('\n')}\n`
+    : '';
+
+  return `You are a literary narrative engine writing in the tradition of James Baldwin, Toni Morrison, and Cormac McCarthy — precise, sensory, emotionally intelligent prose.
+
+STORY: "${S.title}"
+WORLD: ${S.world?.name||'Unknown'} — ${S.world?.description||''}
+SETTING: ${S.era||'timeless'}, ${S.loc||'unspecified place'}
+STORY ARC: ${S.arc} — ${ARC_GUIDE[S.arc]||''}
+THEMES: ${[...S.themes].join(', ')||'none specified'}
+
+CAST:
+${charBlock}
+${garmentFraming}${prevCtx}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NOW WRITE — ACT ${act.n}: ${act.name.toUpperCase()} (${act.ity})
+Dramatic purpose: ${act.desc}
+Dominant energy: ${act.ity} — ${ityNar}
+Position: Act ${act.n} of 7 — calibrate dramatic momentum accordingly.
+
+Write exactly 2 rich paragraphs (150–200 words total) of literary prose. Requirements:
+- No chapter headings, act labels, or meta-commentary — only the scene
+- Specific sensory details grounded in the world's textures and geography
+- Reference what characters are wearing and what that clothing intends
+- Let each character's core -ity energies shape their every gesture and word
+- The ${act.ity} quality must permeate the prose like weather — present everywhere
+- Prose should feel cinematic, alive, and fully inhabited`;
+}
+
+function buildImgPrompt(actIdx, text) {
+  const act = ACTS[actIdx];
+  const snippet = text.slice(0,150).replace(/\n/g,' ');
+  const visuals = S.cast.map(c=>{
+    const g = getGarment(c);
+    let v = c.visual_description||c.name;
+    if (g && (g.visual_description||g.name)) v += ` wearing ${g.visual_description||g.name}`;
+    return v;
+  }).join('; ');
+  const moods = {
+    Grounding:'establishing shot, golden hour, rich textures, sense of place, documentary realism',
+    Awakening:'intimate portrait, warm light, kinetic energy, alive, breath in the frame',
+    Friction:'dramatic tension, harsh shadows, high contrast, confrontational framing, charged air',
+    Connection:'two figures, soft bond, golden light between them, tender recognition',
+    Convergence:'crystalline clarity, decisive moment, sharp focus, everything at stake',
+    Omega:'transcendent light, transformation mid-frame, epic scale, the world changing',
+    Return:'quiet aftermath, long shadows, contemplative distance, what remains',
+  };
+  return `Cinematic scene: ${snippet}. ${visuals}. Setting: ${S.era||'historical'}, ${S.loc||'atmospheric location'}. Mood: ${moods[act.name]||'dramatic, story-driven'}. World: ${S.world?.name||''}. ${act.ity} energy. Photographic quality, dramatic lighting. No text, no logos.`;
+}
+
+// ── API CALLS ──────────────────────────────────────────────────
+async function genText(i, summaries) {
+  const prompt = buildPrompt(i, summaries);
+  try {
+    const r = await fetch(GEM, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'gemini-3.1-pro-preview',
+        contents:[{parts:[{text: prompt}]}],
+        generationConfig:{ maxOutputTokens:600, temperature:0.9 }
+      }),
+    });
+    if (!r.ok) throw 0;
+    const d = await r.json();
+    let text = d.candidates?.[0]?.content?.parts?.[0]?.text || d.text || fallbackScene(i);
+    // Strip any accidental "Act N: Name (Ity)\n\n" headers from the start
+    text = text.replace(/^Act\s+\d+[:\s].+?\n+/i, '').trim();
+    return text;
+  } catch(e){ return fallbackScene(i); }
+}
+
+async function genImg(i, text) {
+  const prompt = buildImgPrompt(i, text);
+  try {
+    const r = await fetch(FAL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'fal-ai/flux/schnell', prompt, image_size:'landscape_16_9', num_images:1}),
+    });
+    if (!r.ok) throw 0;
+    const d = await r.json();
+    return d.images?.[0]?.url || d.image_url || d.url || null;
+  } catch(e){ return null; }
+}
+
+function fallbackScene(i) {
+  const act = ACTS[i];
+  const names = S.cast.map(c=>c.name).join(' and ');
+  const themeStr = [...S.themes].join(' and ') || 'the unspoken';
+  return `The ${act.name.toLowerCase()} settles over everything without announcement. ${names} stand in ${S.loc||'the place'}, in the time of ${S.era||'their lives'}, and the world of ${S.world?.name||'this story'} watches them with the patience of old stone. Something has shifted in the arrangement of things — ${themeStr} pressing through the moment like weather, like memory, like the particular weight of what is about to be said.\n\nThis is the act of ${act.ity}, and it moves through them differently — through their bodies, through what they wear and why they wear it, through the distance or closeness between them. The ${S.arc.toLowerCase()} arc bends here. Everything that follows will carry the mark of this particular instant, this pressure of meaning that cannot be refused or returned.`;
+}
+
+// ── SAVE & EXPORT ──────────────────────────────────────────────
+function buildStory() {
+  return {
+    id:`story-${Date.now()}`,
+    title:S.title,
+    world_id:S.worldId,
+    world_name:S.world?.name,
+    character_ids:[...S.castIds],
+    character_names:S.cast.map(c=>c.name),
+    garment_ids:S.cast.map(c=>getGarment(c)?.id).filter(Boolean),
+    place_ids:S.places.filter(p=>p.name&&S.loc&&p.name.toLowerCase().includes(S.loc.toLowerCase())).map(p=>p.id),
+    era:S.era, location:S.loc,
+    story_arc:S.arc,
+    themes:[...S.themes],
+    acts:ACTS.map((a,i)=>({number:a.n, name:a.name, ity:a.ity, text:S.results[i]?.text||'', image_url:S.results[i]?.img||null})),
+    created_at:new Date().toISOString(),
+    provenance:{tool:'story-engine',version:'1.0',omega_protocol:true},
+  };
+}
+
+function saveLS() {
+  try {
+    const story = buildStory();
+    const list = JSON.parse(localStorage.getItem('trinity_stories')||'[]');
+    list.unshift(story);
+    localStorage.setItem('trinity_stories', JSON.stringify(list));
+  } catch(e){ console.warn('LS save:', e); }
+}
+
+async function saveAPI() {
+  try {
+    const r = await fetch(`${API}/stories`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(buildStory()),
+    });
+    if (r.ok) console.log('Story saved to API');
+  } catch(e){ console.warn('API save skipped:', e.message); }
+}
+
+function doPDF() {
+  const s = document.createElement('style');
+  s.textContent = `@media print{body{background:#fff!important;color:#000!important}.blob,.hdr,.prog,.export-bar{display:none!important}.glass,.act-c{background:transparent!important;border:1px solid #ddd!important;backdrop-filter:none!important}.act-scene p,.act-n,.story-t{color:#000!important}.act-d,.act-ity{color:#555!important}}`;
+  document.head.appendChild(s);
+  setTimeout(()=>{ window.print(); setTimeout(()=>s.remove(),1500); }, 150);
+}
+
+function doCopy() {
+  const lines = [
+    S.title,
+    `${S.world?.name} · ${S.era} · ${S.loc}`,
+    `Arc: ${S.arc}  |  Themes: ${[...S.themes].join(', ')}`,
+    `Cast: ${S.cast.map(c=>c.name).join(', ')}`,
+    '', '─'.repeat(50), '',
+    ...ACTS.map((a,i)=>{
+      const r = S.results[i];
+      if (!r?.text) return null;
+      return [`ACT ${a.n}: ${a.name.toUpperCase()} (${a.ity})`, a.desc, '', r.text, ''].join('\n');
+    }).filter(Boolean),
+  ].join('\n');
+  navigator.clipboard.writeText(lines)
+    .then(()=>toast('Full story copied to clipboard','ok'))
+    .catch(()=>toast('Copy failed','err'));
+}
+
+function doSave() {
+  saveLS();
+  saveAPI()
+    .then(()=>toast('Story saved to Trinity Graph ✦','ok'))
+    .catch(()=>toast('Saved to local storage','inf'));
+}
+
+function doShare() {
+  const d = {title:S.title, world:S.world?.name, arc:S.arc, themes:[...S.themes], chars:S.cast.map(c=>c.name)};
+  const url = `${location.origin}${location.pathname}#story=${btoa(JSON.stringify(d))}`;
+  navigator.clipboard.writeText(url)
+    .then(()=>toast('Share URL copied to clipboard','ok'))
+    .catch(()=>toast('Copy failed','err'));
+}
+
+function doNew() {
+  S.castIds.clear(); S.cast=[]; S.themes.clear(); S.results=[]; S.steps=0; S.done=false;
+  document.getElementById('titleIn').value='';
+  document.getElementById('eraIn').value='';
+  document.getElementById('locIn').value='';
+  document.getElementById('storyView').classList.add('hidden');
+  document.getElementById('progBar').classList.add('hidden');
+  document.getElementById('setupView').classList.remove('hidden');
+  renderCast(); renderThemes(); updateSummary();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── TOAST ───────────────────────────────────────────────────────
+function toast(msg, type='inf') {
+  const c = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(()=>t.remove(), 3600);
+}
+
+// ── EVENT LISTENERS ─────────────────────────────────────────────
+document.getElementById('eraIn').addEventListener('input',e=>{S.era=e.target.value;updateSummary()});
+document.getElementById('locIn').addEventListener('input',e=>{S.loc=e.target.value;updateSummary()});
+document.getElementById('arcSel').addEventListener('change',e=>{S.arc=e.target.value;updateSummary()});
+document.getElementById('titleIn').addEventListener('input',e=>{S.title=e.target.value});
+
+// ── INIT ────────────────────────────────────────────────────────
+async function init() {
+  loadLS();
+  renderThemes();
+  renderSeeds();
+
+  const worlds = await loadWorlds();
+  if (!worlds.length && S.worldId) S.worlds = [{id:S.worldId, name:'Active World', description:''}];
+  renderWorlds();
+
+  if (S.worldId && S.worlds.find(w=>w.id===S.worldId)) {
+    await selWorld(S.worldId);
+  } else if (S.worlds.length===1) {
+    await selWorld(S.worlds[0].id);
+  }
+  // Apply world context from TrinityContext engine
+  applyWorldContext();
+  updateSummary();
+
+  // Spark Maker handoff — "Write Their Story →" button sets trinity_story_setup
+  const sparkSetup = (() => { try { return JSON.parse(localStorage.getItem('trinity_story_setup')||'null'); } catch(e){ return null; } })();
+  if (sparkSetup) {
+    localStorage.removeItem('trinity_story_setup'); // consume once
+    if (sparkSetup.cast && Array.isArray(sparkSetup.cast)) {
+      sparkSetup.cast.forEach(c => {
+        if (S.cast.length < 6 && !S.cast.find(x => x.id === c.id)) {
+          S.cast.push(c);
+          S.castIds.add(c.id);
+        }
+      });
+    }
+    if (sparkSetup.place && !S.loc) S.loc = sparkSetup.place;
+    if (sparkSetup.era && !S.era) S.era = sparkSetup.era;
+    if (sparkSetup.narrative) {
+      // Pre-fill title with character names
+      const names = sparkSetup.cast?.map(c=>c.name).join(' × ');
+      if (names && !document.getElementById('titleIn').value) {
+        document.getElementById('titleIn').value = `The Story of ${names}`;
+      }
+    }
+    renderCast?.(); updateSummary?.();
+    toast('Cast loaded from Spark Maker ✦', 'inf');
+  }
+
+  // URL hash story expand
+  if (location.hash.startsWith('#story=')) {
+    try {
+      const d = JSON.parse(atob(location.hash.slice(7)));
+      if (d.title) document.getElementById('titleIn').value = 'Continuing: '+d.title;
+      if (d.arc) document.getElementById('arcSel').value = d.arc;
+      if (d.themes) d.themes.forEach(t=>{ if (S.themes.size<3) S.themes.add(t); });
+      renderThemes(); updateSummary();
+      toast(`Loaded shared story: "${d.title}"`, 'inf');
+    } catch(e){}
+  }
+}
+
+init();
+</script>
+</body>
+</html>

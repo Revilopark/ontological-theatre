@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VNY Intelligence Map — Enginuity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#080808;color:#e0e0e0;font-family:'Inter',sans-serif;overflow:hidden;height:100vh}
+:root{--cyan:#00D4FF;--gold:#C9A84C;--bg:#080808;--panel:rgba(12,12,12,0.92);--border:rgba(255,255,255,0.08)}
+#header{height:48px;background:linear-gradient(90deg,#0a0a0a,#111);display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--border);z-index:1000;position:relative}
+#header h1{font-size:14px;font-weight:600;letter-spacing:2px;color:var(--cyan)}
+#header h1 span{color:var(--gold);font-weight:400;margin-left:8px;font-size:11px;letter-spacing:1px}
+#header .subtitle{font-size:11px;color:#888;letter-spacing:0.5px}
+#main{display:flex;height:calc(100vh - 48px)}
+#sidebar{width:300px;background:var(--panel);backdrop-filter:blur(20px);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;z-index:900;display:flex;flex-direction:column}
+#sidebar::-webkit-scrollbar{width:4px}
+#sidebar::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+#map-container{flex:1;position:relative}
+#map{width:100%;height:100%}
+.layer-group{border-bottom:1px solid var(--border)}
+.layer-group-header{padding:12px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#aaa;transition:color .2s}
+.layer-group-header:hover{color:#fff}
+.layer-group-header .arrow{transition:transform .2s;font-size:10px}
+.layer-group-header.open .arrow{transform:rotate(90deg)}
+.layer-group-body{display:none;padding:4px 16px 12px}
+.layer-group-body.open{display:block}
+.layer-item{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:11px;color:#bbb}
+.layer-item:hover{color:#fff}
+.layer-item input[type=checkbox]{accent-color:var(--cyan);width:14px;height:14px;cursor:pointer}
+.layer-item .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+#risk-card{margin-top:auto;padding:16px;border-top:1px solid var(--border);background:rgba(0,0,0,0.3)}
+#risk-card h3{font-size:11px;letter-spacing:1.5px;color:#888;margin-bottom:10px;text-transform:uppercase}
+.risk-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:11px}
+.risk-row .label{color:#aaa}
+.risk-row .value{font-weight:600}
+.risk-bar{height:6px;background:#1a1a1a;border-radius:3px;margin-top:8px;overflow:hidden}
+.risk-bar-fill{height:100%;border-radius:3px;transition:width .4s,background .4s}
+#info-panel{position:absolute;bottom:0;left:0;right:0;background:var(--panel);backdrop-filter:blur(20px);border-top:1px solid var(--border);transform:translateY(100%);transition:transform .3s;z-index:800;max-height:40vh;overflow-y:auto;padding:20px 24px}
+#info-panel.open{transform:translateY(0)}
+#info-panel .close-btn{position:absolute;top:12px;right:16px;background:none;border:none;color:#888;cursor:pointer;font-size:18px}
+#info-panel h3{font-size:13px;color:var(--cyan);letter-spacing:1px;margin-bottom:4px}
+#info-panel .category{font-size:10px;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px}
+#info-panel .desc{font-size:12px;color:#ccc;line-height:1.6;margin-bottom:10px}
+#info-panel .meta{display:flex;gap:20px;flex-wrap:wrap}
+#info-panel .meta-item{font-size:11px}
+#info-panel .meta-item .ml{color:#888}
+.risk-badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:600;letter-spacing:0.5px}
+.risk-LOW{background:rgba(0,200,100,0.15);color:#00c864}
+.risk-MEDIUM{background:rgba(255,200,0,0.15);color:#ffc800}
+.risk-HIGH{background:rgba(255,100,0,0.15);color:#ff6400}
+.risk-CRITICAL{background:rgba(255,0,0,0.2);color:#ff3232}
+.scenario-controls{position:absolute;top:10px;right:10px;z-index:800;display:flex;flex-direction:column;gap:6px}
+.scenario-btn{background:rgba(12,12,12,0.85);backdrop-filter:blur(10px);border:1px solid var(--border);color:#aaa;padding:8px 14px;font-size:11px;font-family:'Inter',sans-serif;cursor:pointer;border-radius:4px;letter-spacing:0.5px;transition:all .2s;white-space:nowrap}
+.scenario-btn:hover{color:#fff;border-color:#555}
+.scenario-btn.active{border-color:var(--cyan);color:var(--cyan)}
+#analyze-btn{background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(201,168,76,0.15));border:1px solid var(--cyan);color:var(--cyan);margin-top:4px;font-weight:600}
+#analyze-btn:hover{background:linear-gradient(135deg,rgba(0,212,255,0.25),rgba(201,168,76,0.25))}
+#analysis-panel{position:absolute;top:0;right:0;bottom:0;width:400px;background:var(--panel);backdrop-filter:blur(20px);border-left:1px solid var(--border);z-index:850;transform:translateX(100%);transition:transform .3s;overflow-y:auto;padding:20px}
+#analysis-panel.open{transform:translateX(0)}
+#analysis-panel .close-btn{position:absolute;top:12px;right:16px;background:none;border:none;color:#888;cursor:pointer;font-size:18px}
+#analysis-panel h3{font-size:13px;color:var(--cyan);margin-bottom:12px}
+#analysis-panel .content{font-size:12px;color:#ccc;line-height:1.7;white-space:pre-wrap}
+#analysis-panel .loading{color:var(--gold);font-size:12px}
+.leaflet-popup-content-wrapper{background:rgba(12,12,12,0.95)!important;color:#e0e0e0!important;border-radius:6px!important;border:1px solid rgba(255,255,255,0.1)!important;backdrop-filter:blur(10px);box-shadow:0 4px 20px rgba(0,0,0,0.5)!important}
+.leaflet-popup-tip{background:rgba(12,12,12,0.95)!important}
+.leaflet-popup-content{font-family:'Inter',sans-serif!important;font-size:12px!important;line-height:1.6!important;color:#ccc!important}
+.leaflet-popup-close-button{color:#888!important}
+.leaflet-control-zoom a{background:rgba(12,12,12,0.9)!important;color:#aaa!important;border-color:rgba(255,255,255,0.1)!important}
+#recenter-btn{position:absolute;top:80px;left:10px;z-index:1000;background:rgba(12,12,12,0.92);color:#00E5FF;border:1px solid rgba(0,229,255,0.35);border-radius:6px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;backdrop-filter:blur(8px);letter-spacing:.5px;transition:background .2s,border-color .2s;white-space:nowrap;}
+#recenter-btn:hover{background:rgba(0,188,212,0.18);border-color:#00E5FF;}
+.leaflet-control-attribution{background:rgba(0,0,0,0.6)!important;color:#555!important;font-size:9px!important}
+.leaflet-div-icon{background:none!important;border:none!important;box-shadow:none!important}
+.leaflet-control-attribution a{color:#666!important}
+</style>
+</head>
+<body>
+<div style="position:absolute;top:8px;right:12px;z-index:1000;display:flex;gap:7px">
+  <a href="vny-scenario.html" style="display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:6px;background:rgba(0,200,255,.1);border:1px solid rgba(0,200,255,.25);color:#00c8ff;font-size:10px;font-weight:600;text-decoration:none;font-family:'Inter',sans-serif">← Scenario Tool</a>
+  <a href="vny-atlas.html" style="display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:6px;background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.2);color:#ffd700;font-size:10px;font-weight:600;text-decoration:none;font-family:'Inter',sans-serif">Atlas →</a>
+</div>
+<div id="header">
+<div><h1>VNY INTELLIGENCE MAP<span>ENGINUITY</span></h1></div>
+<div class="subtitle">16425 Hart Street · Van Nuys Airport · Active RFP Analysis</div>
+</div>
+<div id="main">
+<div id="sidebar">
+<!-- Layer groups injected by JS -->
+<div id="layer-container"></div>
+<div id="risk-card">
+<h3>Site Complexity Score</h3>
+<div class="risk-row"><span class="label">FAA Regulatory</span><span class="value" id="risk-faa">—</span></div>
+<div class="risk-row"><span class="label">Community</span><span class="value" id="risk-community" style="color:#ff6400">HIGH</span></div>
+<div class="risk-row"><span class="label">Environmental</span><span class="value" id="risk-env">—</span></div>
+<div class="risk-row"><span class="label">Composite</span><span class="value" id="risk-total">—</span></div>
+<div class="risk-bar"><div class="risk-bar-fill" id="risk-bar-fill"></div></div>
+</div>
+</div>
+<div id="map-container">
+<div id="map"></div>
+<button id="recenter-btn" title="Recenter on VNY">⊕ VNY</button>
+<div class="scenario-controls">
+<button class="scenario-btn" data-concept="A">SHOW: CONCEPT A — Full Jet Campus</button>
+<button class="scenario-btn" data-concept="B">SHOW: CONCEPT B — Hybrid Aviation</button>
+<button class="scenario-btn" data-concept="C">SHOW: CONCEPT C — eVTOL Hub</button>
+<button class="scenario-btn" id="analyze-btn">⚡ ANALYZE SITE CONSTRAINTS</button>
+</div>
+<div id="info-panel">
+<button class="close-btn" onclick="closeInfo()">&times;</button>
+<h3 id="info-title"></h3>
+<div class="category" id="info-category"></div>
+<div class="desc" id="info-desc"></div>
+<div class="meta" id="info-meta"></div>
+</div>
+<div id="analysis-panel">
+<button class="close-btn" onclick="document.getElementById('analysis-panel').classList.remove('open')">&times;</button>
+<h3>⚡ ENGINUITY SITE ANALYSIS</h3>
+<div class="content" id="analysis-content"></div>
+</div>
+</div>
+</div>
+<script>
+// ── AI: Proxy → Direct Gemini 2.5-flash → 2.0-flash ─────────────────────────
+const GEMINI_PROXY='https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+const GEMINI_DIRECT='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyDmqhRDt2eJ-RO-gcRP3c1Sa85wk_E8KJ4';
+const GEMINI_FAST='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyDmqhRDt2eJ-RO-gcRP3c1Sa85wk_E8KJ4';
+async function callAI(prompt,sys,onStatus){
+  const body=JSON.stringify({contents:[{parts:[{text:prompt}]}],system_instruction:{parts:[{text:sys}]}});
+  const hdr={'Content-Type':'application/json'};
+  try{
+    const r=await fetch(GEMINI_PROXY,{method:'POST',headers:hdr,body});
+    if(r.ok){const d=await r.json();const t=d?.candidates?.[0]?.content?.parts?.[0]?.text;if(t)return t;}
+  }catch(e){}
+  if(onStatus)onStatus('⟳ Switching to Gemini 2.5…');
+  for(let i=0;i<2;i++){
+    try{
+      const r=await fetch(GEMINI_DIRECT,{method:'POST',headers:hdr,body});
+      if(r.ok){const d=await r.json();const t=d?.candidates?.[0]?.content?.parts?.[0]?.text;if(t)return t;}
+      if((r.status===503||r.status===429)&&i<1){await new Promise(res=>setTimeout(res,3000));continue;}
+      break;
+    }catch(e){if(i<1){await new Promise(res=>setTimeout(res,2000));continue;}}
+  }
+  if(onStatus)onStatus('⟳ Switching to Gemini 2.0…');
+  try{
+    const r=await fetch(GEMINI_FAST,{method:'POST',headers:hdr,body});
+    if(r.ok){const d=await r.json();const t=d?.candidates?.[0]?.content?.parts?.[0]?.text;if(t)return t;}
+  }catch(e){}
+  throw new Error('All AI providers unavailable — please retry in a moment.');
+}
+
+// ═══════════ MAP INIT ═══════════
+const VNY_CENTER=[34.2082,-118.4892],VNY_ZOOM=14;
+const map = L.map('map',{zoomControl:true,attributionControl:true}).setView(VNY_CENTER,VNY_ZOOM);
+document.getElementById('recenter-btn').addEventListener('click',()=>map.setView(VNY_CENTER,VNY_ZOOM));
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+  attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:19
+}).addTo(map);
+
+// ═══════════ HELPERS ═══════════
+function gj(coords){return coords.map(c=>[c[1],c[0]])} // [lat,lng] to [lng,lat] for geojson
+function poly(latlngs,style,popup,meta){
+  const l=L.polygon(latlngs,style);
+  if(popup)l.bindPopup(popup);
+  if(meta)l.meta=meta;
+  l.on('click',()=>showInfo(meta));
+  return l;
+}
+function line(latlngs,style,popup,meta){
+  const l=L.polyline(latlngs,style);
+  if(popup)l.bindPopup(popup);
+  if(meta)l.meta=meta;
+  l.on('click',()=>showInfo(meta));
+  return l;
+}
+
+// ═══════════ RUNWAY GEOMETRY ═══════════
+// Runway 16R/34L approx endpoints
+const rwy16R=[34.2178,-118.4898]; // north threshold (34L end)
+const rwy34L=[34.2018,-118.4938]; // south threshold (16R end)
+const rwyLen=0.016; // approx degrees
+// 200ft ≈ 0.00055 degrees lat offset perpendicular
+
+function offsetPoint(p,bearing,distKm){
+  const pt=turf.point([p[1],p[0]]);
+  const dest=turf.destination(pt,distKm,bearing);
+  return [dest.geometry.coordinates[1],dest.geometry.coordinates[0]];
+}
+// Runway bearing ~160 degrees (SSE)
+const rwyBearing=160;
+const perpR=rwyBearing+90;
+const perpL=rwyBearing-90;
+
+// ═══════════ LAYER DEFINITIONS ═══════════
+const layers={};
+const layerMeta={};
+
+// --- SITE CONTEXT ---
+layers.hartStreet=poly([
+  [34.2078,-118.4900],[34.2078,-118.4882],[34.2088,-118.4882],[34.2088,-118.4900]
+],{color:'#00D4FF',weight:2,fillColor:'rgba(0,212,255,0.15)',fillOpacity:1},
+"<b style='color:#00D4FF'>16425 Hart Street</b><br>10 acres · Current RFP Parcel<br>Non-FBO mandate · Active Southwest Aviation lease (35 years)",
+{title:'16425 Hart Street Parcel',category:'SITE CONTEXT',desc:'10-acre parcel at 16425 Hart Street, Van Nuys Airport. Current RFP site with non-FBO development mandate. Active Southwest Aviation lease spanning 35 years. This is the primary redevelopment target.',ref:'LAWA RFP 2025',risk:'HIGH',action:'Complete Phase I ESA, verify lease termination provisions, confirm FAA grant assurance compliance before site planning.'});
+
+layers.hayvenhurst=poly([
+  [34.2060,-118.4955],[34.2060,-118.4933],[34.2072,-118.4933],[34.2072,-118.4955]
+],{color:'#C9A84C',weight:2,dashArray:'8,6',fillColor:'rgba(201,168,76,0.15)',fillOpacity:1},
+"<b style='color:#C9A84C'>Hayvenhurst Lot</b><br>~3 acres · Legally contested<br>LAWA claims authority without Specific Plan amendment (disputed)<br>Active litigation risk",
+{title:'Hayvenhurst Lot',category:'SITE CONTEXT',desc:'~3-acre lot on Hayvenhurst Avenue. Legally contested — LAWA claims development authority without Specific Plan amendment, which is disputed. Active litigation risk makes this parcel a secondary/contingent option.',ref:'VNY Specific Plan (2006), pending litigation',risk:'CRITICAL',action:'Do NOT include in primary development scenario until legal status resolved. Monitor litigation. Obtain title report.'});
+
+// Airport boundary (approximate VNY perimeter)
+layers.airportBoundary=poly([
+  [34.2190,-118.4970],[34.2190,-118.4850],[34.2170,-118.4830],
+  [34.2100,-118.4830],[34.2010,-118.4870],[34.1990,-118.4920],
+  [34.2000,-118.4980],[34.2060,-118.5000],[34.2140,-118.4990]
+],{color:'rgba(255,255,255,0.2)',weight:1,fill:false},
+"<b>VNY Airport Boundary</b><br>Van Nuys Airport · LAWA-operated · ~730 acres",
+{title:'VNY Airport Boundary',category:'SITE CONTEXT',desc:'Van Nuys Airport perimeter. LAWA-operated general aviation reliever airport, approximately 730 acres. One of the busiest GA airports in the world.',ref:'LAWA Airport Layout Plan',risk:'LOW',action:'Reference for spatial context only.'});
+
+// --- FAA REGULATORY ---
+// Part 77 Primary Surface: 200ft (0.061km) each side of runway centerline, full length
+const p77w=0.061;
+const p77nw=offsetPoint(rwy16R,perpL,p77w);
+const p77ne=offsetPoint(rwy16R,perpR,p77w);
+const p77se=offsetPoint(rwy34L,perpR,p77w);
+const p77sw=offsetPoint(rwy34L,perpL,p77w);
+layers.part77Primary=poly([p77nw,p77ne,p77se,p77sw],
+{color:'#FF3232',weight:1,fillColor:'rgba(255,50,50,0.1)',fillOpacity:1},
+"<b style='color:#FF3232'>Part 77 Primary Surface</b><br>Any structure within this zone requires FAA airspace study<br>OE/AAA Notification required for objects >200ft AGL",
+{title:'FAA Part 77 Primary Surface',category:'FAA REGULATORY',desc:'The Primary Surface is a horizontal plane centered on the runway, extending 200 feet beyond each end. Any object that penetrates this surface triggers mandatory FAA airspace review (Form 7460-1). All construction within this envelope requires OE/AAA Notification.',ref:'14 CFR Part 77 · FAR Part 77.17(a)(1)',risk:'HIGH',action:'File FAA Form 7460-1 for any proposed structure. Allow 45-day review period. Engage aviation counsel for height analysis.'});
+
+// Approach surfaces (trapezoids from each runway end)
+const appLen=1.5; // km
+const appInnerW=0.061; // 200ft
+const appOuterW=0.61; // 2000ft
+const n1=offsetPoint(rwy16R,rwyBearing-180,0.1);
+const n2=offsetPoint(n1,rwyBearing-180,appLen);
+const nL1=offsetPoint(n1,perpL,appInnerW);
+const nR1=offsetPoint(n1,perpR,appInnerW);
+const nL2=offsetPoint(n2,perpL,appOuterW);
+const nR2=offsetPoint(n2,perpR,appOuterW);
+layers.approachSurfaces=L.layerGroup([
+  poly([nL1,nR1,nR2,nL2],{color:'#FF6400',weight:1,dashArray:'6,4',fillColor:'rgba(255,100,0,0.08)',fillOpacity:1},
+  "<b style='color:#FF6400'>Part 77 Approach Surface (North)</b><br>HIGH SENSITIVITY — extends toward Encino residential<br>Height restriction: 1ft vertical per 20ft horizontal from runway end",
+  {title:'Part 77 North Approach Surface',category:'FAA REGULATORY',desc:'Approach surface extending north from Runway 34L threshold toward Encino residential areas. HIGH SENSITIVITY zone — any structure must not penetrate the glide path. Height limit: 1 foot of vertical clearance required for every 20 feet of horizontal distance from the runway end.',ref:'14 CFR Part 77.19',risk:'CRITICAL',action:'Map all proposed structures against approach surface slope. Residential proximity amplifies political risk of any FAA variance request.'}),
+  (()=>{
+    const s1=offsetPoint(rwy34L,rwyBearing,0.1);
+    const s2=offsetPoint(s1,rwyBearing,appLen);
+    const sL1=offsetPoint(s1,perpL,appInnerW);
+    const sR1=offsetPoint(s1,perpR,appInnerW);
+    const sL2=offsetPoint(s2,perpL,appOuterW);
+    const sR2=offsetPoint(s2,perpR,appOuterW);
+    return poly([sL1,sR1,sR2,sL2],{color:'#FF6400',weight:1,dashArray:'6,4',fillColor:'rgba(255,100,0,0.08)',fillOpacity:1},
+    "<b style='color:#FF6400'>Part 77 Approach Surface (South)</b><br>Height restriction: 1ft vertical per 20ft horizontal",
+    {title:'Part 77 South Approach Surface',category:'FAA REGULATORY',desc:'Approach surface extending south from Runway 16R threshold. Standard obstruction analysis required for any development in this zone.',ref:'14 CFR Part 77.19',risk:'HIGH',action:'File 7460-1 for any structure in approach zone.'});
+  })()
+]);
+
+// RPZ
+const rpzLen=0.305; // 1000ft in km
+const rpzInnerW=0.152; // 500ft
+const rpzOuterW=0.267; // ~875ft
+function makeRPZ(end,awayBearing){
+  const r1=offsetPoint(end,awayBearing,0.05);
+  const r2=offsetPoint(r1,awayBearing,rpzLen);
+  return poly([
+    offsetPoint(r1,perpL,rpzInnerW),offsetPoint(r1,perpR,rpzInnerW),
+    offsetPoint(r2,perpR,rpzOuterW),offsetPoint(r2,perpL,rpzOuterW)
+  ],{color:'#FF0000',weight:2,fillColor:'rgba(255,0,0,0.2)',fillOpacity:1},
+  "<b style='color:#FF0000'>Runway Protection Zone (RPZ)</b><br>NO incompatible land uses<br>Structures, public roads, fuel storage PROHIBITED<br>Strongest FAA restriction",
+  {title:'Runway Protection Zone',category:'FAA REGULATORY',desc:'The RPZ is the most restrictive FAA zone. No incompatible land uses permitted. Structures, public roads, fuel storage, and places of public assembly are all prohibited within the RPZ. This is the strongest constraint on any adjacent development.',ref:'FAA AC 150/5300-13A',risk:'CRITICAL',action:'Absolute no-build zone. Verify Hart Street parcel does not encroach. Any RPZ penetration is a fatal flaw for development.'});
+}
+layers.rpz=L.layerGroup([makeRPZ(rwy16R,rwyBearing-180),makeRPZ(rwy34L,rwyBearing)]);
+
+// Grant Assurance
+layers.grantAssurance=poly([
+  [34.2185,-118.4965],[34.2185,-118.4855],[34.2165,-118.4835],
+  [34.2095,-118.4835],[34.2015,-118.4875],[34.1995,-118.4925],
+  [34.2005,-118.4975],[34.2055,-118.4995],[34.2135,-118.4985]
+],{color:'rgba(255,165,0,0.5)',weight:1,dashArray:'8,4',fillColor:'rgba(255,165,0,0.08)',fillOpacity:1},
+"<b style='color:orange'>FAA Grant Assurance Area</b><br>49 USC §47107 · Airport must remain for public aeronautical use<br>Part 13/16 complaints can enforce this<br>Restricts non-aeronautical development without FAA approval<br>Cited at Jan+Feb 2026 CAC meetings",
+{title:'FAA Grant Assurance Area',category:'FAA REGULATORY',desc:'Under 49 USC §47107, any airport that has accepted FAA Airport Improvement Program (AIP) grants must maintain the facility for public aeronautical use. Non-aeronautical development requires FAA approval. Part 13/16 complaints provide enforcement mechanism — any member of the public can file. This was specifically cited at January and February 2026 Community Advisory Committee meetings as a constraint on the Hart Street redevelopment.',ref:'49 USC §47107 · FAA Order 5190.6B · 14 CFR Part 13/16',risk:'HIGH',action:'Obtain FAA written determination that proposed use is compatible with grant obligations BEFORE committing capital. Monitor Part 16 complaint filings.'});
+
+// Noise contours using turf ellipse
+function noiseEllipse(nKm,sKm,ewKm,color,label,db){
+  const center=turf.point([-118.4918,34.2098]);
+  // Create approximate ellipse as polygon
+  const steps=64;
+  const coords=[];
+  for(let i=0;i<=steps;i++){
+    const angle=(i/steps)*360;
+    const rad=angle*Math.PI/180;
+    const ns=Math.sin(rad)>0?nKm:sKm;
+    const r_ns=Math.abs(Math.sin(rad))*ns;
+    const r_ew=Math.abs(Math.cos(rad))*ewKm;
+    const r=Math.sqrt(r_ns*r_ns+r_ew*r_ew)||0.001;
+    const dest=turf.destination(center,r,angle);
+    coords.push([dest.geometry.coordinates[1],dest.geometry.coordinates[0]]);
+  }
+  return poly(coords,{color:color,weight:1,fillColor:color,fillOpacity:0.08},
+  `<b style='color:${color}'>DNL ${db} dB Noise Contour</b><br>CEQA noise analysis required for sensitive receptors<br>(schools, homes, hospitals) within this zone<br>LAWA noise complaint hotline data shows highest complaints NE of runway`,
+  {title:`DNL ${db} dB Noise Contour`,category:'FAA REGULATORY',desc:`The ${db} dB Day-Night Average Sound Level contour defines the area where average noise exposure reaches ${db} dB. CEQA requires noise analysis for any sensitive receptor (schools, residences, hospitals, parks) within this contour. LAWA noise complaint data consistently shows the highest complaint density northeast of the runway centerline, affecting Encino and Sherman Oaks neighborhoods.`,ref:'14 CFR Part 150 · CEQA Guidelines §15126',risk:db>=75?'CRITICAL':db>=70?'HIGH':'MEDIUM',action:`Map all sensitive receptors within ${db}dB contour. Include noise mitigation measures in CEQA analysis. Consider sound insulation program for affected residences.`});
+}
+layers.noiseContours=L.layerGroup([
+  noiseEllipse(4.0,2.4,1.5,'rgba(255,255,0,0.6)','65dB',65),
+  noiseEllipse(2.4,1.3,0.9,'rgba(255,165,0,0.7)','70dB',70),
+  noiseEllipse(1.1,0.65,0.5,'rgba(255,0,0,0.7)','75dB',75)
+]);
+
+// IFR Approach paths
+const ifrN=offsetPoint(rwy16R,rwyBearing-180,8);
+const ifrS=offsetPoint(rwy34L,rwyBearing,5);
+layers.ifrApproach=L.layerGroup([
+  line([ifrN,rwy16R],{color:'#00D4FF',weight:1.5,dashArray:'10,8',opacity:0.5},
+  "<b style='color:#00D4FF'>IFR Approach Path — Runway 34L (from North)</b><br>ILS approach to Runway 34L<br>Any tall structure in corridor requires NOTAM filing",
+  {title:'IFR Approach Path (North)',category:'FAA REGULATORY',desc:'Instrument Flight Rules approach path for ILS approach to Runway 34L. Aircraft on this path are descending through the approach corridor from the north. Any tall structure or crane in this corridor requires NOTAM (Notice to Airmen) filing and may trigger FAA obstruction evaluation.',ref:'FAA AIM Chapter 5 · ILS Rwy 34L VNY',risk:'MEDIUM',action:'Coordinate any crane operations with VNY ATCT. File NOTAM for temporary obstructions.'}),
+  line([ifrS,rwy34L],{color:'#00D4FF',weight:1.5,dashArray:'10,8',opacity:0.5},
+  "<b style='color:#00D4FF'>IFR Approach Path — Runway 16R (from South)</b>",
+  {title:'IFR Approach Path (South)',category:'FAA REGULATORY',desc:'IFR approach path from the south to Runway 16R.',ref:'FAA AIM Chapter 5',risk:'MEDIUM',action:'Monitor approach path clearance during construction.'})
+]);
+
+// --- MUNICIPAL / ZONING ---
+layers.specificPlan=poly([
+  [34.2200,-118.4980],[34.2200,-118.4840],[34.2175,-118.4820],
+  [34.2090,-118.4820],[34.2000,-118.4860],[34.1980,-118.4930],
+  [34.1990,-118.4990],[34.2050,-118.5010],[34.2150,-118.5000]
+],{color:'#C9A84C',weight:2,fill:false},
+"<b style='color:#C9A84C'>VNY Specific Plan (2006)</b><br>Governs all development on and adjacent to airport<br>Under revision as of 2025<br>LAWA claims Hayvenhurst lot is outside SP boundary (contested)<br>Any new non-aeronautical use requires SP amendment",
+{title:'VNY Specific Plan Boundary',category:'MUNICIPAL / ZONING',desc:'The Van Nuys Airport Specific Plan (2006) governs all development on and adjacent to the airport. Currently under revision as of 2025. LAWA has controversially claimed the Hayvenhurst lot falls outside the Specific Plan boundary, which is disputed by community stakeholders. Any new non-aeronautical use on airport property technically requires a Specific Plan amendment unless LAWA\'s interpretation is upheld.',ref:'LAMC §13.11 · VNY Specific Plan (Ordinance 177,414)',risk:'HIGH',action:'Obtain legal opinion on SP applicability to Hart Street parcel. Monitor SP revision process. Engage with City Planning early.'});
+
+// Zoning
+layers.laZoning=L.layerGroup([
+  poly([ // Airport zone
+    [34.2185,-118.4965],[34.2185,-118.4855],[34.2100,-118.4835],
+    [34.2015,-118.4875],[34.1995,-118.4925],[34.2055,-118.4995]
+  ],{color:'rgba(0,100,255,0.4)',weight:1,fillColor:'rgba(0,100,255,0.1)',fillOpacity:1},
+  "<b style='color:#4488ff'>A1 — Airport Zone</b><br>Airport property zoning per LA City ZIMAS",
+  {title:'A1 Airport Zone',category:'MUNICIPAL / ZONING',desc:'Airport-designated zoning covering VNY property. Development governed by airport-specific regulations and the VNY Specific Plan.',ref:'LAMC · ZIMAS',risk:'LOW',action:'Confirm zoning designation via ZIMAS before permitting.'}),
+  poly([ // Commercial east
+    [34.2185,-118.4855],[34.2185,-118.4810],[34.2000,-118.4810],[34.2000,-118.4835],[34.2100,-118.4835]
+  ],{color:'rgba(0,200,100,0.4)',weight:1,fillColor:'rgba(0,200,100,0.08)',fillOpacity:1},
+  "<b style='color:#00c864'>C2/CM — Commercial Zone</b><br>Adjacent commercial corridors (Van Nuys Blvd area)",
+  {title:'C2/CM Commercial Zone',category:'MUNICIPAL / ZONING',desc:'Commercial zones adjacent to the airport along major corridors. Compatible with aviation support services.',ref:'LAMC · ZIMAS',risk:'LOW',action:'Verify permitted uses for any off-airport support facilities.'}),
+  poly([ // Residential north
+    [34.2250,-118.5020],[34.2250,-118.4810],[34.2190,-118.4810],
+    [34.2190,-118.4970],[34.2150,-118.5000],[34.2200,-118.5020]
+  ],{color:'rgba(255,50,50,0.4)',weight:1,fillColor:'rgba(255,50,50,0.06)',fillOpacity:1},
+  "<b style='color:#ff5050'>R1/RS — Residential Zone</b><br>Source of Encino NC opposition<br>Any increase in jet operations requires noise impact analysis",
+  {title:'R1/RS Residential Zone',category:'MUNICIPAL / ZONING',desc:'Residential zones north of the airport, primarily in Encino. These neighborhoods are the primary source of opposition to airport redevelopment. The Encino Neighborhood Council has been particularly active in opposing any changes that could increase jet traffic or noise.',ref:'LAMC · ZIMAS',risk:'HIGH',action:'Include residential noise impact analysis in all CEQA documentation. Engage community early. Consider sound mitigation commitments.'})
+]);
+
+// Community plans
+layers.communityPlans=L.layerGroup([
+  poly([ // Van Nuys CP
+    [34.2100,-118.5050],[34.2100,-118.4750],[34.1900,-118.4750],[34.1900,-118.5050]
+  ],{color:'rgba(255,255,255,0.3)',weight:1,dashArray:'6,4',fill:false},
+  "<b>Van Nuys Community Plan Area</b>",
+  {title:'Van Nuys Community Plan',category:'MUNICIPAL / ZONING',desc:'Van Nuys Community Plan area boundary. The airport sits within this planning jurisdiction.',ref:'LA City General Plan — Van Nuys Community Plan',risk:'LOW',action:'Review community plan for consistency requirements.'}),
+  poly([ // Encino NC
+    [34.2250,-118.5100],[34.2250,-118.4800],[34.2100,-118.4800],[34.2100,-118.5100]
+  ],{color:'rgba(201,168,76,0.4)',weight:1,dashArray:'6,4',fill:false},
+  "<b style='color:#C9A84C'>Encino Neighborhood Council</b><br>Former VP actively opposing redevelopment<br>Filed formal objections at Jan+Feb 2026 CAC meetings<br>Citing noise, safety, and Specific Plan compliance",
+  {title:'Encino Neighborhood Council',category:'MUNICIPAL / ZONING',desc:'Encino Neighborhood Council boundary. A former Vice President of the Encino NC has been actively opposing the Hart Street redevelopment, filing formal objections at both the January and February 2026 Community Advisory Committee meetings. Primary concerns cited: noise impacts, safety, and Specific Plan compliance. This represents the most organized and vocal opposition to the project.',ref:'LA City NC System · CAC Meeting Minutes Jan/Feb 2026',risk:'CRITICAL',action:'Develop comprehensive community engagement strategy. Address noise and safety concerns proactively. Consider formal MOU with NC on operational limits.'})
+]);
+
+// Streets
+layers.streets=L.layerGroup([
+  line([[34.2082,-118.5000],[34.2082,-118.4800]],{color:'rgba(255,255,255,0.3)',weight:2},"<b>Hart Street</b> · E-W · Southern airport boundary road",{title:'Hart Street',category:'INFRASTRUCTURE',desc:'East-west road along south edge of airport. Primary access to 16425 parcel.',ref:'',risk:'LOW',action:''}),
+  line([[34.2200,-118.4945],[34.2000,-118.4945]],{color:'rgba(255,255,255,0.3)',weight:2},"<b>Hayvenhurst Avenue</b> · N-S",{title:'Hayvenhurst Avenue',category:'INFRASTRUCTURE',desc:'North-south road on western side of airport.',ref:'',risk:'LOW',action:''}),
+  line([[34.2200,-118.4860],[34.2000,-118.4860]],{color:'rgba(255,255,255,0.3)',weight:2},"<b>Woodley Avenue</b> · N-S",{title:'Woodley Avenue',category:'INFRASTRUCTURE',desc:'North-south road on eastern side.',ref:'',risk:'LOW',action:''}),
+  line([[34.2200,-118.5010],[34.2000,-118.5010]],{color:'rgba(255,255,255,0.3)',weight:2},"<b>Balboa Boulevard</b> · N-S",{title:'Balboa Boulevard',category:'INFRASTRUCTURE',desc:'Major north-south boulevard west of airport.',ref:'',risk:'LOW',action:''})
+]);
+
+// --- UTILITIES ---
+layers.electrical=line(
+  [[34.2200,-118.4858],[34.2150,-118.4858],[34.2100,-118.4860],[34.2050,-118.4862],[34.2000,-118.4862]],
+  {color:'#FFD700',weight:3,opacity:0.6},
+  "<b style='color:#FFD700'>LADWP Transmission Corridor</b><br>138kV line along Woodley Ave<br>FBO/MRO facilities require heavy electrical service<br>Proximity to transmission = lower connection cost",
+  {title:'LADWP Transmission Corridor',category:'UTILITIES',desc:'138kV LADWP transmission line running along Woodley Avenue. FBO and MRO facilities require heavy electrical service — proximity to this transmission corridor reduces connection costs. Contact LADWP for capacity study before design.',ref:'LADWP Infrastructure Maps',risk:'LOW',action:'Request LADWP capacity study. Determine available load for proposed development. Budget for transformer/switchgear if needed.'});
+
+layers.waterSewer=L.layerGroup([
+  line([[34.2082,-118.4960],[34.2082,-118.4830]],{color:'#4488ff',weight:2,dashArray:'8,4',opacity:0.5},
+  "<b style='color:#4488ff'>LADWP Water Main + LASAN Sewer</b><br>8-12 inch mains along Hart St<br>Fire suppression capacity required<br>Utility capacity study required before development",
+  {title:'Water/Sewer — Hart St',category:'UTILITIES',desc:'LADWP water main and LASAN sewer line along Hart Street. 8-12 inch diameter mains. Airport operations require fire suppression capacity. Any fuel storage area needs containment infrastructure. Utility capacity study required before development permits can be issued.',ref:'LADWP/LASAN Utility Maps',risk:'MEDIUM',action:'Commission utility capacity study. Verify fire flow requirements with LAFD. Design fuel containment per SPCC requirements.'}),
+  line([[34.2150,-118.4945],[34.2060,-118.4945]],{color:'#4488ff',weight:2,dashArray:'8,4',opacity:0.5},
+  "<b style='color:#4488ff'>Water/Sewer — Hayvenhurst</b>",
+  {title:'Water/Sewer — Hayvenhurst',category:'UTILITIES',desc:'Utility corridor along Hayvenhurst Avenue.',ref:'LADWP/LASAN',risk:'LOW',action:'Verify connections if Hayvenhurst lot is included.'})
+]);
+
+// Fuel
+const fuelIcon=L.divIcon({html:'<div style="width:16px;height:16px;background:#ff3232;border-radius:50%;border:2px solid #ff6666;box-shadow:0 0 8px rgba(255,0,0,0.5)"></div>',iconSize:[16,16],iconAnchor:[8,8]});
+const fuelMarker=L.marker([34.2084,-118.4890],{icon:fuelIcon}).bindPopup("<b style='color:#ff3232'>Existing Fuel Farm</b><br>Southwest Aviation<br>Removal/relocation required for redevelopment<br>Environmental assessment (Phase I/II ESA) required<br>Potential contamination risk → cost uncertainty");
+fuelMarker.meta={title:'Existing Fuel Farm',category:'UTILITIES',desc:'Southwest Aviation fuel storage facility on the Hart Street parcel. Removal or relocation will be required for any redevelopment. Phase I and Phase II Environmental Site Assessments are mandatory. Potential soil and groundwater contamination from fuel operations creates significant cost uncertainty for remediation.',ref:'CERCLA · RCRA · CA HSC §25395',risk:'CRITICAL',action:'Commission Phase I ESA immediately. Budget $50K-$200K for Phase II if Phase I identifies RECs. Remediation costs could reach $500K-$2M depending on contamination extent.'};
+fuelMarker.on('click',()=>showInfo(fuelMarker.meta));
+layers.fuel=L.layerGroup([fuelMarker]);
+
+// Ops areas
+layers.opsAreas=L.layerGroup([
+  line([[34.2175,-118.4880],[34.2020,-118.4920]],{color:'rgba(150,150,150,0.4)',weight:4},
+  "<b>Taxiway Alpha (A)</b><br>Airport Movement Area · LAWA badging required",
+  {title:'Taxiway Alpha',category:'UTILITIES',desc:'Primary parallel taxiway east of runway. Airport movement area requiring LAWA security badging and ground vehicle coordination.',ref:'VNY Airport Layout Plan',risk:'MEDIUM',action:'Coordinate all ground access with LAWA Airfield Ops.'}),
+  line([[34.2170,-118.4910],[34.2025,-118.4948]],{color:'rgba(150,150,150,0.4)',weight:4},
+  "<b>Taxiway Bravo (B)</b>",
+  {title:'Taxiway Bravo',category:'UTILITIES',desc:'Secondary taxiway.',ref:'VNY ALP',risk:'MEDIUM',action:''}),
+  poly([ // Ramp area
+    [34.2100,-118.4870],[34.2100,-118.4845],[34.2070,-118.4845],[34.2070,-118.4870]
+  ],{color:'rgba(150,150,150,0.3)',weight:1,fillColor:'rgba(150,150,150,0.08)',fillOpacity:1},
+  "<b>Ramp / Apron Area</b><br>Ground vehicle access requires LAWA badging<br>Airfield electrical runs underground here",
+  {title:'Ramp/Apron Area',category:'UTILITIES',desc:'Aircraft parking and maneuvering area. Underground airfield electrical (approach lighting, PAPI, edge lighting) runs beneath this area.',ref:'VNY ALP',risk:'MEDIUM',action:'Survey underground utilities before excavation. Coordinate with LAWA for any ramp modifications.'})
+]);
+
+// --- ENVIRONMENTAL ---
+// Flood zone (Sepulveda Basin)
+layers.floodZone=poly([
+  [34.2150,-118.5050],[34.2150,-118.4980],[34.2050,-118.4960],
+  [34.1950,-118.4970],[34.1900,-118.5020],[34.1900,-118.5100],
+  [34.2000,-118.5120],[34.2100,-118.5100]
+],{color:'rgba(100,180,255,0.3)',weight:1,fillColor:'rgba(100,180,255,0.08)',fillOpacity:1},
+"<b style='color:#64b4ff'>FEMA Flood Zone — Sepulveda Basin</b><br>Designed flood control basin (immediately west)<br>Airport itself Zone X (0.2% annual chance)<br>Hayvenhurst lot closer to Basin edge → verify AE/X boundary",
+{title:'FEMA Flood Zone — Sepulveda Basin',category:'ENVIRONMENTAL',desc:'The Sepulveda Basin immediately west of VNY is a designed flood control facility. The airport itself sits in FEMA Zone X (0.2% annual chance of flooding). However, the Hayvenhurst lot is closer to the Basin edge — the AE/X boundary should be verified before finalizing any site plan for that parcel.',ref:'FEMA FIRM Panel · Sepulveda Dam',risk:'MEDIUM',action:'Obtain current FEMA FIRM panel. Verify AE/X boundary relative to Hayvenhurst lot. Include flood risk in due diligence for any Basin-adjacent development.'});
+
+// Seismic
+layers.seismic=poly([
+  [34.2300,-118.5150],[34.2300,-118.4700],[34.1850,-118.4700],[34.1850,-118.5150]
+],{color:'rgba(180,100,255,0.15)',weight:0,fillColor:'rgba(180,100,255,0.05)',fillOpacity:1},
+"<b style='color:#b464ff'>Seismic Zone 4 · LA Basin</b><br>No active fault traces directly through site<br>Nearest: Santa Monica fault ~4.5mi S, Northridge ~6mi N<br>Standard CBC seismic design required",
+{title:'Seismic Risk Zone',category:'ENVIRONMENTAL',desc:'Seismic Zone 4 (LA Basin). No active fault traces run directly through the VNY site. Nearest mapped faults: Santa Monica fault approximately 4.5 miles south, Northridge fault approximately 6 miles north (site of the 1994 M6.7 earthquake). Standard California Building Code seismic design is required. Not a project showstopper but adds structural engineering cost.',ref:'USGS Quaternary Fault Database · CBC Chapter 16',risk:'MEDIUM',action:'Include CBC seismic design in structural engineering scope. Budget additional 5-10% for seismic-rated construction vs. non-seismic baseline.'});
+
+// Environmental Justice
+layers.envJustice=poly([
+  [34.2200,-118.5050],[34.2200,-118.4800],[34.2000,-118.4800],[34.2000,-118.5050]
+],{color:'rgba(255,140,0,0.3)',weight:1,fillColor:'rgba(255,140,0,0.08)',fillOpacity:1},
+"<b style='color:#ff8c00'>CalEnviroScreen 4.0</b><br>Van Nuys ranks 65th-75th percentile statewide<br>Above-average cumulative pollution burden<br>CEQA must address environmental justice<br>Strengthens community opposition arguments",
+{title:'Environmental Justice — CalEnviroScreen',category:'ENVIRONMENTAL',desc:'CalEnviroScreen 4.0 data places the Van Nuys area in the 65th-75th percentile statewide for cumulative pollution burden. This above-average ranking means any CEQA analysis must explicitly address environmental justice considerations. This data point significantly strengthens community opposition arguments and could be cited in legal challenges to the project.',ref:'CalEnviroScreen 4.0 · OEHHA · SB 1000',risk:'HIGH',action:'Include environmental justice analysis in CEQA document. Proactively engage with EJ advocacy groups. Consider enhanced mitigation measures for air quality and noise.'});
+
+// ═══════════ SCENARIO CONCEPTS ═══════════
+const concepts={};
+concepts.A=poly([
+  [34.2079,-118.4899],[34.2079,-118.4883],[34.2087,-118.4883],[34.2087,-118.4899]
+],{color:'#00ff88',weight:2,fillColor:'rgba(0,255,136,0.2)',fillOpacity:1},
+"<b style='color:#00ff88'>CONCEPT A — Full Jet Campus</b><br>Max hangar footprint · FBO-adjacent services<br>~85,000 sq ft hangar + office complex");
+concepts.B=poly([
+  [34.2079,-118.4898],[34.2079,-118.4886],[34.2086,-118.4886],[34.2086,-118.4898]
+],{color:'#ff88ff',weight:2,fillColor:'rgba(255,136,255,0.2)',fillOpacity:1},
+"<b style='color:#ff88ff'>CONCEPT B — Hybrid Aviation</b><br>Mixed hangar + MRO + tech incubator<br>~60,000 sq ft distributed campus");
+concepts.C=poly([
+  [34.2080,-118.4896],[34.2080,-118.4888],[34.2085,-118.4888],[34.2085,-118.4896]
+],{color:'#88ffff',weight:2,fillColor:'rgba(136,255,255,0.2)',fillOpacity:1},
+"<b style='color:#88ffff'>CONCEPT C — eVTOL Hub</b><br>Compact vertiport + charging infrastructure<br>~30,000 sq ft · Future-forward positioning");
+
+// ═══════════ LAYER CONFIG ═══════════
+const layerGroups=[
+  {name:'Site Context',id:'site',expanded:false,items:[
+    {name:'Hart St Parcel',key:'hartStreet',color:'#00D4FF',on:true},
+    {name:'Hayvenhurst Lot',key:'hayvenhurst',color:'#C9A84C',on:true},
+    {name:'Airport Boundary',key:'airportBoundary',color:'rgba(255,255,255,0.4)',on:true}
+  ]},
+  {name:'FAA Regulatory',id:'faa',expanded:true,items:[
+    {name:'Part 77 Primary',key:'part77Primary',color:'#FF3232',on:true},
+    {name:'Approach Surfaces',key:'approachSurfaces',color:'#FF6400',on:true},
+    {name:'Runway Protection Zones',key:'rpz',color:'#FF0000',on:true},
+    {name:'Grant Assurance',key:'grantAssurance',color:'orange',on:true},
+    {name:'Noise Contours',key:'noiseContours',color:'#ffff00',on:false},
+    {name:'IFR Approaches',key:'ifrApproach',color:'#00D4FF',on:false}
+  ]},
+  {name:'Municipal / Zoning',id:'municipal',expanded:false,items:[
+    {name:'Specific Plan',key:'specificPlan',color:'#C9A84C',on:false},
+    {name:'LA Zoning',key:'laZoning',color:'#4488ff',on:false},
+    {name:'Community Plans',key:'communityPlans',color:'#C9A84C',on:false},
+    {name:'Street Network',key:'streets',color:'rgba(255,255,255,0.4)',on:false}
+  ]},
+  {name:'Utilities / Infrastructure',id:'util',expanded:false,items:[
+    {name:'Electrical',key:'electrical',color:'#FFD700',on:false},
+    {name:'Water/Sewer',key:'waterSewer',color:'#4488ff',on:false},
+    {name:'Fuel',key:'fuel',color:'#ff3232',on:false},
+    {name:'Ops Areas',key:'opsAreas',color:'#999',on:false}
+  ]},
+  {name:'Environmental / Risk',id:'env',expanded:false,items:[
+    {name:'Flood Zone',key:'floodZone',color:'#64b4ff',on:false},
+    {name:'Seismic',key:'seismic',color:'#b464ff',on:false},
+    {name:'Environmental Justice',key:'envJustice',color:'#ff8c00',on:false}
+  ]}
+];
+
+// ═══════════ BUILD SIDEBAR ═══════════
+const container=document.getElementById('layer-container');
+layerGroups.forEach(g=>{
+  const div=document.createElement('div');
+  div.className='layer-group';
+  const header=document.createElement('div');
+  header.className='layer-group-header'+(g.expanded?' open':'');
+  header.innerHTML=`<span>${g.name}</span><span class="arrow">▶</span>`;
+  const body=document.createElement('div');
+  body.className='layer-group-body'+(g.expanded?' open':'');
+  g.items.forEach(item=>{
+    const row=document.createElement('label');
+    row.className='layer-item';
+    const cb=document.createElement('input');
+    cb.type='checkbox';
+    cb.checked=item.on;
+    cb.dataset.key=item.key;
+    cb.addEventListener('change',()=>{
+      if(cb.checked)layers[item.key].addTo(map);
+      else map.removeLayer(layers[item.key]);
+      updateRisk();
+    });
+    const dot=document.createElement('span');
+    dot.className='dot';
+    dot.style.background=item.color;
+    row.appendChild(cb);
+    row.appendChild(dot);
+    row.appendChild(document.createTextNode(item.name));
+    body.appendChild(row);
+    if(item.on)layers[item.key].addTo(map);
+  });
+  header.addEventListener('click',()=>{
+    header.classList.toggle('open');
+    body.classList.toggle('open');
+  });
+  div.appendChild(header);
+  div.appendChild(body);
+  container.appendChild(div);
+});
+
+// ═══════════ RISK SCORE ═══════════
+function updateRisk(){
+  const checked=k=>document.querySelector(`input[data-key="${k}"]`)?.checked;
+  let faa=0,faaMax=6;
+  ['part77Primary','approachSurfaces','rpz','grantAssurance','noiseContours','ifrApproach'].forEach(k=>{if(checked(k))faa++});
+  const faaScore=Math.round((faa/faaMax)*100);
+  const communityScore=78; // fixed HIGH
+  let env=0,envMax=3;
+  ['floodZone','seismic','envJustice'].forEach(k=>{if(checked(k))env++});
+  const envScore=env===0?25:Math.round(30+(env/envMax)*60);
+  const composite=Math.round(faaScore*0.45+communityScore*0.30+envScore*0.25);
+  const colorFor=s=>s<40?'#00c864':s<70?'#ffc800':'#ff3232';
+  document.getElementById('risk-faa').textContent=faaScore;
+  document.getElementById('risk-faa').style.color=colorFor(faaScore);
+  document.getElementById('risk-env').textContent=envScore;
+  document.getElementById('risk-env').style.color=colorFor(envScore);
+  document.getElementById('risk-total').textContent=composite;
+  document.getElementById('risk-total').style.color=colorFor(composite);
+  const bar=document.getElementById('risk-bar-fill');
+  bar.style.width=composite+'%';
+  bar.style.background=colorFor(composite);
+}
+updateRisk();
+
+// ═══════════ INFO PANEL ═══════════
+function showInfo(meta){
+  if(!meta||!meta.title)return;
+  document.getElementById('info-title').textContent=meta.title;
+  document.getElementById('info-category').textContent=meta.category||'';
+  document.getElementById('info-desc').textContent=meta.desc||'';
+  let metaHtml='';
+  if(meta.ref)metaHtml+=`<div class="meta-item"><span class="ml">REF:</span> ${meta.ref}</div>`;
+  if(meta.risk)metaHtml+=`<div class="meta-item"><span class="ml">RISK:</span> <span class="risk-badge risk-${meta.risk}">${meta.risk}</span></div>`;
+  if(meta.action)metaHtml+=`<div class="meta-item"><span class="ml">ACTION:</span> ${meta.action}</div>`;
+  document.getElementById('info-meta').innerHTML=metaHtml;
+  document.getElementById('info-panel').classList.add('open');
+}
+function closeInfo(){document.getElementById('info-panel').classList.remove('open')}
+
+// ═══════════ SCENARIOS ═══════════
+let activeConcept=null;
+document.querySelectorAll('.scenario-btn[data-concept]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const c=btn.dataset.concept;
+    if(activeConcept){map.removeLayer(concepts[activeConcept]);document.querySelector(`.scenario-btn[data-concept="${activeConcept}"]`).classList.remove('active')}
+    if(activeConcept===c){activeConcept=null;return}
+    concepts[c].addTo(map);
+    btn.classList.add('active');
+    activeConcept=c;
+  });
+});
+
+// ═══════════ GEMINI ANALYSIS ═══════════
+document.getElementById('analyze-btn').addEventListener('click',async()=>{
+  const panel=document.getElementById('analysis-panel');
+  const content=document.getElementById('analysis-content');
+  panel.classList.add('open');
+  content.innerHTML='<div class="loading">⚡ Analyzing site constraints via Enginuity AI...</div>';
+  const activeLayers=[];
+  document.querySelectorAll('#layer-container input[type=checkbox]:checked').forEach(cb=>activeLayers.push(cb.dataset.key));
+  const prompt=`You are Enginuity, an AI scenario planning tool for airports. Analyze the Van Nuys Airport Hart Street site (16425) given these active regulatory layers: ${activeLayers.join(', ')}. Identify the top 3 risk factors, the optimal development configuration given the constraints, and the due diligence sequence. Be specific about the FAA Part 13/16 risk, the Southwest Aviation litigation, and the Specific Plan ambiguity.
+
+Tag all outputs:
+CONFIRMED: Known facts
+CITED: Public regulatory references  
+INFERRED: Approximate geographic boundaries
+ASSUMED: Site-specific interpretations`;
+  const GIS_SYS='You are Enginuity, an AI-powered scenario planning tool for airports and real estate. You analyze regulatory, environmental, and operational constraints for site development. Be precise, cite specific regulations, and give actionable due diligence recommendations. Use the provenance tags CONFIRMED, CITED, INFERRED, and ASSUMED on all factual claims.';
+  try{
+    const result=await callAI(prompt,GIS_SYS,t=>{content.textContent=t;});
+    content.textContent=result;
+  }catch(e){
+    const STATIC='TOP 3 RISK FACTORS [CONFIRMED]:\n1. FAA Grant Assurance (49 USC §47107) — Part 13/16 complaint risk from any party\n2. Southwest Aviation lease — 35-year term creates litigation exposure on early termination\n3. Specific Plan ambiguity — LAWA interpretation of boundaries is contested\n\nOPTIMAL CONFIG [INFERRED]:\nConcept B (Hybrid Aviation) balances aeronautical use mandate with revenue diversification.\n\nDUE DILIGENCE SEQUENCE [ASSUMED]:\n1. FAA Form 7460-1 + Grant Assurance determination\n2. Phase I/II ESA for fuel farm site\n3. Legal analysis of SP applicability\n4. Community engagement with Encino NC\n5. CEQA Initial Study';
+    content.textContent='⚠ '+e.message+'\n\nStatic analysis:\n\n'+STATIC;
+  }
+});
+
+// Labels for parcels
+L.marker([34.2083,-118.4891],{icon:L.divIcon({html:'<div style="color:#00D4FF;font-size:10px;font-weight:600;white-space:nowrap;text-shadow:0 0 4px rgba(0,0,0,0.8)">16425 HART ST</div>',iconSize:[100,20],iconAnchor:[50,10]})}).addTo(map);
+L.marker([34.2066,-118.4944],{icon:L.divIcon({html:'<div style="color:#C9A84C;font-size:10px;font-weight:600;white-space:nowrap;text-shadow:0 0 4px rgba(0,0,0,0.8)">HAYVENHURST LOT</div>',iconSize:[100,20],iconAnchor:[50,10]})}).addTo(map);
+
+// Runway label
+L.marker([34.2098,-118.4918],{icon:L.divIcon({html:'<div style="color:rgba(255,255,255,0.4);font-size:9px;font-weight:500;white-space:nowrap;transform:rotate(-20deg);text-shadow:0 0 4px rgba(0,0,0,0.8)">RWY 16R/34L</div>',iconSize:[80,20],iconAnchor:[40,10]})}).addTo(map);
+// Runway line
+L.polyline([rwy16R,rwy34L],{color:'rgba(255,255,255,0.15)',weight:3}).addTo(map);
+</script>
+</body>
+</html>
+

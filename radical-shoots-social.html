@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>@radical.shoots — Content Calendar</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Caveat:wght@400;700&display=swap');
+
+  :root {
+    --rs-green: #2D6A4F;
+    --rs-green-light: #52B788;
+    --rs-green-pale: #D8F3DC;
+    --rs-amber: #D4A373;
+    --rs-amber-dark: #8B5E3C;
+    --rs-red: #C1292E;
+    --rs-cream: #FEFAE0;
+    --rs-dark: #1B1B1B;
+    --rs-gray: #6B7280;
+    --rs-border: #E5E7EB;
+    --card-radius: 16px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 12px rgba(0,0,0,.04);
+    --shadow-hover: 0 4px 16px rgba(0,0,0,.12);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #F9FAFB;
+    color: var(--rs-dark);
+    line-height: 1.5;
+  }
+
+  /* HEADER */
+  .header {
+    background: #fff;
+    border-bottom: 1px solid var(--rs-border);
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .header-left svg { flex-shrink: 0; }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .header h1 span { color: var(--rs-green); }
+  .header-meta {
+    font-size: 13px;
+    color: var(--rs-gray);
+    font-weight: 500;
+  }
+
+  /* GRID */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 28px;
+    max-width: 1200px;
+    margin: 32px auto;
+    padding: 0 24px;
+  }
+  @media (max-width: 800px) {
+    .grid { grid-template-columns: 1fr; max-width: 540px; }
+    .header { padding: 16px; flex-direction: column; gap: 8px; }
+  }
+
+  /* CARD */
+  .card {
+    background: #fff;
+    border-radius: var(--card-radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: box-shadow .2s;
+  }
+  .card:hover { box-shadow: var(--shadow-hover); }
+
+  .card-image {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    background: #f0f0f0;
+    overflow: hidden;
+  }
+  .card-image svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .post-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(0,0,0,.65);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .post-number {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: var(--rs-green);
+    color: #fff;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .card-body { padding: 16px 18px 18px; }
+  .card-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .card-schedule {
+    font-size: 12px;
+    color: var(--rs-gray);
+    margin-bottom: 10px;
+  }
+
+  /* Caption */
+  .caption-wrap {
+    position: relative;
+    max-height: 100px;
+    overflow: hidden;
+    transition: max-height .3s ease;
+  }
+  .caption-wrap.expanded { max-height: 600px; }
+  .caption-text {
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    color: #333;
+  }
+  .caption-fade {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 40px;
+    background: linear-gradient(transparent, #fff);
+    pointer-events: none;
+    transition: opacity .3s;
+  }
+  .caption-wrap.expanded .caption-fade { opacity: 0; }
+  .expand-btn {
+    background: none;
+    border: none;
+    color: var(--rs-green);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 0;
+    margin-top: 2px;
+  }
+
+  /* Hashtags */
+  .hashtags {
+    font-size: 12px;
+    color: var(--rs-green);
+    margin-top: 8px;
+    line-height: 1.7;
+    max-height: 42px;
+    overflow: hidden;
+    transition: max-height .3s;
+    cursor: pointer;
+  }
+  .hashtags.expanded { max-height: 200px; }
+
+  /* Buttons */
+  .btn-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--rs-border);
+    border-radius: 8px;
+    background: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+    color: var(--rs-dark);
+    text-align: center;
+  }
+  .btn:hover { background: var(--rs-green-pale); border-color: var(--rs-green-light); }
+  .btn.copied { background: var(--rs-green); color: #fff; border-color: var(--rs-green); }
+
+  /* Print */
+  @media print {
+    .header { position: static; }
+    .grid { gap: 16px; }
+    .btn-row { display: none; }
+    .caption-wrap { max-height: none !important; }
+    .caption-fade { display: none; }
+    .card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--rs-dark);
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    transition: all .3s;
+    z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+      <defs><linearGradient id="ig" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#F58529"/><stop offset="25%" stop-color="#DD2A7B"/><stop offset="50%" stop-color="#8134AF"/><stop offset="100%" stop-color="#515BD4"/></linearGradient></defs>
+      <rect width="32" height="32" rx="8" fill="url(#ig)"/>
+      <rect x="6" y="6" width="20" height="20" rx="6" stroke="#fff" stroke-width="2" fill="none"/>
+      <circle cx="16" cy="16" r="5" stroke="#fff" stroke-width="2" fill="none"/>
+      <circle cx="22.5" cy="9.5" r="1.5" fill="#fff"/>
+    </svg>
+    <div>
+      <h1><span>@radical.shoots</span> Content Calendar</h1>
+      <div class="header-meta">10 Posts · Microgreens · Cheese · Honey · Mushrooms · Maple</div>
+    </div>
+  </div>
+  <div class="header-meta">Nashville, TN · "Integrity & Flavor in Food"</div>
+</div>
+
+<div class="grid">
+
+<!-- ==================== POST 1: Monday Drop ==================== -->
+<div class="card">
+  <div class="card-image">
+    <div class="post-number">1</div>
+    <div class="post-badge">Feed</div>
+    <svg viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+      <!-- Quadrant backgrounds -->
+      <rect x="0" y="0" width="540" height="540" fill="#7B2D3B"/>
+      <rect x="540" y="0" width="540" height="540" fill="#D1607A"/>
+      <rect x="0" y="540" width="540" height="540" fill="#3A7D5C"/>
+      <rect x="540" y="540" width="540" height="540" fill="#4A8B3F"/>
+      <!-- Amaranth (top-left) - red microgreens -->
+      <g transform="translate(270,220)">
+        <line x1="-80" y1="60" x2="-80" y2="-30" stroke="#C1444E" stroke-width="3"/>
+        <ellipse cx="-80" cy="-40" rx="12" ry="8" fill="#E05562"/>
+        <ellipse cx="-72" cy="-34" rx="10" ry="7" fill="#D14452"/>
+        <line x1="-40" y1="60" x2="-40" y2="-50" stroke="#C1444E" stroke-width="3"/>
+        <ellipse cx="-40" cy="-58" rx="14" ry="9" fill="#E05562"/>
+        <ellipse cx="-32" cy="-52" rx="11" ry="7" fill="#D14452"/>
+        <line x1="0" y1="60" x2="0" y2="-40" stroke="#C1444E" stroke-width="3"/>
+        <ellipse cx="0" cy="-48" rx="13" ry="8" fill="#E87680"/>
+        <ellipse cx="8" cy="-42" rx="11" ry="7" fill="#D14452"/>
+        <line x1="40" y1="60" x2="40" y2="-55" stroke="#C1444E" stroke-width="3"/>
+        <ellipse cx="40" cy="-62" rx="12" ry="8" fill="#E05562"/>
+        <line x1="80" y1="60" x2="80" y2="-35" stroke="#C1444E" stroke-width="3"/>
+        <ellipse cx="80" cy="-42" rx="14" ry="9" fill="#E87680"/>
+      </g>
+      <text x="270" y="440" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="Inter,sans-serif" font-size="30" font-weight="600">AMARANTH</text>
+      <!-- Radish (top-right) - pink microgreens -->
+      <g transform="translate(810,220)">
+        <line x1="-80" y1="60" x2="-80" y2="-30" stroke="#A8D5BA" stroke-width="3"/>
+        <ellipse cx="-80" cy="-38" rx="14" ry="9" fill="#F2A0B5"/>
+        <ellipse cx="-72" cy="-32" rx="12" ry="8" fill="#E888A0"/>
+        <line x1="-40" y1="60" x2="-40" y2="-48" stroke="#A8D5BA" stroke-width="3"/>
+        <ellipse cx="-40" cy="-55" rx="13" ry="8" fill="#D98AAE"/>
+        <ellipse cx="-32" cy="-50" rx="11" ry="7" fill="#F2A0B5"/>
+        <line x1="0" y1="60" x2="0" y2="-36" stroke="#A8D5BA" stroke-width="3"/>
+        <ellipse cx="0" cy="-44" rx="15" ry="9" fill="#F2A0B5"/>
+        <line x1="40" y1="60" x2="40" y2="-52" stroke="#A8D5BA" stroke-width="3"/>
+        <ellipse cx="40" cy="-58" rx="12" ry="8" fill="#E0E0FF"/>
+        <line x1="80" y1="60" x2="80" y2="-30" stroke="#A8D5BA" stroke-width="3"/>
+        <ellipse cx="80" cy="-38" rx="14" ry="9" fill="#D98AAE"/>
+      </g>
+      <text x="810" y="440" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="Inter,sans-serif" font-size="30" font-weight="600">RAINBOW RADISH</text>
+      <!-- Dill (bottom-left) - green feathery -->
+      <g transform="translate(270,760)">
+        <line x1="-60" y1="60" x2="-60" y2="-40" stroke="#5AAF6F" stroke-width="2.5"/>
+        <line x1="-60" y1="-10" x2="-80" y2="-30" stroke="#7CCC8E" stroke-width="2"/>
+        <line x1="-60" y1="-10" x2="-40" y2="-32" stroke="#7CCC8E" stroke-width="2"/>
+        <line x1="-60" y1="-25" x2="-75" y2="-48" stroke="#90D9A0" stroke-width="1.5"/>
+        <line x1="-60" y1="-25" x2="-45" y2="-50" stroke="#90D9A0" stroke-width="1.5"/>
+        <line x1="-20" y1="60" x2="-20" y2="-50" stroke="#5AAF6F" stroke-width="2.5"/>
+        <line x1="-20" y1="-15" x2="-40" y2="-38" stroke="#7CCC8E" stroke-width="2"/>
+        <line x1="-20" y1="-15" x2="0" y2="-40" stroke="#7CCC8E" stroke-width="2"/>
+        <line x1="-20" y1="-30" x2="-36" y2="-56" stroke="#90D9A0" stroke-width="1.5"/>
+        <line x1="-20" y1="-30" x2="-4" y2="-58" stroke="#90D9A0" stroke-width="1.5"/>
+        <line x1="20" y1="60" x2="20" y2="-35" stroke="#5AAF6F" stroke-width="2.5"/>
+        <line x1="20" y1="-8" x2="2" y2="-28" stroke="#7CCC8E" stroke-width="2"/>
+        <line x1="20" y1="-8" x2="38" y2="-30" stroke="#7CCC8E" stroke-width="2"/>
+        <line x1="60" y1="60" x2="60" y2="-45" stroke="#5AAF6F" stroke-width="2.5"/>
+        <line x1="60" y1="-12" x2="42" y2="-35" stroke="#7CCC8E" stroke-width="2"/>
+        <line x1="60" y1="-12" x2="78" y2="-38" stroke="#7CCC8E" stroke-width="2"/>
+        <line x1="60" y1="-28" x2="44" y2="-52" stroke="#90D9A0" stroke-width="1.5"/>
+        <line x1="60" y1="-28" x2="76" y2="-55" stroke="#90D9A0" stroke-width="1.5"/>
+      </g>
+      <text x="270" y="980" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="Inter,sans-serif" font-size="30" font-weight="600">DILL</text>
+      <!-- Leek (bottom-right) - tall green -->
+      <g transform="translate(810,760)">
+        <line x1="-60" y1="60" x2="-60" y2="-50" stroke="#6BAF5E" stroke-width="4"/>
+        <ellipse cx="-60" cy="-55" rx="16" ry="8" fill="#8FD480"/>
+        <line x1="-20" y1="60" x2="-20" y2="-60" stroke="#6BAF5E" stroke-width="4"/>
+        <ellipse cx="-20" cy="-65" rx="18" ry="9" fill="#A0E090"/>
+        <line x1="20" y1="60" x2="20" y2="-45" stroke="#6BAF5E" stroke-width="4"/>
+        <ellipse cx="20" cy="-50" rx="15" ry="8" fill="#8FD480"/>
+        <line x1="60" y1="60" x2="60" y2="-55" stroke="#6BAF5E" stroke-width="4"/>
+        <ellipse cx="60" cy="-60" rx="17" ry="9" fill="#A0E090"/>
+        <line x1="-40" y1="60" x2="-40" y2="-40" stroke="#6BAF5E" stroke-width="3"/>
+        <ellipse cx="-40" cy="-45" rx="14" ry="7" fill="#8FD480"/>
+        <line x1="40" y1="60" x2="40" y2="-48" stroke="#6BAF5E" stroke-width="3"/>
+        <ellipse cx="40" cy="-52" rx="15" ry="8" fill="#A0E090"/>
+      </g>
+      <text x="810" y="980" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="Inter,sans-serif" font-size="30" font-weight="600">LEEK</text>
+      <!-- Center dividers -->
+      <line x1="540" y1="0" x2="540" y2="1080" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+      <line x1="0" y1="540" x2="1080" y2="540" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+      <!-- Center overlay -->
+      <rect x="290" y="430" width="500" height="220" rx="16" fill="rgba(0,0,0,0.75)"/>
+      <text x="540" y="510" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="72" font-weight="900" letter-spacing="6">MONDAY</text>
+      <text x="540" y="590" text-anchor="middle" fill="#52B788" font-family="Inter,sans-serif" font-size="72" font-weight="900" letter-spacing="6">DROP</text>
+      <text x="540" y="630" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-family="Inter,sans-serif" font-size="22" font-weight="500">@radical.shoots · Nashville</text>
+    </svg>
+  </div>
+  <div class="card-body">
+    <div class="card-title">"The Drop" — Monday Microgreen Announcement</div>
+    <div class="card-schedule">📅 Every Monday · Feed Post</div>
+    <div class="caption-wrap" id="cap1">
+      <div class="caption-text">MONDAY DROP 🌱
+
+This week's fresh harvest:
+→ Amaranth (ruby red, antioxidant-packed)
+→ Rainbow Radish (pink + purple + white)
+→ Dill (citrusy, perfect on salmon)
+→ Leek (umami bomb for everything)
+
+Cut clamshells & living squares available.
+Pre-order now → link in bio
+
+📍 Nashville pickup</div>
+      <div class="caption-fade"></div>
+    </div>
+    <button class="expand-btn" onclick="toggleCap('cap1',this)">Show more</button>
+    <div class="hashtags" id="ht1" onclick="toggleHt('ht1')">#microgreens #nashvillefood #radicalshoots #mondaydrop #freshgreens #farmtotable #nashvillefoodies #microgreenfarm #eatlocal #sustainablefarming #nashvilletn #regenerativefarming #healthyeating #plantbased #growlocal</div>
+    <div class="btn-row">
+      <button class="btn" onclick="copyText('cap1',this)">📋 Copy Caption</button>
+      <button class="btn" onclick="copyHashtags('ht1',this)">🏷️ Copy Hashtags</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== POST 2: Meet the Cheese ==================== -->
+<div class="card">
+  <div class="card-image">
+    <div class="post-number">2</div>
+    <div class="post-badge">Feed</div>
+    <svg viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+      <!-- Wood background -->
+      <defs>
+        <pattern id="wood" x="0" y="0" width="120" height="1080" patternUnits="userSpaceOnUse">
+          <rect width="120" height="1080" fill="#8B6F47"/>
+          <rect x="0" width="60" height="1080" fill="#7D6340" opacity="0.5"/>
+          <line x1="30" y1="0" x2="30" y2="1080" stroke="#6B5435" stroke-width="1" opacity="0.3"/>
+          <line x1="90" y1="0" x2="90" y2="1080" stroke="#9A7E55" stroke-width="1" opacity="0.2"/>
+        </pattern>
+      </defs>
+      <rect width="1080" height="1080" fill="url(#wood)"/>
+      <rect width="1080" height="1080" fill="rgba(60,40,20,0.3)"/>
+      <!-- Title -->
+      <text x="540" y="130" text-anchor="middle" fill="#FEFAE0" font-family="Inter,sans-serif" font-size="58" font-weight="900" letter-spacing="8">ARTISAN CHEESE</text>
+      <text x="540" y="185" text-anchor="middle" fill="#D4A373" font-family="Caveat,cursive" font-size="38">From Our Herd to Your Table</text>
+      <!-- 6 cheese wedges in circle -->
+      <!-- Cheddar (top) -->
+      <g transform="translate(540,340)">
+        <path d="M-50,0 L0,-40 L50,0 L40,30 L-40,30 Z" fill="#F0C040" stroke="#D4A020" stroke-width="2"/>
+        <path d="M-40,30 L40,30 L50,0" fill="#E0B030" stroke="none"/>
+        <circle cx="-10" cy="5" r="5" fill="#D4A020" opacity="0.5"/>
+        <circle cx="15" cy="15" r="4" fill="#D4A020" opacity="0.4"/>
+        <text x="0" y="60" text-anchor="middle" fill="#FEFAE0" font-family="Inter,sans-serif" font-size="22" font-weight="600">Cheddar</text>
+      </g>
+      <!-- Garlic Herb (top-right) -->
+      <g transform="translate(750,470)">
+        <path d="M-50,0 L0,-40 L50,0 L40,30 L-40,30 Z" fill="#C8D88A" stroke="#A0B860" stroke-width="2"/>
+        <path d="M-40,30 L40,30 L50,0" fill="#B8C87A"/>
+        <circle cx="-5" cy="0" r="3" fill="#7A9A40"/>
+        <circle cx="10" cy="10" r="2.5" fill="#7A9A40"/>
+        <circle cx="20" cy="-5" r="2" fill="#7A9A40"/>
+        <text x="0" y="60" text-anchor="middle" fill="#FEFAE0" font-family="Inter,sans-serif" font-size="22" font-weight="600">Garlic Herb</text>
+      </g>
+      <!-- Lamb Bush (bottom-right) -->
+      <g transform="translate(750,680)">
+        <path d="M-50,0 L0,-40 L50,0 L40,30 L-40,30 Z" fill="#F5E8D0" stroke="#D4C0A0" stroke-width="2"/>
+        <path d="M-40,30 L40,30 L50,0" fill="#E8D8C0"/>
+        <text x="0" y="60" text-anchor="middle" fill="#FEFAE0" font-family="Inter,sans-serif" font-size="22" font-weight="600">Lamb Bush</text>
+      </g>
+      <!-- Gouda (bottom) -->
+      <g transform="translate(540,810)">
+        <path d="M-50,0 L0,-40 L50,0 L40,30 L-40,30 Z" fill="#F0A830" stroke="#D09020" stroke-width="2"/>
+        <path d="M-40,30 L40,30 L50,0" fill="#E09820"/>
+        <text x="0" y="60" text-anchor="middle" fill="#FEFAE0" font-family="Inter,sans-serif" font-size="22" font-weight="600">Gouda</text>
+      </g>
+      <!-- Pepper Jack (bottom-left) -->
+      <g transform="translate(330,680)">
+        <path d="M-50,0 L0,-40 L50,0 L40,30 L-40,30 Z" fill="#F5E0A0" stroke="#D4C080" stroke-width="2"/>
+        <path d="M-40,30 L40,30 L50,0" fill="#E8D090"/>
+        <circle cx="-8" cy="5" r="4" fill="#4A8B3F"/>
+        <circle cx="12" cy="-5" r="3" fill="#C1292E"/>
+        <circle cx="20" cy="15" r="3.5" fill="#4A8B3F"/>
+        <text x="0" y="60" text-anchor="middle" fill="#FEFAE0" font-family="Inter,sans-serif" font-size="22" font-weight="600">Pepper Jack</text>
+      </g>
+      <!-- Chipotle Cheddar (top-left) -->
+      <g transform="translate(330,470)">
+        <path d="M-50,0 L0,-40 L50,0 L40,30 L-40,30 Z" fill="#D07030" stroke="#B05820" stroke-width="2"/>
+        <path d="M-40,30 L40,30 L50,0" fill="#C06020"/>
+        <circle cx="0" cy="0" r="3" fill="#A04818" opacity="0.6"/>
+        <circle cx="-15" cy="12" r="2.5" fill="#A04818" opacity="0.5"/>
+        <text x="0" y="60" text-anchor="middle" fill="#FEFAE0" font-family="Inter,sans-serif" font-size="22" font-weight="600">Chipotle Cheddar</text>
+      </g>
+      <!-- Center circle decoration -->
+      <circle cx="540" cy="590" r="80" fill="none" stroke="#D4A373" stroke-width="2" stroke-dasharray="8,6" opacity="0.5"/>
+      <text x="540" y="585" text-anchor="middle" fill="#D4A373" font-family="Inter,sans-serif" font-size="26" font-weight="800">ALL $8</text>
+      <text x="540" y="615" text-anchor="middle" fill="#FEFAE0" font-family="Inter,sans-serif" font-size="16" font-weight="500" opacity="0.7">HANDCRAFTED</text>
+      <!-- Bottom text -->
+      <text x="540" y="1040" text-anchor="middle" fill="rgba(254,250,224,0.4)" font-family="Inter,sans-serif" font-size="18" font-weight="500">@radical.shoots · Nashville, TN</text>
+    </svg>
+  </div>
+  <div class="card-body">
+    <div class="card-title">"Meet the Cheese" — Artisan Cheese Introduction</div>
+    <div class="card-schedule">📅 Week 1 · Feed Post</div>
+    <div class="caption-wrap" id="cap2">
+      <div class="caption-text">Meet our raw, unpasteurized artisan cheese 🧀
+
+Made from our own herd of grass-fed cows:
+🟡 Cheddar — classic, sharp, perfect
+🌿 Garlic Herb — garden fresh
+🐑 Lamb Bush — manchego-style SHEEP milk
+🟠 Gouda — smooth & creamy
+🌶️ Pepper Jack — jalapeño heat
+🔥 Chipotle Cheddar — smoky & bold
+
+All $8 | All handcrafted | All incredible
+
+Available for pickup in Nashville 📍</div>
+      <div class="caption-fade"></div>
+    </div>
+    <button class="expand-btn" onclick="toggleCap('cap2',this)">Show more</button>
+    <div class="hashtags" id="ht2" onclick="toggleHt('ht2')">#artisancheese #rawcheese #unpasteurized #nashvillecheese #grassfed #farmstead #cheesemaker #handcrafted #radicalshoots #localcheese #nashvillefood #fromthefarm #realfood #cheeselover #tennessee</div>
+    <div class="btn-row">
+      <button class="btn" onclick="copyText('cap2',this)">📋 Copy Caption</button>
+      <button class="btn" onclick="copyHashtags('ht2',this)">🏷️ Copy Hashtags</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== POST 3: Why Microgreens ==================== -->
+<div class="card">
+  <div class="card-image">
+    <div class="post-number">3</div>
+    <div class="post-badge">Feed</div>
+    <svg viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+      <rect width="1080" height="1080" fill="#F0F9F0"/>
+      <!-- Large microgreen illustration at top -->
+      <g transform="translate(540,200)">
+        <line x1="-120" y1="80" x2="-120" y2="-20" stroke="#3A7D5C" stroke-width="4"/>
+        <ellipse cx="-120" cy="-30" rx="22" ry="14" fill="#52B788"/>
+        <ellipse cx="-108" cy="-22" rx="18" ry="11" fill="#40A070"/>
+        <line x1="-60" y1="80" x2="-60" y2="-40" stroke="#3A7D5C" stroke-width="4"/>
+        <ellipse cx="-60" cy="-50" rx="24" ry="15" fill="#52B788"/>
+        <ellipse cx="-48" cy="-42" rx="20" ry="12" fill="#40A070"/>
+        <line x1="0" y1="80" x2="0" y2="-30" stroke="#3A7D5C" stroke-width="4"/>
+        <ellipse cx="0" cy="-40" rx="26" ry="16" fill="#6BCB8B"/>
+        <ellipse cx="12" cy="-32" rx="22" ry="13" fill="#52B788"/>
+        <line x1="60" y1="80" x2="60" y2="-45" stroke="#3A7D5C" stroke-width="4"/>
+        <ellipse cx="60" cy="-55" rx="23" ry="14" fill="#52B788"/>
+        <ellipse cx="72" cy="-47" rx="19" ry="11" fill="#40A070"/>
+        <line x1="120" y1="80" x2="120" y2="-25" stroke="#3A7D5C" stroke-width="4"/>
+        <ellipse cx="120" cy="-35" rx="24" ry="15" fill="#6BCB8B"/>
+      </g>
+      <text x="540" y="340" text-anchor="middle" fill="#2D6A4F" font-family="Inter,sans-serif" font-size="52" font-weight="900">WHY MICROGREENS?</text>
+      <line x1="340" y1="370" x2="740" y2="370" stroke="#52B788" stroke-width="3"/>
+      <!-- Stat 1: Leaf icon + 40x -->
+      <g transform="translate(200,520)">
+        <circle cx="0" cy="0" r="65" fill="#D8F3DC"/>
+        <path d="M-20,-10 Q0,-40 20,-10 Q10,5 0,20 Q-10,5 -20,-10Z" fill="#2D6A4F"/>
+        <line x1="0" y1="20" x2="0" y2="35" stroke="#2D6A4F" stroke-width="3"/>
+        <text x="0" y="100" text-anchor="middle" fill="#2D6A4F" font-family="Inter,sans-serif" font-size="36" font-weight="800">40x</text>
+        <text x="0" y="132" text-anchor="middle" fill="#4A6A5A" font-family="Inter,sans-serif" font-size="18" font-weight="500">more nutrients than</text>
+        <text x="0" y="156" text-anchor="middle" fill="#4A6A5A" font-family="Inter,sans-serif" font-size="18" font-weight="500">mature plants</text>
+      </g>
+      <!-- Stat 2: Clock + 7-14 days -->
+      <g transform="translate(540,520)">
+        <circle cx="0" cy="0" r="65" fill="#D8F3DC"/>
+        <circle cx="0" cy="0" r="30" fill="none" stroke="#2D6A4F" stroke-width="3"/>
+        <line x1="0" y1="0" x2="0" y2="-20" stroke="#2D6A4F" stroke-width="3" stroke-linecap="round"/>
+        <line x1="0" y1="0" x2="14" y2="8" stroke="#2D6A4F" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="0" cy="0" r="3" fill="#2D6A4F"/>
+        <text x="0" y="100" text-anchor="middle" fill="#2D6A4F" font-family="Inter,sans-serif" font-size="36" font-weight="800">7–14</text>
+        <text x="0" y="132" text-anchor="middle" fill="#4A6A5A" font-family="Inter,sans-serif" font-size="18" font-weight="500">days to harvest</text>
+        <text x="0" y="156" text-anchor="middle" fill="#4A6A5A" font-family="Inter,sans-serif" font-size="18" font-weight="500">at peak nutrition</text>
+      </g>
+      <!-- Stat 3: Calendar + year-round -->
+      <g transform="translate(880,520)">
+        <circle cx="0" cy="0" r="65" fill="#D8F3DC"/>
+        <rect x="-22" y="-25" width="44" height="40" rx="4" fill="none" stroke="#2D6A4F" stroke-width="3"/>
+        <line x1="-22" y1="-12" x2="22" y2="-12" stroke="#2D6A4F" stroke-width="2.5"/>
+        <line x1="-12" y1="-30" x2="-12" y2="-22" stroke="#2D6A4F" stroke-width="3" stroke-linecap="round"/>
+        <line x1="12" y1="-30" x2="12" y2="-22" stroke="#2D6A4F" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="-8" cy="0" r="3" fill="#52B788"/>
+        <circle cx="8" cy="0" r="3" fill="#52B788"/>
+        <circle cx="-8" cy="10" r="3" fill="#52B788"/>
+        <circle cx="8" cy="10" r="3" fill="#52B788"/>
+        <text x="0" y="100" text-anchor="middle" fill="#2D6A4F" font-family="Inter,sans-serif" font-size="36" font-weight="800">365</text>
+        <text x="0" y="132" text-anchor="middle" fill="#4A6A5A" font-family="Inter,sans-serif" font-size="18" font-weight="500">days a year</text>
+        <text x="0" y="156" text-anchor="middle" fill="#4A6A5A" font-family="Inter,sans-serif" font-size="18" font-weight="500">year-round growing</text>
+      </g>
+      <!-- Bottom banner -->
+      <rect x="140" y="820" width="800" height="120" rx="16" fill="#2D6A4F"/>
+      <text x="540" y="868" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="28" font-weight="700">No Pesticides · No GMOs · Just Clean Food</text>
+      <text x="540" y="910" text-anchor="middle" fill="#52B788" font-family="Inter,sans-serif" font-size="22" font-weight="500">Try a Living Square — $8.50</text>
+      <!-- Footer -->
+      <text x="540" y="1020" text-anchor="middle" fill="#2D6A4F" font-family="Inter,sans-serif" font-size="20" font-weight="600" opacity="0.5">@radical.shoots</text>
+    </svg>
+  </div>
+  <div class="card-body">
+    <div class="card-title">"Why Microgreens?" — Educational</div>
+    <div class="card-schedule">📅 Week 1 · Feed Post</div>
+    <div class="caption-wrap" id="cap3">
+      <div class="caption-text">Why microgreens? 🤔
+
+Tiny plants. MASSIVE nutrition:
+✅ Up to 40x more vitamins than full-grown veggies
+✅ Harvested at peak nutrition (7-14 days)
+✅ Grow year-round — no season limits
+✅ No pesticides, no GMOs, just clean food
+
+Our top picks for beginners:
+🌿 Dill — throw it on everything
+💗 China Rose Radish — peppery + gorgeous
+🔴 Amaranth — the prettiest thing on your plate
+
+Try a Living Square ($8.50) — it keeps growing on your counter 🌱
+
+#radicalshoots</div>
+      <div class="caption-fade"></div>
+    </div>
+    <button class="expand-btn" onclick="toggleCap('cap3',this)">Show more</button>
+    <div class="hashtags" id="ht3" onclick="toggleHt('ht3')">#microgreens #nutrition #healthyfood #nashvillefood #radicalshoots #superfoods #plantnutrition #eatyourgreens #microgreen #growathome #sustainablefood #nashville #healthylifestyle #farmfresh #nutrientdense</div>
+    <div class="btn-row">
+      <button class="btn" onclick="copyText('cap3',this)">📋 Copy Caption</button>
+      <button class="btn" onclick="copyHashtags('ht3',this)">🏷️ Copy Hashtags</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== POST 4: Honey Heritage ==================== -->
+<div class="card">
+  <div class="card-image">
+    <div class="post-number">4</div>
+    <div class="post-badge">Feed</div>
+    <svg viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="amber" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#F5B84C"/>
+          <stop offset="100%" stop-color="#C07820"/>
+        </linearGradient>
+        <pattern id="honeycomb" x="0" y="0" width="60" height="52" patternUnits="userSpaceOnUse">
+          <polygon points="30,0 60,15 60,37 30,52 0,37 0,15" fill="none" stroke="#D4940C" stroke-width="1.5" opacity="0.25"/>
+        </pattern>
+      </defs>
+      <rect width="1080" height="1080" fill="url(#amber)"/>
+      <rect width="1080" height="1080" fill="url(#honeycomb)"/>
+      <!-- Mountain silhouette -->
+      <polygon points="0,550 150,380 300,480 450,320 600,450 750,350 900,420 1080,500 1080,650 0,650" fill="rgba(80,50,20,0.2)"/>
+      <text x="540" y="610" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="Inter,sans-serif" font-size="22" font-weight="600" letter-spacing="4">CHEROKEE NATIONAL FOREST</text>
+      <!-- EST badge -->
+      <circle cx="540" cy="180" r="70" fill="none" stroke="#fff" stroke-width="3"/>
+      <circle cx="540" cy="180" r="60" fill="none" stroke="#fff" stroke-width="1.5"/>
+      <text x="540" y="170" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="20" font-weight="700">EST.</text>
+      <text x="540" y="200" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="28" font-weight="900">1983</text>
+      <!-- Bee -->
+      <g transform="translate(720,150) scale(0.8)">
+        <ellipse cx="0" cy="0" rx="25" ry="18" fill="#F0D060"/>
+        <rect x="-18" y="-6" width="36" height="4" fill="#3A2A0A" rx="2"/>
+        <rect x="-18" y="2" width="36" height="4" fill="#3A2A0A" rx="2"/>
+        <ellipse cx="28" cy="-2" rx="8" ry="6" fill="#3A2A0A"/>
+        <ellipse cx="-10" cy="-22" rx="16" ry="10" fill="rgba(255,255,255,0.5)" transform="rotate(-20,-10,-22)"/>
+        <ellipse cx="10" cy="-22" rx="16" ry="10" fill="rgba(255,255,255,0.5)" transform="rotate(20,10,-22)"/>
+      </g>
+      <!-- Title -->
+      <text x="540" y="340" text-anchor="middle" fill="#fff" font-family="Georgia,serif" font-size="56" font-weight="700" letter-spacing="4">STRANGE HONEY</text>
+      <text x="540" y="400" text-anchor="middle" fill="#fff" font-family="Georgia,serif" font-size="56" font-weight="700" letter-spacing="4">FARM</text>
+      <!-- 3 honey jars -->
+      <g transform="translate(220,780)">
+        <rect x="-40" y="-80" width="80" height="100" rx="8" fill="rgba(255,255,255,0.2)" stroke="#fff" stroke-width="2"/>
+        <rect x="-30" y="-90" width="60" height="16" rx="4" fill="rgba(255,255,255,0.3)"/>
+        <rect x="-40" y="20" width="80" height="30" rx="4" fill="rgba(255,255,255,0.15)"/>
+        <text x="0" y="42" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="14" font-weight="700">SOURWOOD</text>
+      </g>
+      <g transform="translate(540,780)">
+        <rect x="-40" y="-80" width="80" height="100" rx="8" fill="rgba(255,255,255,0.2)" stroke="#fff" stroke-width="2"/>
+        <rect x="-30" y="-90" width="60" height="16" rx="4" fill="rgba(255,255,255,0.3)"/>
+        <rect x="-40" y="20" width="80" height="30" rx="4" fill="rgba(255,255,255,0.15)"/>
+        <text x="0" y="42" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="14" font-weight="700">MOUNTAIN</text>
+      </g>
+      <g transform="translate(860,780)">
+        <rect x="-40" y="-80" width="80" height="100" rx="8" fill="rgba(255,255,255,0.2)" stroke="#fff" stroke-width="2"/>
+        <rect x="-30" y="-90" width="60" height="16" rx="4" fill="rgba(255,255,255,0.3)"/>
+        <rect x="-40" y="20" width="80" height="30" rx="4" fill="rgba(255,255,255,0.15)"/>
+        <text x="0" y="36" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="12" font-weight="700">DARK</text>
+        <text x="0" y="50" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="12" font-weight="700">WILDFLOWER</text>
+      </g>
+      <!-- Bottom tagline -->
+      <text x="540" y="960" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-family="Caveat,cursive" font-size="30">100% Pure · Raw · Unfiltered</text>
+      <text x="540" y="1010" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-family="Inter,sans-serif" font-size="18">@radical.shoots</text>
+    </svg>
+  </div>
+  <div class="card-body">
+    <div class="card-title">"Honey Heritage" — Strange Honey Farm Story</div>
+    <div class="card-schedule">📅 Week 2 · Feed Post</div>
+    <div class="caption-wrap" id="cap4">
+      <div class="caption-text">Since 1983, Strange Honey Farm has kept bees in the Cherokee National Forest 🐝🏔️
+
+Three varieties, one standard: 100% pure, raw, unfiltered.
+
+🍯 Sourwood — rare Appalachian favorite, smooth & light
+🍯 Tennessee Mountain — balanced golden sweetness
+🍯 Dark Wildflower — bold, caramel-like, complex
+
+Never heated. Never filtered. Never fed white sugar.
+
+Starting at $5.25 for a 3oz hex jar.
+Bulk & wholesale available.
+
+#radicalshoots #rawhoney</div>
+      <div class="caption-fade"></div>
+    </div>
+    <button class="expand-btn" onclick="toggleCap('cap4',this)">Show more</button>
+    <div class="hashtags" id="ht4" onclick="toggleHt('ht4')">#rawhoney #localhoney #tennesseehoney #cherokee #sourwoodhoney #wildflowerhoney #beekeeping #honeybees #nashvillefood #radicalshoots #artisanhoney #purehoney #rawunfiltered #appalachian #strangehoneyfarm</div>
+    <div class="btn-row">
+      <button class="btn" onclick="copyText('cap4',this)">📋 Copy Caption</button>
+      <button class="btn" onclick="copyHashtags('ht4',this)">🏷️ Copy Hashtags</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== POST 5: Chef's Table ==================== -->
+<div class="card">
+  <div class="card-image">
+    <div class="post-number">5</div>
+    <div class="post-badge">Feed</div>
+    <svg viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+      <rect width="1080" height="1080" fill="#1B1B1B"/>
+      <!-- Subtle linen texture -->
+      <rect width="1080" height="1080" fill="rgba(30,30,30,1)"/>
+      <!-- White plate -->
+      <circle cx="540" cy="480" r="320" fill="#F5F5F5"/>
+      <circle cx="540" cy="480" r="310" fill="#fff"/>
+      <circle cx="540" cy="480" r="280" fill="none" stroke="#E8E8E8" stroke-width="1"/>
+      <!-- Artistic food arrangement -->
+      <!-- Sauce swoosh -->
+      <path d="M380,520 Q440,400 520,450 Q600,500 620,420" fill="none" stroke="#8B4513" stroke-width="6" stroke-linecap="round" opacity="0.4"/>
+      <!-- Protein piece -->
+      <ellipse cx="500" cy="470" rx="55" ry="35" fill="#D4956B" transform="rotate(-15,500,470)"/>
+      <ellipse cx="500" cy="465" rx="50" ry="30" fill="#E0A878" transform="rotate(-15,500,465)"/>
+      <!-- Microgreen garnish cluster -->
+      <g transform="translate(580,430)">
+        <line x1="0" y1="20" x2="-8" y2="-8" stroke="#3A7D5C" stroke-width="2"/>
+        <ellipse cx="-8" cy="-12" rx="8" ry="5" fill="#52B788"/>
+        <line x1="5" y1="20" x2="5" y2="-12" stroke="#3A7D5C" stroke-width="2"/>
+        <ellipse cx="5" cy="-16" rx="9" ry="5" fill="#6BCB8B"/>
+        <line x1="10" y1="20" x2="18" y2="-5" stroke="#D1607A" stroke-width="2"/>
+        <ellipse cx="18" cy="-10" rx="7" ry="5" fill="#E888A0"/>
+        <line x1="-5" y1="20" x2="-15" y2="-2" stroke="#3A7D5C" stroke-width="2"/>
+        <ellipse cx="-15" cy="-7" rx="8" ry="5" fill="#40A070"/>
+        <line x1="15" y1="20" x2="25" y2="0" stroke="#D1607A" stroke-width="2"/>
+        <ellipse cx="25" cy="-5" rx="7" ry="4" fill="#F2A0B5"/>
+        <line x1="-2" y1="20" x2="-12" y2="-15" stroke="#3A7D5C" stroke-width="1.5"/>
+        <ellipse cx="-12" cy="-18" rx="6" ry="4" fill="#6BCB8B"/>
+        <line x1="8" y1="20" x2="12" y2="-18" stroke="#7B2D3B" stroke-width="1.5"/>
+        <ellipse cx="12" cy="-22" rx="7" ry="4" fill="#D14452"/>
+      </g>
+      <!-- Small dots (sauce dots) -->
+      <circle cx="430" cy="530" r="4" fill="#8B4513" opacity="0.5"/>
+      <circle cx="450" cy="545" r="3" fill="#8B4513" opacity="0.4"/>
+      <circle cx="475" cy="555" r="2.5" fill="#8B4513" opacity="0.3"/>
+      <!-- Edible flower -->
+      <g transform="translate(620,510)">
+        <ellipse cx="0" cy="-8" rx="5" ry="8" fill="#D98AAE" opacity="0.7"/>
+        <ellipse cx="7" cy="-2" rx="5" ry="8" fill="#D98AAE" opacity="0.6" transform="rotate(72,7,-2)"/>
+        <ellipse cx="4" cy="6" rx="5" ry="8" fill="#D98AAE" opacity="0.5" transform="rotate(144,4,6)"/>
+        <ellipse cx="-4" cy="6" rx="5" ry="8" fill="#D98AAE" opacity="0.6" transform="rotate(216,-4,6)"/>
+        <ellipse cx="-7" cy="-2" rx="5" ry="8" fill="#D98AAE" opacity="0.7" transform="rotate(288,-7,-2)"/>
+        <circle cx="0" cy="0" r="3" fill="#F0D060"/>
+      </g>
+      <!-- Bottom text -->
+      <text x="540" y="920" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-family="Inter,sans-serif" font-size="22" font-weight="600" letter-spacing="8">GROWN FOR CHEFS</text>
+      <text x="540" y="960" text-anchor="middle" fill="rgba(255,255,255,0.2)" font-family="Inter,sans-serif" font-size="16" font-weight="400">@radical.shoots · Nashville, TN</text>
+    </svg>
+  </div>
+  <div class="card-body">
+    <div class="card-title">"Chef's Table" — Restaurant/Chef Feature</div>
+    <div class="card-schedule">📅 Week 2 · Feed Post</div>
+    <div class="caption-wrap" id="cap5">
+      <div class="caption-text">We don't grow for grocery stores.
+We grow for the people who make Nashville taste incredible.
+
+🍽️ Weekly standing orders
+🌱 Custom growing (tell us what you need, we'll plant it)
+🚚 Tuesday & Friday delivery
+📋 Weekly availability list
+
+Currently serving Nashville's best kitchens.
+
+Chefs & restaurants: DM us or email wholesale@radicalshoots.com
+
+#radicalshoots</div>
+      <div class="caption-fade"></div>
+    </div>
+    <button class="expand-btn" onclick="toggleCap('cap5',this)">Show more</button>
+    <div class="hashtags" id="ht5" onclick="toggleHt('ht5')">#farmtotable #nashvillechefs #chefsofinstagram #microgreens #nashvillerestaurants #finedining #localfood #cheflife #radicalshoots #culinaryarts #plating #foodart #sustainablechef #nashvillefoodie #farmfresh</div>
+    <div class="btn-row">
+      <button class="btn" onclick="copyText('cap5',this)">📋 Copy Caption</button>
+      <button class="btn" onclick="copyHashtags('ht5',this)">🏷️ Copy Hashtags</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== POST 6: Living Square ==================== -->
+<div class="card">
+  <div class="card-image">
+    <div class="post-number">6</div>
+    <div class="post-badge">Feed</div>
+    <svg viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+      <rect width="1080" height="1080" fill="#FAFCFA"/>
+      <!-- Title -->
+      <text x="540" y="100" text-anchor="middle" fill="#2D6A4F" font-family="Inter,sans-serif" font-size="44" font-weight="800">THE LIVING SQUARE</text>
+      <text x="540" y="140" text-anchor="middle" fill="#52B788" font-family="Caveat,cursive" font-size="28">A tiny farm for your kitchen counter</text>
+      <!-- Tray cross-section -->
+      <!-- Tray body -->
+      <rect x="190" y="400" width="700" height="180" rx="8" fill="#8B6F47"/>
+      <rect x="190" y="400" width="700" height="20" rx="8" fill="#A0845C"/>
+      <!-- Soil layer -->
+      <rect x="200" y="420" width="680" height="100" fill="#5C4033"/>
+      <rect x="200" y="420" width="680" height="30" fill="#6B4E3A"/>
+      <!-- Root system -->
+      <g opacity="0.6">
+        <line x1="280" y1="520" x2="260" y2="560" stroke="#D4C0A0" stroke-width="1.5"/>
+        <line x1="280" y1="520" x2="290" y2="555" stroke="#D4C0A0" stroke-width="1"/>
+        <line x1="380" y1="520" x2="370" y2="565" stroke="#D4C0A0" stroke-width="1.5"/>
+        <line x1="380" y1="520" x2="400" y2="560" stroke="#D4C0A0" stroke-width="1"/>
+        <line x1="480" y1="520" x2="460" y2="558" stroke="#D4C0A0" stroke-width="1.5"/>
+        <line x1="480" y1="520" x2="495" y2="562" stroke="#D4C0A0" stroke-width="1"/>
+        <line x1="580" y1="520" x2="565" y2="555" stroke="#D4C0A0" stroke-width="1.5"/>
+        <line x1="580" y1="520" x2="600" y2="560" stroke="#D4C0A0" stroke-width="1"/>
+        <line x1="680" y1="520" x2="665" y2="558" stroke="#D4C0A0" stroke-width="1.5"/>
+        <line x1="680" y1="520" x2="700" y2="555" stroke="#D4C0A0" stroke-width="1"/>
+        <line x1="780" y1="520" x2="770" y2="560" stroke="#D4C0A0" stroke-width="1.5"/>
+        <line x1="780" y1="520" x2="795" y2="558" stroke="#D4C0A0" stroke-width="1"/>
+      </g>
+      <!-- Microgreens growing up -->
+      <g>
+        <line x1="260" y1="420" x2="260" y2="310" stroke="#3A7D5C" stroke-width="3"/>
+        <ellipse cx="260" cy="302" rx="14" ry="9" fill="#52B788"/>
+        <line x1="310" y1="420" x2="310" y2="290" stroke="#3A7D5C" stroke-width="3"/>
+        <ellipse cx="310" cy="282" rx="16" ry="10" fill="#6BCB8B"/>
+        <line x1="360" y1="420" x2="360" y2="305" stroke="#3A7D5C" stroke-width="3"/>
+        <ellipse cx="360" cy="297" rx="13" ry="8" fill="#52B788"/>
+        <line x1="410" y1="420" x2="410" y2="280" stroke="#3A7D5C" stroke-width="3"/>
+        <ellipse cx="410" cy="272" rx="15" ry="10" fill="#40A070"/>
+        <line x1="460" y1="420" x2="460" y2="295" stroke="#3A7D5C" stroke-width="3"/>
+        <ellipse cx="460" cy="287" rx="14" ry="9" fill="#6BCB8B"/>
+        <line x1="510" y1="420" x2="510" y2="285" stroke="#3A7D5C" stroke-width="3"/>
+        <ellipse cx="510" cy="277" rx="16" ry="10" fill="#52B788"/>
+        <line x1="560" y1="420" x2="560" y2="300" stroke="#3A7D5C" stroke-width="3"/>
+        <ellipse cx="560" cy="292" rx="13" ry="8" fill="#40A070"/>
+        <line x1="610" y1="420" x2="610" y2="288" stroke="#3A7D5C" stroke-width="3"/>
+        <ellipse cx="610" cy="280" rx="15" ry="9" fill="#6BCB8B"/>
+        <line x1="660" y1="420" x2="660" y2="310" stroke="#3A7D5C" stroke-width="3"/>
+        <ellipse cx="660" cy="302" rx="14" ry="9" fill="#52B788"/>
+        <line x1="710" y1="420" x2="710" y2="292" stroke="#3A7D5C" stroke-width="3"/>
+        <ellipse cx="710" cy="284" rx="16" ry="10" fill="#40A070"/>
+        <line x1="760" y1="420" x2="760" y2="305" stroke="#3A7D5C" stroke-width="3"/>
+        <ellipse cx="760" cy="297" rx="13" ry="8" fill="#6BCB8B"/>
+        <line x1="810" y1="420" x2="810" y2="295" stroke="#3A7D5C" stroke-width="3"/>
+        <ellipse cx="810" cy="287" rx="15" ry="10" fill="#52B788"/>
+      </g>
+      <!-- Scissors cutting -->
+      <g transform="translate(440,260) rotate(-20)">
+        <line x1="0" y1="0" x2="40" y2="-30" stroke="#888" stroke-width="3"/>
+        <line x1="0" y1="0" x2="40" y2="30" stroke="#888" stroke-width="3"/>
+        <circle cx="48" cy="-35" r="12" fill="none" stroke="#888" stroke-width="2.5"/>
+        <circle cx="48" cy="35" r="12" fill="none" stroke="#888" stroke-width="2.5"/>
+        <circle cx="0" cy="0" r="4" fill="#888"/>
+      </g>
+      <!-- Arrow labels -->
+      <!-- Top arrow: CUT FRESH -->
+      <g>
+        <line x1="180" y1="250" x2="260" y2="300" stroke="#2D6A4F" stroke-width="2.5" marker-end="url(#arrowG)"/>
+        <defs><marker id="arrowG" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10" fill="#2D6A4F"/></marker></defs>
+        <text x="60" y="230" fill="#2D6A4F" font-family="Inter,sans-serif" font-size="22" font-weight="700">CUT FRESH</text>
+        <text x="60" y="258" fill="#2D6A4F" font-family="Inter,sans-serif" font-size="22" font-weight="700">AS YOU NEED</text>
+      </g>
+      <!-- Bottom arrow: KEEPS GROWING -->
+      <g>
+        <line x1="180" y1="600" x2="260" y2="555" stroke="#8B6F47" stroke-width="2.5" marker-end="url(#arrowB)"/>
+        <defs><marker id="arrowB" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10" fill="#8B6F47"/></marker></defs>
+        <text x="30" y="610" fill="#8B6F47" font-family="Inter,sans-serif" font-size="22" font-weight="700">KEEPS GROWING</text>
+        <text x="30" y="638" fill="#8B6F47" font-family="Inter,sans-serif" font-size="22" font-weight="700">ON YOUR COUNTER</text>
+      </g>
+      <!-- Price badge -->
+      <circle cx="900" cy="250" r="65" fill="#2D6A4F"/>
+      <text x="900" y="242" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="34" font-weight="900">$8.50</text>
+      <text x="900" y="270" text-anchor="middle" fill="#D8F3DC" font-family="Inter,sans-serif" font-size="16" font-weight="500">each</text>
+      <!-- Varieties list -->
+      <text x="540" y="720" text-anchor="middle" fill="#2D6A4F" font-family="Inter,sans-serif" font-size="20" font-weight="600">Available in 7 varieties</text>
+      <text x="540" y="755" text-anchor="middle" fill="#6B7280" font-family="Inter,sans-serif" font-size="17">Amaranth · Rainbow Radish · Daikon · China Rose · Leek · Dill · Chervil</text>
+      <!-- Bottom bar -->
+      <rect x="0" y="820" width="1080" height="260" fill="#2D6A4F"/>
+      <text x="540" y="910" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="32" font-weight="800">The freshest food you'll ever eat.</text>
+      <text x="540" y="955" text-anchor="middle" fill="#D8F3DC" font-family="Caveat,cursive" font-size="28">Because you harvest it yourself.</text>
+      <text x="540" y="1020" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-family="Inter,sans-serif" font-size="18">@radical.shoots</text>
+    </svg>
+  </div>
+  <div class="card-body">
+    <div class="card-title">"Living Square" — Product Feature</div>
+    <div class="card-schedule">📅 Week 2 · Feed Post</div>
+    <div class="caption-wrap" id="cap6">
+      <div class="caption-text">The Living Square 🌱
+
+It's not a product — it's a tiny farm for your kitchen counter.
+
+→ Dense microgreens growing in a 8x6 tray
+→ Cut what you need, they keep growing
+→ Lasts 2-3 weeks on your counter
+→ $8.50 each (yes, really)
+
+Available in: Amaranth, Rainbow Radish, Daikon, China Rose, Leek, Dill, Chervil
+
+The freshest food you'll ever eat — because you harvest it yourself.
+
+Order → link in bio</div>
+      <div class="caption-fade"></div>
+    </div>
+    <button class="expand-btn" onclick="toggleCap('cap6',this)">Show more</button>
+    <div class="hashtags" id="ht6" onclick="toggleHt('ht6')">#microgreens #livingsquare #kitchengarden #growathome #radicalshoots #freshfood #nashville #urbanfarming #microgreen #countertopgarden #healthyliving #eatfresh #growlocal #indoorgarden #freshherbs</div>
+    <div class="btn-row">
+      <button class="btn" onclick="copyText('cap6',this)">📋 Copy Caption</button>
+      <button class="btn" onclick="copyHashtags('ht6',this)">🏷️ Copy Hashtags</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== POST 7: Maple Trio ==================== -->
+<div class="card">
+  <div class="card-image">
+    <div class="post-number">7</div>
+    <div class="post-badge">Feed</div>
+    <svg viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="autumn" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#F5E6D0"/>
+          <stop offset="100%" stop-color="#E8C8A0"/>
+        </linearGradient>
+      </defs>
+      <rect width="1080" height="1080" fill="url(#autumn)"/>
+      <!-- Falling maple leaves -->
+      <g opacity="0.15">
+        <path d="M100,120 L115,100 L120,115 L140,95 L130,120 L150,125 L130,135 L135,155 L115,140 L95,155 L100,135 L80,125 L100,120Z" fill="#C1292E"/>
+        <path d="M900,200 L915,180 L920,195 L940,175 L930,200 L950,205 L930,215 L935,235 L915,220 L895,235 L900,215 L880,205 L900,200Z" fill="#D4A373" transform="rotate(30,900,200)"/>
+        <path d="M200,900 L215,880 L220,895 L240,875 L230,900 L250,905 L230,915 L235,935 L215,920 L195,935 L200,915 L180,905 L200,900Z" fill="#C07820" transform="rotate(-20,200,900)"/>
+        <path d="M800,850 L815,830 L820,845 L840,825 L830,850 L850,855 L830,865 L835,885 L815,870 L795,885 L800,865 L780,855 L800,850Z" fill="#C1292E" transform="rotate(45,800,850)"/>
+        <path d="M500,50 L515,30 L520,45 L540,25 L530,50 L550,55 L530,65 L535,85 L515,70 L495,85 L500,65 L480,55 L500,50Z" fill="#8B5E3C"/>
+      </g>
+      <!-- Gift box behind -->
+      <rect x="260" y="380" width="560" height="420" rx="16" fill="#D4A373" stroke="#B08050" stroke-width="3"/>
+      <rect x="260" y="380" width="560" height="40" rx="16" fill="#B08050"/>
+      <rect x="510" y="380" width="60" height="420" fill="#B08050" opacity="0.5"/>
+      <!-- Ribbon -->
+      <path d="M540,340 Q500,360 480,380" fill="none" stroke="#C1292E" stroke-width="6"/>
+      <path d="M540,340 Q580,360 600,380" fill="none" stroke="#C1292E" stroke-width="6"/>
+      <circle cx="540" cy="340" r="20" fill="#C1292E"/>
+      <circle cx="540" cy="340" r="12" fill="#D44040"/>
+      <!-- Bottle 1: Pure (amber) -->
+      <g transform="translate(340,560)">
+        <rect x="-28" y="-120" width="56" height="170" rx="6" fill="#D4940C"/>
+        <rect x="-28" y="-120" width="56" height="30" fill="#C08008"/>
+        <rect x="-18" y="-150" width="36" height="35" rx="4" fill="#B07008"/>
+        <rect x="-12" y="-165" width="24" height="18" rx="10" fill="#A06008"/>
+        <rect x="-32" y="50" width="64" height="50" rx="6" fill="rgba(255,255,255,0.9)"/>
+        <text x="0" y="72" text-anchor="middle" fill="#8B5E3C" font-family="Inter,sans-serif" font-size="12" font-weight="800">100% PURE</text>
+        <text x="0" y="88" text-anchor="middle" fill="#8B5E3C" font-family="Inter,sans-serif" font-size="10" font-weight="500">MAPLE SYRUP</text>
+      </g>
+      <!-- Bottle 2: Maple Cider (red-amber) -->
+      <g transform="translate(540,560)">
+        <rect x="-28" y="-120" width="56" height="170" rx="6" fill="#B85C30"/>
+        <rect x="-28" y="-120" width="56" height="30" fill="#A04C28"/>
+        <rect x="-18" y="-150" width="36" height="35" rx="4" fill="#903C20"/>
+        <rect x="-12" y="-165" width="24" height="18" rx="10" fill="#803018"/>
+        <rect x="-32" y="50" width="64" height="50" rx="6" fill="rgba(255,255,255,0.9)"/>
+        <text x="0" y="72" text-anchor="middle" fill="#8B5E3C" font-family="Inter,sans-serif" font-size="12" font-weight="800">MAPLE CIDER</text>
+        <text x="0" y="88" text-anchor="middle" fill="#8B5E3C" font-family="Inter,sans-serif" font-size="10" font-weight="500">APPLE + MAPLE</text>
+      </g>
+      <!-- Bottle 3: Chili-Infused (deep red) -->
+      <g transform="translate(740,560)">
+        <rect x="-28" y="-120" width="56" height="170" rx="6" fill="#8B2020"/>
+        <rect x="-28" y="-120" width="56" height="30" fill="#701818"/>
+        <rect x="-18" y="-150" width="36" height="35" rx="4" fill="#601010"/>
+        <rect x="-12" y="-165" width="24" height="18" rx="10" fill="#500808"/>
+        <rect x="-32" y="50" width="64" height="50" rx="6" fill="rgba(255,255,255,0.9)"/>
+        <text x="0" y="72" text-anchor="middle" fill="#8B5E3C" font-family="Inter,sans-serif" font-size="11" font-weight="800">CHILI-INFUSED</text>
+        <text x="0" y="88" text-anchor="middle" fill="#8B5E3C" font-family="Inter,sans-serif" font-size="10" font-weight="500">SWEET HEAT</text>
+      </g>
+      <!-- Badge -->
+      <rect x="340" y="870" width="400" height="70" rx="35" fill="#2D6A4F"/>
+      <text x="540" y="915" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="30" font-weight="800">SAMPLER GIFT BOX $25</text>
+      <!-- Top title -->
+      <text x="540" y="100" text-anchor="middle" fill="#5C3A1A" font-family="Inter,sans-serif" font-size="48" font-weight="900" letter-spacing="3">THE MAPLE TRIO</text>
+      <text x="540" y="145" text-anchor="middle" fill="#8B5E3C" font-family="Caveat,cursive" font-size="30">The gift they actually want</text>
+      <!-- Footer -->
+      <text x="540" y="1020" text-anchor="middle" fill="rgba(92,58,26,0.4)" font-family="Inter,sans-serif" font-size="18">@radical.shoots · Nashville, TN</text>
+    </svg>
+  </div>
+  <div class="card-body">
+    <div class="card-title">"Maple Trio" — Gift Feature</div>
+    <div class="card-schedule">📅 Week 3 · Feed Post</div>
+    <div class="caption-wrap" id="cap7">
+      <div class="caption-text">The gift they actually want 🍁
+
+Our Sampler Syrup Gift Box: $25
+
+Three locally-produced maple syrups:
+🍁 100% Pure — classic, golden perfection
+🍎 Maple Cider — apple meets maple
+🌶️ Chili-Infused — sweet heat that changes everything
+
+Put it on pancakes, in cocktails, on cheese (YES), or straight off a spoon.
+
+Perfect for:
+→ Hosts & hostesses
+→ Food lovers
+→ "Sorry I was late" gifts
+→ Yourself (we won't tell)
+
+#radicalshoots</div>
+      <div class="caption-fade"></div>
+    </div>
+    <button class="expand-btn" onclick="toggleCap('cap7',this)">Show more</button>
+    <div class="hashtags" id="ht7" onclick="toggleHt('ht7')">#maplesyrup #nashvillegifts #giftbox #localfood #radicalshoots #foodiegift #artisanfood #tennesseemade #spicysyrup #maplecider #gourmetfood #nashville #handcrafted #supportlocal #foodlover</div>
+    <div class="btn-row">
+      <button class="btn" onclick="copyText('cap7',this)">📋 Copy Caption</button>
+      <button class="btn" onclick="copyHashtags('ht7',this)">🏷️ Copy Hashtags</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== POST 8: Lion's Mane ==================== -->
+<div class="card">
+  <div class="card-image">
+    <div class="post-number">8</div>
+    <div class="post-badge">Feed</div>
+    <svg viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+      <rect width="1080" height="1080" fill="#0F0F0F"/>
+      <!-- Subtle radial glow -->
+      <defs>
+        <radialGradient id="glow" cx="50%" cy="45%" r="40%">
+          <stop offset="0%" stop-color="#2A2A2A"/>
+          <stop offset="100%" stop-color="#0F0F0F"/>
+        </radialGradient>
+      </defs>
+      <rect width="1080" height="1080" fill="url(#glow)"/>
+      <!-- Lion's Mane mushroom - cascading tendrils -->
+      <g transform="translate(540,420)">
+        <!-- Main body -->
+        <ellipse cx="0" cy="-60" rx="140" ry="80" fill="#F0E8D8"/>
+        <ellipse cx="0" cy="-50" rx="120" ry="65" fill="#F5F0E5"/>
+        <!-- Cascading icicle tendrils -->
+        <g fill="#F5F0E5" opacity="0.95">
+          <!-- Row 1 -->
+          <path d="M-120,-20 Q-118,60 -115,140 Q-115,145 -120,140 Q-125,60 -128,-20Z"/>
+          <path d="M-100,-30 Q-98,80 -95,180 Q-95,185 -100,180 Q-105,80 -108,-30Z"/>
+          <path d="M-80,-35 Q-78,90 -75,200 Q-75,206 -80,200 Q-85,90 -88,-35Z"/>
+          <path d="M-60,-38 Q-58,100 -55,220 Q-55,226 -60,220 Q-65,100 -68,-38Z"/>
+          <path d="M-40,-40 Q-38,110 -35,240 Q-35,246 -40,240 Q-45,110 -48,-40Z"/>
+          <path d="M-20,-40 Q-18,120 -15,260 Q-15,266 -20,260 Q-25,120 -28,-40Z"/>
+          <path d="M0,-40 Q2,130 5,270 Q5,276 0,270 Q-5,130 -8,-40Z"/>
+          <path d="M20,-40 Q22,120 25,255 Q25,261 20,255 Q15,120 12,-40Z"/>
+          <path d="M40,-40 Q42,110 45,235 Q45,241 40,235 Q35,110 32,-40Z"/>
+          <path d="M60,-38 Q62,100 65,215 Q65,221 60,215 Q55,100 52,-38Z"/>
+          <path d="M80,-35 Q82,90 85,195 Q85,201 80,195 Q75,90 72,-35Z"/>
+          <path d="M100,-30 Q102,75 105,170 Q105,176 100,170 Q95,75 92,-30Z"/>
+          <path d="M120,-20 Q122,50 125,130 Q125,136 120,130 Q115,50 112,-20Z"/>
+        </g>
+        <!-- Inner tendrils slightly darker -->
+        <g fill="#E8DCC8" opacity="0.6">
+          <path d="M-90,-32 Q-88,70 -85,160 Q-85,165 -90,160 Q-95,70 -98,-32Z"/>
+          <path d="M-50,-39 Q-48,95 -45,210 Q-45,215 -50,210 Q-55,95 -58,-39Z"/>
+          <path d="M-10,-40 Q-8,115 -5,245 Q-5,250 -10,245 Q-15,115 -18,-40Z"/>
+          <path d="M30,-40 Q32,105 35,225 Q35,230 30,225 Q25,105 22,-40Z"/>
+          <path d="M70,-37 Q72,85 75,185 Q75,190 70,185 Q65,85 62,-37Z"/>
+          <path d="M110,-28 Q112,60 115,150 Q115,155 110,150 Q105,60 102,-28Z"/>
+        </g>
+      </g>
+      <!-- BRAIN FOOD text with brain icon -->
+      <g transform="translate(540,850)">
+        <!-- Tiny brain -->
+        <g transform="translate(-90,0) scale(0.5)" opacity="0.5">
+          <path d="M-30,-20 Q-40,-30 -30,-40 Q-15,-50 0,-40 Q15,-50 30,-40 Q40,-30 30,-20 Q40,-10 30,0 Q35,15 20,20 Q10,25 0,20 Q-10,25 -20,20 Q-35,15 -30,0 Q-40,-10 -30,-20Z" fill="#F0E8D8"/>
+          <line x1="0" y1="-40" x2="0" y2="20" stroke="#D4C0A0" stroke-width="2"/>
+        </g>
+        <text x="0" y="8" text-anchor="middle" fill="rgba(240,232,216,0.4)" font-family="Inter,sans-serif" font-size="24" font-weight="700" letter-spacing="8">BRAIN FOOD</text>
+      </g>
+      <!-- Price badge -->
+      <rect x="780" y="60" width="220" height="70" rx="35" fill="rgba(240,232,216,0.15)" stroke="rgba(240,232,216,0.3)" stroke-width="2"/>
+      <text x="890" y="105" text-anchor="middle" fill="#F0E8D8" font-family="Inter,sans-serif" font-size="28" font-weight="800">$9 / 8oz</text>
+      <!-- Title -->
+      <text x="540" y="960" text-anchor="middle" fill="rgba(240,232,216,0.25)" font-family="Inter,sans-serif" font-size="20" font-weight="500">LION'S MANE · Sustainably Grown · @radical.shoots</text>
+    </svg>
+  </div>
+  <div class="card-body">
+    <div class="card-title">"Lion's Mane" — Mushroom Feature</div>
+    <div class="card-schedule">📅 Week 3 · Feed Post</div>
+    <div class="caption-wrap" id="cap8">
+      <div class="caption-text">Lion's Mane 🍄
+
+The mushroom that tastes like crab and feeds your brain.
+
+→ Umami-rich, meaty texture
+→ Subtle seafood-like flavor
+→ Sauté, grill, or add to soups
+→ Research shows neuroprotective potential
+
+Grown to order. 2-week lead time.
+$9 for 8oz of fresh, sustainably grown Lion's Mane.
+
+Your nervous system will thank you.
+
+Order → link in bio 🧠</div>
+      <div class="caption-fade"></div>
+    </div>
+    <button class="expand-btn" onclick="toggleCap('cap8',this)">Show more</button>
+    <div class="hashtags" id="ht8" onclick="toggleHt('ht8')">#lionsmane #gourmetmushrooms #mushrooms #brainfood #nashvillefood #radicalshoots #functionalmushrooms #mushroomforaging #umami #healthyfood #plantbased #adaptogens #nashville #sustainablefood #mushroomlover</div>
+    <div class="btn-row">
+      <button class="btn" onclick="copyText('cap8',this)">📋 Copy Caption</button>
+      <button class="btn" onclick="copyHashtags('ht8',this)">🏷️ Copy Hashtags</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== POST 9: The Radical Difference ==================== -->
+<div class="card">
+  <div class="card-image">
+    <div class="post-number">9</div>
+    <div class="post-badge">Feed</div>
+    <svg viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+      <!-- Left side: gray/lifeless -->
+      <rect x="0" y="0" width="490" height="1080" fill="#E0E0E0"/>
+      <!-- Right side: vibrant green -->
+      <rect x="590" y="0" width="490" height="1080" fill="#D8F3DC"/>
+      <!-- Center VS divider -->
+      <rect x="490" y="0" width="100" height="1080" fill="#1B1B1B"/>
+      <text x="540" y="560" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="48" font-weight="900">VS</text>
+      <!-- Left side: grocery store -->
+      <!-- Plastic container -->
+      <g transform="translate(245,380)">
+        <rect x="-100" y="-80" width="200" height="140" rx="6" fill="#C8C8C8" stroke="#A0A0A0" stroke-width="2"/>
+        <rect x="-100" y="-80" width="200" height="20" rx="6" fill="#B0B0B0"/>
+        <!-- Wilted greens -->
+        <line x1="-60" y1="30" x2="-65" y2="-20" stroke="#8A8A6A" stroke-width="3"/>
+        <ellipse cx="-65" cy="-25" rx="14" ry="8" fill="#9A9A78" opacity="0.7"/>
+        <line x1="-20" y1="30" x2="-22" y2="-10" stroke="#8A8A6A" stroke-width="3"/>
+        <ellipse cx="-22" cy="-16" rx="12" ry="7" fill="#8A8A68" opacity="0.6"/>
+        <line x1="20" y1="30" x2="18" y2="-15" stroke="#8A8A6A" stroke-width="3"/>
+        <ellipse cx="18" cy="-20" rx="13" ry="8" fill="#9A9A78" opacity="0.5"/>
+        <line x1="60" y1="30" x2="55" y2="-8" stroke="#8A8A6A" stroke-width="3"/>
+        <ellipse cx="55" cy="-14" rx="11" ry="7" fill="#8A8A68" opacity="0.6"/>
+        <!-- Drooping effect -->
+        <ellipse cx="-50" cy="-18" rx="10" ry="6" fill="#7A7A58" opacity="0.4" transform="rotate(20,-50,-18)"/>
+        <ellipse cx="40" cy="-12" rx="10" ry="6" fill="#7A7A58" opacity="0.4" transform="rotate(-15,40,-12)"/>
+      </g>
+      <!-- "2 WEEKS OLD" stamp -->
+      <g transform="translate(245,580) rotate(-10)">
+        <rect x="-90" y="-25" width="180" height="50" rx="4" fill="none" stroke="#C1292E" stroke-width="3" opacity="0.6"/>
+        <text x="0" y="5" text-anchor="middle" fill="#C1292E" font-family="Inter,sans-serif" font-size="22" font-weight="800" opacity="0.6">2 WEEKS OLD</text>
+      </g>
+      <text x="245" y="720" text-anchor="middle" fill="#888" font-family="Inter,sans-serif" font-size="18" font-weight="600">1,500 miles shipped</text>
+      <text x="245" y="750" text-anchor="middle" fill="#888" font-family="Inter,sans-serif" font-size="18" font-weight="600">Sprayed & processed</text>
+      <!-- Right side: Radical Shoots -->
+      <g transform="translate(835,380)">
+        <!-- Beautiful tray -->
+        <rect x="-100" y="30" width="200" height="30" rx="4" fill="#8B6F47"/>
+        <!-- Vibrant microgreens -->
+        <line x1="-70" y1="30" x2="-70" y2="-30" stroke="#2D6A4F" stroke-width="3"/>
+        <ellipse cx="-70" cy="-36" rx="14" ry="9" fill="#52B788"/>
+        <line x1="-40" y1="30" x2="-40" y2="-40" stroke="#2D6A4F" stroke-width="3"/>
+        <ellipse cx="-40" cy="-46" rx="16" ry="10" fill="#6BCB8B"/>
+        <line x1="-10" y1="30" x2="-10" y2="-35" stroke="#C1292E" stroke-width="3"/>
+        <ellipse cx="-10" cy="-41" rx="13" ry="8" fill="#E05562"/>
+        <line x1="20" y1="30" x2="20" y2="-42" stroke="#2D6A4F" stroke-width="3"/>
+        <ellipse cx="20" cy="-48" rx="15" ry="9" fill="#52B788"/>
+        <line x1="50" y1="30" x2="50" y2="-32" stroke="#D1607A" stroke-width="3"/>
+        <ellipse cx="50" cy="-38" rx="14" ry="9" fill="#F2A0B5"/>
+        <line x1="80" y1="30" x2="80" y2="-38" stroke="#2D6A4F" stroke-width="3"/>
+        <ellipse cx="80" cy="-44" rx="13" ry="8" fill="#40A070"/>
+      </g>
+      <!-- Freshness badge -->
+      <g transform="translate(835,580)">
+        <rect x="-90" y="-25" width="180" height="50" rx="25" fill="#2D6A4F"/>
+        <text x="0" y="6" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="18" font-weight="800">HARVESTED TODAY</text>
+      </g>
+      <text x="835" y="720" text-anchor="middle" fill="#2D6A4F" font-family="Inter,sans-serif" font-size="18" font-weight="600">2 miles from farm</text>
+      <text x="835" y="750" text-anchor="middle" fill="#2D6A4F" font-family="Inter,sans-serif" font-size="18" font-weight="600">Pesticide-free · No GMOs</text>
+      <!-- Top headline -->
+      <rect x="0" y="0" width="1080" height="160" fill="#1B1B1B"/>
+      <text x="540" y="80" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="38" font-weight="900">THERE'S FRESH.</text>
+      <text x="540" y="130" text-anchor="middle" fill="#52B788" font-family="Inter,sans-serif" font-size="38" font-weight="900">THEN THERE'S RADICAL.</text>
+      <!-- Bottom -->
+      <rect x="0" y="920" width="1080" height="160" fill="#1B1B1B"/>
+      <text x="540" y="980" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="26" font-weight="700">Integrity & Flavor. That's the radical difference.</text>
+      <text x="540" y="1020" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-family="Inter,sans-serif" font-size="18">@radical.shoots · Nashville, TN</text>
+    </svg>
+  </div>
+  <div class="card-body">
+    <div class="card-title">"The Radical Difference" — Values/Brand</div>
+    <div class="card-schedule">📅 Week 4 · Feed Post</div>
+    <div class="caption-wrap" id="cap9">
+      <div class="caption-text">There's fresh. Then there's radical. 🌱
+
+What you get from us:
+✅ Harvested the morning of delivery
+✅ Grown in pesticide-free environments
+✅ No GMOs, no shortcuts
+✅ 2 miles from our farm to your plate
+✅ Cheese from our own grass-fed herd
+✅ Honey from bees in national forests
+
+What you get from the grocery store:
+❌ Picked 2 weeks ago
+❌ Shipped 1,500 miles
+❌ Sprayed with who-knows-what
+❌ Sitting in plastic since Tuesday
+
+Integrity & flavor. That's the radical difference.
+
+#radicalshoots</div>
+      <div class="caption-fade"></div>
+    </div>
+    <button class="expand-btn" onclick="toggleCap('cap9',this)">Show more</button>
+    <div class="hashtags" id="ht9" onclick="toggleHt('ht9')">#eatlocal #farmtotable #radicalshoots #nashvillefood #sustainablefarming #regenerativeagriculture #knowyourfarmer #localfood #realfood #organicfood #healthyeating #nashville #farmfresh #supportlocal #foodintegrity</div>
+    <div class="btn-row">
+      <button class="btn" onclick="copyText('cap9',this)">📋 Copy Caption</button>
+      <button class="btn" onclick="copyHashtags('ht9',this)">🏷️ Copy Hashtags</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== POST 10: Community ==================== -->
+<div class="card">
+  <div class="card-image">
+    <div class="post-number">10</div>
+    <div class="post-badge">Feed</div>
+    <svg viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="warmsky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#F5D5A0"/>
+          <stop offset="60%" stop-color="#F0C878"/>
+          <stop offset="100%" stop-color="#E8B850"/>
+        </linearGradient>
+      </defs>
+      <rect width="1080" height="1080" fill="url(#warmsky)"/>
+      <!-- Nashville skyline (subtle, background) -->
+      <g opacity="0.12">
+        <rect x="100" y="300" width="60" height="200" fill="#3A2A0A"/>
+        <rect x="180" y="250" width="50" height="250" fill="#3A2A0A"/>
+        <rect x="250" y="280" width="70" height="220" fill="#3A2A0A"/>
+        <!-- Batman building silhouette -->
+        <rect x="400" y="200" width="80" height="300" fill="#3A2A0A"/>
+        <polygon points="400,200 420,140 440,200" fill="#3A2A0A"/>
+        <polygon points="440,200 460,140 480,200" fill="#3A2A0A"/>
+        <rect x="520" y="260" width="55" height="240" fill="#3A2A0A"/>
+        <rect x="600" y="290" width="65" height="210" fill="#3A2A0A"/>
+        <rect x="700" y="270" width="50" height="230" fill="#3A2A0A"/>
+        <rect x="780" y="310" width="60" height="190" fill="#3A2A0A"/>
+        <rect x="860" y="280" width="55" height="220" fill="#3A2A0A"/>
+        <rect x="940" y="320" width="60" height="180" fill="#3A2A0A"/>
+      </g>
+      <!-- Ground -->
+      <rect x="0" y="500" width="1080" height="580" fill="#4A7A3A" opacity="0.3"/>
+      <!-- Market booth table -->
+      <rect x="140" y="550" width="800" height="20" rx="4" fill="#8B6F47"/>
+      <!-- Table legs -->
+      <rect x="180" y="570" width="12" height="120" fill="#7A5E38"/>
+      <rect x="888" y="570" width="12" height="120" fill="#7A5E38"/>
+      <!-- Tablecloth front -->
+      <rect x="140" y="555" width="800" height="140" rx="4" fill="#2D6A4F" opacity="0.85"/>
+      <!-- RADICAL SHOOTS banner -->
+      <rect x="280" y="410" width="520" height="80" rx="8" fill="#2D6A4F"/>
+      <text x="540" y="462" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="36" font-weight="900" letter-spacing="4">RADICAL SHOOTS</text>
+      <!-- Products on table -->
+      <!-- Microgreen trays -->
+      <g transform="translate(240,540)">
+        <rect x="-35" y="-30" width="70" height="25" rx="3" fill="#5C4033"/>
+        <g>
+          <line x1="-25" y1="-30" x2="-25" y2="-48" stroke="#3A7D5C" stroke-width="2"/>
+          <ellipse cx="-25" cy="-52" rx="8" ry="5" fill="#52B788"/>
+          <line x1="-10" y1="-30" x2="-10" y2="-52" stroke="#3A7D5C" stroke-width="2"/>
+          <ellipse cx="-10" cy="-56" rx="9" ry="5" fill="#6BCB8B"/>
+          <line x1="5" y1="-30" x2="5" y2="-46" stroke="#C1292E" stroke-width="2"/>
+          <ellipse cx="5" cy="-50" rx="8" ry="5" fill="#E05562"/>
+          <line x1="20" y1="-30" x2="20" y2="-50" stroke="#3A7D5C" stroke-width="2"/>
+          <ellipse cx="20" cy="-54" rx="9" ry="5" fill="#52B788"/>
+        </g>
+      </g>
+      <!-- Cheese wheels -->
+      <g transform="translate(440,535)">
+        <ellipse cx="0" cy="0" rx="35" ry="12" fill="#F0C040"/>
+        <rect x="-35" y="0" width="70" height="18" fill="#E0B030" rx="2"/>
+        <ellipse cx="0" cy="18" rx="35" ry="8" fill="#D4A020"/>
+        <ellipse cx="50" cy="5" rx="28" ry="10" fill="#D07030"/>
+        <rect x="22" y="5" width="56" height="14" fill="#C06020" rx="2"/>
+        <ellipse cx="50" cy="19" rx="28" ry="7" fill="#B05820"/>
+      </g>
+      <!-- Honey jars -->
+      <g transform="translate(660,530)">
+        <rect x="-18" y="-25" width="36" height="35" rx="4" fill="#D4940C" stroke="#B07008" stroke-width="1.5"/>
+        <rect x="-12" y="-32" width="24" height="10" rx="3" fill="#B07008"/>
+        <rect x="20" y="-22" width="32" height="30" rx="4" fill="#C08008" stroke="#A06808" stroke-width="1.5"/>
+        <rect x="26" y="-28" width="20" height="8" rx="3" fill="#A06808"/>
+        <rect x="-50" y="-20" width="28" height="28" rx="4" fill="#8B5520" stroke="#704010" stroke-width="1.5"/>
+        <rect x="-46" y="-26" width="20" height="8" rx="3" fill="#704010"/>
+      </g>
+      <!-- Maple syrup bottles -->
+      <g transform="translate(810,530)">
+        <rect x="-14" y="-30" width="28" height="40" rx="4" fill="#D4940C"/>
+        <rect x="-8" y="-38" width="16" height="10" rx="3" fill="#B07008"/>
+        <rect x="20" y="-28" width="25" height="35" rx="4" fill="#8B2020"/>
+        <rect x="26" y="-35" width="13" height="9" rx="3" fill="#701818"/>
+      </g>
+      <!-- People silhouettes -->
+      <!-- Person 1 (browsing) -->
+      <g transform="translate(320,720)" opacity="0.6">
+        <circle cx="0" cy="-50" r="18" fill="#5C3A1A"/>
+        <ellipse cx="0" cy="0" rx="22" ry="35" fill="#5C3A1A"/>
+      </g>
+      <!-- Person 2 (looking at products) -->
+      <g transform="translate(520,730)" opacity="0.5">
+        <circle cx="0" cy="-50" r="16" fill="#8B5E3C"/>
+        <ellipse cx="0" cy="0" rx="20" ry="32" fill="#8B5E3C"/>
+      </g>
+      <!-- Person 3 (reaching/exchanging) -->
+      <g transform="translate(700,720)" opacity="0.55">
+        <circle cx="0" cy="-50" r="17" fill="#6B4530"/>
+        <ellipse cx="0" cy="0" rx="21" ry="33" fill="#6B4530"/>
+        <!-- Extended arm -->
+        <line x1="-20" y1="-20" x2="-50" y2="-35" stroke="#6B4530" stroke-width="8" stroke-linecap="round"/>
+      </g>
+      <!-- Hands exchanging product -->
+      <g transform="translate(650,680)">
+        <rect x="-12" y="-10" width="24" height="16" rx="3" fill="#52B788"/>
+        <line x1="-12" y1="6" x2="-30" y2="15" stroke="#D4956B" stroke-width="6" stroke-linecap="round"/>
+        <line x1="12" y1="6" x2="30" y2="15" stroke="#8B6550" stroke-width="6" stroke-linecap="round"/>
+      </g>
+      <!-- Title at top -->
+      <text x="540" y="180" text-anchor="middle" fill="#2D6A4F" font-family="Inter,sans-serif" font-size="48" font-weight="900">EVERY MONDAY</text>
+      <text x="540" y="230" text-anchor="middle" fill="#2D6A4F" font-family="Inter,sans-serif" font-size="48" font-weight="900">WE SHOW UP.</text>
+      <text x="540" y="310" text-anchor="middle" fill="#5C3A1A" font-family="Caveat,cursive" font-size="34">Nashville — you've made this something real.</text>
+      <!-- Bottom bar -->
+      <rect x="0" y="920" width="1080" height="160" fill="#2D6A4F"/>
+      <text x="540" y="980" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="28" font-weight="700">We grow because you care. 💚</text>
+      <text x="540" y="1030" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="Inter,sans-serif" font-size="20">📍 Nashville, TN · @radical.shoots</text>
+    </svg>
+  </div>
+  <div class="card-body">
+    <div class="card-title">"Community" — Farmers Market / People</div>
+    <div class="card-schedule">📅 Week 4 · Feed Post</div>
+    <div class="caption-wrap" id="cap10">
+      <div class="caption-text">Every Monday we show up.
+
+Fresh micro drops.
+Handcrafted cheese.
+Raw honey from the mountains.
+Conversations about food that matters.
+
+Nashville — you've made this something real.
+
+Thank you to every chef, every home cook, every person who's said "I'll try the amaranth."
+
+We grow because you care.
+See you at the market 💚
+
+📍 Nashville, TN</div>
+      <div class="caption-fade"></div>
+    </div>
+    <button class="expand-btn" onclick="toggleCap('cap10',this)">Show more</button>
+    <div class="hashtags" id="ht10" onclick="toggleHt('ht10')">#nashvillefarmersmarket #radicalshoots #nashville #communityfarming #eatlocal #farmersmarket #nashvillefood #supportlocal #smallfarm #localfood #farmlife #nashvilletn #growlocal #communityovercompetition #realfood</div>
+    <div class="btn-row">
+      <button class="btn" onclick="copyText('cap10',this)">📋 Copy Caption</button>
+      <button class="btn" onclick="copyHashtags('ht10',this)">🏷️ Copy Hashtags</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- end grid -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+function toggleCap(id, btn) {
+  const el = document.getElementById(id);
+  el.classList.toggle('expanded');
+  btn.textContent = el.classList.contains('expanded') ? 'Show less' : 'Show more';
+}
+function toggleHt(id) {
+  document.getElementById(id).classList.toggle('expanded');
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+function copyText(id, btn) {
+  const text = document.getElementById(id).querySelector('.caption-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied');
+    btn.textContent = '✓ Copied!';
+    showToast('Caption copied to clipboard');
+    setTimeout(() => { btn.classList.remove('copied'); btn.textContent = '📋 Copy Caption'; }, 2000);
+  });
+}
+function copyHashtags(id, btn) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied');
+    btn.textContent = '✓ Copied!';
+    showToast('Hashtags copied to clipboard');
+    setTimeout(() => { btn.classList.remove('copied'); btn.textContent = '🏷️ Copy Hashtags'; }, 2000);
+  });
+}
+</script>
+</body>
+</html>

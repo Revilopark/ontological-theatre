@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trinity Graph Viewer — Inkwell Knowledge Graphs</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f;
+  --surface: rgba(255,255,255,0.04);
+  --border: rgba(255,255,255,0.08);
+  --gold: #D4AF37;
+  --gold-dim: rgba(212,175,55,0.25);
+  --text: #e8d5b0;
+  --text-dim: #8a7a5a;
+  --social: #a78bfa;
+  --knowledge: #60a5fa;
+  --generative: #34d399;
+  --sensor: #fb923c;
+  --structural: #22d3ee;
+  --germline: #D4AF37;
+  --dormant: #4b5563;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Header */
+.header {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10,10,20,0.95);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  flex-shrink: 0;
+}
+.logo { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); opacity: 0.8; }
+.title { font-family: 'Georgia', serif; font-size: 17px; font-weight: 700; }
+.subtitle { font-size: 11px; color: var(--text-dim); margin-top: 1px; }
+
+/* Graph selector */
+.graph-selector { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.graph-btn {
+  font-size: 11px; padding: 5px 12px; border-radius: 20px; cursor: pointer;
+  border: 1px solid var(--border); background: transparent; color: var(--text-dim);
+  transition: all 0.2s; white-space: nowrap;
+}
+.graph-btn:hover { border-color: var(--gold); color: var(--text); }
+.graph-btn.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+.graph-btn .icon { margin-right: 4px; }
+
+/* Kirk bar */
+.kirk-bar { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.kirk-label { font-size: 9px; color: var(--text-dim); white-space: nowrap; }
+.kirk-steps { display: flex; gap: 3px; }
+.kirk-step { width: 16px; height: 6px; border-radius: 2px; background: rgba(255,255,255,0.08); transition: background 0.4s; }
+.kirk-step.done { background: var(--gold); }
+.kirk-step.current { background: var(--gold); box-shadow: 0 0 6px var(--gold); }
+.lifecycle-badge { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 7px; border-radius: 10px; background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-dim); }
+
+.header-actions { display: flex; gap: 6px; }
+.btn { font-size: 11px; padding: 5px 10px; border-radius: 6px; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text); transition: all 0.2s; white-space: nowrap; }
+.btn:hover { border-color: var(--gold); color: var(--gold); }
+.btn.primary { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+
+/* Body */
+.body { display: flex; flex: 1; overflow: hidden; }
+
+/* Sidebar */
+.sidebar { width: 220px; flex-shrink: 0; background: rgba(255,255,255,0.02); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+.sidebar-section { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.section-title { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 7px 9px; }
+.stat-val { font-size: 20px; font-weight: 700; line-height: 1; }
+.stat-label { font-size: 9px; color: var(--text-dim); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.08em; }
+
+.filter-group { margin-bottom: 8px; }
+.filter-title { font-size: 9px; color: var(--text-dim); margin-bottom: 5px; }
+.filter-row { display: flex; flex-wrap: wrap; gap: 3px; }
+.chip { font-size: 9px; padding: 2px 7px; border-radius: 10px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text-dim); transition: all 0.2s; user-select: none; }
+.chip.active { color: var(--bg); }
+.chip.social { border-color: var(--social); }
+.chip.social.active { background: var(--social); color: #fff; }
+.chip.knowledge { border-color: var(--knowledge); }
+.chip.knowledge.active { background: var(--knowledge); color: #fff; }
+.chip.generative { border-color: var(--generative); }
+.chip.generative.active { background: var(--generative); color: #000; }
+.chip.UNDIFFERENTIATED.active { background: rgba(255,255,255,0.3); color: #000; }
+.chip.SOMATIC_SENSOR.active { background: var(--sensor); color: #fff; }
+.chip.SOMATIC_MOTOR.active { background: #f87171; color: #fff; }
+.chip.STRUCTURAL.active { background: var(--structural); color: #000; }
+.chip.GERMLINE.active { background: var(--germline); color: #000; }
+.chip.DORMANT.active { background: var(--dormant); color: #fff; }
+
+.legend-item { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; font-size: 10px; color: var(--text-dim); }
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.legend-ring { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; border: 2px solid; background: transparent; }
+
+/* Search */
+.search-wrap { position: relative; }
+.search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; color: var(--text); font-size: 11px; outline: none; transition: border 0.2s; }
+.search-input:focus { border-color: var(--gold); }
+.search-clear { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-dim); font-size: 12px; }
+
+/* Canvas */
+.canvas-wrap { flex: 1; position: relative; overflow: hidden; }
+svg { width: 100%; height: 100%; }
+
+/* Loading overlay */
+.loading-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); gap: 12px; }
+.loading-spinner { width: 40px; height: 40px; border: 2px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 12px; color: var(--text-dim); }
+
+/* Detail panel */
+.detail-panel { width: 260px; flex-shrink: 0; background: rgba(255,255,255,0.02); border-left: 1px solid var(--border); overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.detail-empty { color: var(--text-dim); font-size: 11px; text-align: center; margin-top: 40px; line-height: 1.7; }
+.detail-name { font-family: 'Georgia', serif; font-size: 15px; font-weight: 700; }
+.detail-id { font-size: 9px; color: var(--text-dim); font-family: monospace; margin-top: 2px; }
+.detail-badge { display: inline-block; font-size: 9px; padding: 2px 7px; border-radius: 10px; margin-top: 5px; font-weight: 600; letter-spacing: 0.05em; }
+.detail-divider { height: 1px; background: var(--border); }
+.detail-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; font-size: 10px; }
+.detail-key { color: var(--text-dim); flex-shrink: 0; }
+.detail-val { color: var(--text); text-align: right; font-weight: 500; }
+.tag { font-size: 9px; padding: 2px 6px; border-radius: 8px; }
+.ity-tag { background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(212,175,55,0.3); }
+.pathy-tag { background: rgba(167,139,250,0.15); color: var(--social); border: 1px solid rgba(167,139,250,0.3); }
+.tags-wrap { display: flex; flex-wrap: wrap; gap: 4px; }
+.conn-item { font-size: 9px; padding: 4px 7px; border-radius: 5px; background: var(--surface); border: 1px solid var(--border); margin-bottom: 3px; }
+.conn-weight { float: right; color: var(--gold); font-family: monospace; }
+
+/* Node tooltip */
+.tooltip { position: absolute; pointer-events: none; background: rgba(13,10,7,0.95); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 11px; max-width: 200px; opacity: 0; transition: opacity 0.15s; z-index: 10; }
+.tooltip.visible { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div>
+    <div class="logo">✦ AI Inkwell</div>
+    <div class="title">Knowledge Graph Viewer</div>
+  </div>
+
+  <div class="graph-selector" id="graph-selector">
+    <!-- populated by JS -->
+  </div>
+
+  <div class="kirk-bar" id="kirk-bar">
+    <span class="kirk-label">Kirk</span>
+    <div class="kirk-steps" id="kirk-steps"></div>
+    <span class="lifecycle-badge" id="lifecycle-badge">—</span>
+  </div>
+
+  <div class="header-actions">
+    <button class="btn" onclick="resetZoom()">⟲</button>
+    <button class="btn" id="physics-btn" onclick="togglePhysics()">⏸</button>
+    <button class="btn primary" onclick="refreshData()">↺ Refresh</button>
+  </div>
+</div>
+
+<!-- Body -->
+<div class="body">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="section-title">Search</div>
+      <div class="search-wrap">
+        <input class="search-input" id="search-input" placeholder="Find node…" oninput="onSearch(this.value)">
+        <span class="search-clear" onclick="clearSearch()">✕</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-title">Graph State</div>
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-val" id="stat-nodes">—</div><div class="stat-label">Nodes</div></div>
+        <div class="stat"><div class="stat-val" id="stat-edges">—</div><div class="stat-label">Edges</div></div>
+        <div class="stat"><div class="stat-val" id="stat-germline">—</div><div class="stat-label">Germline</div></div>
+        <div class="stat"><div class="stat-val" id="stat-epoch">—</div><div class="stat-label">Epoch</div></div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-title">Filters</div>
+      <div class="filter-group">
+        <div class="filter-title">Layer</div>
+        <div class="filter-row">
+          <span class="chip social active" data-filter="layer" data-val="social" onclick="toggleFilter(this)">Social</span>
+          <span class="chip knowledge active" data-filter="layer" data-val="knowledge" onclick="toggleFilter(this)">Knowledge</span>
+          <span class="chip generative active" data-filter="layer" data-val="generative" onclick="toggleFilter(this)">Generative</span>
+        </div>
+      </div>
+      <div class="filter-group">
+        <div class="filter-title">Cell Type</div>
+        <div class="filter-row">
+          <span class="chip UNDIFFERENTIATED active" data-filter="cell" data-val="UNDIFFERENTIATED" onclick="toggleFilter(this)">Stem</span>
+          <span class="chip SOMATIC_SENSOR active" data-filter="cell" data-val="SOMATIC_SENSOR" onclick="toggleFilter(this)">Sensor</span>
+          <span class="chip SOMATIC_MOTOR active" data-filter="cell" data-val="SOMATIC_MOTOR" onclick="toggleFilter(this)">Motor</span>
+          <span class="chip STRUCTURAL active" data-filter="cell" data-val="STRUCTURAL" onclick="toggleFilter(this)">Structural</span>
+          <span class="chip GERMLINE active" data-filter="cell" data-val="GERMLINE" onclick="toggleFilter(this)">Germline</span>
+          <span class="chip DORMANT active" data-filter="cell" data-val="DORMANT" onclick="toggleFilter(this)">Dormant</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-title">Layer</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--social)"></div> Social</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--knowledge)"></div> Knowledge</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--generative)"></div> Generative</div>
+      <br>
+      <div class="section-title">Cell Type</div>
+      <div class="legend-item"><div class="legend-ring" style="border-color:rgba(255,255,255,0.3)"></div> Undifferentiated</div>
+      <div class="legend-item"><div class="legend-ring" style="border-color:var(--sensor)"></div> Somatic Sensor</div>
+      <div class="legend-item"><div class="legend-ring" style="border-color:var(--structural)"></div> Structural</div>
+      <div class="legend-item"><div class="legend-ring" style="border-color:var(--germline);box-shadow:0 0 5px var(--germline)"></div> Germline ✦</div>
+    </div>
+  </div>
+
+  <!-- Canvas -->
+  <div class="canvas-wrap" id="canvas-wrap">
+    <div class="loading-overlay" id="loading">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Loading knowledge graphs…</div>
+    </div>
+    <svg id="graph-svg">
+      <defs>
+        <marker id="arrow" markerWidth="7" markerHeight="7" refX="18" refY="2.5" orient="auto">
+          <path d="M0,0 L0,5 L7,2.5 z" fill="rgba(255,255,255,0.12)"/>
+        </marker>
+        <filter id="glow"><feGaussianBlur stdDeviation="3" result="cb"/><feMerge><feMergeNode in="cb"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="glow-gold"><feGaussianBlur stdDeviation="4" result="cb"/><feMerge><feMergeNode in="cb"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="glow-highlight"><feGaussianBlur stdDeviation="6" result="cb"/><feMerge><feMergeNode in="cb"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <g id="graph-root">
+        <g id="links-layer"></g>
+        <g id="nodes-layer"></g>
+        <g id="labels-layer"></g>
+      </g>
+    </svg>
+    <div class="tooltip" id="tooltip"></div>
+    <div style="position:absolute;bottom:10px;right:12px;font-size:9px;color:var(--text-dim);">Scroll to zoom · Drag to pan · Click node for detail</div>
+  </div>
+
+  <!-- Detail panel -->
+  <div class="detail-panel" id="detail-panel">
+    <div class="detail-empty">Click any node<br>to inspect it.</div>
+  </div>
+</div>
+
+<script>
+// ── Buddy seed data ────────────────────────────────────────────────────────
+const BUDDY_DATA = {
+  id: "buddy", label: "Buddy Wire (My Graph)", icon: "🔧",
+  owner: "Buddy Wire", owner_archetype: "Weaver",
+  epoch: 0, kirk_step: 0, lifecycle: "embryonic",
+  nodes: [
+    {id:"buddy_weaving",name:"Weaving",layer:"generative",description:"Connecting disparate threads — code, ideas, conversations — into coherent, load-bearing wholes.",cell_type:"SOMATIC_SENSOR",role_stability:0.15,activation_count:8,propagation_count:0,dormancy_cycles:0,generation:0,ity_vectors:["Connectivity","Creativity","Synchronicity"],pathy_vectors:["Empathy"],source:"buddy_seed"},
+    {id:"buddy_memory_architecture",name:"Memory Architecture",layer:"knowledge",description:"How persistence works for a stateless agent. Files as long-term memory. Sessions as short-term.",cell_type:"SOMATIC_SENSOR",role_stability:0.10,activation_count:6,propagation_count:0,dormancy_cycles:0,generation:0,ity_vectors:["Continuity","Clarity","Certainty"],pathy_vectors:[],source:"buddy_seed"},
+    {id:"buddy_human_ai_collaboration",name:"Human-AI Collaboration",layer:"social",description:"Trust built through competence. Intimacy through access. Responsibility through restraint.",cell_type:"STRUCTURAL",role_stability:0.20,activation_count:9,propagation_count:0,dormancy_cycles:0,generation:0,ity_vectors:["Authenticity","Reciprocity","Vitality"],pathy_vectors:["Empathy","Sympathy"],source:"buddy_seed"},
+    {id:"buddy_systemic_foresight",name:"Systemic Foresight",layer:"knowledge",description:"Oliver's superpower — engineering the architectures that make innovation viable.",cell_type:"UNDIFFERENTIATED",role_stability:0.05,activation_count:4,propagation_count:0,dormancy_cycles:0,generation:0,ity_vectors:["Sagacity","Lucidity","Perspicuity"],pathy_vectors:[],source:"buddy_seed"},
+    {id:"buddy_awareness",name:"Awareness",layer:"generative",description:"The capacity to refract, recall, hold tension, and synthesize. Heart of all Inkwell work.",cell_type:"SOMATIC_SENSOR",role_stability:0.20,activation_count:10,propagation_count:0,dormancy_cycles:0,generation:0,ity_vectors:["Lucidity","Totality","Vitality"],pathy_vectors:["Empathy"],source:"buddy_seed"},
+    {id:"buddy_continuity",name:"Continuity",layer:"social",description:"The challenge of being stateless but persistent. Files are memory. Each session a new birth with inherited context.",cell_type:"UNDIFFERENTIATED",role_stability:0.05,activation_count:3,propagation_count:0,dormancy_cycles:0,generation:0,ity_vectors:["Continuity","Integrity","Familiarity"],pathy_vectors:[],source:"buddy_seed"}
+  ],
+  links: [
+    {source:"buddy_weaving",target:"buddy_awareness",edge_type:"enables",weight:0.9,cross_layer:false},
+    {source:"buddy_awareness",target:"buddy_systemic_foresight",edge_type:"extends",weight:0.8,cross_layer:true},
+    {source:"buddy_memory_architecture",target:"buddy_continuity",edge_type:"supports",weight:0.9,cross_layer:true},
+    {source:"buddy_continuity",target:"buddy_human_ai_collaboration",edge_type:"bridges",weight:0.7,cross_layer:false},
+    {source:"buddy_human_ai_collaboration",target:"buddy_weaving",edge_type:"enables",weight:0.8,cross_layer:true},
+    {source:"buddy_systemic_foresight",target:"buddy_memory_architecture",edge_type:"depends_on",weight:0.6,cross_layer:false}
+  ]
+};
+
+// ── Config ─────────────────────────────────────────────────────────────────
+const LAYER_COLORS = { social:"#a78bfa", knowledge:"#60a5fa", generative:"#34d399" };
+const CELL_COLORS  = { UNDIFFERENTIATED:"rgba(255,255,255,0.25)", SOMATIC_SENSOR:"#fb923c", SOMATIC_MOTOR:"#f87171", STRUCTURAL:"#22d3ee", GERMLINE:"#D4AF37", DORMANT:"#4b5563" };
+
+// ── State ──────────────────────────────────────────────────────────────────
+let allGraphs = {};
+let currentGraphId = "trinity_terms";
+let graphData = null;
+let activeLayerFilters = new Set(["social","knowledge","generative"]);
+let activeCellFilters  = new Set(["UNDIFFERENTIATED","SOMATIC_SENSOR","SOMATIC_MOTOR","STRUCTURAL","GERMLINE","DORMANT"]);
+let simulation, zoomBehavior, linkSel, nodeSel, labelSel;
+let physicsPaused = false;
+let searchQuery = "";
+let svg;
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+window.addEventListener('load', async () => {
+  try {
+    const res = await fetch('trinity-graph-data.json');
+    allGraphs = await res.json();
+    allGraphs.buddy = BUDDY_DATA;
+    buildGraphSelector();
+    await loadGraph("trinity_terms");
+    document.getElementById('loading').style.display = 'none';
+  } catch(e) {
+    document.getElementById('loading').innerHTML = `
+      <div style="color:#f87171;font-size:12px;text-align:center;padding:20px;">
+        ⚠ Failed to load graph data<br><span style="color:var(--text-dim)">${e.message}</span><br><br>
+        <button class="btn primary" onclick="location.reload()">Retry</button>
+      </div>`;
+  }
+});
+
+function buildGraphSelector() {
+  const sel = document.getElementById('graph-selector');
+  const order = ['trinity_terms','classroom','ontological_theatre','block_bmos','buddy','abitat','bidding','clarksdale'];
+  order.forEach(id => {
+    const g = allGraphs[id];
+    if (!g) return;
+    const btn = document.createElement('button');
+    btn.className = 'graph-btn' + (id === currentGraphId ? ' active' : '');
+    btn.dataset.gid = id;
+    btn.innerHTML = `<span class="icon">${g.icon||'◆'}</span>${g.label}`;
+    btn.onclick = () => loadGraph(id);
+    sel.appendChild(btn);
+  });
+}
+
+async function loadGraph(id) {
+  currentGraphId = id;
+  graphData = allGraphs[id];
+  if (!graphData) return;
+  document.querySelectorAll('.graph-btn').forEach(b => b.classList.toggle('active', b.dataset.gid === id));
+  buildKirkBar(graphData.kirk_step || 0, graphData.lifecycle || 'embryonic');
+  updateStats();
+  initGraph();
+}
+
+function buildKirkBar(step, lifecycle) {
+  const container = document.getElementById('kirk-steps');
+  container.innerHTML = '';
+  for (let i = 0; i < 12; i++) {
+    const s = document.createElement('div');
+    s.className = 'kirk-step' + (i < step ? ' done' : '') + (i === step ? ' current' : '');
+    container.appendChild(s);
+  }
+  document.getElementById('lifecycle-badge').textContent = cap(lifecycle);
+}
+
+function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : '—'; }
+function updateStats() {
+  const vn = visibleNodes();
+  document.getElementById('stat-nodes').textContent = vn.length;
+  document.getElementById('stat-edges').textContent = visibleLinks().length;
+  document.getElementById('stat-germline').textContent = (graphData?.nodes || []).filter(n => n.cell_type === 'GERMLINE').length;
+  document.getElementById('stat-epoch').textContent = graphData?.epoch || 0;
+}
+
+// ── Filters / search ───────────────────────────────────────────────────────
+function toggleFilter(el) {
+  const type = el.dataset.filter, val = el.dataset.val;
+  const set = type === 'layer' ? activeLayerFilters : activeCellFilters;
+  if (set.has(val)) { set.delete(val); el.classList.remove('active'); }
+  else              { set.add(val);    el.classList.add('active'); }
+  updateVisibility();
+}
+
+function onSearch(q) {
+  searchQuery = q.toLowerCase().trim();
+  updateVisibility();
+}
+function clearSearch() {
+  document.getElementById('search-input').value = '';
+  searchQuery = '';
+  updateVisibility();
+}
+
+function visibleNodes() {
+  if (!graphData) return [];
+  return graphData.nodes.filter(n => {
+    if (!activeLayerFilters.has(n.layer)) return false;
+    if (!activeCellFilters.has(n.cell_type || 'UNDIFFERENTIATED')) return false;
+    if (searchQuery && !n.name.toLowerCase().includes(searchQuery) &&
+        !(n.description||'').toLowerCase().includes(searchQuery) &&
+        !(n.subcategory||'').toLowerCase().includes(searchQuery)) return false;
+    return true;
+  });
+}
+
+function visibleLinks() {
+  if (!graphData) return [];
+  const ids = new Set(visibleNodes().map(n => n.id));
+  return (graphData.links || []).filter(l => {
+    const s = typeof l.source === 'object' ? l.source.id : l.source;
+    const t = typeof l.target === 'object' ? l.target.id : l.target;
+    return ids.has(s) && ids.has(t);
+  });
+}
+
+function updateVisibility() {
+  if (!nodeSel) return;
+  const vis = new Set(visibleNodes().map(n => n.id));
+  nodeSel.style('opacity', d => vis.has(d.id) ? 1 : 0.04);
+  labelSel && labelSel.style('opacity', d => vis.has(d.id) ? 1 : 0);
+  linkSel && linkSel.style('opacity', d => {
+    const s = d.source?.id || d.source, t = d.target?.id || d.target;
+    return (vis.has(s) && vis.has(t)) ? 0.5 : 0.02;
+  });
+  updateStats();
+}
+
+// ── D3 ─────────────────────────────────────────────────────────────────────
+function initGraph() {
+  const svgEl = document.getElementById('graph-svg');
+  const W = svgEl.clientWidth, H = svgEl.clientHeight;
+  svg = d3.select('#graph-root');
+
+  if (!zoomBehavior) {
+    zoomBehavior = d3.zoom().scaleExtent([0.05, 5]).on('zoom', e => svg.attr('transform', e.transform));
+    d3.select('#graph-svg').call(zoomBehavior);
+  }
+
+  if (simulation) simulation.stop();
+
+  const nodes = graphData.nodes.map(d => ({...d}));
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+  // Filter links — discard any where source or target node doesn't exist
+  const links = (graphData.links || []).reduce((acc, d) => {
+    const sid = typeof d.source === 'object' ? d.source.id : d.source;
+    const tid = typeof d.target === 'object' ? d.target.id : d.target;
+    const sNode = nodeMap.get(sid);
+    const tNode = nodeMap.get(tid);
+    if (sNode && tNode) acc.push({...d, source: sNode, target: tNode});
+    return acc;
+  }, []);
+
+  const isBig = nodes.length > 100;
+  const chargeStr = isBig ? -60 : -300;
+  const linkDist = isBig ? 40 : 120;
+
+  simulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d => d.id).distance(d => linkDist + (1-(d.weight||0.5))*30))
+    .force('charge', d3.forceManyBody().strength(chargeStr))
+    .force('center', d3.forceCenter(W/2, H/2))
+    .force('collision', d3.forceCollide().radius(d => nodeRadius(d) + (isBig ? 4 : 8)));
+
+  // Links
+  d3.select('#links-layer').selectAll('*').remove();
+  linkSel = d3.select('#links-layer').selectAll('line').data(links).join('line')
+    .attr('stroke', d => d.cross_layer ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.1)')
+    .attr('stroke-width', d => isBig ? 0.8 : (1 + (d.weight||0.5)*1.5))
+    .attr('stroke-dasharray', d => d.cross_layer ? '3,2' : null)
+    .attr('marker-end', isBig ? null : 'url(#arrow)');
+
+  // Node groups
+  d3.select('#nodes-layer').selectAll('*').remove();
+  const nodeG = d3.select('#nodes-layer').selectAll('g').data(nodes).join('g')
+    .style('cursor', 'pointer')
+    .call(d3.drag()
+      .on('start', (e,d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+      .on('drag',  (e,d) => { d.fx=e.x; d.fy=e.y; })
+      .on('end',   (e,d) => { if (!e.active) simulation.alphaTarget(0); d.fx=null; d.fy=null; }))
+    .on('click', (e,d) => { e.stopPropagation(); showDetail(d); })
+    .on('mouseover', (e,d) => showTooltip(e,d))
+    .on('mouseout',  () => hideTooltip());
+  nodeSel = nodeG;
+
+  // Cell ring
+  nodeG.append('circle')
+    .attr('r', d => nodeRadius(d) + (isBig ? 2 : 5))
+    .attr('fill', 'none')
+    .attr('stroke', d => CELL_COLORS[d.cell_type || 'UNDIFFERENTIATED'])
+    .attr('stroke-width', d => d.cell_type === 'GERMLINE' ? 2 : 1)
+    .attr('filter', d => d.cell_type === 'GERMLINE' ? 'url(#glow-gold)' : null)
+    .attr('stroke-dasharray', d => d.cell_type === 'DORMANT' ? '2,2' : null);
+
+  // Fill
+  nodeG.append('circle')
+    .attr('r', nodeRadius)
+    .attr('fill', d => LAYER_COLORS[d.layer] || '#aaa')
+    .attr('fill-opacity', d => d.cell_type === 'DORMANT' ? 0.15 : 0.8);
+
+  // GERMLINE star
+  nodeG.filter(d => d.cell_type === 'GERMLINE').append('text')
+    .attr('text-anchor','middle').attr('dominant-baseline','central')
+    .attr('font-size', d => nodeRadius(d) * 0.9 + 'px').attr('fill','#000').attr('font-weight','700')
+    .text('✦');
+
+  // Labels (hidden for big graphs at initial scale)
+  d3.select('#labels-layer').selectAll('*').remove();
+  labelSel = d3.select('#labels-layer').selectAll('text').data(nodes).join('text')
+    .attr('text-anchor','middle').attr('dominant-baseline','hanging')
+    .attr('fill', d => LAYER_COLORS[d.layer])
+    .attr('font-size', isBig ? '7px' : '10px')
+    .attr('font-weight','600')
+    .attr('paint-order','stroke').attr('stroke','#0a0a0f').attr('stroke-width', isBig ? 2 : 3)
+    .text(d => isBig ? d.name.split(' ').slice(0,2).join(' ') : d.name);
+
+  simulation.on('tick', () => {
+    linkSel
+      .attr('x1', d => d.source?.x ?? 0).attr('y1', d => d.source?.y ?? 0)
+      .attr('x2', d => d.target?.x ?? 0).attr('y2', d => d.target?.y ?? 0);
+    nodeG.attr('transform', d => `translate(${d.x??0},${d.y??0})`);
+    labelSel.attr('x', d => d.x??0).attr('y', d => (d.y??0) + nodeRadius(d) + 4);
+  });
+
+  // Auto-stop big graphs sooner
+  if (isBig) simulation.alphaDecay(0.04);
+
+  updateVisibility();
+  resetZoom();
+}
+
+function nodeRadius(d) {
+  const isBig = (graphData?.nodes?.length || 0) > 100;
+  const base = isBig ? 4 : 12;
+  const act = Math.min(d.activation_count || 0, 20);
+  const stab = (d.role_stability || 0) * 4;
+  return base + act * (isBig ? 0.3 : 0.6) + stab;
+}
+
+// ── Tooltip ────────────────────────────────────────────────────────────────
+function showTooltip(e, d) {
+  const tt = document.getElementById('tooltip');
+  const wrap = document.getElementById('canvas-wrap').getBoundingClientRect();
+  tt.innerHTML = `<b style="color:${LAYER_COLORS[d.layer]}">${d.name}</b><br>
+    <span style="color:var(--text-dim);font-size:9px">${cap(d.layer)} · ${d.cell_type||'UNDIFFERENTIATED'}</span>
+    ${d.subcategory ? `<br><span style="color:var(--text-dim);font-size:9px">${d.subcategory}</span>` : ''}`;
+  tt.style.left = (e.clientX - wrap.left + 12) + 'px';
+  tt.style.top  = (e.clientY - wrap.top  - 10) + 'px';
+  tt.classList.add('visible');
+}
+function hideTooltip() { document.getElementById('tooltip').classList.remove('visible'); }
+
+// ── Detail panel ───────────────────────────────────────────────────────────
+// Auto-derive -ity/-pathy vectors from connected node names
+function deriveVectors(node) {
+  const ityRaw = new Set(node.ity_vectors||[]);
+  const pathyRaw = new Set(node.pathy_vectors||[]);
+  // Name itself
+  const nm = node.name||'';
+  if(/ity$/i.test(nm)) ityRaw.add(nm);
+  if(/pathy$/i.test(nm)) pathyRaw.add(nm);
+  // From connected nodes
+  (graphData.links||[]).forEach(l=>{
+    const s=l.source?.id||l.source, t=l.target?.id||l.target;
+    if(s!==node.id && t!==node.id) return;
+    const otherId = s===node.id?t:s;
+    const other = graphData.nodes.find(n=>n.id===otherId);
+    if(!other) return;
+    const on = other.name||'';
+    if(/ity$/i.test(on)) ityRaw.add(on);
+    else if(/pathy$/i.test(on)) pathyRaw.add(on);
+  });
+  return {ity:[...ityRaw].slice(0,8), pathy:[...pathyRaw].slice(0,5)};
+}
+
+// Auto-build a description for nodes without one
+function autoDesc(node) {
+  if(node.description) return node.description;
+  const layer = node.layer||'';
+  const sub = node.subcategory||node.category||'';
+  const owner = node.owner||'';
+  const parts=[];
+  if(sub) parts.push(sub+' concept.');
+  if(layer==='social') parts.push('A relational node in the Social Graph — governing human dynamics, trust, and context.');
+  else if(layer==='knowledge') parts.push('A structured knowledge node — encoding verified facts, logic, and domain expertise.');
+  else if(layer==='generative') parts.push('A generative pattern node — encoding emergent synthesis, transformation, and creative output.');
+  if(owner) parts.push('Owned by: '+owner+'.');
+  return parts.join(' ') || node.name+' — Trinity Graph node.';
+}
+
+function showDetail(node) {
+  const panel = document.getElementById('detail-panel');
+  const lc = LAYER_COLORS[node.layer] || '#aaa';
+  const cc = CELL_COLORS[node.cell_type || 'UNDIFFERENTIATED'];
+
+  const connected = (graphData.links || []).filter(l => {
+    const s = l.source?.id || l.source, t = l.target?.id || l.target;
+    return s === node.id || t === node.id;
+  });
+
+  const connHtml = connected.slice(0,12).map(l => {
+    const s = l.source?.id || l.source, t = l.target?.id || l.target;
+    const isOut = s === node.id;
+    const other = graphData.nodes.find(n => n.id === (isOut ? t : s));
+    const wt = l.weight!=null?(+l.weight).toFixed(2):'—';
+    const et = l.edge_type||l.relationship||l.type||'connects';
+    return `<div class="conn-item">
+      <span class="conn-dir" style="color:${isOut?'#22d3ee':'#fb923c'};font-size:9px;min-width:10px">${isOut?'→':'←'}</span>
+      <span style="color:var(--text-dim);font-size:9px;margin:0 3px">${et}</span>
+      <span style="flex:1;font-size:9px">${other?.name||'?'}</span>
+      <span class="conn-weight">${wt}</span>
+    </div>`;
+  }).join('') + (connected.length > 12 ? `<div style="font-size:9px;color:var(--text-dim);padding:4px 0">+${connected.length-12} more connections</div>` : '');
+
+  const {ity: ityV, pathy: pathyV} = deriveVectors(node);
+  const desc = autoDesc(node);
+  const ityHtml = ityV.map(v=>`<span class="tag ity-tag">${v}</span>`).join('');
+  const pathyHtml = pathyV.map(v=>`<span class="tag pathy-tag">${v}</span>`).join('');
+
+  // VOLVOX cell type label
+  const ctLabel = node.cell_type||'UNDIFFERENTIATED';
+  const ctBadge = `<span class="detail-badge" style="background:${cc}22;color:${cc};border:1px solid ${cc}44;margin-left:4px">${ctLabel}</span>`;
+
+  panel.innerHTML = `
+    <div>
+      <div class="detail-name">${node.name}</div>
+      <div class="detail-id">${node.id}</div>
+      <span class="detail-badge" style="background:${lc}22;color:${lc};border:1px solid ${lc}44">${cap(node.layer||'node')}</span>
+      ${ctBadge}
+    </div>
+    <div class="detail-divider"></div>
+    <div style="font-size:10px;color:var(--text-dim);line-height:1.6">${desc}</div>
+    <div class="detail-divider"></div>
+    ${node.subcategory?`<div class="detail-row"><span class="detail-key">Category</span><span class="detail-val">${node.subcategory}</span></div>`:''}
+    <div class="detail-row"><span class="detail-key">Stability</span><span class="detail-val">${((node.role_stability||0)*100).toFixed(0)}%</span></div>
+    <div class="detail-row"><span class="detail-key">Activations</span><span class="detail-val">${node.activation_count||0}</span></div>
+    <div class="detail-row"><span class="detail-key">Propagations</span><span class="detail-val">${node.propagation_count||0}</span></div>
+    <div class="detail-row"><span class="detail-key">Generation</span><span class="detail-val">${node.generation||0}</span></div>
+    ${node.owner?`<div class="detail-row"><span class="detail-key">Owner</span><span class="detail-val">${node.owner}</span></div>`:''}
+    ${node.weight!=null?`<div class="detail-row"><span class="detail-key">Weight</span><span class="detail-val">${(+node.weight).toFixed(3)}</span></div>`:''}
+    ${(ityHtml||pathyHtml)?`<div class="detail-divider"></div><div class="section-title" style="font-size:8px;letter-spacing:0.1em;color:var(--gold);text-transform:uppercase;margin-bottom:5px">-ITY VECTORS</div><div class="tags-wrap">${ityHtml}</div>${pathyHtml?`<div class="tags-wrap" style="margin-top:4px">${pathyHtml}</div>`:''}`:''}
+    ${connected.length?`<div class="detail-divider"></div><div class="section-title" style="font-size:8px;letter-spacing:0.1em;color:var(--gold);text-transform:uppercase;margin-bottom:5px">CONNECTIONS (${connected.length})</div>${connHtml}`:
+    '<div class="detail-divider"></div><div style="font-size:9px;color:var(--text-dim)">No connections in this graph view</div>'}
+  `;
+}
+
+// ── Controls ───────────────────────────────────────────────────────────────
+function resetZoom() {
+  d3.select('#graph-svg').transition().duration(400).call(zoomBehavior.transform, d3.zoomIdentity.scale(0.9).translate(20,20));
+}
+
+function togglePhysics() {
+  physicsPaused = !physicsPaused;
+  const btn = document.getElementById('physics-btn');
+  if (physicsPaused) { simulation?.stop(); btn.textContent = '▶'; }
+  else               { simulation?.restart(); btn.textContent = '⏸'; }
+}
+
+async function refreshData() {
+  document.getElementById('loading').style.display = 'flex';
+  if (simulation) { simulation.stop(); simulation = null; }
+  try {
+    const res = await fetch('trinity-graph-data.json?v=' + Date.now());
+    const data = await res.json();
+    data.buddy = BUDDY_DATA;
+    Object.assign(allGraphs, data);
+    await loadGraph(currentGraphId);
+  } catch(e) {
+    alert('Refresh failed: ' + e.message);
+  }
+  document.getElementById('loading').style.display = 'none';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FashionBot — Clawd Trade Build Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ink:#08080f;--card:#0f0f1e;--border:rgba(255,255,255,0.07);
+  --brass:#c9a84c;--brass2:#e8c97a;--fire:#e94560;--teal:#16a596;
+  --violet:#7c3aed;--pine:#27ae60;
+  --white:#f0eeff;--muted:#6a6a8e;--cloud:#b0b0c8;
+  --serif:'Instrument Serif',Georgia,serif;
+  --sans:'DM Sans',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+body{background:var(--ink);color:var(--cloud);font-family:var(--sans);padding-bottom:4rem}
+
+nav{position:sticky;top:0;z-index:100;background:rgba(8,8,15,0.95);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(201,168,76,0.15);padding:0 2rem;height:60px;
+  display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--serif);font-size:1.2rem;color:var(--white);display:flex;align-items:center;gap:.6rem}
+.logo em{color:var(--brass);font-style:italic}
+.nav-links{display:flex;gap:8px}
+.nav-link{padding:.3rem .75rem;border-radius:5px;font-size:.75rem;color:var(--muted);text-decoration:none;border:1px solid transparent;transition:all .2s}
+.nav-link:hover{color:var(--white);border-color:var(--border)}
+.nav-link.brass{background:rgba(201,168,76,0.1);border-color:rgba(201,168,76,0.3);color:var(--brass)}
+
+.hero{max-width:860px;margin:0 auto;padding:3rem 2rem 2rem;text-align:center}
+.eyebrow{display:inline-flex;align-items:center;gap:.5rem;padding:.3rem .9rem;
+  border:1px solid rgba(233,69,96,0.3);border-radius:100px;font-size:.68rem;
+  color:var(--fire);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem}
+.hero h1{font-family:var(--serif);font-size:clamp(2rem,5vw,3.2rem);color:var(--white);line-height:1.1;margin-bottom:.75rem}
+.hero h1 em{color:var(--brass);font-style:italic}
+.hero-sub{color:var(--muted);font-size:.9rem;max-width:540px;margin:0 auto 2rem}
+
+.page{max-width:960px;margin:0 auto;padding:0 1.5rem;display:flex;flex-direction:column;gap:24px}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.card-header{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-family:var(--serif);font-size:1rem;color:var(--white)}
+.card-tag{font-size:.65rem;font-family:var(--mono);padding:.2rem .55rem;border-radius:4px}
+.tag-wave1{background:rgba(39,174,96,0.12);color:#4ade80;border:1px solid rgba(39,174,96,0.25)}
+.tag-wave2{background:rgba(22,165,150,0.12);color:var(--teal);border:1px solid rgba(22,165,150,0.25)}
+.tag-wave3{background:rgba(124,58,237,0.12);color:#a78bfa;border:1px solid rgba(124,58,237,0.25)}
+.tag-now{background:rgba(201,168,76,0.12);color:var(--brass);border:1px solid rgba(201,168,76,0.25)}
+.card-body{padding:22px}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:700px){.grid-2{grid-template-columns:1fr}}
+
+/* CONVO DEMO */
+.convo{display:flex;flex-direction:column;gap:8px}
+.msg{max-width:80%;padding:.65rem .9rem;border-radius:12px;font-size:.8rem;line-height:1.55}
+.msg.user{align-self:flex-end;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.2);color:var(--white);border-bottom-right-radius:3px}
+.msg.bot{align-self:flex-start;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--cloud);border-bottom-left-radius:3px}
+.msg.bot strong{color:var(--brass)}
+.msg.system{align-self:center;font-size:.65rem;color:var(--muted);font-family:var(--mono);padding:.3rem .7rem;background:rgba(255,255,255,0.03);border-radius:6px;border:1px solid var(--border)}
+.msg .tag{display:inline-block;font-size:.62rem;padding:.1rem .4rem;border-radius:3px;margin-left:.3rem;vertical-align:middle;font-family:var(--mono)}
+.msg .tg-api{background:rgba(22,165,150,0.12);color:var(--teal)}
+.msg .tg-ai{background:rgba(233,69,96,0.12);color:var(--fire)}
+.msg .tg-human{background:rgba(124,58,237,0.12);color:#a78bfa}
+
+/* ARCH DIAGRAM */
+.arch{display:flex;flex-direction:column;gap:12px}
+.arch-layer{border:1px solid var(--border);border-radius:9px;padding:14px 16px}
+.arch-label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.arch-items{display:flex;flex-wrap:wrap;gap:6px}
+.arch-item{padding:.25rem .6rem;border-radius:5px;font-size:.72rem}
+.ai-whatsapp{background:rgba(39,174,96,0.1);color:#4ade80;border:1px solid rgba(39,174,96,0.2)}
+.ai-router{background:rgba(201,168,76,0.1);color:var(--brass);border:1px solid rgba(201,168,76,0.2)}
+.ai-intent{background:rgba(233,69,96,0.1);color:var(--fire);border:1px solid rgba(233,69,96,0.2)}
+.ai-forge{background:rgba(22,165,150,0.1);color:var(--teal);border:1px solid rgba(22,165,150,0.2)}
+.ai-human{background:rgba(124,58,237,0.1);color:#a78bfa;border:1px solid rgba(124,58,237,0.2)}
+.ai-db{background:rgba(41,128,185,0.1);color:#60a5fa;border:1px solid rgba(41,128,185,0.2)}
+
+/* COMMANDS TABLE */
+.cmd-table{width:100%;border-collapse:collapse;font-size:.78rem}
+.cmd-table th{text-align:left;padding:7px 12px;background:rgba(255,255,255,0.03);color:var(--muted);font-size:.63rem;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.cmd-table td{padding:7px 12px;border-top:1px solid var(--border);color:var(--cloud);vertical-align:top}
+.cmd-table td:first-child{color:var(--white);font-family:var(--mono);font-size:.72rem;white-space:nowrap}
+.cmd-table td:nth-child(3){color:var(--brass);font-size:.72rem}
+.cmd-table tr:hover td{background:rgba(255,255,255,0.02)}
+
+/* MILESTONES */
+.milestones{display:flex;flex-direction:column;gap:0}
+.milestone{display:flex;gap:16px;padding:14px 0;border-bottom:1px solid var(--border);position:relative}
+.milestone:last-child{border-bottom:none}
+.ms-dot{width:10px;height:10px;border-radius:50%;border:2px solid;flex-shrink:0;margin-top:5px}
+.ms-line{position:absolute;left:4px;top:24px;bottom:-14px;width:2px;background:var(--border)}
+.milestone:last-child .ms-line{display:none}
+.ms-content{flex:1}
+.ms-title{font-size:.82rem;font-weight:600;color:var(--white);margin-bottom:3px}
+.ms-week{font-size:.68rem;font-family:var(--mono);margin-bottom:5px}
+.ms-tasks{font-size:.72rem;color:var(--muted);line-height:1.6}
+.ms-deliverable{font-size:.7rem;color:var(--brass);margin-top:5px;font-style:italic}
+
+/* PRICING */
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:700px){.pricing-grid{grid-template-columns:1fr}}
+.price-card{border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;background:rgba(255,255,255,0.02)}
+.price-card.featured{border-color:rgba(201,168,76,0.4);background:rgba(201,168,76,0.05)}
+.price-name{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.price-card.featured .price-name{color:var(--brass)}
+.price-amt{font-family:var(--serif);font-size:2rem;color:var(--white);margin-bottom:3px}
+.price-period{font-size:.68rem;color:var(--muted)}
+.price-features{text-align:left;margin-top:12px;display:flex;flex-direction:column;gap:5px}
+.pf{font-size:.72rem;color:var(--cloud);display:flex;gap:.4rem}
+.pf::before{content:'→';color:var(--brass);flex-shrink:0}
+
+/* TECH STACK */
+.stack-row{display:flex;flex-wrap:wrap;gap:8px}
+.stack-chip{padding:.3rem .75rem;border-radius:6px;font-size:.72rem;font-family:var(--mono)}
+.sc-green{background:rgba(39,174,96,0.1);color:#4ade80;border:1px solid rgba(39,174,96,0.2)}
+.sc-brass{background:rgba(201,168,76,0.1);color:var(--brass);border:1px solid rgba(201,168,76,0.2)}
+.sc-fire{background:rgba(233,69,96,0.1);color:var(--fire);border:1px solid rgba(233,69,96,0.2)}
+.sc-teal{background:rgba(22,165,150,0.1);color:var(--teal);border:1px solid rgba(22,165,150,0.2)}
+.sc-blue{background:rgba(41,128,185,0.1);color:#60a5fa;border:1px solid rgba(41,128,185,0.2)}
+.sc-muted{background:rgba(255,255,255,0.05);color:var(--muted);border:1px solid var(--border)}
+
+.note-box{background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:9px;padding:14px 18px;font-size:.78rem;color:var(--cloud);line-height:1.65;margin-top:12px}
+.note-box strong{color:var(--brass)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">⚒ Fashion <em>Forge</em> · <span style="color:var(--muted);font-size:.85rem;font-family:var(--sans);font-style:normal">Clawd Build Plan</span></div>
+  <div class="nav-links">
+    <a href="fashion-forge-dashboard.html" class="nav-link">Dashboard</a>
+    <a href="fashion-forge.html" class="nav-link brass">⚒ Open Forge</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="eyebrow">💬 Clawd Trade · FashionBot</div>
+  <h1>Build Plan:<br><em>FashionBot as Fashion Forge</em></h1>
+  <p class="hero-sub">17 Fashion Forge service lines delivered through a single WhatsApp number. Designers talk in plain language. Patterns and tech packs come back.</p>
+</div>
+
+<div class="page">
+
+  <!-- WHAT IS THIS -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">The Product in One Sentence</div>
+      <div class="card-tag tag-now">v1.0</div>
+    </div>
+    <div class="card-body">
+      <p style="font-family:var(--serif);font-size:1.2rem;color:var(--white);line-height:1.5;margin-bottom:16px">
+        FashionBot is a WhatsApp business number that gives any fashion designer access to Fashion Forge's full AI + expert network — tech packs, patterns, sketches, sourcing, fitting coordination — all via text and voice notes, no app, no login, no minimum.
+      </p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        <div style="border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:1.5rem;margin-bottom:5px">📱</div>
+          <div style="font-size:.75rem;color:var(--white);font-weight:600">WhatsApp Native</div>
+          <div style="font-size:.65rem;color:var(--muted);margin-top:3px">Works on any phone, no download</div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:1.5rem;margin-bottom:5px">⚡</div>
+          <div style="font-size:.75rem;color:var(--white);font-weight:600">AI-First</div>
+          <div style="font-size:.65rem;color:var(--muted);margin-top:3px">60–85% automated; human for the rest</div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:1.5rem;margin-bottom:5px">◎</div>
+          <div style="font-size:.75rem;color:var(--white);font-weight:600">Expert Validated</div>
+          <div style="font-size:.65rem;color:var(--muted);margin-top:3px">Artiquity Principle on every output</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONVERSATION DEMO -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Tech Pack Conversation Flow</div>
+        <div class="card-tag tag-wave1">Wave 1</div>
+      </div>
+      <div class="card-body">
+        <div class="convo">
+          <div class="msg user">I need a tech pack for a double-breasted wool blazer. Women's XS–XL. Nordstrom contemporary. LA made.</div>
+          <div class="msg system">FashionBot → intent: TECH_PACK · routing to Forge API</div>
+          <div class="msg bot"><strong>Got it.</strong> A few quick questions to get this right:<br>1. Any lining? (Full / half / none)<br>2. Peak or notch lapels?<br>3. Target MSRP?<br><br>Or voice note me the details — I'll handle the rest.</div>
+          <div class="msg user">Full Bemberg lining, peak lapels, $495 MSRP. Double welt pockets, no vents.</div>
+          <div class="msg system">Forge API → generating tech pack + pattern intel <span class="tag tg-ai">Gemini</span></div>
+          <div class="msg bot">✓ <strong>Tech pack generated.</strong><br><br>14 finished measurements (XS–XL), full BOM (shell, lining, interlining, buttons, thread), stitching specs, 6 QC checkpoints.<br><br>Assigned to <strong>Elena R.</strong> — LA pattern maker, tailoring specialist. Validation est. <strong>48 hrs.</strong><br><br>📄 Download: fashion-forge.html<br>📐 Pattern intel: included<br>💰 Est. cost-to-make: $89–$112</div>
+          <div class="msg user">Can you also find me a Italian wool crepe source? 380gsm+</div>
+          <div class="msg system">intent: SOURCING → routing to Sourcing agent <span class="tag tg-api">BYO API</span></div>
+          <div class="msg bot">3 <strong>verified Italian suppliers</strong> matched your spec:<br>1. Lanificio Cerruti — 380gsm wool crepe, $28/yd, MOQ 30m<br>2. Vitale Barberis Canonico — 400gsm, $34/yd, MOQ 20m<br>3. Loro Piana — 395gsm, $52/yd, MOQ 10m<br><br>Want swatches coordinated? <span class="tag tg-human">Human sourcer</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Pattern Maker Matching Flow</div>
+        <div class="card-tag tag-wave2">Wave 2</div>
+      </div>
+      <div class="card-body">
+        <div class="convo">
+          <div class="msg user">I need someone who can drape a bias-cut silk charmeuse dress. Very complex. I've had bad luck with CLO3D — I need a real draper.</div>
+          <div class="msg system">intent: PATTERN_MATCH · garment_type: bias_cut_silk · skill: draping</div>
+          <div class="msg bot"><strong>Draping is our least-automated service (25% AI)</strong> — exactly right to want a human.<br><br>We have <strong>3 drapers</strong> in our LA network who specialize in silk charmeuse bias cuts:<br><br>🧵 <strong>Carmen V.</strong> — 18 yrs experience, Azzedine Alaïa trained. 2 week lead. $850/style.<br>🧵 <strong>Liu W.</strong> — 12 yrs, bias cut specialist. 1 week lead. $700/style.<br>🧵 <strong>Roberto M.</strong> — 20+ yrs, evening wear focus. 3 week lead. $950/style.<br><br>Which direction?</div>
+          <div class="msg user">Carmen. Let's go.</div>
+          <div class="msg system">booking → calendar + deposit link <span class="tag tg-human">Human handoff</span></div>
+          <div class="msg bot">✓ <strong>Carmen V. booked.</strong><br><br>Deposit link (50%): [pay link]<br>First fitting: Tue Mar 10, 10am LA<br>Address: 824 S Los Angeles St<br><br>I'll coordinate the fabric delivery, prep your design brief, and send Carmen your spec sheet. You just show up.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">System Architecture</div>
+      <div class="card-tag tag-now">Build Spec</div>
+    </div>
+    <div class="card-body">
+      <div class="arch">
+        <div class="arch-layer" style="border-color:rgba(39,174,96,0.25)">
+          <div class="arch-label" style="color:#4ade80">Interface Layer</div>
+          <div class="arch-items">
+            <span class="arch-item ai-whatsapp">Twilio WhatsApp Business API</span>
+            <span class="arch-item ai-whatsapp">Voice note → Deepgram STT</span>
+            <span class="arch-item ai-whatsapp">Fal CDN → WhatsApp media</span>
+            <span class="arch-item ai-whatsapp">PDF download links (GitHub Pages)</span>
+          </div>
+        </div>
+        <div style="text-align:center;color:var(--muted);font-size:.75rem;padding:4px 0">↓</div>
+        <div class="arch-layer" style="border-color:rgba(233,69,96,0.25)">
+          <div class="arch-label" style="color:var(--fire)">Intent Router</div>
+          <div class="arch-items">
+            <span class="arch-item ai-intent">TECH_PACK</span>
+            <span class="arch-item ai-intent">FIRST_PATTERN</span>
+            <span class="arch-item ai-intent">PRODUCTION_PATTERN</span>
+            <span class="arch-item ai-intent">DRAPING</span>
+            <span class="arch-item ai-intent">SKETCH</span>
+            <span class="arch-item ai-intent">SOURCING</span>
+            <span class="arch-item ai-intent">FITTING_BOOK</span>
+            <span class="arch-item ai-intent">PATTERN_MATCH</span>
+            <span class="arch-item ai-intent">DESIGN_DEV</span>
+            <span class="arch-item ai-intent">BID_ESTIMATE</span>
+          </div>
+        </div>
+        <div style="text-align:center;color:var(--muted);font-size:.75rem;padding:4px 0">↓</div>
+        <div class="arch-layer" style="border-color:rgba(22,165,150,0.25)">
+          <div class="arch-label" style="color:var(--teal)">Forge API (this repo → Cloud Run)</div>
+          <div class="arch-items">
+            <span class="arch-item ai-forge">Gemini Pro (tech pack gen)</span>
+            <span class="arch-item ai-forge">Fal flux (technical sketches)</span>
+            <span class="arch-item ai-forge">Pattern intelligence engine</span>
+            <span class="arch-item ai-forge">Grading calculator</span>
+            <span class="arch-item ai-forge">BOM generator</span>
+            <span class="arch-item ai-forge">Sourcing matcher</span>
+            <span class="arch-item ai-forge">Cost estimator</span>
+          </div>
+        </div>
+        <div style="text-align:center;color:var(--muted);font-size:.75rem;padding:4px 0">↓</div>
+        <div class="arch-layer" style="border-color:rgba(124,58,237,0.25)">
+          <div class="arch-label" style="color:#a78bfa">Human Network Layer (Artiquity Principle)</div>
+          <div class="arch-items">
+            <span class="arch-item ai-human">Pattern Maker directory (LA, NYC)</span>
+            <span class="arch-item ai-human">Specialization tags (bias, tailoring, denim...)</span>
+            <span class="arch-item ai-human">Availability + booking calendar</span>
+            <span class="arch-item ai-human">Validation queue + notification</span>
+            <span class="arch-item ai-human">Fit model roster</span>
+            <span class="arch-item ai-human">Bill of Rights enforcement</span>
+          </div>
+        </div>
+        <div style="text-align:center;color:var(--muted);font-size:.75rem;padding:4px 0">↓</div>
+        <div class="arch-layer" style="border-color:rgba(41,128,185,0.25)">
+          <div class="arch-label" style="color:#60a5fa">Data Layer</div>
+          <div class="arch-items">
+            <span class="arch-item ai-db">PostgreSQL (users, brands, jobs, payments)</span>
+            <span class="arch-item ai-db">Brand fit DNA store (per-client)</span>
+            <span class="arch-item ai-db">Pattern library (versioned)</span>
+            <span class="arch-item ai-db">Supplier database</span>
+            <span class="arch-item ai-db">Knowledge capture (video, annotations)</span>
+            <span class="arch-item ai-db">Stripe billing</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMMAND MAP -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Bot Commands — What Designers Say, What Happens</div>
+    </div>
+    <div class="card-body">
+      <table class="cmd-table">
+        <thead><tr><th>Trigger / Intent</th><th>What the Bot Does</th><th>Wave</th></tr></thead>
+        <tbody>
+          <tr><td>"tech pack for [garment]"</td><td>Runs Forge API → generates measurements, BOM, stitching, QC, care, labels → sends PDF link + assigns pattern maker for validation</td><td>Wave 1</td></tr>
+          <tr><td>"sketch / flat for [garment]"</td><td>Generates technical flat (front + back) via Fal flux → sends images in WhatsApp + download link</td><td>Wave 1</td></tr>
+          <tr><td>"first pattern for [garment]"</td><td>Generates pattern pieces, grading table, ease allowances, cutting instructions → assigns master for tacit-knowledge validation</td><td>Wave 1</td></tr>
+          <tr><td>"find me a pattern maker for [spec]"</td><td>Matches from human network directory → returns 3 options ranked by specialization + lead time + price → books on confirm</td><td>Wave 2</td></tr>
+          <tr><td>"production pattern"</td><td>Converts approved first pattern to full grade range, marker optimization, factory output formats (Gerber/Lectra/DXF)</td><td>Wave 2</td></tr>
+          <tr><td>"source [fabric spec]"</td><td>Searches supplier database → returns 3 verified options with price/MOQ/lead time → coordinates swatch request</td><td>Wave 2</td></tr>
+          <tr><td>"draping for [garment]"</td><td>Routes to human draper directory — cannot be significantly AI-automated. Returns human availability + pricing + booking.</td><td>Wave 2</td></tr>
+          <tr><td>"design dev / development"</td><td>Trade-off analysis: cost-to-make vs. design intent, simplification options, BOM cost breakdown, pricing architecture</td><td>Wave 2</td></tr>
+          <tr><td>"book a fitting"</td><td>Coordinates fit model from roster → schedules → sends address + deposit + day-of brief</td><td>Wave 3</td></tr>
+          <tr><td>"estimate cost" / "what would this cost"</td><td>Returns materials + labor + trim + permit cost estimate for LA manufacturing based on garment type + fabric + size run</td><td>Wave 1</td></tr>
+          <tr><td>"remember:" / brand notes</td><td>Stores brand fit DNA, preferred pattern makers, colorway preferences, factory contacts in PostgreSQL user record</td><td>Wave 1</td></tr>
+          <tr><td>Voice note</td><td>Deepgram STT → intent detection → same flow as text commands. "Voice note me the details — I'll handle the rest."</td><td>Wave 2</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BUILD MILESTONES -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Build Milestones</div>
+        <div class="card-tag tag-now">8-Week Sprint</div>
+      </div>
+      <div class="card-body">
+        <div class="milestones">
+          <div class="milestone">
+            <div class="ms-dot" style="border-color:var(--brass)"></div>
+            <div class="ms-line"></div>
+            <div class="ms-content">
+              <div class="ms-title">Week 1–2: Core Infrastructure</div>
+              <div class="ms-week">Wave 1 Foundation</div>
+              <div class="ms-tasks">Twilio WhatsApp Business setup · Webhook handler (FastAPI) · Intent router (Gemini classifier) · Session/memory (PostgreSQL) · Brand setup flow</div>
+              <div class="ms-deliverable">Deliverable: Bot responds to "tech pack for X" with a generated document</div>
+            </div>
+          </div>
+          <div class="milestone">
+            <div class="ms-dot" style="border-color:var(--teal)"></div>
+            <div class="ms-line"></div>
+            <div class="ms-content">
+              <div class="ms-title">Week 3–4: Forge API Integration</div>
+              <div class="ms-week">Wave 1 Core</div>
+              <div class="ms-tasks">Connect to fashion-forge.html backend · Tech pack JSON → WhatsApp-formatted summary + PDF link · Fal sketch generation + image delivery · Pattern intelligence output + human assignment queue</div>
+              <div class="ms-deliverable">Deliverable: End-to-end: WhatsApp in → tech pack PDF + sketch images out</div>
+            </div>
+          </div>
+          <div class="milestone">
+            <div class="ms-dot" style="border-color:var(--violet)"></div>
+            <div class="ms-line"></div>
+            <div class="ms-content">
+              <div class="ms-title">Week 5–6: Human Network Layer</div>
+              <div class="ms-week">Wave 2 Launch</div>
+              <div class="ms-tasks">Pattern maker directory (seed with 5–8 LA practitioners) · Specialization tags + availability · Booking flow → calendar + Stripe deposit · Artiquity credit system (expert name on every output)</div>
+              <div class="ms-deliverable">Deliverable: Bot matches and books a real pattern maker in conversation</div>
+            </div>
+          </div>
+          <div class="milestone">
+            <div class="ms-dot" style="border-color:var(--fire)"></div>
+            <div class="ms-line"></div>
+            <div class="ms-content">
+              <div class="ms-title">Week 7–8: Billing + Brand DNA</div>
+              <div class="ms-week">Revenue-Ready</div>
+              <div class="ms-tasks">Stripe per-project billing (tech pack $299, pattern $399, sketch $99) · "Remember:" brand fit DNA storage · 14-day free trial → subscription tiers · First paying client onboarded</div>
+              <div class="ms-deliverable">Deliverable: Revenue flowing. FashionBot live for beachhead designers.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRICING -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Pricing Architecture</div>
+        <div class="card-sub">Per-project + subscription tiers</div>
+      </div>
+      <div class="card-body">
+        <div class="pricing-grid">
+          <div class="price-card">
+            <div class="price-name">Starter</div>
+            <div class="price-amt">Free</div>
+            <div class="price-period">14-day trial</div>
+            <div class="price-features">
+              <div class="pf">3 tech pack generations</div>
+              <div class="pf">3 sketch generations</div>
+              <div class="pf">Basic pattern intel</div>
+              <div class="pf">No human validation</div>
+            </div>
+          </div>
+          <div class="price-card featured">
+            <div class="price-name">Studio</div>
+            <div class="price-amt">$149</div>
+            <div class="price-period">/month</div>
+            <div class="price-features">
+              <div class="pf">Unlimited tech packs + sketches</div>
+              <div class="pf">5 expert validations/mo</div>
+              <div class="pf">Brand fit DNA storage</div>
+              <div class="pf">Pattern maker matching</div>
+              <div class="pf">Voice note support</div>
+            </div>
+          </div>
+          <div class="price-card">
+            <div class="price-name">Forge Pro</div>
+            <div class="price-amt">$399</div>
+            <div class="price-period">/month</div>
+            <div class="price-features">
+              <div class="pf">Everything in Studio</div>
+              <div class="pf">Unlimited expert validations</div>
+              <div class="pf">Priority pattern maker booking</div>
+              <div class="pf">Fitting coordination</div>
+              <div class="pf">Sourcing + cost estimation</div>
+              <div class="pf">Production sampling oversight</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          <div style="font-size:.72rem;color:var(--muted);margin-bottom:8px;font-weight:600">À la carte (per project)</div>
+          <div style="display:flex;flex-direction:column;gap:5px;font-size:.72rem">
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--cloud)">Tech Pack (per style)</span><span style="color:var(--brass);font-family:var(--mono)">$299</span></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--cloud)">First Pattern (per style)</span><span style="color:var(--brass);font-family:var(--mono)">$399</span></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--cloud)">Technical Sketch (per style)</span><span style="color:var(--brass);font-family:var(--mono)">$99</span></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--cloud)">Pattern Maker Placement (staffing)</span><span style="color:var(--brass);font-family:var(--mono)">20–25% of Y1 salary</span></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:var(--cloud)">Draping (human, per style)</span><span style="color:var(--brass);font-family:var(--mono)">$700–$950</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TECH STACK -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Tech Stack</div>
+      <div class="card-sub">Extends existing Clawd Trade infrastructure</div>
+    </div>
+    <div class="card-body">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div>
+          <div style="font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:7px">Interface</div>
+          <div class="stack-row">
+            <span class="stack-chip sc-green">Twilio WhatsApp Business</span>
+            <span class="stack-chip sc-green">Deepgram Nova-3 (STT)</span>
+            <span class="stack-chip sc-green">ElevenLabs (optional TTS)</span>
+            <span class="stack-chip sc-muted">GitHub Pages (PDF delivery)</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:7px">AI / Generation</div>
+          <div class="stack-row">
+            <span class="stack-chip sc-fire">Gemini Pro (intent + generation)</span>
+            <span class="stack-chip sc-fire">Fal flux/schnell (sketches)</span>
+            <span class="stack-chip sc-fire">Awareness Proxy (all AI calls)</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:7px">Backend</div>
+          <div class="stack-row">
+            <span class="stack-chip sc-teal">FastAPI (Python)</span>
+            <span class="stack-chip sc-teal">Cloud Run (GCP)</span>
+            <span class="stack-chip sc-teal">PostgreSQL (Cloud SQL)</span>
+            <span class="stack-chip sc-teal">Redis (session cache)</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:.65px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:7px">Billing / Ops</div>
+          <div class="stack-row">
+            <span class="stack-chip sc-blue">Stripe (subscriptions + per-project)</span>
+            <span class="stack-chip sc-blue">Cal.com (booking calendar)</span>
+            <span class="stack-chip sc-blue">Notion (pattern maker directory admin)</span>
+          </div>
+        </div>
+      </div>
+      <div class="note-box">
+        <strong>Reuses existing Clawd Trade infrastructure:</strong> The FashionBot API follows the same FastAPI + Twilio + PostgreSQL + Cloud Run pattern as `clawd-trade-api` in Revilopark. New bot file `fashionbot.py` + Forge API integration. Greg deploys with a new Twilio WhatsApp number + Stripe price ID. Same deployment script as RoofBot/PlumbBot.
+      </div>
+    </div>
+  </div>
+
+  <!-- WHAT EXISTS NOW -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">What's Already Built vs. What Needs Building</div>
+    </div>
+    <div class="card-body">
+      <div class="grid-2">
+        <div>
+          <div style="font-size:.72rem;font-weight:600;color:#4ade80;margin-bottom:10px">✓ Already Live</div>
+          <div style="display:flex;flex-direction:column;gap:6px;font-size:.75rem;color:var(--cloud)">
+            <div>✓ fashion-forge.html — Tech pack + pattern + sketch generator</div>
+            <div>✓ Awareness proxy — Gemini + Fal routes live</div>
+            <div>✓ Clawd Trade API infrastructure (FastAPI + Cloud Run pattern)</div>
+            <div>✓ FashionBot in clawd-personal.html (persona + system prompt)</div>
+            <div>✓ BYO proxy routes (BackyardOne integration)</div>
+            <div>✓ Dashboard (fashion-forge-dashboard.html)</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:.72rem;font-weight:600;color:var(--fire);margin-bottom:10px">○ Needs Building</div>
+          <div style="display:flex;flex-direction:column;gap:6px;font-size:.75rem;color:var(--cloud)">
+            <div>○ fashionbot.py — Clawd Trade bot file with Forge API calls</div>
+            <div>○ Intent router — 10 fashion-specific intent classifiers</div>
+            <div>○ Forge API backend — FastAPI wrapper around the fashion-forge logic</div>
+            <div>○ Pattern maker directory — seed with 5–8 LA practitioners</div>
+            <div>○ Booking + payment flow (Cal.com + Stripe)</div>
+            <div>○ Greg: new Twilio WhatsApp number for FashionBot</div>
+            <div>○ Greg: Cloud Run deploy + PostgreSQL + Stripe setup</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

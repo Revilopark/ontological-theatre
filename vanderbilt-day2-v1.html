@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vanderbilt Day 2 — The Trinity Graph: Hands On | Inkwell Labs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   INKWELL LABS DESIGN SYSTEM — VANDERBILT SPRING 2026
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --blue-900: #0A2540;
+  --blue-800: #0F3460;
+  --blue-700: #1A5276;
+  --blue-600: #2980B9;
+  --blue-500: #4A9FD9;
+  --blue-400: #6BB5E0;
+  --blue-300: #8ECAE6;
+  --warm-100: #F5F0E8;
+  --warm-200: #EDE5D4;
+  --warm-300: #DDD4C0;
+  --vand: #cfb87c;
+  --glass-bg: rgba(255,255,255,0.55);
+  --glass-border: rgba(255,255,255,0.6);
+  --shadow-sm: 0 4px 16px rgba(10,37,64,0.06);
+  --shadow-md: 0 8px 32px rgba(10,37,64,0.08);
+  --shadow-lg: 0 16px 48px rgba(10,37,64,0.12);
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: linear-gradient(180deg, #EBF5FB 0%, #FFFFFF 40%, #F5F0E8 100%);
+  font-family: var(--font-body);
+  color: var(--blue-900);
+}
+
+/* ---- SLIDE DECK ---- */
+.deck { width: 100%; height: 100%; position: relative; }
+
+.slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-start;
+  padding: 56px 64px 160px;
+  overflow-y: auto;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.4s ease;
+  background: linear-gradient(180deg, #EBF5FB 0%, #FFFFFF 40%, #F5F0E8 100%);
+}
+.slide.active { opacity: 1; pointer-events: all; }
+.slide.center { justify-content: center; }
+
+/* ---- TYPOGRAPHY ---- */
+.label {
+  font-family: var(--font-body);
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--blue-500); margin-bottom: 12px;
+}
+h1, .h1 {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 5vw, 72px);
+  font-weight: 900; line-height: 1.08;
+  background: linear-gradient(135deg, #0F3460, #4A9FD9);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+h2, .h2 {
+  font-family: var(--font-display);
+  font-size: clamp(26px, 3.5vw, 48px);
+  font-weight: 700; line-height: 1.15;
+  background: linear-gradient(135deg, #0F3460, #4A9FD9);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+h3, .h3 {
+  font-family: var(--font-display);
+  font-size: clamp(18px, 2.2vw, 28px);
+  font-weight: 600; color: var(--blue-800);
+}
+.subtitle {
+  font-family: var(--font-body);
+  font-size: clamp(14px, 1.6vw, 20px);
+  font-weight: 400; color: var(--blue-700);
+  line-height: 1.6; max-width: 680px;
+}
+.body-text {
+  font-size: clamp(13px, 1.4vw, 17px);
+  color: var(--blue-800); line-height: 1.7;
+}
+.mono {
+  font-family: var(--font-mono);
+  font-size: 13px; color: var(--blue-600);
+  letter-spacing: -0.3px;
+}
+
+/* ---- GLASS PANEL ---- */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-md);
+  padding: 28px 32px;
+}
+.glass-sm { padding: 16px 20px; border-radius: 14px; }
+.glass-dark {
+  background: rgba(10,37,64,0.04);
+  border: 1px solid rgba(10,37,64,0.08);
+  border-radius: 16px;
+  padding: 20px 24px;
+}
+
+/* ---- EPISODE CARDS ---- */
+.ep-card {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; gap: 20px;
+  padding: 80px 64px; border-radius: 32px;
+  background: linear-gradient(135deg, rgba(10,37,64,0.03) 0%, rgba(74,159,217,0.06) 100%);
+  border: 1px solid rgba(74,159,217,0.2);
+  box-shadow: 0 20px 60px rgba(10,37,64,0.1);
+  max-width: 760px; width: 100%;
+}
+.ep-number {
+  font-family: var(--font-mono);
+  font-size: 12px; font-weight: 600;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: var(--blue-400);
+  padding: 6px 16px; border-radius: 9999px;
+  background: rgba(74,159,217,0.08);
+  border: 1px solid rgba(74,159,217,0.2);
+}
+.ep-icon {
+  font-size: 64px; line-height: 1;
+  filter: drop-shadow(0 4px 12px rgba(74,159,217,0.3));
+}
+
+/* ---- RUNE SYSTEM ---- */
+.rune-symbol {
+  font-size: 2rem; line-height: 1;
+  background: linear-gradient(180deg, #4A9FD9, #DDD4C0);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.rune-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 6px;
+  align-items: center; text-align: center;
+}
+.rune-card .rune-symbol { font-size: 1.8rem; }
+.rune-name {
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 700;
+  color: var(--blue-800); letter-spacing: 0.3px;
+}
+.rune-domain {
+  font-size: 10px; font-weight: 500; color: var(--blue-500);
+  letter-spacing: 1px; text-transform: uppercase;
+}
+.cluster-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; padding: 4px 12px;
+  border-radius: 9999px; width: fit-content;
+}
+.cluster-analytical { background: rgba(10,37,64,0.07); color: var(--blue-800); }
+.cluster-creative { background: rgba(207,184,124,0.15); color: #8B6914; }
+.cluster-human { background: rgba(74,159,217,0.1); color: var(--blue-700); }
+.cluster-integration { background: rgba(221,212,192,0.4); color: #6B5B3E; }
+.cluster-meta { background: linear-gradient(90deg, rgba(74,159,217,0.1), rgba(207,184,124,0.15)); color: var(--blue-800); }
+
+/* ---- OMEGA STAGES ---- */
+.omega-stage {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; border-radius: 12px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s;
+}
+.omega-stage:hover { box-shadow: var(--shadow-md); transform: translateX(4px); }
+.omega-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue-500), var(--blue-700));
+  color: white; font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.omega-name {
+  font-family: var(--font-display);
+  font-size: 14px; font-weight: 700; color: var(--blue-900);
+}
+.omega-desc {
+  font-size: 12px; color: var(--blue-600); margin-left: auto;
+  font-style: italic;
+}
+
+/* ---- TRINITY GRAPH VIZ ---- */
+.trinity-viz {
+  position: relative; width: 280px; height: 280px;
+  flex-shrink: 0;
+}
+.trinity-node {
+  position: absolute;
+  width: 80px; height: 80px; border-radius: 50%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600;
+  box-shadow: var(--shadow-md);
+}
+.trinity-node.social {
+  top: 0; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg, rgba(74,159,217,0.9), rgba(107,181,224,0.9));
+  color: white;
+}
+.trinity-node.knowledge {
+  bottom: 10px; left: 10px;
+  background: linear-gradient(135deg, rgba(10,37,64,0.85), rgba(26,82,118,0.85));
+  color: white;
+}
+.trinity-node.generative {
+  bottom: 10px; right: 10px;
+  background: linear-gradient(135deg, rgba(207,184,124,0.9), rgba(180,155,90,0.9));
+  color: var(--blue-900);
+}
+.trinity-edge {
+  position: absolute;
+  height: 2px; background: linear-gradient(90deg, rgba(74,159,217,0.3), rgba(74,159,217,0.1));
+  transform-origin: 0 50%;
+}
+
+/* ---- NEO4J NODE VIZ ---- */
+.neo4j-node {
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%; font-size: 11px; font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+.neo4j-edge {
+  height: 2px; flex: 1;
+  background: linear-gradient(90deg, transparent, rgba(74,159,217,0.4), transparent);
+}
+
+/* ---- KIRK PROGRESSION ---- */
+.kirk-step {
+  display: flex; align-items: flex-start; gap: 16px;
+  padding: 14px 18px; border-radius: 14px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-sm);
+}
+.kirk-step.active-step {
+  background: rgba(74,159,217,0.08);
+  border-color: rgba(74,159,217,0.3);
+  box-shadow: 0 4px 20px rgba(74,159,217,0.15);
+}
+.kirk-step.target-step {
+  background: rgba(207,184,124,0.1);
+  border-color: rgba(207,184,124,0.4);
+  box-shadow: 0 4px 20px rgba(207,184,124,0.2);
+}
+.kirk-num {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; flex-shrink: 0;
+}
+.kirk-step.active-step .kirk-num { background: var(--blue-500); color: white; }
+.kirk-step.target-step .kirk-num { background: var(--vand); color: var(--blue-900); }
+.kirk-step:not(.active-step):not(.target-step) .kirk-num {
+  background: rgba(10,37,64,0.08); color: var(--blue-600);
+}
+
+/* ---- GRAPH NODES DEMO ---- */
+.graph-demo {
+  position: relative; width: 100%; height: 220px;
+}
+.gnode {
+  position: absolute;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; font-size: 10px; font-weight: 600;
+  box-shadow: var(--shadow-md); cursor: default;
+  transition: transform 0.2s;
+}
+.gnode:hover { transform: scale(1.1); }
+.gnode-label {
+  position: absolute; top: 105%; left: 50%; transform: translateX(-50%);
+  white-space: nowrap; font-size: 9px; color: var(--blue-600);
+  font-weight: 500;
+}
+.gedge {
+  position: absolute; height: 1.5px;
+  background: linear-gradient(90deg, rgba(74,159,217,0.5), rgba(107,181,224,0.2));
+  transform-origin: 0 50%;
+  pointer-events: none;
+}
+
+/* ---- PILL TAGS ---- */
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 9999px;
+  font-size: 12px; font-weight: 500;
+  background: rgba(74,159,217,0.1);
+  border: 1px solid rgba(74,159,217,0.2);
+  color: var(--blue-700);
+}
+.pill-vand {
+  background: rgba(207,184,124,0.12);
+  border-color: rgba(207,184,124,0.35);
+  color: #7a5c10;
+}
+.pill-dark {
+  background: rgba(10,37,64,0.07);
+  border-color: rgba(10,37,64,0.12);
+  color: var(--blue-800);
+}
+
+/* ---- CTA / ASSIGNMENT BOX ---- */
+.assignment-box {
+  border-left: 4px solid var(--vand);
+  background: rgba(207,184,124,0.08);
+  border-radius: 0 16px 16px 0;
+  padding: 20px 24px;
+}
+
+/* ---- DIVIDER ---- */
+.divider {
+  width: 48px; height: 3px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--blue-500), var(--blue-300));
+  margin: 16px 0;
+}
+
+/* ---- QUOTE BLOCK ---- */
+.blockquote {
+  border-left: 3px solid var(--blue-400);
+  padding: 12px 20px;
+  background: rgba(74,159,217,0.04);
+  border-radius: 0 12px 12px 0;
+  font-family: var(--font-display);
+  font-style: italic; font-size: 15px;
+  color: var(--blue-800); line-height: 1.6;
+}
+
+/* ---- PROGRESS BAR (used in Omega walk-through) ---- */
+.progress-bar {
+  height: 4px; border-radius: 2px;
+  background: rgba(10,37,64,0.08);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--blue-500), var(--blue-400));
+  transition: width 0.5s ease;
+}
+
+/* ============================================================
+   SPEAKER NOTES OVERLAY
+   ============================================================ */
+#notes-overlay {
+  display: none; position: fixed;
+  bottom: 80px; left: 24px; right: 24px;
+  max-height: 160px;
+  background: rgba(10,37,64,0.93);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(74,159,217,0.3);
+  border-radius: 16px; padding: 16px 24px;
+  overflow-y: auto; z-index: 200;
+  box-shadow: 0 16px 40px rgba(10,37,64,0.3);
+}
+#notes-overlay.visible { display: block; }
+#notes-overlay .notes-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: rgba(74,159,217,0.8); margin-bottom: 8px;
+}
+#notes-overlay .notes-text {
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.88);
+  font-family: var(--font-body);
+}
+
+/* ============================================================
+   NAV BAR
+   ============================================================ */
+#nav-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: 68px; z-index: 300;
+  background: rgba(255,255,255,0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(10,37,64,0.08);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px;
+  box-shadow: 0 -4px 24px rgba(10,37,64,0.05);
+}
+.nav-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 9999px;
+  background: linear-gradient(135deg, var(--blue-600), var(--blue-500));
+  border: none; cursor: pointer; color: white;
+  font-size: 16px; font-weight: 700;
+  box-shadow: 0 4px 12px rgba(74,159,217,0.3);
+  transition: all 0.2s; flex-shrink: 0;
+}
+.nav-btn:hover { transform: scale(1.07); box-shadow: 0 6px 20px rgba(74,159,217,0.4); }
+.nav-btn:disabled { opacity: 0.35; cursor: default; transform: none; }
+
+#slide-dots {
+  display: flex; gap: 5px; align-items: center;
+  flex-wrap: wrap; justify-content: center; max-width: 400px;
+}
+.dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(10,37,64,0.18);
+  cursor: pointer; transition: all 0.25s;
+}
+.dot.active { width: 20px; border-radius: 3px; background: var(--blue-500); }
+.dot:hover:not(.active) { background: var(--blue-400); }
+
+#slide-counter {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--blue-500); letter-spacing: 1px;
+  min-width: 60px; text-align: right;
+}
+
+#notes-toggle {
+  background: none; border: 1px solid rgba(10,37,64,0.15);
+  border-radius: 9999px; padding: 5px 12px;
+  font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--blue-600);
+  cursor: pointer; transition: all 0.2s; margin-left: 12px;
+}
+#notes-toggle:hover { background: rgba(74,159,217,0.08); }
+#notes-toggle.active { background: rgba(74,159,217,0.12); color: var(--blue-500); }
+
+/* ============================================================
+   LOGO MARK (top-left on most slides)
+   ============================================================ */
+.inkwell-mark {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 32px; align-self: flex-start;
+}
+.inkwell-mark .mark-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--blue-800), var(--blue-500));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.inkwell-mark .mark-text {
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 700;
+  color: var(--blue-800); letter-spacing: 0.5px;
+}
+.inkwell-mark .mark-sub {
+  font-size: 10px; font-weight: 500; color: var(--blue-500);
+  letter-spacing: 1px; text-transform: uppercase;
+}
+
+/* ---- UTILITY ---- */
+.w-full { width: 100%; }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.gap-4 { gap: 16px; }
+.gap-3 { gap: 12px; }
+.gap-2 { gap: 8px; }
+.gap-6 { gap: 24px; }
+.gap-8 { gap: 32px; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.text-center { text-align: center; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }
+.mt-6 { margin-top: 24px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-4 { margin-bottom: 16px; }
+.max-content { max-width: 900px; width: 100%; }
+.vand-accent { color: var(--vand); }
+.blue-500 { color: var(--blue-500); }
+
+/* scrollbar styling */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(74,159,217,0.3); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+<!-- ============================================================
+     SLIDE 1 — TITLE
+     ============================================================ -->
+<section class="slide center" id="slide-1"
+  data-notes="Good morning. Or — good whatever-time-it-is at Owen. Last week I made you a promise: everything is a graph. Today we prove it. You've already talked to your VanderBot. That conversation? Real nodes. Real edges. Real graph. Let's dig in. Session 2. The Trinity Graph — Hands On.">
+
+  <div style="text-align:center; max-width: 780px;">
+    <div class="label" style="justify-content:center; display:flex; gap:8px; margin-bottom:24px;">
+      <span class="pill-vand pill">Vanderbilt Owen</span>
+      <span class="pill">Spring 2026</span>
+      <span class="pill-dark pill">Session 2 of 8</span>
+    </div>
+
+    <div style="font-size:13px; color:var(--blue-500); letter-spacing:2px; text-transform:uppercase; margin-bottom:8px; font-family:var(--font-mono);">AI-Accelerated Entrepreneurship Practicum</div>
+
+    <h1 style="margin-bottom:20px; font-size:clamp(40px,6vw,84px);">The Trinity Graph</h1>
+
+    <div style="font-family:var(--font-display); font-size:clamp(20px,3vw,36px); font-weight:400; font-style:italic; color:var(--blue-600); margin-bottom:32px;">Hands On</div>
+
+    <div class="divider" style="margin:0 auto 32px;"></div>
+
+    <p class="subtitle" style="margin:0 auto 40px; text-align:center;">
+      Your VanderBot is live. Your graph is growing. <br>Today we make it real.
+    </p>
+
+    <!-- Trinity Visual -->
+    <div style="display:flex; gap:20px; justify-content:center; flex-wrap:wrap;">
+      <div class="glass glass-sm" style="padding:14px 22px; display:flex; flex-direction:column; align-items:center; gap:4px;">
+        <span style="font-size:22px; background: linear-gradient(180deg,#4A9FD9,#DDD4C0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">△</span>
+        <span style="font-size:11px; color:var(--blue-700); font-weight:600;">Social Graph</span>
+      </div>
+      <div class="glass glass-sm" style="padding:14px 22px; display:flex; flex-direction:column; align-items:center; gap:4px;">
+        <span style="font-size:22px; background: linear-gradient(180deg,#4A9FD9,#DDD4C0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">◈</span>
+        <span style="font-size:11px; color:var(--blue-700); font-weight:600;">Knowledge Graph</span>
+      </div>
+      <div class="glass glass-sm" style="padding:14px 22px; display:flex; flex-direction:column; align-items:center; gap:4px;">
+        <span style="font-size:22px; background: linear-gradient(180deg,#4A9FD9,#DDD4C0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">✦</span>
+        <span style="font-size:11px; color:var(--blue-700); font-weight:600;">Generative Graph</span>
+      </div>
+    </div>
+
+    <div style="margin-top:40px;">
+      <span style="font-size:11px; color:var(--blue-400); letter-spacing:1.5px; font-family:var(--font-mono);">Oliver Luckett · Inkwell Labs · 2026</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 2 — RECAP
+     ============================================================ -->
+<section class="slide" id="slide-2"
+  data-notes="Quick housekeeping before we dive. Last week covered a lot of ground — graph theory, my career story from Clarksdale to here, the IAM framework, and the Trinity architecture. Then I handed out a homework assignment that was actually just texting a phone number. That's my version of an MBA problem set. Let's see how it went.">
+
+  <div class="max-content">
+    <div class="inkwell-mark">
+      <div class="mark-icon">✦</div>
+      <div><div class="mark-text">Inkwell Labs</div><div class="mark-sub">Practicum · Day 2</div></div>
+    </div>
+
+    <div class="label">Session Recap</div>
+    <h2 style="margin-bottom:8px;">Day 1: What We Covered</h2>
+    <div class="divider"></div>
+
+    <div class="grid-2" style="margin-top:8px;">
+      <div class="flex flex-col gap-3">
+        <div class="glass glass-sm">
+          <div style="font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--blue-500); margin-bottom:6px;">Foundations</div>
+          <ul style="list-style:none; display:flex; flex-direction:column; gap:6px;">
+            <li class="body-text">▸ Everything is a graph</li>
+            <li class="body-text">▸ Graph theory: nodes, edges, relationships</li>
+            <li class="body-text">▸ Protocols beat platforms</li>
+            <li class="body-text">▸ Oliver's career arc: Clarksdale → Inkwell</li>
+          </ul>
+        </div>
+        <div class="glass glass-sm">
+          <div style="font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--blue-500); margin-bottom:6px;">IAM Framework</div>
+          <ul style="list-style:none; display:flex; flex-direction:column; gap:6px;">
+            <li class="body-text">▸ Inkwell Awareness Model (IAM)</li>
+            <li class="body-text">▸ Trinity Graph: Social / Knowledge / Generative</li>
+            <li class="body-text">▸ Introduction to the 11 Runes</li>
+            <li class="body-text">▸ Omega Protocol overview (10 stages)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="flex flex-col gap-3">
+        <div class="assignment-box">
+          <div style="font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--vand); margin-bottom:8px;">Your Assignment</div>
+          <p class="body-text" style="margin-bottom:12px;">Text your VanderBot on WhatsApp:</p>
+          <div class="glass-dark" style="padding:12px 16px; text-align:center;">
+            <span class="mono" style="font-size:16px; color:var(--blue-800);">+1 (310) 770-9035</span>
+          </div>
+          <p class="body-text" style="margin-top:10px; font-size:13px;">Tell it about your business, your problems, your ideas.</p>
+        </div>
+        <div class="glass glass-sm" style="background:rgba(74,159,217,0.06); border-color:rgba(74,159,217,0.2);">
+          <div style="font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--blue-500); margin-bottom:8px;">Today</div>
+          <p class="body-text">We go deeper. You have your bot. Now let's understand what it's actually doing — and how to use it to think.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 3 — EP 1 OPENER
+     ============================================================ -->
+<section class="slide center" id="slide-3"
+  data-notes="Alright — first episode. Some of you texted right away. Some of you waited until last night. Either way, something interesting happened: you created data. Not just chat history. Actual structured data in a graph database. Let me show you what that looks like.">
+
+  <div class="ep-card">
+    <span class="ep-number">Episode 01</span>
+    <div class="ep-icon">🔵</div>
+    <h2 style="font-size:clamp(28px,4vw,56px);">Your First Node</h2>
+    <p class="subtitle" style="max-width:500px; text-align:center;">
+      What actually happened when you talked to your VanderBot — and what it means for the Trinity Graph
+    </p>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:8px;">
+      <span class="pill">Social Graph</span>
+      <span class="pill">Knowledge Graph</span>
+      <span class="pill">Generative Graph</span>
+      <span class="pill-dark pill">Neo4j</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 4 — YOUR CONVO → GRAPH NODES
+     ============================================================ -->
+<section class="slide" id="slide-4"
+  data-notes="Look at your phones. Pull up your VanderBot chat. Every single thing you talked about — your startup idea, your career question, the market you're targeting — each one of those topics became a node. A real node in Neo4j. The questions you asked formed edges. The entities you mentioned got connected. Your conversation wasn't a conversation. It was a graph construction event.">
+
+  <div class="max-content">
+    <div class="inkwell-mark">
+      <div class="mark-icon">🔵</div>
+      <div><div class="mark-text">Episode 1</div><div class="mark-sub">Your First Node</div></div>
+    </div>
+    <div class="label">Ep 1 — Graph Construction</div>
+    <h2 style="margin-bottom:8px;">Your Chat Was a Graph Event</h2>
+    <div class="divider"></div>
+
+    <div class="grid-2" style="margin-top:8px; gap:20px;">
+      <div class="flex flex-col gap-3">
+        <div class="blockquote">
+          "Every question you asked, every topic you explored — those became real nodes in a real graph database. Neo4j. Your graph is already growing."
+        </div>
+        <div class="flex flex-col gap-2">
+          <div class="omega-stage">
+            <div style="font-size:18px;">💬</div>
+            <div>
+              <div class="omega-name" style="font-size:13px;">Chat Message</div>
+              <div class="omega-desc" style="font-size:11px; margin-left:0;">Input event</div>
+            </div>
+            <span style="font-size:16px; color:var(--blue-400); margin-left:auto;">→</span>
+          </div>
+          <div class="omega-stage">
+            <div style="font-size:18px;">🔍</div>
+            <div>
+              <div class="omega-name" style="font-size:13px;">Entity Extraction</div>
+              <div class="omega-desc" style="font-size:11px; margin-left:0;">NLP pipeline</div>
+            </div>
+            <span style="font-size:16px; color:var(--blue-400); margin-left:auto;">→</span>
+          </div>
+          <div class="omega-stage">
+            <div style="font-size:18px;">🗄️</div>
+            <div>
+              <div class="omega-name" style="font-size:13px;">Neo4j Node Written</div>
+              <div class="omega-desc" style="font-size:11px; margin-left:0;">Graph database</div>
+            </div>
+            <span style="font-size:16px; color:var(--blue-400); margin-left:auto;">✓</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Simple graph demo -->
+      <div class="glass" style="padding:20px; position:relative; overflow:hidden; min-height:260px;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--blue-500); margin-bottom:12px;">Sample Student Graph · Neo4j</div>
+        <div class="graph-demo">
+          <!-- Edges (behind nodes) -->
+          <svg style="position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;">
+            <defs>
+              <marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="rgba(74,159,217,0.5)"/>
+              </marker>
+            </defs>
+            <line x1="100" y1="55" x2="200" y2="55" stroke="rgba(74,159,217,0.35)" stroke-width="1.5" marker-end="url(#arr)"/>
+            <line x1="100" y1="55" x2="60" y2="140" stroke="rgba(74,159,217,0.35)" stroke-width="1.5" marker-end="url(#arr)"/>
+            <line x1="100" y1="55" x2="170" y2="150" stroke="rgba(74,159,217,0.35)" stroke-width="1.5" marker-end="url(#arr)"/>
+            <line x1="200" y1="55" x2="170" y2="150" stroke="rgba(207,184,124,0.4)" stroke-width="1.5" marker-end="url(#arr)"/>
+            <line x1="60" y1="140" x2="170" y2="150" stroke="rgba(10,37,64,0.2)" stroke-width="1.5"/>
+            <text x="152" y="48" font-size="8" fill="rgba(74,159,217,0.7)" font-family="SF Mono,monospace">ASKED_ABOUT</text>
+            <text x="26" y="100" font-size="8" fill="rgba(74,159,217,0.7)" font-family="SF Mono,monospace">MENTIONED</text>
+            <text x="128" y="105" font-size="8" fill="rgba(207,184,124,0.8)" font-family="SF Mono,monospace">CONNECTS</text>
+          </svg>
+          <!-- Student node -->
+          <div class="gnode" style="width:52px;height:52px;left:74px;top:30px;background:linear-gradient(135deg,var(--blue-600),var(--blue-500));color:white;font-size:9px;text-align:center;line-height:1.2;">
+            <div>:Person<br/><span style="font-size:8px;opacity:0.8;">You</span></div>
+          </div>
+          <!-- Market node -->
+          <div class="gnode" style="width:48px;height:48px;left:176px;top:32px;background:linear-gradient(135deg,#4A9FD9,#8ECAE6);color:white;font-size:8px;text-align:center;line-height:1.2;">
+            <div>:Topic<br/><span style="font-size:7px;opacity:0.8;">Market</span></div>
+          </div>
+          <!-- Startup idea node -->
+          <div class="gnode" style="width:44px;height:44px;left:38px;top:118px;background:linear-gradient(135deg,var(--blue-800),var(--blue-700));color:white;font-size:8px;text-align:center;line-height:1.2;">
+            <div>:Idea<br/><span style="font-size:7px;opacity:0.8;">Startup</span></div>
+          </div>
+          <!-- Problem node -->
+          <div class="gnode" style="width:44px;height:44px;left:148px;top:128px;background:linear-gradient(135deg,rgba(207,184,124,0.9),rgba(180,155,90,0.9));color:var(--blue-900);font-size:8px;text-align:center;line-height:1.2;">
+            <div>:Problem<br/><span style="font-size:7px;opacity:0.7;">Pain Pt</span></div>
+          </div>
+        </div>
+        <div class="mono" style="margin-top:4px; font-size:10px; color:var(--blue-500);">MATCH (u:Person)-[r]-&gt;(t:Topic) RETURN u,r,t</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 5 — THE THREE GRAPHS
+     ============================================================ -->
+<section class="slide" id="slide-5"
+  data-notes="The Trinity isn't three separate databases. It's one graph with three lenses. Social: who cares about this? Who influenced whom? Who's connected to who in the conversation? Knowledge: what do we actually know? What's true, what's inferred, what's contested? Generative: what could be? What new combinations are possible? Every node in your graph gets tagged with which dimension it lives in. Most nodes touch all three.">
+
+  <div class="max-content">
+    <div class="label">Ep 1 — Trinity Architecture</div>
+    <h2 style="margin-bottom:8px;">Three Graphs, One Truth</h2>
+    <div class="divider"></div>
+
+    <div class="grid-3" style="margin-top:12px;">
+      <!-- Social -->
+      <div class="glass" style="padding:24px 20px; border-top: 3px solid var(--blue-500);">
+        <div style="font-size:36px; text-align:center; margin-bottom:12px; background:linear-gradient(180deg,#4A9FD9,#DDD4C0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">△</div>
+        <div class="h3" style="text-align:center; font-size:18px; margin-bottom:8px;">Social Graph</div>
+        <div style="font-size:12px; font-weight:700; color:var(--blue-500); letter-spacing:1.5px; text-transform:uppercase; text-align:center; margin-bottom:10px;">Who Cares?</div>
+        <ul style="list-style:none; display:flex; flex-direction:column; gap:6px;">
+          <li class="body-text" style="font-size:13px;">▸ Relationships between people</li>
+          <li class="body-text" style="font-size:13px;">▸ Trust, influence, attention</li>
+          <li class="body-text" style="font-size:13px;">▸ Who shares, who listens</li>
+          <li class="body-text" style="font-size:13px;">▸ Network topology</li>
+        </ul>
+        <div class="mono" style="margin-top:14px; padding:8px 10px; background:rgba(74,159,217,0.05); border-radius:8px; font-size:10px;">(:Person)-[:KNOWS]→(:Person)</div>
+      </div>
+      <!-- Knowledge -->
+      <div class="glass" style="padding:24px 20px; border-top: 3px solid var(--blue-800);">
+        <div style="font-size:36px; text-align:center; margin-bottom:12px; background:linear-gradient(180deg,#4A9FD9,#DDD4C0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">◈</div>
+        <div class="h3" style="text-align:center; font-size:18px; margin-bottom:8px;">Knowledge Graph</div>
+        <div style="font-size:12px; font-weight:700; color:var(--blue-700); letter-spacing:1.5px; text-transform:uppercase; text-align:center; margin-bottom:10px;">What's True?</div>
+        <ul style="list-style:none; display:flex; flex-direction:column; gap:6px;">
+          <li class="body-text" style="font-size:13px;">▸ Facts, concepts, claims</li>
+          <li class="body-text" style="font-size:13px;">▸ Domain expertise</li>
+          <li class="body-text" style="font-size:13px;">▸ Verified vs. inferred</li>
+          <li class="body-text" style="font-size:13px;">▸ Semantic relationships</li>
+        </ul>
+        <div class="mono" style="margin-top:14px; padding:8px 10px; background:rgba(10,37,64,0.04); border-radius:8px; font-size:10px;">(:Concept)-[:IMPLIES]→(:Fact)</div>
+      </div>
+      <!-- Generative -->
+      <div class="glass" style="padding:24px 20px; border-top: 3px solid var(--vand);">
+        <div style="font-size:36px; text-align:center; margin-bottom:12px; background:linear-gradient(180deg,#4A9FD9,#DDD4C0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">✦</div>
+        <div class="h3" style="text-align:center; font-size:18px; margin-bottom:8px;">Generative Graph</div>
+        <div style="font-size:12px; font-weight:700; color:#8B6914; letter-spacing:1.5px; text-transform:uppercase; text-align:center; margin-bottom:10px;">What Could Be?</div>
+        <ul style="list-style:none; display:flex; flex-direction:column; gap:6px;">
+          <li class="body-text" style="font-size:13px;">▸ Possibilities, hypotheses</li>
+          <li class="body-text" style="font-size:13px;">▸ Creative combinations</li>
+          <li class="body-text" style="font-size:13px;">▸ Emergent opportunities</li>
+          <li class="body-text" style="font-size:13px;">▸ Future-state modeling</li>
+        </ul>
+        <div class="mono" style="margin-top:14px; padding:8px 10px; background:rgba(207,184,124,0.06); border-radius:8px; font-size:10px;">(:Idea)-[:ENABLES]→(:Outcome)</div>
+      </div>
+    </div>
+
+    <div class="glass" style="margin-top:16px; padding:16px 24px; background:rgba(74,159,217,0.04); border-color:rgba(74,159,217,0.15);">
+      <p class="body-text" style="text-align:center;">
+        <strong>The Trinity works as a single structure.</strong> Every node you create touches all three dimensions simultaneously — you just choose which lens to reason from.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 6 — EP 2 OPENER
+     ============================================================ -->
+<section class="slide center" id="slide-6"
+  data-notes="Okay. Episode 2. This is the one I really want you to internalize. The Inkwell Runes. When I first started designing this system I called them filters, then lenses, then modes. Runes felt right because there's something ancient about the idea — a symbol that carries a whole way of thinking. But we went further. Each rune is an epistemic contract — it prevents a specific failure mode, requires specific artifacts, and has validation rules. If a rune can't be argued with, reviewed, or failed, it's not a rune.">
+
+  <div class="ep-card">
+    <span class="ep-number">Episode 02</span>
+    <div class="ep-icon">⚡</div>
+    <h2 style="font-size:clamp(28px,4vw,56px);">The Inkwell Runes</h2>
+    <p class="subtitle" style="max-width:520px; text-align:center;">
+      Not decoration. Not labels. Each rune is a distinct lens — a way of seeing and reasoning through any problem.
+    </p>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:8px;">
+      <span class="pill">Truth & Reasoning ×3</span>
+      <span class="pill">Build & Execute ×3</span>
+      <span class="pill">Human & Wellness ×3</span>
+      <span class="pill-vand pill">Identity & Truth ×2</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 7 — ALL 14 RUNES OVERVIEW
+     ============================================================ -->
+<section class="slide" id="slide-7"
+  data-notes="Here they all are. Eleven Inkwell Runes, four clusters. Truth and Reasoning — Rigor, Human, Muse. Build and Execute — Forge, Clarity, Synchronicity. Human and Wellness — Vitality, Propensity, Converge. And Identity and Truth — Identity and Authenticity. Each rune is a different lens on any problem. Rigor verifies truth. Human brings empathy. Muse expands creatively. Forge tests feasibility. And so on. The power is in cycling through them deliberately.">
+
+  <div class="max-content">
+    <div class="label">Ep 2 — Rune System v1.0</div>
+    <h2 style="margin-bottom:8px;">The 11 Inkwell Runes</h2>
+    <div class="divider"></div>
+
+    <!-- Row 1 -->
+    <div style="margin-top:16px; margin-bottom:8px;">
+      <span class="cluster-label cluster-analytical">Truth & Reasoning</span>
+    </div>
+    <div class="grid-3" style="gap:10px;">
+      <div class="rune-card">
+        <div class="rune-symbol">⚖︎</div>
+        <div class="rune-name">Rigor</div>
+        <div class="rune-domain">Truth verification</div>
+      </div>
+      <div class="rune-card">
+        <div class="rune-symbol">✦</div>
+        <div class="rune-name">Human</div>
+        <div class="rune-domain">Empathic reasoning</div>
+      </div>
+      <div class="rune-card">
+        <div class="rune-symbol">✺</div>
+        <div class="rune-name">Muse</div>
+        <div class="rune-domain">Creative expansion</div>
+      </div>
+    </div>
+
+    <!-- Row 2 -->
+    <div style="margin-top:12px; margin-bottom:8px;">
+      <span class="cluster-label cluster-creative">Build & Execute</span>
+    </div>
+    <div class="grid-3" style="gap:10px;">
+      <div class="rune-card">
+        <div class="rune-symbol">⛬</div>
+        <div class="rune-name">Forge</div>
+        <div class="rune-domain">Feasibility & build</div>
+      </div>
+      <div class="rune-card">
+        <div class="rune-symbol">✹</div>
+        <div class="rune-name">Clarity</div>
+        <div class="rune-domain">Operational awareness</div>
+      </div>
+      <div class="rune-card">
+        <div class="rune-symbol">෴</div>
+        <div class="rune-name">Synchronicity</div>
+        <div class="rune-domain">Trend alignment</div>
+      </div>
+    </div>
+
+    <!-- Row 3 -->
+    <div style="margin-top:12px; margin-bottom:8px;">
+      <span class="cluster-label cluster-human">Human & Wellness</span>
+    </div>
+    <div class="grid-3" style="gap:10px;">
+      <div class="rune-card">
+        <div class="rune-symbol">ღ</div>
+        <div class="rune-name">Vitality</div>
+        <div class="rune-domain">Wellness governance</div>
+      </div>
+      <div class="rune-card">
+        <div class="rune-symbol">↟</div>
+        <div class="rune-name">Propensity</div>
+        <div class="rune-domain">Desire mapping</div>
+      </div>
+      <div class="rune-card">
+        <div class="rune-symbol">Δ³</div>
+        <div class="rune-name">Converge</div>
+        <div class="rune-domain">Synthesis</div>
+      </div>
+    </div>
+
+    <!-- Row 4 -->
+    <div style="margin-top:12px; margin-bottom:8px;">
+      <span class="cluster-label cluster-integration">Identity & Truth</span>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <div class="rune-card">
+        <div class="rune-symbol">𓁹</div>
+        <div class="rune-name">Identity</div>
+        <div class="rune-domain">Essence preservation</div>
+      </div>
+      <div class="rune-card">
+        <div class="rune-symbol">𓂀</div>
+        <div class="rune-name">Authenticity</div>
+        <div class="rune-domain">Truth-of-self validation</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 8 — RUNES AS REASONING MODES
+     ============================================================ -->
+<section class="slide" id="slide-8"
+  data-notes="Here's what I mean by runes as lenses. Take any business problem — let's say you're trying to figure out why your product isn't getting traction. Rigor says: what do we actually know vs. assume? Verify the truth. Human says: forget the data — what does the customer actually feel? Muse says: what if we reframe the entire question? Each rune gives you a different true insight. Together they give you a 360-degree view.">
+
+  <div class="max-content">
+    <div class="label">Ep 2 — Applied Runes</div>
+    <h2 style="margin-bottom:8px;">Each Rune is a Lens</h2>
+    <div class="divider"></div>
+
+    <p class="subtitle" style="margin-bottom:24px;">Apply the same problem to different runes. Each gives you a different true insight.</p>
+
+    <div class="glass" style="padding:16px 24px; margin-bottom:16px; background:rgba(10,37,64,0.03);">
+      <div class="label" style="margin-bottom:6px;">Example Problem</div>
+      <p class="body-text" style="font-size:16px; font-weight:500;">
+        "Our SaaS product has strong signups but 60% churn in month one."
+      </p>
+    </div>
+
+    <div class="flex flex-col gap-3">
+      <div class="flex gap-3 items-start">
+        <div class="rune-card" style="width:64px; height:64px; flex-shrink:0; justify-content:center;">
+          <div class="rune-symbol">⚖︎</div>
+          <div class="rune-domain">Rigor</div>
+        </div>
+        <div class="glass glass-sm flex-col" style="flex:1;">
+          <div style="font-size:12px; font-weight:700; color:var(--blue-800); margin-bottom:4px;">⚖︎ Rigor — Truth Verification</div>
+          <p class="body-text" style="font-size:13px;">Map every touchpoint in month one. What exact action precedes cancellation? What do we actually know vs. assume? Is the 60% consistent across cohorts or is one segment driving it?</p>
+        </div>
+      </div>
+      <div class="flex gap-3 items-start">
+        <div class="rune-card" style="width:64px; height:64px; flex-shrink:0; justify-content:center;">
+          <div class="rune-symbol">✦</div>
+          <div class="rune-domain">Human</div>
+        </div>
+        <div class="glass glass-sm flex-col" style="flex:1;">
+          <div style="font-size:12px; font-weight:700; color:var(--blue-800); margin-bottom:4px;">✦ Human — Empathic Reasoning</div>
+          <p class="body-text" style="font-size:13px;">Forget the data for a second. What is the actual lived experience of a user in month one? Where does reality diverge from the promise? What feeling drove them to cancel?</p>
+        </div>
+      </div>
+      <div class="flex gap-3 items-start">
+        <div class="rune-card" style="width:64px; height:64px; flex-shrink:0; justify-content:center;">
+          <div class="rune-symbol">✺</div>
+          <div class="rune-domain">Muse</div>
+        </div>
+        <div class="glass glass-sm flex-col" style="flex:1;">
+          <div style="font-size:12px; font-weight:700; color:var(--blue-800); margin-bottom:4px;">✺ Muse — Creative Expansion</div>
+          <p class="body-text" style="font-size:13px;">What if you didn't try to reduce churn at all — what if you redesigned onboarding so the "churn" moment became an upgrade moment instead? What's the non-obvious reframe?</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="assignment-box" style="margin-top:16px;">
+      <p class="body-text" style="font-size:13px;"><strong>Try it:</strong> Take your real business problem. Run it through ⚖︎ Rigor, then ✦ Human, then ✺ Muse. What different perspectives emerge?</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 9 — EP 3 OPENER
+     ============================================================ -->
+<section class="slide center" id="slide-9"
+  data-notes="Episode 3. The Omega Protocol. This is where it gets serious. The first two episodes were about data and lenses. This episode is about synthesis — how you actually use this stuff to reason through something hard. The Omega Protocol is a 10-stage spiral. Not a checklist. A spiral — because you go through it iteratively, and each pass makes the previous pass richer.">
+
+  <div class="ep-card">
+    <span class="ep-number">Episode 03</span>
+    <div class="ep-icon">Ω</div>
+    <h2 style="font-size:clamp(28px,4vw,56px);">The Omega Protocol</h2>
+    <p class="subtitle" style="max-width:520px; text-align:center;">
+      Ten stages of synthesis. This is where AI stops being a chatbot and becomes a reasoning engine.
+    </p>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:8px;">
+      <span class="pill">10 Stages</span>
+      <span class="pill">Synthesis Spiral</span>
+      <span class="pill-dark pill">Iterative</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 10 — THE 10 STAGES
+     ============================================================ -->
+<section class="slide" id="slide-10"
+  data-notes="Ten stages. I'll walk through each one. Materiality — what is the actual physical or operational reality here? Not the story, the material. Vitality — is this thing alive? Does it have energy and momentum? Interiority — what's the interior logic, the hidden structure? Criticality — where are the failure points? What's load-bearing? Connectivity — how is this thing connected to the broader system? Lucidity — can you see it clearly and explain it clearly? Necessity — what absolutely must be true for this to work? Reciprocity — what does this give back to the system it operates in? Totality — the whole picture. And Continuity — how does this persist and evolve?">
+
+  <div class="max-content">
+    <div class="label">Ep 3 — Omega Protocol</div>
+    <h2 style="margin-bottom:8px;">The 10-Stage Synthesis Spiral</h2>
+    <div class="divider"></div>
+
+    <div class="grid-2" style="margin-top:12px; gap:10px;">
+      <div class="flex flex-col gap-2">
+        <div class="omega-stage">
+          <div class="omega-num">1</div>
+          <div><div class="omega-name">Materiality</div></div>
+          <div class="omega-desc">What is physically, operationally real?</div>
+        </div>
+        <div class="omega-stage">
+          <div class="omega-num">2</div>
+          <div><div class="omega-name">Vitality</div></div>
+          <div class="omega-desc">Does it live? Does it have energy?</div>
+        </div>
+        <div class="omega-stage">
+          <div class="omega-num">3</div>
+          <div><div class="omega-name">Interiority</div></div>
+          <div class="omega-desc">What is the hidden inner logic?</div>
+        </div>
+        <div class="omega-stage">
+          <div class="omega-num">4</div>
+          <div><div class="omega-name">Criticality</div></div>
+          <div class="omega-desc">Where are the load-bearing points?</div>
+        </div>
+        <div class="omega-stage">
+          <div class="omega-num">5</div>
+          <div><div class="omega-name">Connectivity</div></div>
+          <div class="omega-desc">How does it connect to the whole?</div>
+        </div>
+      </div>
+      <div class="flex flex-col gap-2">
+        <div class="omega-stage">
+          <div class="omega-num">6</div>
+          <div><div class="omega-name">Lucidity</div></div>
+          <div class="omega-desc">Can you see and explain it clearly?</div>
+        </div>
+        <div class="omega-stage">
+          <div class="omega-num">7</div>
+          <div><div class="omega-name">Necessity</div></div>
+          <div class="omega-desc">What absolutely must be true?</div>
+        </div>
+        <div class="omega-stage">
+          <div class="omega-num">8</div>
+          <div><div class="omega-name">Reciprocity</div></div>
+          <div class="omega-desc">What does it give back to the system?</div>
+        </div>
+        <div class="omega-stage">
+          <div class="omega-num">9</div>
+          <div><div class="omega-name">Totality</div></div>
+          <div class="omega-desc">The whole picture — nothing missing</div>
+        </div>
+        <div class="omega-stage" style="background:rgba(207,184,124,0.08); border-color:rgba(207,184,124,0.3);">
+          <div class="omega-num" style="background:linear-gradient(135deg,var(--vand),#b89842);">10</div>
+          <div><div class="omega-name">Continuity</div></div>
+          <div class="omega-desc">How does it persist and evolve?</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass" style="margin-top:14px; padding:14px 20px; background:rgba(74,159,217,0.04);">
+      <p class="body-text" style="text-align:center; font-size:13px;">
+        <strong>It's a spiral, not a checklist.</strong> You don't complete stage 1 and move on — you cycle through all 10, and each pass adds depth to the previous one.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 11 — OMEGA WALKTHROUGH
+     ============================================================ -->
+<section class="slide" id="slide-11"
+  data-notes="Let's run a real example. Suppose someone in this room is building a marketplace for freelance talent in emerging markets. Watch how the Omega spiral reveals what a normal business analysis would miss. Stage 1, Materiality: the physical reality is bandwidth constraints, mobile-first users, and informal payment systems. Stage 2, Vitality: is there already movement? Are there existing WhatsApp groups doing this informally? Stage 5, Connectivity: this isn't just about the marketplace — it connects to the entire informal economy infrastructure. That insight changes your product roadmap. That's what the Omega Protocol does.">
+
+  <div class="max-content">
+    <div class="label">Ep 3 — Omega Walk-Through</div>
+    <h2 style="margin-bottom:8px;">Omega in Action: A Real Example</h2>
+    <div class="divider"></div>
+
+    <div class="glass" style="padding:14px 20px; margin-bottom:16px; border-color:rgba(74,159,217,0.2);">
+      <div class="label" style="margin-bottom:4px;">Example Venture</div>
+      <p class="body-text" style="font-size:15px; font-weight:500;">"B2B marketplace for freelance professional talent in emerging markets"</p>
+    </div>
+
+    <div class="flex flex-col gap-3">
+      <div class="grid-2" style="gap:10px;">
+        <div class="glass glass-sm" style="border-left:3px solid var(--blue-500);">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+            <div class="omega-num" style="width:22px;height:22px;font-size:10px;">1</div>
+            <span style="font-size:12px; font-weight:700; color:var(--blue-800);">Materiality</span>
+          </div>
+          <p class="body-text" style="font-size:12px;">Bandwidth constraints, mobile-first users, informal payment systems. The product must work on 3G in Lagos and Nairobi.</p>
+        </div>
+        <div class="glass glass-sm" style="border-left:3px solid var(--blue-400);">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+            <div class="omega-num" style="width:22px;height:22px;font-size:10px;">2</div>
+            <span style="font-size:12px; font-weight:700; color:var(--blue-800);">Vitality</span>
+          </div>
+          <p class="body-text" style="font-size:12px;">WhatsApp groups already doing this informally. There is existing energy — you're not creating demand, you're structuring it.</p>
+        </div>
+        <div class="glass glass-sm" style="border-left:3px solid var(--blue-600);">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+            <div class="omega-num" style="width:22px;height:22px;font-size:10px;">4</div>
+            <span style="font-size:12px; font-weight:700; color:var(--blue-800);">Criticality</span>
+          </div>
+          <p class="body-text" style="font-size:12px;">Trust is load-bearing. Without reputation infrastructure, the whole marketplace collapses. This is the hardest thing to build.</p>
+        </div>
+        <div class="glass glass-sm" style="border-left:3px solid var(--vand);">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+            <div class="omega-num" style="width:22px;height:22px;font-size:10px;background:linear-gradient(135deg,var(--vand),#b89842);">5</div>
+            <span style="font-size:12px; font-weight:700; color:var(--blue-800);">Connectivity</span>
+          </div>
+          <p class="body-text" style="font-size:12px;">This connects to the entire informal economy. Your graph now includes mobile money, diaspora remittance networks, and global SMB hiring markets.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="assignment-box" style="margin-top:14px;">
+      <p class="body-text" style="font-size:13px;"><strong>Insight from Omega:</strong> A standard market analysis would give you TAM/SAM/SOM. The Omega Protocol reveals that trust infrastructure (Stage 4) is your actual product — not the marketplace itself. That's a different company.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 12 — EP 4 OPENER
+     ============================================================ -->
+<section class="slide center" id="slide-12"
+  data-notes="Episode 4. Build Your Graph. This is the practical one. The one where you leave today knowing exactly what you need to do. There's a curriculum built into the VanderBot — it's called the Kirk Progression, and right now you're all probably somewhere between Step 1 and Step 2. Today I'm asking you to reach Step 3 before we meet again.">
+
+  <div class="ep-card">
+    <span class="ep-number">Episode 04</span>
+    <div class="ep-icon">🌐</div>
+    <h2 style="font-size:clamp(28px,4vw,56px);">Build Your Graph</h2>
+    <p class="subtitle" style="max-width:520px; text-align:center;">
+      The Kirk Progression — how nodes activate, how edges form, and what "structural" actually means.
+    </p>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:8px;">
+      <span class="pill">Kirk Steps 1–5</span>
+      <span class="pill-vand pill">Your Target: Step 3</span>
+      <span class="pill-dark pill">Next Session</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 13 — KIRK PROGRESSION
+     ============================================================ -->
+<section class="slide" id="slide-13"
+  data-notes="The Kirk Progression is named after the idea of a starship's command structure — not because of any Star Trek thing, but because a good command structure has clear stages of readiness. Step 1 is Orientation — you've talked to the bot, you know it exists. Step 2 is Exploration — you've had real conversations, touched multiple topics. Step 3 is Structural — this is the key one — your graph has enough density that patterns emerge. You start seeing things you didn't know you didn't know. That's the target. Steps 4 and 5 are for later.">
+
+  <div class="max-content">
+    <div class="label">Ep 4 — Kirk Curriculum</div>
+    <h2 style="margin-bottom:8px;">The Kirk Progression</h2>
+    <div class="divider"></div>
+
+    <div class="flex flex-col gap-3" style="margin-top:12px;">
+      <div class="kirk-step active-step">
+        <div class="kirk-num">1</div>
+        <div style="flex:1;">
+          <div style="font-family:var(--font-display); font-weight:700; color:var(--blue-800); font-size:15px;">Orientation</div>
+          <div class="body-text" style="font-size:13px; margin-top:3px;">You've texted the bot. You know it exists. You've had one or two conversations. Your graph has a handful of nodes.</div>
+        </div>
+        <span class="pill" style="font-size:10px; flex-shrink:0;">Where most of you are</span>
+      </div>
+
+      <div class="kirk-step active-step">
+        <div class="kirk-num">2</div>
+        <div style="flex:1;">
+          <div style="font-family:var(--font-display); font-weight:700; color:var(--blue-800); font-size:15px;">Exploration</div>
+          <div class="body-text" style="font-size:13px; margin-top:3px;">Multiple topic areas. Real back-and-forth. You've started using rune clusters intentionally — or at least the bot has suggested them. 20+ nodes, edges forming.</div>
+        </div>
+        <span class="pill" style="font-size:10px; flex-shrink:0; background:rgba(74,159,217,0.15);">Or here</span>
+      </div>
+
+      <div class="kirk-step target-step">
+        <div class="kirk-num">3</div>
+        <div style="flex:1;">
+          <div style="font-family:var(--font-display); font-weight:700; color:#7a5c10; font-size:15px;">Structural ← <span class="vand-accent">Your Target</span></div>
+          <div class="body-text" style="font-size:13px; margin-top:3px;">Your graph has enough density that patterns emerge. You start seeing connections you didn't know existed. The bot starts surfacing non-obvious insights. This is where it gets useful.</div>
+        </div>
+        <span class="pill-vand pill" style="font-size:10px; flex-shrink:0;">By Day 3</span>
+      </div>
+
+      <div class="kirk-step">
+        <div class="kirk-num">4</div>
+        <div style="flex:1;">
+          <div style="font-family:var(--font-display); font-weight:700; color:var(--blue-600); font-size:15px;">Synthesis</div>
+          <div class="body-text" style="font-size:13px; margin-top:3px;">Running Omega Protocol on real problems. The bot functions as a reasoning partner, not just a responder. Multi-hop traversals across your graph.</div>
+        </div>
+        <span class="pill-dark pill" style="font-size:10px; flex-shrink:0; opacity:0.7;">Mid-term</span>
+      </div>
+
+      <div class="kirk-step">
+        <div class="kirk-num">5</div>
+        <div style="flex:1;">
+          <div style="font-family:var(--font-display); font-weight:700; color:var(--blue-600); font-size:15px;">Generative</div>
+          <div class="body-text" style="font-size:13px; margin-top:3px;">Your graph generates its own hypotheses. You're not asking questions — you're running experiments in a knowledge space you've co-built. Fully differentiated.</div>
+        </div>
+        <span class="pill-dark pill" style="font-size:10px; flex-shrink:0; opacity:0.7;">End of term</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 14 — STRUCTURAL VS. UNDIFFERENTIATED
+     ============================================================ -->
+<section class="slide" id="slide-14"
+  data-notes="I keep using the word 'structural.' Let me be precise. An undifferentiated graph is like a pile of Post-its. Lots of topics, no connective tissue. Every conversation is a new pile. A structural graph has topology — clusters, bridges, hubs. You can traverse it. You can ask questions that span multiple domains. The transition from undifferentiated to structural happens around node 50-80, in my experience. But it's not about quantity. It's about specificity. Vague conversations create vague nodes. Precise, thoughtful questions create dense, connected nodes.">
+
+  <div class="max-content">
+    <div class="label">Ep 4 — Graph Density</div>
+    <h2 style="margin-bottom:8px;">Structural vs. Undifferentiated</h2>
+    <div class="divider"></div>
+
+    <div class="grid-2" style="margin-top:16px; gap:20px;">
+      <!-- Undifferentiated -->
+      <div class="flex flex-col gap-3">
+        <div style="font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:rgba(10,37,64,0.4); margin-bottom:-6px;">❌ Undifferentiated</div>
+        <div class="glass" style="padding:20px; position:relative; min-height:200px; border-color:rgba(10,37,64,0.1);">
+          <!-- Scattered nodes, no real connections -->
+          <svg style="width:100%;height:180px;overflow:visible;">
+            <circle cx="40" cy="40" r="14" fill="rgba(74,159,217,0.2)" stroke="rgba(74,159,217,0.4)" stroke-width="1.5"/>
+            <circle cx="130" cy="25" r="12" fill="rgba(74,159,217,0.15)" stroke="rgba(74,159,217,0.3)" stroke-width="1.5"/>
+            <circle cx="80" cy="90" r="10" fill="rgba(74,159,217,0.18)" stroke="rgba(74,159,217,0.35)" stroke-width="1.5"/>
+            <circle cx="170" cy="80" r="13" fill="rgba(74,159,217,0.12)" stroke="rgba(74,159,217,0.25)" stroke-width="1.5"/>
+            <circle cx="50" cy="150" r="11" fill="rgba(74,159,217,0.15)" stroke="rgba(74,159,217,0.3)" stroke-width="1.5"/>
+            <circle cx="150" cy="150" r="9" fill="rgba(74,159,217,0.1)" stroke="rgba(74,159,217,0.2)" stroke-width="1.5"/>
+            <circle cx="100" cy="140" r="8" fill="rgba(74,159,217,0.08)" stroke="rgba(74,159,217,0.2)" stroke-width="1.5"/>
+            <text x="8" y="130" font-size="9" fill="rgba(10,37,64,0.35)" font-family="Inter,sans-serif">Few edges.</text>
+            <text x="8" y="142" font-size="9" fill="rgba(10,37,64,0.35)" font-family="Inter,sans-serif">Isolated clusters.</text>
+            <text x="8" y="154" font-size="9" fill="rgba(10,37,64,0.35)" font-family="Inter,sans-serif">No emergent structure.</text>
+          </svg>
+        </div>
+        <ul style="list-style:none; display:flex; flex-direction:column; gap:6px;">
+          <li class="body-text" style="font-size:13px;">▸ Vague, broad questions</li>
+          <li class="body-text" style="font-size:13px;">▸ Conversations don't build on each other</li>
+          <li class="body-text" style="font-size:13px;">▸ Nodes have no connective tissue</li>
+          <li class="body-text" style="font-size:13px;">▸ Bot can't traverse — no multi-hop insights</li>
+        </ul>
+      </div>
+
+      <!-- Structural -->
+      <div class="flex flex-col gap-3">
+        <div style="font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--blue-500); margin-bottom:-6px;">✓ Structural</div>
+        <div class="glass" style="padding:20px; position:relative; min-height:200px; border-color:rgba(74,159,217,0.25);">
+          <svg style="width:100%;height:180px;overflow:visible;">
+            <defs>
+              <marker id="arr2" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
+                <path d="M0,0 L5,2.5 L0,5 Z" fill="rgba(74,159,217,0.6)"/>
+              </marker>
+            </defs>
+            <!-- Central hub -->
+            <circle cx="105" cy="90" r="22" fill="rgba(74,159,217,0.25)" stroke="rgba(74,159,217,0.6)" stroke-width="2"/>
+            <!-- Satellite nodes -->
+            <circle cx="40" cy="40" r="14" fill="rgba(74,159,217,0.2)" stroke="rgba(74,159,217,0.5)" stroke-width="1.5"/>
+            <circle cx="170" cy="40" r="13" fill="rgba(207,184,124,0.3)" stroke="rgba(207,184,124,0.6)" stroke-width="1.5"/>
+            <circle cx="35" cy="140" r="12" fill="rgba(10,37,64,0.12)" stroke="rgba(10,37,64,0.3)" stroke-width="1.5"/>
+            <circle cx="175" cy="140" r="14" fill="rgba(74,159,217,0.18)" stroke="rgba(74,159,217,0.45)" stroke-width="1.5"/>
+            <circle cx="105" cy="160" r="10" fill="rgba(207,184,124,0.2)" stroke="rgba(207,184,124,0.4)" stroke-width="1.5"/>
+            <!-- Edges -->
+            <line x1="54" y1="47" x2="86" y2="73" stroke="rgba(74,159,217,0.5)" stroke-width="1.5" marker-end="url(#arr2)"/>
+            <line x1="157" y1="49" x2="124" y2="72" stroke="rgba(74,159,217,0.4)" stroke-width="1.5" marker-end="url(#arr2)"/>
+            <line x1="47" y1="133" x2="86" y2="106" stroke="rgba(74,159,217,0.45)" stroke-width="1.5" marker-end="url(#arr2)"/>
+            <line x1="161" y1="131" x2="124" y2="107" stroke="rgba(74,159,217,0.4)" stroke-width="1.5" marker-end="url(#arr2)"/>
+            <line x1="105" y1="112" x2="105" y2="150" stroke="rgba(207,184,124,0.5)" stroke-width="1.5" marker-end="url(#arr2)"/>
+            <line x1="40" y1="53" x2="35" y2="128" stroke="rgba(10,37,64,0.2)" stroke-width="1" stroke-dasharray="3,3"/>
+            <line x1="170" y1="53" x2="175" y2="127" stroke="rgba(10,37,64,0.2)" stroke-width="1" stroke-dasharray="3,3"/>
+            <text x="72" y="94" font-size="8" fill="rgba(74,159,217,0.9)" font-family="Inter,sans-serif" font-weight="700">HUB</text>
+          </svg>
+        </div>
+        <ul style="list-style:none; display:flex; flex-direction:column; gap:6px;">
+          <li class="body-text" style="font-size:13px;">▸ Specific, domain-rich conversations</li>
+          <li class="body-text" style="font-size:13px;">▸ Each session builds on previous nodes</li>
+          <li class="body-text" style="font-size:13px;">▸ Hub nodes emerge — high-degree connectors</li>
+          <li class="body-text" style="font-size:13px;">▸ Multi-hop traversal reveals hidden insights</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 15 — HOW NODES ACTIVATE
+     ============================================================ -->
+<section class="slide" id="slide-15"
+  data-notes="Nodes don't activate by accident. They activate through specificity. When you say 'I'm interested in supply chain' — that creates one node, labeled vaguely. When you say 'I'm looking at cold chain logistics for fresh produce in the Thai export market, specifically the gap between farm-gate temperature control and port-side certification' — that creates six nodes and four edges in one sentence. The more specific your input, the richer your graph. This is why I tell people: talk to the bot like you talk to a very smart colleague you're briefing for the first time. Specific. Dense. Contextual.">
+
+  <div class="max-content">
+    <div class="label">Ep 4 — Node Activation</div>
+    <h2 style="margin-bottom:8px;">How Nodes Activate</h2>
+    <div class="divider"></div>
+
+    <div class="grid-2" style="margin-top:16px; gap:20px; align-items:start;">
+      <div class="flex flex-col gap-3">
+        <div class="glass glass-sm" style="border-left:3px solid rgba(10,37,64,0.2);">
+          <div style="font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:rgba(10,37,64,0.4); margin-bottom:6px;">Weak input → Weak node</div>
+          <p class="body-text" style="font-size:13px; font-style:italic; color:var(--blue-600);">"Tell me about supply chain."</p>
+          <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+            <span class="pill" style="font-size:10px; opacity:0.6;">:Topic "supply chain"</span>
+          </div>
+          <p class="body-text" style="font-size:12px; margin-top:6px; color:rgba(10,37,64,0.5);">1 vague node. No edges. Nothing to traverse.</p>
+        </div>
+
+        <div class="glass glass-sm" style="border-left:3px solid var(--blue-500);">
+          <div style="font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--blue-500); margin-bottom:6px;">Specific input → Rich cluster</div>
+          <p class="body-text" style="font-size:13px; font-style:italic; color:var(--blue-700);">"Cold chain logistics for fresh produce in Thai export markets — the gap between farm-gate temperature control and port-side certification."</p>
+          <div style="margin-top:8px; display:flex; gap:5px; flex-wrap:wrap;">
+            <span class="pill" style="font-size:9px;">:Domain cold-chain</span>
+            <span class="pill" style="font-size:9px;">:Market Thailand</span>
+            <span class="pill" style="font-size:9px;">:Problem certification</span>
+            <span class="pill" style="font-size:9px;">:Segment fresh-produce</span>
+            <span class="pill-vand pill" style="font-size:9px;">4 edges formed</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <div class="glass" style="padding:20px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--blue-500); margin-bottom:12px;">Node Activation Rules</div>
+          <div class="flex flex-col gap-3">
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="font-size:18px; flex-shrink:0;">🎯</span>
+              <div>
+                <div style="font-size:13px; font-weight:600; color:var(--blue-800); margin-bottom:3px;">Specificity creates nodes</div>
+                <div class="body-text" style="font-size:12px;">Named entities, geographies, time periods, relationships. Each specific thing becomes a node.</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="font-size:18px; flex-shrink:0;">🔗</span>
+              <div>
+                <div style="font-size:13px; font-weight:600; color:var(--blue-800); margin-bottom:3px;">Relationships create edges</div>
+                <div class="body-text" style="font-size:12px;">When you say "X connects to Y" or "this gap between A and B" — that's an edge. Edges are the real value.</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="font-size:18px; flex-shrink:0;">🔄</span>
+              <div>
+                <div style="font-size:13px; font-weight:600; color:var(--blue-800); margin-bottom:3px;">Return visits reinforce nodes</div>
+                <div class="body-text" style="font-size:12px;">Every time you revisit a topic, the node gains weight. High-weight nodes become hubs. Hubs generate the best insights.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 16 — RUNE CLUSTERS ON A REAL PROBLEM
+     ============================================================ -->
+<section class="slide" id="slide-16"
+  data-notes="Here's how you use rune clusters on a real business problem. Not one at a time — in phases. Phase 1: Understand — use Rigor, Human, and Muse to verify truth, feel the experience, and expand creatively. Phase 2: Build — use Forge, Clarity, and Synchronicity to test feasibility, get operationally clear, and align with timing. Phase 3: Align — use Vitality, Propensity, and Converge to check wellness, map desires, and synthesize. Phase 4: Validate — use Identity and Authenticity as the final gates. Does this preserve who you are? Is it true?">
+
+  <div class="max-content">
+    <div class="label">Ep 4 — Applied Rune Clusters</div>
+    <h2 style="margin-bottom:8px;">Clusters on a Real Problem</h2>
+    <div class="divider"></div>
+
+    <p class="subtitle" style="margin-bottom:16px; font-size:14px;">Each cluster is a phase of inquiry. Use them sequentially on any hard problem.</p>
+
+    <div class="flex flex-col gap-3">
+      <div class="glass glass-sm" style="border-left:3px solid var(--blue-900);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <span class="cluster-label cluster-analytical" style="margin-bottom:6px; display:inline-block;">⚖︎ Rigor · ✦ Human · ✺ Muse</span>
+            <div style="font-size:13px; font-weight:600; color:var(--blue-800); margin-top:4px;">Phase 1: Understand</div>
+            <p class="body-text" style="font-size:12px; margin-top:3px;">Verify the truth. Feel the human experience. Expand creatively. What do we know, what do people feel, and what haven't we considered?</p>
+          </div>
+          <span class="pill-dark pill" style="font-size:10px; flex-shrink:0; margin-left:12px;">Start here</span>
+        </div>
+      </div>
+
+      <div class="glass glass-sm" style="border-left:3px solid var(--vand);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <span class="cluster-label cluster-creative" style="margin-bottom:6px; display:inline-block;">⛬ Forge · ✹ Clarity · ෴ Synchronicity</span>
+            <div style="font-size:13px; font-weight:600; color:var(--blue-800); margin-top:4px;">Phase 2: Build</div>
+            <p class="body-text" style="font-size:12px; margin-top:3px;">Assess feasibility. Get operationally clear. Align with trends and timing. Can we actually build this, and does the world want it now?</p>
+          </div>
+          <span class="pill-vand pill" style="font-size:10px; flex-shrink:0; margin-left:12px;">Expand</span>
+        </div>
+      </div>
+
+      <div class="glass glass-sm" style="border-left:3px solid var(--blue-500);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <span class="cluster-label cluster-human" style="margin-bottom:6px; display:inline-block;">ღ Vitality · ↟ Propensity · Δ³ Converge</span>
+            <div style="font-size:13px; font-weight:600; color:var(--blue-800); margin-top:4px;">Phase 3: Align</div>
+            <p class="body-text" style="font-size:12px; margin-top:3px;">Check wellness impact. Map desires and motivations. Synthesize everything into a coherent direction. Is this healthy, wanted, and convergent?</p>
+          </div>
+          <span class="pill" style="font-size:10px; flex-shrink:0; margin-left:12px;">Ground</span>
+        </div>
+      </div>
+
+      <div class="glass glass-sm" style="border-left:3px solid var(--warm-300);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <span class="cluster-label cluster-integration" style="margin-bottom:6px; display:inline-block;">𓁹 Identity · 𓂀 Authenticity</span>
+            <div style="font-size:13px; font-weight:600; color:var(--blue-800); margin-top:4px;">Phase 4: Validate</div>
+            <p class="body-text" style="font-size:12px; margin-top:3px;">Does this preserve the essence of who you are? Is it authentically true to your vision? Identity and authenticity are the final gates before you ship.</p>
+          </div>
+          <span class="pill-dark pill" style="font-size:10px; flex-shrink:0; margin-left:12px;">Decide + Ship</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 17 — YOUR ASSIGNMENT
+     ============================================================ -->
+<section class="slide" id="slide-17"
+  data-notes="Okay. Here's the assignment. It's one thing: reach Kirk Step 3 — Structural — before Session 3. That means having enough density in your graph that patterns start to emerge. I'll tell you exactly how to get there: pick one real business problem you're actually working on or care about. Not a hypothetical. A real one. Spend at least 3 separate sessions with your VanderBot, each 20+ minutes. In each session, use a specific rune cluster as your lens — not all of them, just one. Be specific. And at the end of each session, ask the bot to show you what's in your graph.">
+
+  <div class="max-content">
+    <div class="label">Assignment — Before Session 3</div>
+    <h2 style="margin-bottom:8px;">Reach Kirk Step 3</h2>
+    <div class="divider"></div>
+
+    <div class="assignment-box" style="margin-top:16px; margin-bottom:16px; border-radius:0 20px 20px 0;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+        <span style="font-size:28px;">🎯</span>
+        <div>
+          <div style="font-size:12px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--vand); margin-bottom:3px;">Primary Goal</div>
+          <div style="font-family:var(--font-display); font-size:20px; font-weight:700; color:var(--blue-900);">Reach Kirk Step 3: Structural</div>
+        </div>
+      </div>
+      <p class="body-text" style="font-size:14px;">Your graph must have enough density that patterns emerge. You start seeing connections you didn't expect.</p>
+    </div>
+
+    <div class="grid-2" style="gap:14px;">
+      <div class="glass glass-sm">
+        <div style="font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--blue-500); margin-bottom:10px;">How to Get There</div>
+        <div class="flex flex-col gap-2">
+          <div style="display:flex; gap:8px; align-items:flex-start;">
+            <div style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--blue-600),var(--blue-500));color:white;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;">1</div>
+            <p class="body-text" style="font-size:13px;">Pick <strong>one real business problem</strong> you actually care about — not hypothetical.</p>
+          </div>
+          <div style="display:flex; gap:8px; align-items:flex-start;">
+            <div style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--blue-600),var(--blue-500));color:white;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;">2</div>
+            <p class="body-text" style="font-size:13px;"><strong>3 separate sessions</strong>, 20+ minutes each. Different rune cluster per session.</p>
+          </div>
+          <div style="display:flex; gap:8px; align-items:flex-start;">
+            <div style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--blue-600),var(--blue-500));color:white;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;">3</div>
+            <p class="body-text" style="font-size:13px;">Be <strong>specific</strong>. Named entities. Specific relationships. Specific gaps.</p>
+          </div>
+          <div style="display:flex; gap:8px; align-items:flex-start;">
+            <div style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--blue-600),var(--blue-500));color:white;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;">4</div>
+            <p class="body-text" style="font-size:13px;">End each session: ask the bot <span class="mono">"show me my graph summary"</span></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass glass-sm">
+        <div style="font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--blue-500); margin-bottom:10px;">Rune Cluster Rotation</div>
+        <div class="flex flex-col gap-2">
+          <div class="omega-stage" style="padding:8px 12px;">
+            <div class="omega-num" style="width:24px;height:24px;font-size:10px;">S1</div>
+            <div>
+              <div class="omega-name" style="font-size:12px;">Session 1</div>
+              <div class="omega-desc" style="font-size:11px;margin-left:0;">Truth: ⚖︎ Rigor · ✦ Human · ✺ Muse</div>
+            </div>
+          </div>
+          <div class="omega-stage" style="padding:8px 12px;">
+            <div class="omega-num" style="width:24px;height:24px;font-size:10px;">S2</div>
+            <div>
+              <div class="omega-name" style="font-size:12px;">Session 2</div>
+              <div class="omega-desc" style="font-size:11px;margin-left:0;">Build: ⛬ Forge · ✹ Clarity · ෴ Synchronicity</div>
+            </div>
+          </div>
+          <div class="omega-stage" style="padding:8px 12px; background:rgba(207,184,124,0.07); border-color:rgba(207,184,124,0.25);">
+            <div class="omega-num" style="width:24px;height:24px;font-size:10px;background:linear-gradient(135deg,var(--vand),#b89842);">S3</div>
+            <div>
+              <div class="omega-name" style="font-size:12px;">Session 3</div>
+              <div class="omega-desc" style="font-size:11px;margin-left:0;">Align: ღ Vitality · ↟ Propensity · Δ³ Converge</div>
+            </div>
+          </div>
+        </div>
+        <div class="mono" style="margin-top:10px; font-size:11px; text-align:center; padding:8px; background:rgba(74,159,217,0.04); border-radius:8px;">WhatsApp: +1 (310) 770-9035</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 18 — WHAT TO EXPECT AT STEP 3
+     ============================================================ -->
+<section class="slide" id="slide-18"
+  data-notes="People ask me: how will I know I've reached Step 3? You'll feel it. Suddenly the bot says something and you think — wait, I didn't tell it that. But it connected it from something else you said two sessions ago. That's multi-hop traversal. That's structural density doing its work. A second sign: you'll notice the bot pushes back. At Step 1 and 2 it's mostly answering your questions. At Step 3 it starts generating questions for you. That shift is important. Third sign: you start bringing new information to old nodes. You read an article and immediately think 'that connects to what we were discussing.' Your brain starts behaving like a graph database. That's the goal.">
+
+  <div class="max-content">
+    <div class="label">Ep 4 — Kirk Step 3</div>
+    <h2 style="margin-bottom:8px;">What Step 3 Feels Like</h2>
+    <div class="divider"></div>
+
+    <p class="subtitle" style="margin-bottom:20px;">Three signs you've crossed into Structural territory.</p>
+
+    <div class="flex flex-col gap-4">
+      <div class="glass" style="padding:22px 26px; display:flex; gap:18px; align-items:flex-start;">
+        <div style="font-size:32px; flex-shrink:0;">💡</div>
+        <div>
+          <div class="h3" style="font-size:17px; margin-bottom:6px;">The bot says something you didn't tell it</div>
+          <p class="body-text">It connected information from a conversation two sessions ago to something you just said. That's multi-hop traversal. Your graph has enough edges to create new paths. This is the first sign.</p>
+        </div>
+      </div>
+
+      <div class="glass" style="padding:22px 26px; display:flex; gap:18px; align-items:flex-start;">
+        <div style="font-size:32px; flex-shrink:0;">🔄</div>
+        <div>
+          <div class="h3" style="font-size:17px; margin-bottom:6px;">The bot starts asking you questions</div>
+          <p class="body-text">At Steps 1–2, you ask and it answers. At Step 3, the dynamic flips. It starts generating questions back — probing gaps in your graph, suggesting unexplored edges. That shift is structural density at work.</p>
+        </div>
+      </div>
+
+      <div class="glass" style="padding:22px 26px; display:flex; gap:18px; align-items:flex-start; background:rgba(207,184,124,0.06); border-color:rgba(207,184,124,0.2);">
+        <div style="font-size:32px; flex-shrink:0;">🧠</div>
+        <div>
+          <div class="h3" style="font-size:17px; margin-bottom:6px;">Your brain starts behaving like a graph</div>
+          <p class="body-text">You read an article and immediately think: <em>that connects to what we discussed.</em> New information automatically routes to existing nodes. Your mental model has adopted the graph structure. <span class="vand-accent" style="font-weight:600;">This is the goal.</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 19 — SESSION SYNTHESIS
+     ============================================================ -->
+<section class="slide" id="slide-19"
+  data-notes="Let me give you today's synthesis in one paragraph. The Trinity Graph is your operating system. The 11 runes are your modes of reasoning. The Omega Protocol is your method for going deep. The Kirk Progression is your map for getting there. Your VanderBot is the instrument. None of these things are separate ideas — they're all one system, and the system only works when you use it. So go home, text your bot, be specific, and get to Step 3. I'll see you in two weeks, and I want to hear about an insight that surprised you.">
+
+  <div class="max-content">
+    <div class="label">Session Synthesis</div>
+    <h2 style="margin-bottom:8px;">Today's Architecture</h2>
+    <div class="divider"></div>
+
+    <div class="glass" style="padding:24px 28px; margin-top:12px; margin-bottom:20px;">
+      <p class="body-text" style="font-size:15px; line-height:1.8; text-align:center; max-width:680px; margin:0 auto;">
+        The <strong>Trinity Graph</strong> is your operating system. The <strong>11 Runes</strong> are your modes of reasoning. The <strong>Omega Protocol</strong> is your method for going deep. The <strong>Kirk Progression</strong> is your map for getting there. Your <strong>VanderBot</strong> is the instrument.
+      </p>
+    </div>
+
+    <div class="grid-4">
+      <div style="text-align:center; padding:16px; border-radius:16px; background:var(--glass-bg); border:1px solid var(--glass-border);">
+        <div style="font-size:28px; margin-bottom:8px; background:linear-gradient(180deg,#4A9FD9,#DDD4C0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">△∞</div>
+        <div style="font-size:12px; font-weight:700; color:var(--blue-800);">Trinity Graph</div>
+        <div style="font-size:11px; color:var(--blue-500); margin-top:3px;">OS</div>
+      </div>
+      <div style="text-align:center; padding:16px; border-radius:16px; background:var(--glass-bg); border:1px solid var(--glass-border);">
+        <div style="font-size:28px; margin-bottom:8px; background:linear-gradient(180deg,#4A9FD9,#DDD4C0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">⚡</div>
+        <div style="font-size:12px; font-weight:700; color:var(--blue-800);">11 Runes</div>
+        <div style="font-size:11px; color:var(--blue-500); margin-top:3px;">Reasoning modes</div>
+      </div>
+      <div style="text-align:center; padding:16px; border-radius:16px; background:var(--glass-bg); border:1px solid var(--glass-border);">
+        <div style="font-size:28px; margin-bottom:8px; background:linear-gradient(180deg,#4A9FD9,#DDD4C0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Ω</div>
+        <div style="font-size:12px; font-weight:700; color:var(--blue-800);">Omega Protocol</div>
+        <div style="font-size:11px; color:var(--blue-500); margin-top:3px;">Deep synthesis</div>
+      </div>
+      <div style="text-align:center; padding:16px; border-radius:16px; background:rgba(207,184,124,0.1); border:1px solid rgba(207,184,124,0.3);">
+        <div style="font-size:28px; margin-bottom:8px; color:var(--vand);">⚓</div>
+        <div style="font-size:12px; font-weight:700; color:var(--blue-800);">Kirk Step 3</div>
+        <div style="font-size:11px; color:#8B6914; margin-top:3px;">Your target</div>
+      </div>
+    </div>
+
+    <div class="glass-dark" style="margin-top:20px; text-align:center;">
+      <p class="body-text" style="font-size:14px;">
+        None of these are separate ideas. They're one system. The system only works when you use it.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 20 — CLOSE / NEXT SESSION
+     ============================================================ -->
+<section class="slide center" id="slide-20"
+  data-notes="That's it for today. Go home, go to your car, go to the coffee shop — wherever you think — and text your VanderBot. Pick your real problem. Be specific. Use the Analytical cluster first. See what happens. At Session 3 we're going to do something different: I'm going to ask two or three of you to walk us through your graph live. What you asked, what came back, what surprised you. So make it worth showing. See you then.">
+
+  <div style="max-width:700px; width:100%; text-align:center; display:flex; flex-direction:column; align-items:center; gap:28px;">
+    <div>
+      <div class="label" style="justify-content:center; display:flex; gap:8px; margin-bottom:20px;">
+        <span class="pill-vand pill">Session 2 Complete</span>
+        <span class="pill">Spring 2026</span>
+      </div>
+      <h1 style="font-size:clamp(36px,5.5vw,72px); margin-bottom:12px;">See You at Session 3</h1>
+      <p class="subtitle" style="text-align:center; margin:0 auto;">
+        Come back with a structural graph and one insight that surprised you.
+      </p>
+    </div>
+
+    <div class="glass" style="padding:28px 36px; width:100%; max-width:500px;">
+      <div class="label" style="margin-bottom:12px;">Next Session Preview</div>
+      <div class="flex flex-col gap-3">
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:16px;">🌐</span>
+          <p class="body-text" style="font-size:13px; text-align:left;">Live graph walk-throughs — 2–3 students share their Kirk Step 3 graphs with the class</p>
+        </div>
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:16px;">Ω</span>
+          <p class="body-text" style="font-size:13px; text-align:left;">Running a full Omega Protocol together on a shared problem</p>
+        </div>
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:16px;">🔬</span>
+          <p class="body-text" style="font-size:13px; text-align:left;">Introducing the Inkwell Research Stack: from graph → insight → artifact</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass" style="padding:16px 28px; background:rgba(74,159,217,0.05); border-color:rgba(74,159,217,0.2);">
+      <div style="font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--blue-500); margin-bottom:6px;">Your VanderBot</div>
+      <div class="mono" style="font-size:18px; color:var(--blue-800);">+1 (310) 770-9035</div>
+      <p style="font-size:12px; color:var(--blue-600); margin-top:4px;">WhatsApp · Available 24/7 · Your graph is always on</p>
+    </div>
+
+    <div>
+      <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:16px;">
+        <span class="pill">Inkwell Labs</span>
+        <span class="pill-vand pill">Vanderbilt Owen</span>
+        <span class="pill-dark pill">Spring 2026</span>
+      </div>
+      <p style="font-size:11px; color:var(--blue-400); font-family:var(--font-mono); letter-spacing:1px;">Oliver Luckett · AI-Accelerated Entrepreneurship Practicum</p>
+    </div>
+  </div>
+</section>
+
+</div><!-- /deck -->
+
+<!-- ============================================================
+     SPEAKER NOTES OVERLAY
+     ============================================================ -->
+<div id="notes-overlay">
+  <div class="notes-label">Speaker Notes — [N] to toggle</div>
+  <div class="notes-text" id="notes-text"></div>
+</div>
+
+<!-- ============================================================
+     NAVIGATION BAR
+     ============================================================ -->
+<div id="nav-bar">
+  <button class="nav-btn" id="prev-btn" title="Previous (←)">&#8592;</button>
+
+  <div id="slide-dots"></div>
+
+  <div style="display:flex; align-items:center; gap:0;">
+    <div id="slide-counter">1 / 20</div>
+    <button id="notes-toggle" title="Toggle notes (N)">NOTES</button>
+  </div>
+
+  <button class="nav-btn" id="next-btn" title="Next (→ or Space)">&#8594;</button>
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+(function() {
+  const TOTAL_SLIDES = 20;
+  let current = 1;
+  let notesVisible = false;
+
+  const slides = Array.from({length: TOTAL_SLIDES}, (_, i) => document.getElementById('slide-' + (i + 1)));
+  const dotsContainer = document.getElementById('slide-dots');
+  const counter = document.getElementById('slide-counter');
+  const notesOverlay = document.getElementById('notes-overlay');
+  const notesText = document.getElementById('notes-text');
+  const notesToggle = document.getElementById('notes-toggle');
+  const prevBtn = document.getElementById('prev-btn');
+  const nextBtn = document.getElementById('next-btn');
+
+  // Build dots
+  slides.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i === 0 ? ' active' : '');
+    dot.addEventListener('click', () => goTo(i + 1));
+    dotsContainer.appendChild(dot);
+  });
+
+  function goTo(n) {
+    if (n < 1 || n > TOTAL_SLIDES) return;
+    // Deactivate current
+    const prevSlide = slides[current - 1];
+    if (prevSlide) prevSlide.classList.remove('active');
+    // Activate new
+    current = n;
+    const nextSlide = slides[current - 1];
+    if (nextSlide) {
+      nextSlide.classList.add('active');
+      nextSlide.scrollTop = 0;
+    }
+    // Update dots
+    const dots = dotsContainer.querySelectorAll('.dot');
+    dots.forEach((d, i) => d.classList.toggle('active', i === current - 1));
+    // Update counter
+    counter.textContent = current + ' / ' + TOTAL_SLIDES;
+    // Update nav buttons
+    prevBtn.disabled = current === 1;
+    nextBtn.disabled = current === TOTAL_SLIDES;
+    // Update notes
+    if (notesVisible) updateNotes();
+  }
+
+  function updateNotes() {
+    const slide = slides[current - 1];
+    const notes = slide ? (slide.dataset.notes || '') : '';
+    notesText.textContent = notes || '(No speaker notes for this slide)';
+  }
+
+  function toggleNotes() {
+    notesVisible = !notesVisible;
+    notesOverlay.classList.toggle('visible', notesVisible);
+    notesToggle.classList.toggle('active', notesVisible);
+    if (notesVisible) updateNotes();
+  }
+
+  // Event listeners
+  prevBtn.addEventListener('click', () => goTo(current - 1));
+  nextBtn.addEventListener('click', () => goTo(current + 1));
+  notesToggle.addEventListener('click', toggleNotes);
+
+  document.addEventListener('keydown', (e) => {
+    switch(e.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        e.preventDefault();
+        goTo(current + 1);
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        e.preventDefault();
+        goTo(current - 1);
+        break;
+      case ' ':
+        e.preventDefault();
+        goTo(current + 1);
+        break;
+      case 'n':
+      case 'N':
+        e.preventDefault();
+        toggleNotes();
+        break;
+    }
+  });
+
+  // Touch swipe support
+  let touchStartX = 0;
+  let touchStartY = 0;
+  document.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, {passive: true});
+  document.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+      if (dx < 0) goTo(current + 1);
+      else goTo(current - 1);
+    }
+  }, {passive: true});
+
+  // Initialize
+  goTo(1);
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Capsule Builder &amp; Generator — Ontological Theatre</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0A0A0F; color: #E8E8F0; font-family: 'Courier New', monospace; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useRef, useCallback } = React;
+
+    /* ─────────────────────────────────────────────────────────────
+       ONTOLOGY — preserved verbatim from artiquity_analyzer.jsx
+    ───────────────────────────────────────────────────────────── */
+    const ONTOLOGY = {
+      medium: {
+        MED_OIL: { name: "Oil Paint",    tags: ["thick impasto","glazed layers","sfumato","alla prima","old masters technique"] },
+        MED_WC:  { name: "Watercolor",   tags: ["wet on wet","blooms","granulation","transparent layers","soft edges"] },
+        MED_ACR: { name: "Acrylic",      tags: ["bold color","matte finish","fluid acrylic","pouring technique"] },
+        MED_GOU: { name: "Gouache",      tags: ["flat color","matte opaque","editorial illustration"] },
+        MED_PAS: { name: "Pastel",       tags: ["soft pastel","chalky texture","velvety surface","blended pastels"] },
+        MED_GRA: { name: "Graphite",     tags: ["pencil sketch","hatching","crosshatching","tonal study"] },
+        MED_CHA: { name: "Charcoal",     tags: ["expressive mark","gestural line","smudged charcoal"] },
+        MED_INK: { name: "Ink",          tags: ["sumi-e","brushwork","line art","gestural brushstroke"] },
+        MED_DIG: { name: "Digital",      tags: ["digital painting","concept art","matte painting","3D render"] },
+        MED_MIX: { name: "Mixed Media",  tags: ["mixed media","collage","assemblage","layered media"] },
+        MED_ENC: { name: "Encaustic",    tags: ["encaustic wax","molten texture","translucent layers"] },
+        MED_FRE: { name: "Fresco",       tags: ["fresco painting","plaster texture","buon fresco","mural"] }
+      },
+      tools: {
+        TOOL_BR_RND: { name: "Round Brush",   marks: ["fine line","dot","tapered stroke"] },
+        TOOL_BR_FLT: { name: "Flat Brush",    marks: ["wash","edge stroke","blunt mark"] },
+        TOOL_BR_FAN: { name: "Fan Brush",     marks: ["dry brush","texture","foliage"] },
+        TOOL_BR_FIL: { name: "Filbert Brush", marks: ["petal stroke","soft blend"] },
+        TOOL_PK:     { name: "Palette Knife", marks: ["impasto","scrape","texture","clean edge"] },
+        TOOL_STYL:   { name: "Stylus/Pen",    marks: ["variable line","pressure sensitive"] },
+        TOOL_AIR:    { name: "Airbrush",      marks: ["gradient","soft shadow","smooth blend"] },
+        TOOL_SPG:    { name: "Sponge",        marks: ["stipple","organic texture","mottled"] },
+        TOOL_SPR:    { name: "Spray Can",     marks: ["spray","gradient","drip"] },
+        TOOL_FNG:    { name: "Fingers",       marks: ["smear","blend","fingerprint texture"] }
+      },
+      surfaces: {
+        SURF_CANV_STR: { name: "Stretched Canvas",      texture: "medium-coarse", compatible: ["oil","acrylic"] },
+        SURF_WCP:      { name: "Watercolor Paper (CP)",  texture: "medium",        compatible: ["watercolor","ink"] },
+        SURF_WCP_HP:   { name: "Hot Press Paper",        texture: "smooth",        compatible: ["watercolor","ink","gouache"] },
+        SURF_DRP:      { name: "Drawing Paper",          texture: "smooth-fine",   compatible: ["graphite","ink"] },
+        SURF_WOOD:     { name: "Wood Panel",             texture: "variable",      compatible: ["oil","tempera","encaustic"] },
+        SURF_IB:       { name: "Illustration Board",     texture: "smooth",        compatible: ["ink","gouache","acrylic"] },
+        SURF_FAB:      { name: "Fabric/Textile",         texture: "woven",         compatible: ["dye","batik","acrylic"] },
+        SURF_DIG:      { name: "Digital Canvas",         texture: "infinite",      compatible: ["digital"] }
+      },
+      techniques: {
+        TECH_IMP: { name: "Impasto",       effect: "Thick sculptural paint texture" },
+        TECH_GLA: { name: "Glazing",       effect: "Luminous transparent color depth" },
+        TECH_WOW: { name: "Wet-on-Wet",    effect: "Soft color diffusion and bleeds" },
+        TECH_DRY: { name: "Dry Brush",     effect: "Broken textured strokes" },
+        TECH_SCU: { name: "Scumbling",     effect: "Broken color atmospheric effect" },
+        TECH_ALP: { name: "Alla Prima",    effect: "Direct single-session painting" },
+        TECH_SGR: { name: "Sgraffito",     effect: "Revealed underpainting via scratching" },
+        TECH_MON: { name: "Monotype",      effect: "Single-impression print" },
+        TECH_CHI: { name: "Chiaroscuro",   effect: "Strong light/dark dramatic contrast" },
+        TECH_SFU: { name: "Sfumato",       effect: "Seamless tonal transitions" },
+        TECH_TEN: { name: "Tenebrism",     effect: "Extreme dark backgrounds, spot-lit figures" },
+        TECH_UND: { name: "Underpainting", effect: "Monochrome base layer (grisaille/verdaccio)" },
+        TECH_POI: { name: "Pointillism",   effect: "Optical color mixing via dots" }
+      },
+      style_attributes: {
+        texture:           { range: ["smooth","fine grain","medium grain","coarse grain","heavy impasto"] },
+        edge_quality:      { range: ["lost edges","soft edges","medium edges","hard edges","crisp edges"] },
+        opacity:           { range: ["transparent","semi transparent","semi opaque","opaque"] },
+        mark_making:       { range: ["invisible mark","subtle mark","visible brushwork","expressive mark","gestural mark"] },
+        color_temperature: { range: ["cool dominant","neutral","warm dominant","split temperature"] },
+        value_range:       { range: ["high key","mid key","low key","full range"] }
+      }
+    };
+
+    /* ─────────────────────────────────────────────────────────────
+       ANALYSIS PROMPT — preserved verbatim
+    ───────────────────────────────────────────────────────────── */
+    const ANALYSIS_PROMPT = `You are Artiquity, an expert art analyzer. Analyze the provided artwork image and classify it using ONLY the following ontology IDs and values.
+
+MEDIUM IDs (pick one primary): MED_OIL, MED_WC, MED_ACR, MED_GOU, MED_PAS, MED_GRA, MED_CHA, MED_INK, MED_DIG, MED_MIX, MED_ENC, MED_FRE
+
+TOOL IDs (pick applicable): TOOL_BR_RND, TOOL_BR_FLT, TOOL_BR_FAN, TOOL_BR_FIL, TOOL_PK, TOOL_STYL, TOOL_AIR, TOOL_SPG, TOOL_SPR, TOOL_FNG
+
+SURFACE IDs (pick one): SURF_CANV_STR, SURF_WCP, SURF_WCP_HP, SURF_DRP, SURF_WOOD, SURF_IB, SURF_FAB, SURF_DIG
+
+TECHNIQUE IDs (pick applicable): TECH_IMP, TECH_GLA, TECH_WOW, TECH_DRY, TECH_SCU, TECH_ALP, TECH_SGR, TECH_MON, TECH_CHI, TECH_SFU, TECH_TEN, TECH_UND, TECH_POI
+
+STYLE ATTRIBUTE ALLOWED VALUES:
+- texture: smooth | fine grain | medium grain | coarse grain | heavy impasto
+- edge_quality: lost edges | soft edges | medium edges | hard edges | crisp edges
+- opacity: transparent | semi transparent | semi opaque | opaque
+- mark_making: invisible mark | subtle mark | visible brushwork | expressive mark | gestural mark
+- color_temperature: cool dominant | neutral | warm dominant | split temperature
+- value_range: high key | mid key | low key | full range
+
+COMPOSITION ALLOWED VALUES:
+- rule: rule of thirds | golden ratio | rule of odds | symmetry | asymmetry | radial balance
+- focal_strategy: contrast | isolation | convergence | color accent | edge tension
+- spatial_depth: atmospheric perspective | linear perspective | overlapping | size diminution | color temperature recession
+- format: portrait | landscape | close-up | bird's eye | worm's eye | square | panoramic
+
+Respond ONLY with a raw JSON object. No markdown fences, no explanation, no extra text — just valid JSON:
+{
+  "medium": { "primary": "MED_XXX", "additional": [], "confidence": 0.9 },
+  "tools": ["TOOL_XXX"],
+  "surface": { "id": "SURF_XXX", "confidence": 0.8 },
+  "techniques": ["TECH_XXX"],
+  "style_attributes": {
+    "texture": "value",
+    "edge_quality": "value",
+    "opacity": "value",
+    "mark_making": "value",
+    "color_temperature": "value",
+    "value_range": "value"
+  },
+  "composition": {
+    "rule": "value",
+    "focal_strategy": "value",
+    "spatial_depth": "value",
+    "format": "value"
+  },
+  "lora_parameters": {
+    "texture_weight": 0.0,
+    "luminosity": 0.0,
+    "edge_softness": 0.0,
+    "contrast": 0.0,
+    "atmosphere": 0.0,
+    "spontaneity": 0.0
+  },
+  "generative_prompt": "comma separated prompt string",
+  "analysis_notes": "brief expert observation",
+  "era_attribution": "estimated period or movement"
+}`;
+
+    /* ─────────────────────────────────────────────────────────────
+       MAIN COMPONENT
+    ───────────────────────────────────────────────────────────── */
+    function ArtiquityAnalyzer() {
+      const [image, setImage]             = useState(null);
+      const [imageBase64, setImageBase64] = useState(null);
+      const [imageMime, setImageMime]     = useState(null);
+      const [result, setResult]           = useState(null);
+      const [loading, setLoading]         = useState(false);
+      const [error, setError]             = useState(null);
+      const [dragOver, setDragOver]       = useState(false);
+      const [activeTab, setActiveTab]     = useState("medium");
+      const fileRef = useRef(null);
+
+      const processFile = (file) => {
+        if (!file || !file.type.startsWith("image/")) return;
+        setResult(null); setError(null);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const MAX_DIM = 1920;
+            let { width, height } = img;
+            if (width > MAX_DIM || height > MAX_DIM) {
+              const scale = MAX_DIM / Math.max(width, height);
+              width  = Math.round(width  * scale);
+              height = Math.round(height * scale);
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width  = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+            const b64 = dataUrl.split(",")[1];
+            setImage(dataUrl);
+            setImageBase64(b64);
+            setImageMime("image/jpeg");
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+
+      const handleDrop = useCallback((e) => {
+        e.preventDefault(); setDragOver(false);
+        processFile(e.dataTransfer.files[0]);
+      }, []);
+
+      const analyze = async () => {
+        if (!imageBase64) return;
+        setLoading(true); setError(null);
+        try {
+          const res = await fetch("https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "gemini-3.1-pro-preview",
+              contents: [{
+                parts: [
+                  { inline_data: { mime_type: imageMime, data: imageBase64 } },
+                  { text: ANALYSIS_PROMPT }
+                ]
+              }]
+            })
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            throw new Error(`API ${res.status}: ${JSON.stringify(data)}`);
+          }
+
+          const rawText = data.candidates[0].content.parts[0].text;
+
+          const cleaned = rawText
+            .replace(/^```json\s*/i, "")
+            .replace(/^```\s*/i, "")
+            .replace(/\s*```$/i, "")
+            .trim();
+
+          const parsed = JSON.parse(cleaned);
+          setResult(parsed);
+          setActiveTab("medium");
+        } catch (err) {
+          setError(err.message || "Unknown error — check console");
+          console.error("Artiquity error:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const tabs = ["medium","tools","surface","techniques","style","composition","lora","prompt"];
+
+      return (
+        <div style={{ minHeight:"100vh", background:"#0A0A0F", color:"#E8E8F0", fontFamily:"'Courier New', monospace" }}>
+
+          {/* Header */}
+          <div style={{ borderBottom:"1px solid #1A1A35", padding:"16px 24px", display:"flex", alignItems:"center", gap:"16px", background:"#07070D" }}>
+            <div>
+              <div style={{ fontSize:"20px", fontWeight:"bold", letterSpacing:"0.18em", color:"#E94560" }}>CAPSULE BUILDER &amp; GENERATOR</div>
+              <div style={{ fontSize:"9px", color:"#3A3A70", letterSpacing:"0.28em" }}>ARTIQUITY — ONTOLOGICAL THEATRE</div>
+            </div>
+            <div style={{ marginLeft:"auto", display:"flex", gap:"6px" }}>
+              {["Trinity Graph","LoRA Ready","v1.0"].map(t => (
+                <span key={t} style={{ fontSize:"9px", padding:"3px 8px", border:"1px solid #1A1A35", color:"#44447A", letterSpacing:"0.1em", borderRadius:"2px" }}>{t}</span>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display:"grid", gridTemplateColumns:"320px 1fr", minHeight:"calc(100vh - 57px)" }}>
+
+            {/* Left panel */}
+            <div style={{ borderRight:"1px solid #1A1A35", padding:"18px", display:"flex", flexDirection:"column", gap:"12px", background:"#060610" }}>
+              <div style={{ fontSize:"9px", color:"#3A3A70", letterSpacing:"0.25em" }}>INPUT / ARTWORK</div>
+
+              <div
+                onDrop={handleDrop}
+                onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onClick={() => fileRef.current?.click()}
+                style={{
+                  border:`2px dashed ${dragOver ? "#E94560" : image ? "#252545" : "#1A1A35"}`,
+                  borderRadius:"4px", minHeight:"190px", cursor:"pointer",
+                  display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+                  overflow:"hidden", transition:"border-color 0.2s",
+                  background: dragOver ? "rgba(233,69,96,0.04)" : "transparent"
+                }}
+              >
+                {image
+                  ? <img src={image} alt="" style={{ width:"100%", maxHeight:"260px", objectFit:"contain" }} />
+                  : <div style={{ textAlign:"center", padding:"20px" }}>
+                      <div style={{ fontSize:"28px", opacity:0.2, marginBottom:"10px" }}>⬡</div>
+                      <div style={{ fontSize:"10px", color:"#3A3A70", lineHeight:1.9 }}>
+                        DROP ARTWORK HERE<br/>
+                        <span style={{ color:"#252545" }}>or click to browse</span>
+                      </div>
+                    </div>
+                }
+              </div>
+              <input ref={fileRef} type="file" accept="image/*" style={{ display:"none" }}
+                onChange={e => processFile(e.target.files[0])} />
+
+              {image && !loading && (
+                <button onClick={analyze} style={{
+                  background:"#E94560", color:"#fff", border:"none",
+                  padding:"12px", fontSize:"10px", letterSpacing:"0.22em",
+                  cursor:"pointer", borderRadius:"2px", fontFamily:"'Courier New', monospace"
+                }}>ANALYZE ARTWORK</button>
+              )}
+
+              {loading && (
+                <div style={{ display:"flex", alignItems:"center", gap:"12px", padding:"12px", background:"#0C0C1A", border:"1px solid #1A1A35", borderRadius:"2px" }}>
+                  <div style={{ width:"16px", height:"16px", border:"2px solid #E94560", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.8s linear infinite", flexShrink:0 }} />
+                  <span style={{ fontSize:"9px", color:"#3A3A70", letterSpacing:"0.18em" }}>CLASSIFYING…</span>
+                </div>
+              )}
+
+              {error && (
+                <div style={{ color:"#E94560", fontSize:"9px", padding:"10px", border:"1px solid rgba(233,69,96,0.35)", borderRadius:"2px", background:"rgba(233,69,96,0.04)", wordBreak:"break-all", lineHeight:1.7 }}>
+                  <div style={{ marginBottom:"4px", letterSpacing:"0.1em" }}>ERROR</div>
+                  {error}
+                </div>
+              )}
+
+              {/* Legend */}
+              <div style={{ marginTop:"6px" }}>
+                <div style={{ fontSize:"9px", color:"#3A3A70", letterSpacing:"0.2em", marginBottom:"10px" }}>ONTOLOGY CLASSES</div>
+                {[
+                  ["MEDIUM",      `${Object.keys(ONTOLOGY.medium).length} instances`],
+                  ["TOOL",        `${Object.keys(ONTOLOGY.tools).length} instances`],
+                  ["SURFACE",     `${Object.keys(ONTOLOGY.surfaces).length} instances`],
+                  ["TECHNIQUE",   `${Object.keys(ONTOLOGY.techniques).length} instances`],
+                  ["STYLE ATTR",  "6 dimensions"],
+                  ["COMPOSITION", "4 structural axes"],
+                ].map(([cls, cnt]) => (
+                  <div key={cls} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", borderBottom:"1px solid #0E0E20", fontSize:"9px" }}>
+                    <span style={{ color:"#555590" }}>{cls}</span>
+                    <span style={{ color:"#252545" }}>{cnt}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right panel */}
+            <div style={{ padding:"22px", overflowY:"auto" }}>
+
+              {!result && !loading && !error && (
+                <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", height:"100%", opacity:0.18 }}>
+                  <div style={{ fontSize:"52px", marginBottom:"12px" }}>⬡</div>
+                  <div style={{ fontSize:"9px", letterSpacing:"0.35em" }}>AWAITING ARTWORK INPUT</div>
+                </div>
+              )}
+
+              {result && (() => {
+                const med  = ONTOLOGY.medium[result.medium?.primary];
+                const surf = ONTOLOGY.surfaces[result.surface?.id];
+
+                return (
+                  <div>
+                    {/* Stats row */}
+                    <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"8px", marginBottom:"18px" }}>
+                      {[
+                        { label:"PRIMARY MEDIUM", value: med?.name || result.medium?.primary, sub:`${Math.round((result.medium?.confidence||0)*100)}% confidence` },
+                        { label:"TECHNIQUES",     value: result.techniques?.length || 0, sub:"identified" },
+                        { label:"SURFACE",        value: surf?.name || result.surface?.id, sub:`${Math.round((result.surface?.confidence||0)*100)}% confidence` },
+                        { label:"ERA",            value: result.era_attribution || "—", sub:"estimated movement" },
+                      ].map(({ label, value, sub }) => (
+                        <div key={label} style={{ padding:"12px", background:"#0C0C18", border:"1px solid #1A1A35", borderRadius:"3px" }}>
+                          <div style={{ fontSize:"8px", color:"#3A3A70", letterSpacing:"0.18em", marginBottom:"5px" }}>{label}</div>
+                          <div style={{ fontSize:"12px", color:"#E8E8F0", fontWeight:"bold", marginBottom:"3px", wordBreak:"break-word" }}>{value}</div>
+                          <div style={{ fontSize:"9px", color:"#252545" }}>{sub}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Tab bar */}
+                    <div style={{ display:"flex", gap:"3px", marginBottom:"16px", flexWrap:"wrap" }}>
+                      {tabs.map(t => (
+                        <button key={t} onClick={() => setActiveTab(t)} style={{
+                          background: activeTab===t ? "#E94560" : "#0C0C18",
+                          color: activeTab===t ? "#fff" : "#44447A",
+                          border:`1px solid ${activeTab===t ? "#E94560" : "#1A1A35"}`,
+                          padding:"5px 12px", fontSize:"9px", letterSpacing:"0.16em",
+                          cursor:"pointer", borderRadius:"2px", fontFamily:"'Courier New', monospace",
+                          textTransform:"uppercase"
+                        }}>{t}</button>
+                      ))}
+                    </div>
+
+                    {/* MEDIUM */}
+                    {activeTab==="medium" && (
+                      <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+                        <Row label="Primary Medium" value={med?.name || result.medium?.primary} id={result.medium?.primary} />
+                        <ConfRow label="Confidence" val={result.medium?.confidence||0} />
+                        {(result.medium?.additional||[]).length > 0 && (
+                          <Row label="Additional" value={(result.medium.additional).map(id => ONTOLOGY.medium[id]?.name||id).join(", ")} />
+                        )}
+                        <div style={{ marginTop:"10px" }}>
+                          <Micro>ONTOLOGY TAGS</Micro>
+                          <TagCloud tags={med?.tags||[]} />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* TOOLS */}
+                    {activeTab==="tools" && (
+                      <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+                        {(result.tools||[]).map(id => {
+                          const t = ONTOLOGY.tools[id];
+                          return t ? (
+                            <Card key={id}>
+                              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"7px" }}>
+                                <span style={{ fontSize:"12px", color:"#E8E8F0" }}>{t.name}</span>
+                                <ID v={id} />
+                              </div>
+                              <TagCloud tags={t.marks||[]} small />
+                            </Card>
+                          ) : null;
+                        })}
+                        {!result.tools?.length && <Empty />}
+                      </div>
+                    )}
+
+                    {/* SURFACE */}
+                    {activeTab==="surface" && (
+                      <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+                        {surf ? (
+                          <>
+                            <Row label="Surface"    value={surf.name}                         id={result.surface?.id} />
+                            <Row label="Texture"    value={surf.texture} />
+                            <Row label="Compatible" value={(surf.compatible||[]).join(", ")} />
+                            <ConfRow label="Confidence" val={result.surface?.confidence||0} />
+                          </>
+                        ) : <Empty />}
+                      </div>
+                    )}
+
+                    {/* TECHNIQUES */}
+                    {activeTab==="techniques" && (
+                      <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+                        {(result.techniques||[]).map(id => {
+                          const t = ONTOLOGY.techniques[id];
+                          return t ? (
+                            <Card key={id}>
+                              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"5px" }}>
+                                <span style={{ fontSize:"12px", color:"#E8E8F0" }}>{t.name}</span>
+                                <ID v={id} />
+                              </div>
+                              <div style={{ fontSize:"10px", color:"#555590" }}>{t.effect}</div>
+                            </Card>
+                          ) : null;
+                        })}
+                        {!result.techniques?.length && <Empty />}
+                      </div>
+                    )}
+
+                    {/* STYLE */}
+                    {activeTab==="style" && (
+                      <div style={{ display:"flex", flexDirection:"column", gap:"14px" }}>
+                        {Object.entries(result.style_attributes||{}).map(([dim, val]) => {
+                          const range = ONTOLOGY.style_attributes[dim]?.range||[];
+                          const idx = range.findIndex(r => r.toLowerCase()===(val||"").toLowerCase());
+                          return (
+                            <div key={dim}>
+                              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"4px" }}>
+                                <span style={{ fontSize:"9px", color:"#3A3A70", letterSpacing:"0.12em" }}>{dim.replace(/_/g," ").toUpperCase()}</span>
+                                <span style={{ fontSize:"9px", color:"#E94560" }}>{val}</span>
+                              </div>
+                              <div style={{ display:"flex", gap:"2px" }}>
+                                {range.map((r, i) => (
+                                  <div key={r} title={r} style={{ flex:1, height:"5px", borderRadius:"1px",
+                                    background: i===idx ? "#E94560" : i<idx ? "#3A3A80" : "#111128" }} />
+                                ))}
+                              </div>
+                              <div style={{ display:"flex", justifyContent:"space-between", marginTop:"3px" }}>
+                                <span style={{ fontSize:"7px", color:"#252545" }}>{range[0]}</span>
+                                <span style={{ fontSize:"7px", color:"#252545" }}>{range[range.length-1]}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* COMPOSITION */}
+                    {activeTab==="composition" && (
+                      <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+                        <Row label="Structural Rule"  value={result.composition?.rule} />
+                        <Row label="Focal Strategy"   value={result.composition?.focal_strategy} />
+                        <Row label="Spatial Depth"    value={result.composition?.spatial_depth} />
+                        <Row label="Format"           value={result.composition?.format} />
+                        {result.analysis_notes && (
+                          <Card style={{ marginTop:"10px" }}>
+                            <Micro>EXPERT NOTES</Micro>
+                            <div style={{ fontSize:"11px", color:"#AAAACC", lineHeight:1.7, marginTop:"6px" }}>{result.analysis_notes}</div>
+                          </Card>
+                        )}
+                      </div>
+                    )}
+
+                    {/* LORA */}
+                    {activeTab==="lora" && (
+                      <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
+                        <Micro>COMPUTED LORA PARAMETER VECTOR</Micro>
+                        {Object.entries(result.lora_parameters||{}).map(([p, v]) => {
+                          const c = Math.min(1, Math.max(0, v||0));
+                          return (
+                            <div key={p}>
+                              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"4px" }}>
+                                <span style={{ fontSize:"10px", color:"#555590", letterSpacing:"0.08em" }}>{p}</span>
+                                <span style={{ fontSize:"10px", color:"#00FFB2" }}>{(v||0).toFixed(2)}</span>
+                              </div>
+                              <div style={{ height:"4px", background:"#111128", borderRadius:"2px", overflow:"hidden" }}>
+                                <div style={{ height:"100%", width:`${c*100}%`, background:"linear-gradient(90deg,#3A3A80,#00FFB2)", borderRadius:"2px" }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* PROMPT */}
+                    {activeTab==="prompt" && (
+                      <div style={{ display:"flex", flexDirection:"column", gap:"14px" }}>
+                        <div>
+                          <Micro>SYNTHESIZED GENERATIVE PROMPT</Micro>
+                          <div style={{ marginTop:"8px", padding:"16px", background:"#0C0C18", border:"1px solid #E94560", borderRadius:"3px", fontSize:"11px", color:"#E8E8F0", lineHeight:1.8 }}>
+                            {result.generative_prompt}
+                          </div>
+                          <button
+                            onClick={() => navigator.clipboard?.writeText(result.generative_prompt)}
+                            style={{ marginTop:"7px", background:"transparent", border:"1px solid #252545", color:"#3A3A70", padding:"6px 12px", fontSize:"9px", letterSpacing:"0.16em", cursor:"pointer", fontFamily:"'Courier New', monospace", borderRadius:"2px" }}
+                          >COPY PROMPT</button>
+                        </div>
+                        <div>
+                          <Micro>CLASSIFICATION SUMMARY</Micro>
+                          <div style={{ marginTop:"8px", display:"flex", flexDirection:"column" }}>
+                            {[
+                              ["Medium",     med?.name],
+                              ["Surface",    surf?.name],
+                              ["Tools",      (result.tools||[]).map(id => ONTOLOGY.tools[id]?.name||id).join(", ")],
+                              ["Techniques", (result.techniques||[]).map(id => ONTOLOGY.techniques[id]?.name||id).join(", ")],
+                              ["Era",        result.era_attribution],
+                            ].map(([k, v]) => (
+                              <div key={k} style={{ display:"flex", gap:"12px", fontSize:"10px", padding:"5px 0", borderBottom:"1px solid #0E0E1C" }}>
+                                <span style={{ color:"#3A3A70", width:"80px", flexShrink:0 }}>{k}</span>
+                                <span style={{ color:"#AAAACC" }}>{v||"—"}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ── Helpers ── */
+    function Row({ label, value, id }) {
+      return (
+        <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:"1px solid #0E0E1C", alignItems:"center" }}>
+          <span style={{ fontSize:"9px", color:"#3A3A70", letterSpacing:"0.13em" }}>{label.toUpperCase()}</span>
+          <div style={{ display:"flex", alignItems:"center", gap:"7px" }}>
+            {id && <ID v={id} />}
+            <span style={{ fontSize:"11px", color:"#E8E8F0" }}>{value||"—"}</span>
+          </div>
+        </div>
+      );
+    }
+
+    function ConfRow({ label, val }) {
+      const col = val > 0.8 ? "#00FFB2" : val > 0.5 ? "#FFD600" : "#FF4E4E";
+      return (
+        <div style={{ display:"flex", alignItems:"center", gap:"10px", padding:"8px 0", borderBottom:"1px solid #0E0E1C" }}>
+          <span style={{ fontSize:"9px", color:"#3A3A70", letterSpacing:"0.13em", width:"100px" }}>{label.toUpperCase()}</span>
+          <div style={{ flex:1, height:"4px", background:"#111128", borderRadius:"2px", overflow:"hidden" }}>
+            <div style={{ height:"100%", width:`${val*100}%`, background:col, borderRadius:"2px", transition:"width 0.5s" }} />
+          </div>
+          <span style={{ fontSize:"9px", color:col, width:"32px", textAlign:"right" }}>{Math.round(val*100)}%</span>
+        </div>
+      );
+    }
+
+    function ID({ v }) {
+      return <span style={{ fontSize:"8px", color:"#252545", padding:"2px 5px", border:"1px solid #1A1A35", borderRadius:"2px" }}>{v}</span>;
+    }
+
+    function Micro({ children }) {
+      return <div style={{ fontSize:"9px", color:"#3A3A70", letterSpacing:"0.2em", marginBottom:"4px" }}>{children}</div>;
+    }
+
+    function Card({ children, style }) {
+      return <div style={{ padding:"12px", background:"#0C0C18", border:"1px solid #1A1A35", borderRadius:"3px", ...style }}>{children}</div>;
+    }
+
+    function TagCloud({ tags, small }) {
+      return (
+        <div style={{ display:"flex", flexWrap:"wrap", gap:"5px" }}>
+          {tags.map(t => (
+            <span key={t} style={{ padding: small ? "2px 7px" : "3px 9px", background:"#090914", border:"1px solid #1A1A35", borderRadius:"2px", fontSize: small ? "9px" : "10px", color:"#555590" }}>{t}</span>
+          ))}
+        </div>
+      );
+    }
+
+    function Empty() {
+      return <div style={{ color:"#252545", fontSize:"10px", padding:"16px 0" }}>None identified</div>;
+    }
+
+    /* ── Mount ── */
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<ArtiquityAnalyzer />);
+  </script>
+</body>
+</html>

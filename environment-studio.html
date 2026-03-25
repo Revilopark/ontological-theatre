@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Environment Studio — Trinity Worlds</title>
+<style>
+  :root {
+    --bg: #0a0a12;
+    --surface: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.08);
+    --text: #e8e8f0;
+    --muted: rgba(255,255,255,0.4);
+    --gold: #CFB87C;
+    --gold-dim: rgba(207,184,124,0.3);
+    --blue: #7EB8F7;
+    --blue-dim: rgba(126,184,247,0.3);
+    --rose: #FF6B8A;
+    --green: #6BFFB8;
+    --green-dim: rgba(107,255,184,0.3);
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, sans-serif; min-height: 100vh; }
+
+  /* ── Nav ── */
+  nav { display:flex; align-items:center; justify-content:space-between; padding:16px 28px; border-bottom:1px solid var(--border); background:rgba(10,10,18,0.8); backdrop-filter:blur(20px); position:sticky; top:0; z-index:100; }
+  .nav-logo { font-size:1.1rem; font-weight:700; color:var(--text); text-decoration:none; }
+  .nav-logo span { color:var(--green); }
+  .nav-links { display:flex; gap:16px; align-items:center; }
+  .nav-links a { color:var(--muted); text-decoration:none; font-size:0.85rem; transition:color 0.2s; }
+  .nav-links a:hover { color:var(--text); }
+  .world-badge { background:var(--green-dim); border:1px solid var(--green); color:var(--green); border-radius:20px; padding:4px 12px; font-size:0.75rem; font-weight:600; }
+
+  /* ── Layout ── */
+  .layout { display:grid; grid-template-columns:320px 1fr; gap:0; min-height:calc(100vh - 60px); }
+  .sidebar { border-right:1px solid var(--border); padding:20px; overflow-y:auto; max-height:calc(100vh - 60px); position:sticky; top:60px; }
+  .main { padding:24px; overflow-y:auto; }
+
+  /* ── Glass ── */
+  .glass { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); backdrop-filter:blur(20px); }
+  .glass-sm { background:var(--surface); border:1px solid var(--border); border-radius:10px; }
+
+  /* ── Headings ── */
+  h2 { font-size:1.3rem; font-weight:700; margin-bottom:16px; }
+  h3 { font-size:1rem; font-weight:600; margin-bottom:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; font-size:0.75rem; }
+  .section { margin-bottom:28px; }
+
+  /* ── Form ── */
+  label { display:block; font-size:0.8rem; color:var(--muted); margin-bottom:6px; }
+  input, textarea, select { width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:8px; color:var(--text); padding:10px 12px; font-size:0.9rem; font-family:inherit; outline:none; transition:border-color 0.2s; resize:vertical; }
+  input:focus, textarea:focus, select:focus { border-color:var(--green); }
+  textarea { min-height:80px; }
+  .form-row { margin-bottom:14px; }
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  /* ── Buttons ── */
+  .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:10px; font-size:0.85rem; font-weight:600; cursor:pointer; border:none; transition:all 0.2s; }
+  .btn-green { background:linear-gradient(135deg,rgba(107,255,184,0.2),rgba(107,255,184,0.1)); border:1px solid var(--green); color:var(--green); }
+  .btn-green:hover { background:rgba(107,255,184,0.25); }
+  .btn-ghost { background:transparent; border:1px solid var(--border); color:var(--muted); }
+  .btn-ghost:hover { border-color:var(--text); color:var(--text); }
+  .btn-gold { background:linear-gradient(135deg,rgba(207,184,124,0.2),rgba(207,184,124,0.1)); border:1px solid var(--gold); color:var(--gold); }
+  .btn-gold:hover { background:rgba(207,184,124,0.25); }
+  .btn-sm { padding:6px 12px; font-size:0.78rem; border-radius:8px; }
+  .btn-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; }
+
+  /* ── Place cards ── */
+  .place-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+  .place-card { padding:18px; border-radius:var(--radius); border:1px solid var(--border); background:var(--surface); cursor:pointer; transition:all 0.2s; position:relative; }
+  .place-card:hover { border-color:var(--green-dim); transform:translateY(-2px); }
+  .place-card.selected { border-color:var(--green); background:rgba(107,255,184,0.05); }
+  .place-name { font-size:1rem; font-weight:700; margin-bottom:4px; }
+  .place-type { font-size:0.75rem; color:var(--green); font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px; }
+  .place-desc { font-size:0.82rem; color:var(--muted); line-height:1.5; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .place-meta { display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+  .badge { font-size:0.7rem; padding:3px 8px; border-radius:20px; font-weight:600; }
+  .badge-era { background:rgba(207,184,124,0.15); color:var(--gold); border:1px solid var(--gold-dim); }
+  .badge-ity { background:rgba(107,255,184,0.1); color:var(--green); border:1px solid var(--green-dim); }
+  .place-card-footer { display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:10px; border-top:1px solid var(--border); }
+
+  /* ── Detail panel ── */
+  .detail-panel { padding:24px; }
+  .detail-name { font-size:1.8rem; font-weight:800; margin-bottom:4px; }
+  .detail-type { font-size:0.85rem; color:var(--green); font-weight:600; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:16px; }
+  .detail-desc { font-size:0.95rem; line-height:1.7; color:rgba(255,255,255,0.8); margin-bottom:20px; }
+
+  /* ── Ity sliders ── */
+  .ity-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .ity-item { }
+  .ity-label { font-size:0.72rem; color:var(--muted); margin-bottom:4px; display:flex; justify-content:space-between; }
+  .ity-bar { height:4px; background:rgba(255,255,255,0.08); border-radius:2px; overflow:hidden; }
+  .ity-fill { height:100%; background:linear-gradient(90deg,var(--green),var(--blue)); border-radius:2px; transition:width 0.4s; }
+
+  /* ── Atmosphere ── */
+  .atm-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .atm-chip { padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,0.03); font-size:0.8rem; cursor:pointer; transition:all 0.15s; text-align:center; }
+  .atm-chip.active { border-color:var(--green); background:rgba(107,255,184,0.1); color:var(--green); }
+
+  /* ── Tabs ── */
+  .tabs { display:flex; gap:4px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:0; }
+  .tab { padding:8px 16px; font-size:0.85rem; cursor:pointer; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px; transition:all 0.2s; background:none; border-top:none; border-left:none; border-right:none; font-family:inherit; }
+  .tab.active { color:var(--green); border-bottom-color:var(--green); }
+
+  /* ── Toast ── */
+  #toast { position:fixed; bottom:24px; right:24px; padding:12px 20px; border-radius:12px; font-size:0.85rem; font-weight:600; z-index:999; transform:translateY(80px); transition:transform 0.3s; pointer-events:none; }
+  #toast.show { transform:translateY(0); }
+  #toast.success { background:rgba(107,255,184,0.15); border:1px solid var(--green); color:var(--green); }
+  #toast.error { background:rgba(255,107,138,0.15); border:1px solid var(--rose); color:var(--rose); }
+
+  /* ── Empty state ── */
+  .empty { text-align:center; padding:60px 20px; color:var(--muted); }
+  .empty-icon { font-size:3rem; margin-bottom:16px; }
+  .empty-text { font-size:0.9rem; line-height:1.6; }
+
+  /* ── Spinner ── */
+  .spinner { display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:spin 0.7s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  @media(max-width:768px) {
+    .layout { grid-template-columns:1fr; }
+    .sidebar { position:static; max-height:none; border-right:none; border-bottom:1px solid var(--border); }
+    .ity-grid { grid-template-columns:repeat(2,1fr); }
+    .place-grid { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="trinity-worlds.html" class="nav-logo">Environment<span>.</span>Studio</a>
+  <div class="nav-links">
+    <a href="world-builder.html">Worlds</a>
+    <a href="character-studio.html">Characters</a>
+    <a href="spark-maker.html">Sparks</a>
+    <a href="story-engine.html">Stories</a>
+    <span id="world-badge" class="world-badge" style="display:none"></span>
+  </div>
+</nav>
+
+<div class="layout">
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="section">
+      <h3>Active World</h3>
+      <div id="world-info" style="color:var(--muted);font-size:0.82rem;padding:12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid var(--border)">
+        No world active — open World Builder to set one.
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Add Place</h3>
+      <div class="form-row"><label>Name *</label><input id="p-name" placeholder="Cumberland Gap, The Hollow, etc."></div>
+      <div class="form-row"><label>Place Type</label>
+        <select id="p-type">
+          <option>Landmark</option><option>Settlement</option><option>Wilderness</option>
+          <option>Battlefield</option><option>Crossroads</option><option>Sacred Ground</option>
+          <option>Port / Gateway</option><option>Ruins</option><option>Interior</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Description</label><textarea id="p-desc" placeholder="What makes this place alive…" style="min-height:70px"></textarea></div>
+      <div class="form-grid">
+        <div class="form-row"><label>Era</label><input id="p-era" placeholder="1760–1820"></div>
+        <div class="form-row"><label>Region</label><input id="p-region" placeholder="Kentucky, etc."></div>
+      </div>
+      <div class="form-row"><label>Atmosphere Tags (comma-separated)</label><input id="p-tags" placeholder="dark, liminal, contested…"></div>
+      <div class="btn-row">
+        <button class="btn btn-green" onclick="createPlace()">＋ Add Place</button>
+        <button class="btn btn-ghost btn-sm" onclick="generatePlace()"><span id="gen-spinner" style="display:none" class="spinner"></span> ✦ Generate</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Filter</h3>
+      <input id="search" placeholder="Search places…" oninput="filterPlaces()" style="margin-bottom:10px">
+      <select id="filter-type" onchange="filterPlaces()">
+        <option value="">All types</option>
+        <option>Landmark</option><option>Settlement</option><option>Wilderness</option>
+        <option>Battlefield</option><option>Crossroads</option><option>Sacred Ground</option>
+        <option>Port / Gateway</option><option>Ruins</option><option>Interior</option><option>Other</option>
+      </select>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <div>
+        <h2 style="margin-bottom:4px">Places & Environments</h2>
+        <p style="color:var(--muted);font-size:0.85rem" id="place-count">Loading…</p>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="loadPlaces()">↺ Refresh</button>
+        <button class="btn btn-gold btn-sm" onclick="seedPlaces()">⚡ Seed Demo</button>
+      </div>
+    </div>
+
+    <!-- View tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="setView('grid',this)">Grid</button>
+      <button class="tab" onclick="setView('detail',this)">Detail</button>
+    </div>
+
+    <!-- Grid view -->
+    <div id="view-grid">
+      <div id="place-grid" class="place-grid">
+        <div class="empty"><div class="empty-icon">🌍</div><div class="empty-text">Loading places…</div></div>
+      </div>
+    </div>
+
+    <!-- Detail view -->
+    <div id="view-detail" style="display:none">
+      <div id="detail-content">
+        <div class="empty"><div class="empty-icon">🌍</div><div class="empty-text">Select a place from the grid to see its full profile.</div></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = 'https://trinity-graph-api-328246068140.us-central1.run.app';
+const GEM  = 'https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+
+let state = { world: null, places: [], filtered: [], selected: null, view: 'grid' };
+
+// ── Init ──────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  loadWorld();
+  loadPlaces();
+});
+
+function loadWorld() {
+  try {
+    const raw = localStorage.getItem('trinity_active_world');
+    if (raw) {
+      state.world = JSON.parse(raw);
+      document.getElementById('world-info').innerHTML = `
+        <div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:4px">${state.world.name}</div>
+        <div style="color:var(--muted);font-size:0.78rem">${state.world.description || state.world.premise || ''}</div>
+        ${state.world.era ? `<div style="color:var(--gold);font-size:0.75rem;margin-top:6px">Era: ${state.world.era}</div>` : ''}
+      `;
+      document.getElementById('world-badge').textContent = state.world.name;
+      document.getElementById('world-badge').style.display = 'inline-block';
+      if (state.world.era) document.getElementById('p-era').value = state.world.era;
+    }
+  } catch(e) {}
+}
+
+// ── API helper ────────────────────────────────────────────────────────────
+async function api(path, opts={}) {
+  const res = await fetch(API + path, {
+    method: opts.method || 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+// ── Load places ───────────────────────────────────────────────────────────
+async function loadPlaces() {
+  const wid = state.world?.id || localStorage.getItem('trinity_active_world_id');
+  if (!wid) {
+    document.getElementById('place-grid').innerHTML = `<div class="empty"><div class="empty-icon">🌍</div><div class="empty-text">No world active.<br><small>Open World Builder and set an active world to load its places.</small></div></div>`;
+    document.getElementById('place-count').textContent = 'No world';
+    return;
+  }
+  try {
+    const data = await api(`/places?world_id=${wid}`);
+    state.places = data || [];
+    state.filtered = [...state.places];
+    renderGrid();
+    document.getElementById('place-count').textContent = `${state.places.length} place${state.places.length !== 1 ? 's' : ''}`;
+  } catch(e) {
+    document.getElementById('place-grid').innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Could not load places — API may be offline.<br><small>${e.message}</small></div></div>`;
+    document.getElementById('place-count').textContent = 'API offline';
+  }
+}
+
+// ── Render grid ───────────────────────────────────────────────────────────
+function renderGrid() {
+  const grid = document.getElementById('place-grid');
+  if (!state.filtered.length) {
+    grid.innerHTML = `<div class="empty"><div class="empty-icon">🌍</div><div class="empty-text">No places yet.<br>Add one in the sidebar or click ✦ Generate.</div></div>`;
+    return;
+  }
+  grid.innerHTML = state.filtered.map(p => `
+    <div class="place-card${state.selected?.id === p.id ? ' selected' : ''}" onclick="selectPlace('${p.id}')">
+      <div class="place-type">${p.place_type || p.type || 'Place'}</div>
+      <div class="place-name">${p.name}</div>
+      <div class="place-desc">${p.description || p.atmosphere || 'No description yet.'}</div>
+      <div class="place-meta">
+        ${p.era ? `<span class="badge badge-era">${p.era}</span>` : ''}
+        ${p.dominant_ity ? `<span class="badge badge-ity">${p.dominant_ity}</span>` : ''}
+        ${p.region ? `<span class="badge" style="background:rgba(126,184,247,0.1);color:var(--blue);border:1px solid rgba(126,184,247,0.3)">${p.region}</span>` : ''}
+      </div>
+      <div class="place-card-footer">
+        <span style="font-size:0.72rem;color:var(--muted)">${(p.tags||[]).slice(0,3).join(' · ')}</span>
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deletePlace('${p.id}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Select place ──────────────────────────────────────────────────────────
+function selectPlace(id) {
+  state.selected = state.places.find(p => p.id === id);
+  renderGrid();
+  if (state.view === 'grid') {
+    setView('detail', document.querySelectorAll('.tab')[1]);
+  }
+  renderDetail();
+}
+
+// ── Render detail ──────────────────────────────────────────────────────────
+function renderDetail() {
+  const p = state.selected;
+  if (!p) return;
+  const ityFields = ['vitality','materiality','continuity','resilience','authenticity','complexity','connectivity','necessity','intensity','melancholy','tranquility','clarity','serendipity','luminosity','fragility'];
+  const ityHtml = ityFields.filter(k => p[k] && p[k] !== 0.5).map(k => `
+    <div class="ity-item">
+      <div class="ity-label"><span>${k}</span><span>${(p[k]*100).toFixed(0)}%</span></div>
+      <div class="ity-bar"><div class="ity-fill" style="width:${p[k]*100}%"></div></div>
+    </div>
+  `).join('') || '<div style="color:var(--muted);font-size:0.82rem">No ity profile — edit to add resonance scores.</div>';
+
+  document.getElementById('detail-content').innerHTML = `
+    <div class="glass detail-panel">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div class="detail-type">${p.place_type || p.type || 'Place'} ${p.era ? '· '+p.era : ''} ${p.region ? '· '+p.region : ''}</div>
+          <div class="detail-name">${p.name}</div>
+        </div>
+        <button class="btn btn-gold btn-sm" onclick="enrichPlace('${p.id}')">✦ Enrich with AI</button>
+      </div>
+
+      <p class="detail-desc">${p.description || p.atmosphere || '<em style="color:var(--muted)">No description yet.</em>'}</p>
+
+      ${p.historical_significance ? `<div style="padding:14px;background:rgba(207,184,124,0.07);border:1px solid var(--gold-dim);border-radius:10px;margin-bottom:20px;font-size:0.88rem;line-height:1.6;color:rgba(255,255,255,0.75)">${p.historical_significance}</div>` : ''}
+
+      <div class="section">
+        <h3>Atmosphere Tags</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${(p.tags||[]).map(t => `<span class="badge badge-ity">${t}</span>`).join('') || '<span style="color:var(--muted);font-size:0.82rem">None</span>'}
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Resonance Profile</h3>
+        <div class="ity-grid">${ityHtml}</div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px">
+        <button class="btn btn-green btn-sm" onclick="sendToStory('${p.id}')">→ Use in Story Engine</button>
+        <button class="btn btn-ghost btn-sm" onclick="sendToSpark('${p.id}')">⚡ Use in Spark Maker</button>
+        <button class="btn btn-ghost btn-sm" onclick="deletePlace('${p.id}')">🗑 Delete</button>
+      </div>
+    </div>
+  `;
+}
+
+// ── Create place ──────────────────────────────────────────────────────────
+async function createPlace() {
+  const name = document.getElementById('p-name').value.trim();
+  if (!name) { toast('Name required', 'error'); return; }
+  const wid = state.world?.id || localStorage.getItem('trinity_active_world_id');
+  if (!wid) { toast('Set an active world first', 'error'); return; }
+
+  const tagsRaw = document.getElementById('p-tags').value;
+  try {
+    const place = await api('/places', {
+      method: 'POST',
+      body: {
+        name,
+        world_id: wid,
+        place_type: document.getElementById('p-type').value,
+        description: document.getElementById('p-desc').value,
+        era: document.getElementById('p-era').value || null,
+        region: document.getElementById('p-region').value || null,
+        tags: tagsRaw ? tagsRaw.split(',').map(s=>s.trim()).filter(Boolean) : [],
+      }
+    });
+    toast(`"${place.name}" added`, 'success');
+    state.places.unshift(place);
+    state.filtered = [...state.places];
+    renderGrid();
+    document.getElementById('place-count').textContent = `${state.places.length} places`;
+    document.getElementById('p-name').value = '';
+    document.getElementById('p-desc').value = '';
+    document.getElementById('p-tags').value = '';
+  } catch(e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+// ── Generate place via Gemini ─────────────────────────────────────────────
+async function generatePlace() {
+  const spinner = document.getElementById('gen-spinner');
+  spinner.style.display = 'inline-block';
+  const worldCtx = state.world ? `World: "${state.world.name}". ${state.world.description || state.world.premise || ''}. Era: ${state.world.era || 'unspecified'}.` : 'Generic fictional world.';
+  const prompt = `${worldCtx}\n\nCreate one vivid, specific place or environment for this world. Return JSON only:\n{"name":"...","type":"Landmark|Settlement|Wilderness|Battlefield|Crossroads|Sacred Ground|Ruins|Interior","description":"2-3 evocative sentences","era":"...","region":"...","tags":["tag1","tag2","tag3"],"dominant_ity":"one -ity word","historical_significance":"1 sentence"}`;
+  try {
+    const res = await fetch(GEM, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({prompt, max_tokens:400}) });
+    const data = await res.json();
+    const raw = (data.text || data.content || '').replace(/```json|```/g,'').trim();
+    const obj = JSON.parse(raw);
+    if (obj.name) {
+      document.getElementById('p-name').value = obj.name;
+      document.getElementById('p-type').value = obj.type || 'Landmark';
+      document.getElementById('p-desc').value = obj.description || '';
+      document.getElementById('p-era').value = obj.era || '';
+      document.getElementById('p-region').value = obj.region || '';
+      document.getElementById('p-tags').value = (obj.tags||[]).join(', ');
+      toast(`Generated: ${obj.name}`, 'success');
+    }
+  } catch(e) { toast('Generation failed', 'error'); }
+  spinner.style.display = 'none';
+}
+
+// ── Enrich place ──────────────────────────────────────────────────────────
+async function enrichPlace(id) {
+  const p = state.places.find(x => x.id === id);
+  if (!p) return;
+  toast('Enriching with AI…', 'success');
+  const prompt = `Place: "${p.name}" (${p.place_type || 'unknown type'}). ${p.description || ''}. World: "${state.world?.name || 'unknown'}". Era: ${p.era || 'unspecified'}.\n\nEnrich this place profile. Return JSON only:\n{"description":"Rich 3-4 sentence description","historical_significance":"1-2 sentences","tags":["up to 6 atmospheric tags"],"dominant_ity":"strongest -ity quality of this place","vitality":0.0-1.0,"materiality":0.0-1.0,"continuity":0.0-1.0,"resilience":0.0-1.0,"melancholy":0.0-1.0,"intensity":0.0-1.0,"tranquility":0.0-1.0,"serendipity":0.0-1.0}`;
+  try {
+    const res = await fetch(GEM, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({prompt, max_tokens:500}) });
+    const data = await res.json();
+    const raw = (data.text || data.content || '').replace(/```json|```/g,'').trim();
+    const obj = JSON.parse(raw);
+    // Update via API
+    await api(`/places/${id}`, { method:'PUT', body: obj });
+    // Update local
+    const idx = state.places.findIndex(x => x.id === id);
+    if (idx >= 0) state.places[idx] = { ...state.places[idx], ...obj };
+    state.selected = state.places.find(x => x.id === id);
+    renderGrid();
+    renderDetail();
+    toast('Place enriched!', 'success');
+  } catch(e) { toast('Enrichment failed', 'error'); }
+}
+
+// ── Delete place ──────────────────────────────────────────────────────────
+async function deletePlace(id) {
+  if (!confirm('Delete this place?')) return;
+  try {
+    await api(`/places/${id}`, { method:'DELETE' });
+    state.places = state.places.filter(p => p.id !== id);
+    state.filtered = [...state.places];
+    if (state.selected?.id === id) state.selected = null;
+    renderGrid();
+    document.getElementById('place-count').textContent = `${state.places.length} places`;
+    toast('Deleted', 'success');
+  } catch(e) { toast('Delete failed', 'error'); }
+}
+
+// ── Filter ────────────────────────────────────────────────────────────────
+function filterPlaces() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const t = document.getElementById('filter-type').value;
+  state.filtered = state.places.filter(p => {
+    const matchQ = !q || p.name.toLowerCase().includes(q) || (p.description||'').toLowerCase().includes(q);
+    const matchT = !t || (p.place_type||p.type||'') === t;
+    return matchQ && matchT;
+  });
+  renderGrid();
+}
+
+// ── View toggle ───────────────────────────────────────────────────────────
+function setView(v, el) {
+  state.view = v;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('view-grid').style.display = v === 'grid' ? 'block' : 'none';
+  document.getElementById('view-detail').style.display = v === 'detail' ? 'block' : 'none';
+  if (v === 'detail' && state.selected) renderDetail();
+}
+
+// ── Cross-studio nav ──────────────────────────────────────────────────────
+function sendToStory(id) {
+  const p = state.places.find(x => x.id === id);
+  if (!p) return;
+  const setup = JSON.parse(localStorage.getItem('trinity_story_setup') || '{}');
+  setup.location = p.name;
+  localStorage.setItem('trinity_story_setup', JSON.stringify(setup));
+  toast('Location set — opening Story Engine…', 'success');
+  setTimeout(() => window.open('story-engine.html', '_blank'), 800);
+}
+
+function sendToSpark(id) {
+  const p = state.places.find(x => x.id === id);
+  if (!p) return;
+  localStorage.setItem('trinity_spark_location', JSON.stringify(p));
+  toast('Location set — opening Spark Maker…', 'success');
+  setTimeout(() => window.open('spark-maker.html', '_blank'), 800);
+}
+
+// ── Seed demo places ──────────────────────────────────────────────────────
+async function seedPlaces() {
+  const wid = state.world?.id || localStorage.getItem('trinity_active_world_id');
+  if (!wid) { toast('Set an active world first', 'error'); return; }
+  const seeds = [
+    { name:'The Crossroads', world_id:wid, place_type:'Crossroads', description:'Where two roads meet at midnight. The ground is worn down by a century of indecision.', era: state.world?.era || '', tags:['liminal','dark','mythic','contested'] },
+    { name:'The River Bend', world_id:wid, place_type:'Landmark', description:'The river curves here and slows. Everything washes up at the bend eventually — the lost, the dead, the dreaming.', era: state.world?.era || '', tags:['water','slow','mythic','boundary'] },
+    { name:'The Old Settlement', world_id:wid, place_type:'Ruins', description:'Stone foundations only. The people left or were taken. The land remembers what the records don\'t.', era: state.world?.era || '', tags:['ruins','memory','haunted','history'] },
+  ];
+  let count = 0;
+  for (const s of seeds) {
+    try { const p = await api('/places', { method:'POST', body:s }); state.places.unshift(p); count++; } catch(e) {}
+  }
+  state.filtered = [...state.places];
+  renderGrid();
+  document.getElementById('place-count').textContent = `${state.places.length} places`;
+  toast(`Seeded ${count} demo places`, 'success');
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────
+function toast(msg, type='success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>

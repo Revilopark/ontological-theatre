@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infinity Strip — AI Comic Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a10;--s1:#111118;--s2:#18181f;--s3:#1f1f28;
+  --b1:rgba(255,255,255,.06);--b2:rgba(255,255,255,.1);
+  --t1:#f0eeff;--t2:#b0b0c8;--t3:#6a6a8e;
+  --accent:#7c3aed;--accent2:#a855f7;--accentg:rgba(124,58,237,.15);
+  --gold:#c9a84c;--fire:#e94560;--teal:#16a596;--pine:#22c55e;
+  --sans:'DM Sans',system-ui,sans-serif;
+  --comic:'Bangers',cursive;
+  --mono:'JetBrains Mono',monospace;
+  --r:10px;--r2:14px;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--t1);font-family:var(--sans);display:flex;flex-direction:column}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
+
+/* ── TOPBAR ── */
+.topbar{height:52px;background:rgba(10,10,16,.95);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--b1);display:flex;align-items:center;
+  padding:0 16px;gap:12px;flex-shrink:0;z-index:100}
+.logo{font-family:var(--comic);font-size:1.35rem;letter-spacing:1px;
+  background:linear-gradient(135deg,var(--accent2),var(--fire));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo span{color:var(--t3);font-size:.7rem;font-family:var(--sans);font-weight:400;
+  -webkit-text-fill-color:var(--t3);margin-left:4px}
+.topbar-tools{display:flex;gap:6px;margin-left:auto}
+.tbtn{padding:.3rem .7rem;border-radius:6px;border:1px solid var(--b1);
+  background:var(--s2);color:var(--t2);font-size:.72rem;font-weight:500;
+  cursor:pointer;transition:all .2s;font-family:var(--sans)}
+.tbtn:hover{border-color:var(--b2);color:var(--t1)}
+.tbtn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;border-color:transparent}
+.tbtn.primary:hover{opacity:.9}
+.tbtn.active{border-color:var(--accent);color:var(--accent2)}
+.style-badge{padding:.25rem .55rem;border-radius:4px;font-size:.65rem;font-family:var(--mono);
+  background:var(--accentg);border:1px solid rgba(124,58,237,.3);color:var(--accent2)}
+
+/* ── WORKSPACE ── */
+.workspace{flex:1;display:flex;overflow:hidden}
+
+/* ── PANEL LIST ── */
+.panel-list{width:220px;background:var(--s1);border-right:1px solid var(--b1);
+  display:flex;flex-direction:column;flex-shrink:0}
+.plist-hdr{padding:10px 14px;border-bottom:1px solid var(--b1);font-size:.7rem;
+  font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;
+  display:flex;justify-content:space-between;align-items:center}
+.plist-scroll{flex:1;overflow-y:auto;padding:8px}
+.plist-item{display:flex;gap:8px;align-items:center;padding:7px 9px;border-radius:8px;
+  cursor:pointer;border:1px solid transparent;transition:all .2s;margin-bottom:4px;
+  position:relative}
+.plist-item:hover{background:var(--s2);border-color:var(--b1)}
+.plist-item.active{background:var(--accentg);border-color:rgba(124,58,237,.4)}
+.plist-thumb{width:40px;height:52px;border-radius:4px;overflow:hidden;
+  background:var(--s3);flex-shrink:0;position:relative}
+.plist-thumb img{width:100%;height:100%;object-fit:cover}
+.plist-thumb .gen-spin{position:absolute;inset:0;display:flex;align-items:center;
+  justify-content:center;font-size:1rem}
+.plist-meta{flex:1;min-width:0}
+.plist-num{font-size:.62rem;color:var(--t3);font-family:var(--mono)}
+.plist-label{font-size:.75rem;color:var(--t1);font-weight:500;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px}
+.plist-type{font-size:.6rem;color:var(--accent2)}
+.plist-del{position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  width:18px;height:18px;border-radius:3px;border:none;background:none;
+  color:var(--t3);cursor:pointer;font-size:.7rem;display:none;align-items:center;justify-content:center}
+.plist-item:hover .plist-del{display:flex}
+.plist-del:hover{background:rgba(233,69,96,.2);color:var(--fire)}
+.add-panel-btn{margin:8px;padding:.6rem;border-radius:8px;border:1px dashed var(--b2);
+  background:transparent;color:var(--t3);cursor:pointer;font-size:.78rem;
+  font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:6px;
+  transition:all .2s}
+.add-panel-btn:hover{border-color:var(--accent);color:var(--accent2);background:var(--accentg)}
+
+/* ── PHONE PREVIEW ── */
+.phone-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;
+  align-items:center;background:var(--bg);padding:16px 0}
+.phone-controls{display:flex;gap:8px;margin-bottom:12px;align-items:center}
+.zoom-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--b1);
+  background:var(--s2);color:var(--t2);cursor:pointer;font-size:.8rem;
+  display:flex;align-items:center;justify-content:center}
+.zoom-btn:hover{border-color:var(--b2);color:var(--t1)}
+.zoom-label{font-size:.65rem;color:var(--t3);font-family:var(--mono);min-width:36px;text-align:center}
+
+.phone-frame{background:#0a0a0a;border-radius:44px;border:3px solid #2a2a2a;
+  box-shadow:0 0 0 1px #111,0 20px 60px rgba(0,0,0,.7),inset 0 0 0 1px #333;
+  overflow:hidden;position:relative;flex-shrink:0;
+  width:320px;height:600px;transition:all .3s}
+.phone-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:120px;height:28px;background:#0a0a0a;border-radius:0 0 18px 18px;z-index:10}
+.phone-screen{height:100%;overflow-y:scroll;overflow-x:hidden;padding-top:28px;
+  scroll-behavior:smooth;background:#000}
+.phone-screen::-webkit-scrollbar{display:none}
+
+.strip-panel{width:100%;position:relative;overflow:hidden;cursor:pointer;
+  transition:outline .15s;flex-shrink:0}
+.strip-panel:hover .panel-overlay-hint{opacity:1}
+.strip-panel.selected-panel{outline:2px solid var(--accent2)}
+.strip-panel img{width:100%;display:block}
+.strip-panel .panel-placeholder{width:100%;display:flex;align-items:center;
+  justify-content:center;background:var(--s3);color:var(--t3);font-size:.8rem;flex-direction:column;gap:6px}
+.strip-panel .panel-placeholder .ph-icon{font-size:2rem;opacity:.4}
+.strip-panel .gen-overlay{position:absolute;inset:0;background:rgba(0,0,0,.7);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;font-size:.72rem;color:var(--t2)}
+.spin{width:24px;height:24px;border:3px solid rgba(255,255,255,.1);
+  border-top-color:var(--accent2);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── SVG OVERLAYS ── */
+.overlay-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.overlay-svg.editable{pointer-events:all}
+.bubble-group{cursor:move}
+.bubble-text{font-family:'Bangers',cursive;font-size:13px;text-anchor:middle;dominant-baseline:middle;fill:#000;letter-spacing:.5px}
+.caption-text{font-family:'DM Sans',sans-serif;font-size:10px;fill:#fff;font-weight:600}
+
+/* ── PANEL EDITOR ── */
+.panel-editor{width:280px;background:var(--s1);border-left:1px solid var(--b1);
+  display:flex;flex-direction:column;overflow:hidden}
+.pe-hdr{padding:10px 14px;border-bottom:1px solid var(--b1);font-size:.7rem;
+  font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.1em}
+.pe-scroll{flex:1;overflow-y:auto;padding:14px}
+.pe-section{margin-bottom:16px}
+.pe-label{font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--t3);margin-bottom:6px}
+.pe-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.pe-type-btn{padding:.4rem;border-radius:6px;border:1px solid var(--b1);background:var(--s2);
+  font-size:.6rem;color:var(--t2);cursor:pointer;text-align:center;transition:all .2s}
+.pe-type-btn:hover{border-color:var(--b2);color:var(--t1)}
+.pe-type-btn.active{border-color:var(--accent);background:var(--accentg);color:var(--accent2)}
+.pe-type-icon{font-size:1rem;display:block;margin-bottom:2px}
+.pe-textarea{width:100%;padding:.6rem .75rem;border-radius:8px;border:1px solid var(--b1);
+  background:var(--s2);color:var(--t1);font-size:.8rem;font-family:var(--sans);
+  resize:none;line-height:1.6;transition:border-color .2s}
+.pe-textarea:focus{outline:none;border-color:rgba(124,58,237,.5)}
+.pe-textarea::placeholder{color:var(--t3)}
+.gen-btn{width:100%;padding:.65rem;border-radius:8px;border:none;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;font-size:.82rem;font-weight:700;cursor:pointer;
+  font-family:var(--sans);letter-spacing:.3px;transition:all .2s;margin-top:4px}
+.gen-btn:hover{opacity:.9;transform:translateY(-1px)}
+.gen-btn:disabled{opacity:.5;cursor:default;transform:none}
+.gen-btn.regen{background:linear-gradient(135deg,var(--teal),#0e7490)}
+
+/* overlay tools */
+.overlay-tools{display:flex;flex-wrap:wrap;gap:5px}
+.ot-btn{padding:.3rem .6rem;border-radius:6px;border:1px solid var(--b1);
+  background:var(--s2);color:var(--t2);font-size:.7rem;cursor:pointer;transition:all .2s}
+.ot-btn:hover{border-color:var(--b2);color:var(--t1)}
+.pe-chars{display:flex;flex-direction:column;gap:5px;font-size:.73rem;color:var(--t2)}
+.pe-char-tag{padding:.25rem .55rem;background:var(--s2);border:1px solid var(--b1);
+  border-radius:5px;cursor:pointer;transition:all .2s}
+.pe-char-tag:hover{border-color:var(--accent);color:var(--accent2)}
+
+/* ── SETUP MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  backdrop-filter:blur(8px)}
+.modal{background:var(--s1);border:1px solid var(--b2);border-radius:18px;
+  max-width:700px;width:100%;max-height:90vh;overflow-y:auto;padding:28px}
+.modal-title{font-family:var(--comic);font-size:2rem;letter-spacing:1px;margin-bottom:4px;
+  background:linear-gradient(135deg,var(--accent2),var(--fire));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.modal-sub{color:var(--t3);font-size:.85rem;margin-bottom:24px}
+.field{margin-bottom:16px}
+.field-label{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--t3);margin-bottom:6px;display:block}
+.field-input{width:100%;padding:.65rem .8rem;border-radius:8px;border:1px solid var(--b1);
+  background:var(--s2);color:var(--t1);font-size:.88rem;font-family:var(--sans)}
+.field-input:focus{outline:none;border-color:rgba(124,58,237,.5)}
+
+/* style grid */
+.style-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
+.style-card{border:2px solid var(--b1);border-radius:10px;padding:12px 10px;
+  cursor:pointer;text-align:center;transition:all .2s;background:var(--s2)}
+.style-card:hover{border-color:var(--b2)}
+.style-card.active{border-color:var(--accent2);background:var(--accentg)}
+.style-card .sc-icon{font-size:1.6rem;margin-bottom:5px}
+.style-card .sc-name{font-size:.75rem;font-weight:600;color:var(--t1)}
+.style-card .sc-desc{font-size:.62rem;color:var(--t3);margin-top:2px;line-height:1.4}
+
+/* char editor */
+.char-row{display:grid;grid-template-columns:1fr 2fr 22px;gap:6px;align-items:start;margin-bottom:6px}
+.char-input{padding:.4rem .55rem;border-radius:6px;border:1px solid var(--b1);
+  background:var(--s2);color:var(--t1);font-size:.78rem;font-family:var(--sans);width:100%}
+.char-input:focus{outline:none;border-color:rgba(124,58,237,.4)}
+.char-del{background:none;border:none;color:var(--t3);cursor:pointer;font-size:.9rem;padding-top:6px}
+.char-del:hover{color:var(--fire)}
+
+.start-btn{width:100%;padding:.9rem;border-radius:10px;border:none;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;font-size:1rem;font-weight:700;cursor:pointer;font-family:var(--comic);
+  letter-spacing:1px;font-size:1.1rem;transition:all .2s;margin-top:8px}
+.start-btn:hover{opacity:.9;transform:translateY(-1px)}
+
+/* ── EXPORT PANEL ── */
+.export-bar{padding:8px 14px;background:var(--s1);border-top:1px solid var(--b1);
+  display:flex;gap:8px;align-items:center;flex-shrink:0}
+.export-bar .exp-label{font-size:.68rem;color:var(--t3);flex:1}
+.ebtn{padding:.35rem .75rem;border-radius:6px;border:1px solid var(--b1);
+  background:var(--s2);color:var(--t2);font-size:.72rem;cursor:pointer;transition:all .2s}
+.ebtn:hover{border-color:var(--b2);color:var(--t1)}
+.ebtn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:var(--s2);border:1px solid var(--b2);border-radius:8px;
+  padding:.5rem 1rem;font-size:.78rem;color:var(--t1);z-index:9999;
+  pointer-events:none;transition:opacity .3s;white-space:nowrap}
+.toast.ok{border-color:rgba(34,197,94,.3);color:#4ade80}
+.toast.err{border-color:rgba(233,69,96,.3);color:var(--fire)}
+.toast.hide{opacity:0}
+
+
+/* ── OT AUTO-BUILD MODAL ── */
+.ot-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:500;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  backdrop-filter:blur(10px);overflow-y:auto}
+.ot-modal{background:linear-gradient(160deg,#0e0e18,#080810);
+  border:1px solid rgba(168,85,247,.25);border-radius:16px;
+  max-width:780px;width:100%;padding:28px;max-height:90vh;overflow-y:auto}
+.ot-modal-title{font-family:'Bangers',cursive;font-size:1.6rem;letter-spacing:1px;
+  background:linear-gradient(135deg,#a855f7,#c9a84c);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:3px}
+.ot-modal-sub{font-size:.72rem;color:var(--t3);margin-bottom:22px}
+.ot-section-label{font-size:.6rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.14em;color:var(--t3);margin-bottom:7px}
+.era-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:18px}
+.era-btn{padding:.5rem .4rem;border-radius:6px;border:1px solid var(--b1);
+  background:var(--s2);font-size:.68rem;font-weight:600;color:var(--t2);
+  cursor:pointer;text-align:center;transition:all .2s}
+.era-btn:hover{border-color:var(--b2)}
+.era-btn.active{border-color:var(--accent);background:var(--accentg);color:var(--accent2)}
+.era-btn .eb-year{font-size:.55rem;color:var(--t3);display:block;margin-top:1px;font-family:var(--mono)}
+.char-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:18px}
+.ot-char-card{padding:9px;border-radius:7px;border:1px solid var(--b1);background:var(--s2);
+  cursor:pointer;transition:all .2s;text-align:center}
+.ot-char-card:hover{border-color:var(--b2)}
+.ot-char-card.selected{border-color:var(--gold);background:rgba(201,168,76,.12)}
+.ot-char-card .occ-sym{font-size:1.1rem;display:block;margin-bottom:3px}
+.ot-char-card .occ-name{font-size:.62rem;font-weight:600;color:var(--t1);line-height:1.3}
+.ot-char-card .occ-role{font-size:.55rem;color:var(--t3);margin-top:2px;line-height:1.3}
+.ot-char-card .occ-type{font-size:.5rem;margin-top:3px;padding:.1rem .35rem;
+  border-radius:3px;background:var(--b1);color:var(--t3);display:inline-block}
+.dir-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:18px}
+.dir-btn{padding:.4rem;border-radius:6px;border:1px solid var(--b1);background:var(--s2);
+  font-size:.62rem;color:var(--t2);cursor:pointer;text-align:center;transition:all .2s}
+.dir-btn:hover{border-color:var(--b2)}
+.dir-btn.active{border-color:var(--accent2);background:rgba(168,85,247,.12);color:var(--accent2)}
+.pc-grid{display:flex;gap:6px;margin-bottom:18px}
+.pc-btn{padding:.3rem .7rem;border-radius:5px;border:1px solid var(--b1);background:var(--s2);
+  font-size:.72rem;color:var(--t2);cursor:pointer;transition:all .2s;font-family:var(--mono)}
+.pc-btn:hover{border-color:var(--b2)}
+.pc-btn.active{border-color:var(--accent);background:var(--accentg);color:var(--accent2)}
+.ot-gen-btn{width:100%;padding:.75rem;border-radius:8px;border:none;
+  background:linear-gradient(135deg,var(--accent),#c9a84c);
+  color:#fff;font-size:.9rem;font-weight:700;cursor:pointer;
+  font-family:'Bangers',cursive;letter-spacing:1px;transition:all .2s;margin-top:6px}
+.ot-gen-btn:hover{opacity:.9}
+.ot-gen-btn:disabled{opacity:.4;cursor:default}
+.script-preview{background:var(--s2);border:1px solid var(--b1);border-radius:8px;
+  padding:12px;max-height:200px;overflow-y:auto;margin-top:12px;font-size:.7rem;
+  color:var(--t2);line-height:1.6;white-space:pre-wrap;font-family:var(--mono)}
+
+/* ── BUBBLE PICKER ── */
+.bubble-picker{position:fixed;background:var(--s2);border:1px solid var(--b2);
+  border-radius:10px;padding:10px;display:flex;gap:6px;flex-wrap:wrap;z-index:300;
+  box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.bp-btn{padding:.3rem .6rem;border-radius:6px;border:1px solid var(--b1);
+  background:var(--s1);color:var(--t2);font-size:.7rem;cursor:pointer;white-space:nowrap}
+.bp-btn:hover{border-color:var(--accent);color:var(--accent2)}
+</style>
+</head>
+<body>
+
+<!-- SETUP MODAL -->
+<div class="modal-bg" id="setupModal">
+  <div class="modal">
+    <div class="modal-title">∞ Infinity Strip</div>
+    <div class="modal-sub">AI comic builder · Vertical scroll format · Powered by Fal + Gemini</div>
+
+    <div class="field">
+      <label class="field-label">Series Title</label>
+      <input class="field-input" id="setup-title" placeholder="e.g. Neon Delta, The Last Archivist…" value="">
+    </div>
+
+    <div class="field">
+      <label class="field-label">Art Style</label>
+      <div class="style-grid" id="styleGrid"></div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Characters (optional — inject into every panel prompt)</label>
+      <div id="charList"></div>
+      <button class="tbtn" onclick="addChar()" style="font-size:.72rem;margin-top:5px">+ Add Character</button>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Story Premise / World Context</label>
+      <textarea class="field-input pe-textarea" id="setup-premise" rows="2"
+        placeholder="e.g. 1940s Mississippi Delta. A blues musician discovers he can summon the dead through his guitar…"></textarea>
+    </div>
+
+    <button class="start-btn" onclick="startBuilder()">✦ Begin Creating</button>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">∞ Infinity Strip <span id="seriesTitle">Untitled</span></div>
+  <div class="style-badge" id="styleBadge">comic_book</div>
+  <div class="topbar-tools">
+    <button class="tbtn" onclick="openSetup()">⚙ Story Setup</button>
+    <button class="tbtn active" onclick="openOtModal()" style="border-color:var(--gold);color:var(--gold)">⊕ Build from OT</button>
+    <button class="tbtn" onclick="exportStrip()">⬇ Export Strip</button>
+    <button class="tbtn active" onclick="togglePreviewSize()">📱 Preview</button>
+  </div>
+</div>
+
+<!-- WORKSPACE -->
+<div class="workspace">
+
+  <!-- PANEL LIST -->
+  <div class="panel-list">
+    <div class="plist-hdr">
+      <span>Panels</span>
+      <span id="plist-count" style="color:var(--accent2);font-family:var(--mono);font-size:.75rem">0</span>
+    </div>
+    <div class="plist-scroll" id="plistScroll"></div>
+    <button class="add-panel-btn" onclick="addPanel()">＋ Add Panel</button>
+  </div>
+
+  <!-- PHONE PREVIEW -->
+  <div class="phone-wrap">
+    <div class="phone-controls">
+      <button class="zoom-btn" onclick="zoom(-1)">−</button>
+      <span class="zoom-label" id="zoomLabel">100%</span>
+      <button class="zoom-btn" onclick="zoom(1)">+</button>
+      <span style="font-size:.62rem;color:var(--t3);margin-left:8px">scroll to read ↓</span>
+    </div>
+    <div class="phone-frame" id="phoneFrame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen" id="phoneScreen">
+        <!-- panels render here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL EDITOR -->
+  <div class="panel-editor">
+    <div class="pe-hdr">Panel Editor</div>
+    <div class="pe-scroll" id="peScroll">
+      <div style="padding:40px 0;text-align:center;color:var(--t3);font-size:.82rem">
+        <div style="font-size:1.5rem;margin-bottom:8px">←</div>
+        Select a panel to edit
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- EXPORT BAR -->
+<div class="export-bar">
+  <span class="exp-label" id="exportLabel">0 panels · <span id="exportWords">Ready to create</span></span>
+  <button class="ebtn" onclick="exportPanels()">⬇ Individual PNGs</button>
+  <button class="ebtn primary" onclick="exportStrip()">⬇ Full Strip</button>
+</div>
+
+<!-- TOAST -->
+<div class="toast hide" id="toast"></div>
+
+<script>
+// ── CONFIG ─────────────────────────────────────────────────────────────────
+const PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app';
+const FAL   = PROXY + '/fal/generate-sync';
+const GEM   = PROXY + '/gemini/generate';
+
+// ── STYLES ─────────────────────────────────────────────────────────────────
+const STYLES = {
+  comic_book: {
+    name:'Comic Book', icon:'🦸', desc:'Marvel / DC bold inks',
+    prompt:'American superhero comic book art, bold black inks, Ben-Day dot texture, dynamic heroic composition, vibrant flat colors, Marvel-DC style'
+  },
+  manga: {
+    name:'Manga', icon:'⛩️', desc:'Japanese clean lines',
+    prompt:'manga art style, clean sharp inks, expressive character faces, screen tone textures, Japanese comics aesthetic, high contrast black and white with spot color'
+  },
+  webtoon: {
+    name:'Webtoon', icon:'📱', desc:'Korean vertical digital',
+    prompt:'Korean webtoon digital art style, clean lines, bright colors, contemporary digital illustration, vertical strip format optimized, youthful energy'
+  },
+  noir: {
+    name:'Noir', icon:'🌑', desc:'Black & white shadows',
+    prompt:'noir graphic novel art, heavy black ink shadows, chiaroscuro, film noir aesthetic, black and white with deep shadow pools, gritty urban atmosphere'
+  },
+  retro_pop: {
+    name:'Retro Pop', icon:'💥', desc:'1960s Lichtenstein',
+    prompt:'1960s pop art comic style, Roy Lichtenstein inspired, primary colors, halftone dot pattern overlay, bold CMYK colors, Ben-Day dots, retro printing aesthetic'
+  },
+  watercolor: {
+    name:'Watercolor', icon:'🎨', desc:'Painterly illustrated',
+    prompt:'watercolor illustrated comic, loose expressive brushwork, soft color bleeds, painterly graphic novel, illustrated storybook warmth, editorial illustration quality'
+  },
+};
+
+// ── PANEL TYPES ─────────────────────────────────────────────────────────────
+const PANEL_TYPES = {
+  standard:   {name:'Standard',    icon:'▬', w:320, h:240, ratio:'4:3',  fal_size:'landscape_4_3'},
+  portrait:   {name:'Portrait',    icon:'▯', w:320, h:426, ratio:'3:4',  fal_size:'portrait_4_3'},
+  cinematic:  {name:'Cinematic',   icon:'━', w:320, h:144, ratio:'21:9', fal_size:'landscape_16_9'},
+  square:     {name:'Square',      icon:'▪', w:320, h:320, ratio:'1:1',  fal_size:'square_hd'},
+  tall:       {name:'Tall',        icon:'▮', w:320, h:480, ratio:'2:3',  fal_size:'portrait_16_9'},
+  splash:     {name:'Splash',      icon:'◻', w:320, h:560, ratio:'9:16', fal_size:'portrait_16_9'},
+};
+
+// ── STATE ───────────────────────────────────────────────────────────────────
+let state = {
+  title: 'Untitled',
+  style: 'comic_book',
+  premise: '',
+  characters: [],
+  panels: [],
+  selectedId: null,
+  zoom: 1.0,
+  nextId: 1,
+  overlayMode: null, // 'speech'|'thought'|'shout'|'caption'|'narration'
+};
+
+// ── BUBBLE TYPES ────────────────────────────────────────────────────────────
+const BUBBLES = {
+  speech:    {label:'💬 Speech',    shape:'ellipse',   fill:'#fff',textFill:'#000'},
+  thought:   {label:'💭 Thought',   shape:'cloud',     fill:'#fff',textFill:'#000'},
+  shout:     {label:'💥 Shout',     shape:'starburst', fill:'#fff200',textFill:'#000'},
+  caption:   {label:'📜 Caption',   shape:'rect',      fill:'rgba(0,0,0,0.8)',textFill:'#fff'},
+  narration: {label:'🗣 Narration', shape:'narration', fill:'#1a1a2e',textFill:'#d4a017'},
+  sfx:       {label:'💢 SFX',       shape:'sfx',       fill:'none',textFill:'#ff0'},
+};
+
+// ── SETUP ───────────────────────────────────────────────────────────────────
+function buildStyleGrid(){
+  const grid = document.getElementById('styleGrid');
+  grid.innerHTML = Object.entries(STYLES).map(([k,s])=>`
+    <div class="style-card ${k===state.style?'active':''}" onclick="selectStyle('${k}')">
+      <div class="sc-icon">${s.icon}</div>
+      <div class="sc-name">${s.name}</div>
+      <div class="sc-desc">${s.desc}</div>
+    </div>`).join('');
+}
+
+function selectStyle(k){
+  state.style = k;
+  buildStyleGrid();
+  document.getElementById('styleBadge').textContent = k;
+}
+
+let setupChars = [];
+function addChar(){
+  setupChars.push({name:'',desc:''});
+  renderCharList();
+}
+function removeChar(i){ setupChars.splice(i,1); renderCharList(); }
+function renderCharList(){
+  document.getElementById('charList').innerHTML = setupChars.map((c,i)=>`
+    <div class="char-row">
+      <input class="char-input" placeholder="Name" value="${c.name}"
+        oninput="setupChars[${i}].name=this.value">
+      <input class="char-input" placeholder="Appearance: tall Black man, leather jacket, natural hair…" value="${c.desc}"
+        oninput="setupChars[${i}].desc=this.value">
+      <button class="char-del" onclick="removeChar(${i})">×</button>
+    </div>`).join('');
+}
+
+function startBuilder(){
+  state.title    = document.getElementById('setup-title').value.trim() || 'Untitled';
+  state.premise  = document.getElementById('setup-premise').value.trim();
+  state.characters = setupChars.filter(c=>c.name.trim());
+  document.getElementById('seriesTitle').textContent = state.title;
+  document.getElementById('styleBadge').textContent = state.style;
+  document.getElementById('setupModal').style.display='none';
+  if(state.panels.length===0) addPanel();
+  renderAll();
+  toast('✦ ' + state.title + ' — let\'s build','ok');
+}
+
+function openSetup(){
+  document.getElementById('setup-title').value = state.title;
+  setupChars = [...state.characters];
+  renderCharList();
+  buildStyleGrid();
+  document.getElementById('setupModal').style.display='flex';
+}
+
+// ── PANELS ──────────────────────────────────────────────────────────────────
+function addPanel(type='standard'){
+  const panel = {
+    id: state.nextId++,
+    type,
+    prompt: '',
+    imageUrl: null,
+    generating: false,
+    overlays: [],
+  };
+  state.panels.push(panel);
+  state.selectedId = panel.id;
+  renderAll();
+  scrollToPanel(panel.id);
+}
+
+function deletePanel(id){
+  state.panels = state.panels.filter(p=>p.id!==id);
+  if(state.selectedId===id) state.selectedId = state.panels[0]?.id || null;
+  renderAll();
+}
+
+function selectPanel(id){
+  state.selectedId = id;
+  renderPanelList();
+  renderPanelEditor();
+  const el = document.getElementById('strip-'+id);
+  if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function getPanel(id){ return state.panels.find(p=>p.id===id); }
+
+// ── GENERATE ────────────────────────────────────────────────────────────────
+function buildPrompt(panel){
+  const style = STYLES[state.style];
+  const charTokens = state.characters.map(c=>`${c.name}: ${c.desc}`).join('; ');
+  const pt = PANEL_TYPES[panel.type] || PANEL_TYPES.standard;
+  const premise = state.premise ? `Story world: ${state.premise}. ` : '';
+  const chars = charTokens ? `Characters: ${charTokens}. ` : '';
+  return `${style.prompt}, ${premise}${chars}Scene: ${panel.prompt}, infinity scroll vertical comic panel, ${pt.ratio} ratio, no text no words no speech bubbles, professional comic art`;
+}
+
+async function generatePanel(id){
+  const panel = getPanel(id);
+  if(!panel || !panel.prompt.trim()){ toast('Describe the scene first','err'); return; }
+  panel.generating = true;
+  renderAll();
+  try{
+    const pt = PANEL_TYPES[panel.type] || PANEL_TYPES.standard;
+    const r = await fetch(FAL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'fal-ai/flux/schnell',
+        prompt: buildPrompt(panel),
+        image_size: pt.fal_size,
+        num_inference_steps: 4,
+      })
+    });
+    const data = await r.json();
+    const url = data?.images?.[0]?.url;
+    if(url){
+      panel.imageUrl = url;
+      panel.generating = false;
+      toast('Panel generated ✓','ok');
+    } else {
+      throw new Error(data?.detail || 'No image returned');
+    }
+  } catch(e){
+    panel.generating = false;
+    toast('Generation failed: '+e.message,'err');
+  }
+  renderAll();
+}
+
+// ── OVERLAY SYSTEM ──────────────────────────────────────────────────────────
+function addOverlay(panelId, type){
+  const panel = getPanel(panelId);
+  if(!panel) return;
+  const text = prompt(`${BUBBLES[type].label} text:`, type==='sfx'?'POW!':'...');
+  if(!text) return;
+  panel.overlays.push({
+    id: Date.now(), type, text,
+    x: 50, y: 20, w: 80, h: 30, // percent-based
+  });
+  renderAll();
+}
+
+function removeOverlay(panelId, overlayId){
+  const panel = getPanel(panelId);
+  if(!panel) return;
+  panel.overlays = panel.overlays.filter(o=>o.id!==overlayId);
+  renderAll();
+}
+
+function buildBubbleSVG(panel, editable=false){
+  if(!panel.overlays.length) return '';
+  const pt = PANEL_TYPES[panel.type] || PANEL_TYPES.standard;
+  const W = pt.w, H = pt.h;
+  const svgParts = panel.overlays.map(ov=>{
+    const b = BUBBLES[ov.type];
+    const cx = ov.x/100*W, cy = ov.y/100*H;
+    const bw = ov.w/100*W, bh = ov.h/100*H;
+    let shape='', tail='';
+    if(b.shape==='ellipse'){
+      shape = `<ellipse cx="${cx}" cy="${cy}" rx="${bw/2}" ry="${bh/2}" fill="${b.fill}" stroke="#000" stroke-width="2"/>`;
+      tail  = `<polygon points="${cx},${cy+bh/2} ${cx-8},${cy+bh/2+12} ${cx+8},${cy+bh/2}" fill="${b.fill}" stroke="#000" stroke-width="2"/>`;
+    } else if(b.shape==='rect'||b.shape==='narration'){
+      const rx = b.shape==='narration'?2:4;
+      shape = `<rect x="${cx-bw/2}" y="${cy-bh/2}" width="${bw}" height="${bh}" rx="${rx}" fill="${b.fill}" stroke="${b.shape==='narration'?'#c9a84c':'rgba(255,255,255,.3)'}" stroke-width="1.5"/>`;
+    } else if(b.shape==='starburst'){
+      const pts = starburst(cx,cy,bw/2,bh/2,8);
+      shape = `<polygon points="${pts}" fill="${b.fill}" stroke="#000" stroke-width="2"/>`;
+    } else if(b.shape==='sfx'){
+      shape = '';
+    } else if(b.shape==='cloud'){
+      shape = `<ellipse cx="${cx}" cy="${cy}" rx="${bw/2}" ry="${bh/2}" fill="${b.fill}" stroke="#000" stroke-width="2"/>
+      <ellipse cx="${cx-bw/4}" cy="${cy-bh/2+2}" rx="${bw/5}" ry="${bh/6}" fill="${b.fill}" stroke="#000" stroke-width="1.5"/>
+      <ellipse cx="${cx+bw/5}" cy="${cy-bh/2+2}" rx="${bw/6}" ry="${bh/7}" fill="${b.fill}" stroke="#000" stroke-width="1.5"/>`;
+    }
+    const fontSize = b.shape==='sfx' ? Math.round(bw/ov.text.length*1.4+8) : 13;
+    const fontFam  = b.shape==='sfx' ? 'Bangers' : b.shape==='narration' ? 'DM Sans' : 'Bangers';
+    const textEl   = `<text x="${cx}" y="${cy}" font-family="${fontFam}" font-size="${fontSize}"
+      font-weight="${b.shape==='sfx'?'900':'400'}" text-anchor="middle" dominant-baseline="middle"
+      fill="${b.textFill}" letter-spacing="1">${escSVG(ov.text)}</text>`;
+    const delbtn   = editable ? `<circle cx="${cx+bw/2-4}" cy="${cy-bh/2+4}" r="7" fill="#e94560" opacity=".8" style="cursor:pointer" onclick="removeOverlay(${panel.id},${ov.id})"/>
+      <text x="${cx+bw/2-4}" y="${cy-bh/2+5}" font-size="9" text-anchor="middle" dominant-baseline="middle" fill="#fff" style="cursor:pointer;pointer-events:none">×</text>` : '';
+    return `<g class="bubble-group" data-ov="${ov.id}">${shape}${tail}${textEl}${delbtn}</g>`;
+  });
+  return `<svg class="overlay-svg${editable?' editable':''}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${svgParts.join('')}</svg>`;
+}
+
+function starburst(cx,cy,rx,ry,points){
+  const pts=[];
+  for(let i=0;i<points*2;i++){
+    const a=Math.PI*i/points - Math.PI/2;
+    const r = i%2===0 ? 1 : 0.5;
+    pts.push(`${cx+rx*r*Math.cos(a)},${cy+ry*r*Math.sin(a)}`);
+  }
+  return pts.join(' ');
+}
+
+function escSVG(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── RENDER ──────────────────────────────────────────────────────────────────
+function renderAll(){
+  renderPanelList();
+  renderPhoneStrip();
+  renderPanelEditor();
+  document.getElementById('plist-count').textContent = state.panels.length;
+  const gen = state.panels.filter(p=>p.imageUrl).length;
+  document.getElementById('exportLabel').innerHTML = `${state.panels.length} panels · ${gen} generated`;
+}
+
+function renderPanelList(){
+  const scroll = document.getElementById('plistScroll');
+  scroll.innerHTML = state.panels.map((p,i)=>{
+    const pt = PANEL_TYPES[p.type]||PANEL_TYPES.standard;
+    return `<div class="plist-item ${p.id===state.selectedId?'active':''}" onclick="selectPanel(${p.id})">
+      <div class="plist-thumb">
+        ${p.generating ? '<div class="gen-spin">⏳</div>'
+          : p.imageUrl ? `<img src="${p.imageUrl}" loading="lazy">`
+          : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--t3)">—</div>'}
+      </div>
+      <div class="plist-meta">
+        <div class="plist-num">#${i+1}</div>
+        <div class="plist-label">${p.prompt||'(no description)'}</div>
+        <div class="plist-type">${pt.name} · ${pt.ratio}</div>
+      </div>
+      <button class="plist-del" onclick="event.stopPropagation();deletePanel(${p.id})">×</button>
+    </div>`;
+  }).join('');
+}
+
+function renderPhoneStrip(){
+  const screen = document.getElementById('phoneScreen');
+  if(!state.panels.length){
+    screen.innerHTML='<div style="padding:40px 20px;text-align:center;color:#555;font-size:.8rem">Add panels to begin</div>';
+    return;
+  }
+  screen.innerHTML = state.panels.map(p=>{
+    const pt = PANEL_TYPES[p.type]||PANEL_TYPES.standard;
+    const h = Math.round(320*(pt.h/pt.w));
+    return `<div class="strip-panel ${p.id===state.selectedId?'selected-panel':''}" id="strip-${p.id}"
+      style="height:${h}px" onclick="selectPanel(${p.id})">
+      ${p.generating
+        ? `<div class="gen-overlay"><div class="spin"></div><span>Generating…</span></div><div class="panel-placeholder" style="height:${h}px"></div>`
+        : p.imageUrl
+          ? `<img src="${p.imageUrl}" style="height:${h}px;width:100%;object-fit:cover">`
+          : `<div class="panel-placeholder" style="height:${h}px"><div class="ph-icon">🎨</div><span>Panel ${state.panels.indexOf(p)+1}</span></div>`
+      }
+      ${buildBubbleSVG(p, p.id===state.selectedId)}
+    </div>`;
+  }).join('');
+}
+
+function renderPanelEditor(){
+  const pe = document.getElementById('peScroll');
+  if(!state.selectedId){
+    pe.innerHTML='<div style="padding:40px 0;text-align:center;color:var(--t3)">Select a panel</div>';
+    return;
+  }
+  const panel = getPanel(state.selectedId);
+  if(!panel){ pe.innerHTML=''; return; }
+  const idx = state.panels.indexOf(panel);
+
+  pe.innerHTML = `
+    <div class="pe-section">
+      <div class="pe-label">Panel #${idx+1} · Type</div>
+      <div class="pe-type-grid">
+        ${Object.entries(PANEL_TYPES).map(([k,t])=>`
+          <div class="pe-type-btn ${panel.type===k?'active':''}" onclick="setType(${panel.id},'${k}')">
+            <span class="pe-type-icon">${t.icon}</span>${t.name}<br>
+            <span style="font-size:.55rem;color:var(--t3)">${t.ratio}</span>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="pe-section">
+      <div class="pe-label">Scene Description</div>
+      <textarea class="pe-textarea" rows="4" id="pe-prompt"
+        placeholder="A blues musician stands at a crossroads at midnight, shadow split by two roads, moonlight from above…"
+        oninput="updatePrompt(${panel.id},this.value)">${panel.prompt}</textarea>
+      ${state.characters.length ? `
+        <div style="margin-top:6px">
+          <div class="pe-label" style="margin-bottom:4px">Inject character</div>
+          <div class="pe-chars">${state.characters.map(c=>`
+            <span class="pe-char-tag" onclick="appendChar('${escHTML(c.name)}')">${c.name}</span>
+          `).join('')}</div>
+        </div>` : ''}
+      <button class="gen-btn ${panel.imageUrl?'regen':''}" id="genBtn"
+        onclick="generatePanel(${panel.id})"
+        ${panel.generating?'disabled':''}>
+        ${panel.generating?'<span style="display:inline-flex;align-items:center;gap:6px"><span class="spin" style="width:14px;height:14px;border-width:2px"></span>Generating…</span>'
+          : panel.imageUrl?'↻ Regenerate Panel':'✦ Generate Panel'}
+      </button>
+    </div>
+
+    <div class="pe-section">
+      <div class="pe-label">Text Overlays</div>
+      <div class="overlay-tools">
+        ${Object.entries(BUBBLES).map(([k,b])=>`
+          <button class="ot-btn" onclick="addOverlay(${panel.id},'${k}')">${b.label}</button>
+        `).join('')}
+      </div>
+      ${panel.overlays.length ? `
+        <div style="margin-top:8px;font-size:.7rem;color:var(--t3)">
+          ${panel.overlays.length} overlay${panel.overlays.length!==1?'s':''} · Click × to remove
+        </div>` : ''}
+    </div>
+
+    <div class="pe-section" style="border-top:1px solid var(--b1);padding-top:12px">
+      <div class="pe-label">Panel Actions</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="tbtn" onclick="movePanel(${panel.id},-1)">↑ Move Up</button>
+        <button class="tbtn" onclick="movePanel(${panel.id},1)">↓ Move Down</button>
+        <button class="tbtn" onclick="duplicatePanel(${panel.id})">⎘ Duplicate</button>
+        <button class="tbtn" style="color:var(--fire);border-color:rgba(233,69,96,.3)" onclick="deletePanel(${panel.id})">🗑 Delete</button>
+      </div>
+    </div>
+  `;
+}
+
+function setType(id,type){
+  const p=getPanel(id); if(!p) return;
+  p.type=type; renderAll();
+}
+function updatePrompt(id,val){
+  const p=getPanel(id); if(!p) return;
+  p.prompt=val;
+  const item=document.querySelector(`.plist-item .plist-label`);
+}
+function escHTML(s){ return s.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function appendChar(name){
+  const ta=document.getElementById('pe-prompt'); if(!ta) return;
+  const p=getPanel(state.selectedId); if(!p) return;
+  const add = p.prompt ? `, featuring ${name}` : `${name}`;
+  ta.value = p.prompt + add;
+  p.prompt = ta.value;
+}
+function movePanel(id,dir){
+  const i=state.panels.findIndex(p=>p.id===id);
+  if(i<0) return;
+  const ni=i+dir;
+  if(ni<0||ni>=state.panels.length) return;
+  [state.panels[i],state.panels[ni]]=[state.panels[ni],state.panels[i]];
+  renderAll();
+}
+function duplicatePanel(id){
+  const p=getPanel(id); if(!p) return;
+  const np={...p, id:state.nextId++, overlays:[...p.overlays.map(o=>({...o,id:Date.now()+Math.random()}))]};
+  const i=state.panels.findIndex(x=>x.id===id);
+  state.panels.splice(i+1,0,np);
+  state.selectedId=np.id;
+  renderAll(); toast('Panel duplicated','ok');
+}
+function scrollToPanel(id){
+  setTimeout(()=>{
+    const el=document.getElementById('strip-'+id);
+    if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'});
+  },50);
+}
+
+// ── ZOOM ────────────────────────────────────────────────────────────────────
+function zoom(dir){
+  state.zoom = Math.max(.5,Math.min(1.5,state.zoom+dir*.1));
+  const frame = document.getElementById('phoneFrame');
+  frame.style.transform = `scale(${state.zoom})`;
+  frame.style.transformOrigin = 'top center';
+  document.getElementById('zoomLabel').textContent = Math.round(state.zoom*100)+'%';
+}
+let previewSize = 1;
+function togglePreviewSize(){
+  previewSize = previewSize===1?2:1;
+  const frame = document.getElementById('phoneFrame');
+  frame.style.width = previewSize===1?'320px':'390px';
+  frame.style.height = previewSize===1?'600px':'780px';
+}
+
+// ── EXPORT ──────────────────────────────────────────────────────────────────
+async function exportStrip(){
+  const generated = state.panels.filter(p=>p.imageUrl);
+  if(!generated.length){ toast('Generate some panels first','err'); return; }
+  toast('Preparing strip…');
+  // Build a canvas with all panels stacked
+  const canvas=document.createElement('canvas');
+  canvas.width=320;
+  let totalH=0;
+  const imgs=[];
+  for(const p of generated){
+    const img=new Image(); img.crossOrigin='anonymous';
+    await new Promise(res=>{img.onload=res;img.onerror=res;img.src=p.imageUrl;});
+    const pt=PANEL_TYPES[p.type]||PANEL_TYPES.standard;
+    const h=Math.round(320*(pt.h/pt.w));
+    imgs.push({img,h,panel:p});
+    totalH+=h;
+  }
+  canvas.height=totalH;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,320,totalH);
+  let y=0;
+  for(const {img,h}of imgs){
+    ctx.drawImage(img,0,y,320,h);
+    y+=h;
+  }
+  const link=document.createElement('a');
+  link.download=(state.title.replace(/\s+/g,'-').toLowerCase()||'strip')+'.jpg';
+  link.href=canvas.toDataURL('image/jpeg',.92);
+  link.click();
+  toast('Strip downloaded ✓','ok');
+}
+
+async function exportPanels(){
+  const generated=state.panels.filter(p=>p.imageUrl);
+  if(!generated.length){ toast('Generate some panels first','err'); return; }
+  for(let i=0;i<generated.length;i++){
+    const p=generated[i];
+    const link=document.createElement('a');
+    link.download=`panel-${String(i+1).padStart(2,'0')}.jpg`;
+    link.href=p.imageUrl;
+    link.target='_blank';
+    link.click();
+    await new Promise(r=>setTimeout(r,300));
+  }
+  toast(`${generated.length} panels exported`,'ok');
+}
+
+// ── TOAST ────────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast '+(type||'');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.add('hide'),2800);
+}
+
+
+// ═══ ONTOLOGICAL THEATRE INTEGRATION ═══════════════════════════════════════
+
+const OT_ERAS = [
+  {id:'mound',   name:'Mound Era',    year:'800–1600 CE', color:'#c9a84c'},
+  {id:'nations', name:'Nations Era',  year:'1700–1830',   color:'#16a596'},
+  {id:'removal', name:'Removal Era',  year:'1830–1900',   color:'#e94560'},
+  {id:'delta',   name:'Delta Era',    year:'1900–1960',   color:'#a855f7'},
+];
+
+const OT_CHARS = [
+  // Weaver lineage ◈
+  {id:'weaver-mound',   era:'mound',   lin:'Weaver',      sym:'◈', name:'Spider Grandmother',  role:'Pattern Keeper',        type:'chant',    medium:'fired clay tablets with spider web incisions', flavor:'Every web holds the memory of every web that came before it.',artifacts:['Clay tablet with web pattern','Seed storage vessel','Woven carrying basket']},
+  {id:'weaver-nations', era:'nations', lin:'Weaver',      sym:'◈', name:'Bone Picker Woman',   role:'Between Keeper',        type:'prayer',   medium:'deerskin membrane with charcoal marks',        flavor:'The dead speak through me only after they have finished speaking.',artifacts:['Deerskin ceremonial wrap','Bone stylus','Mourning bundle']},
+  {id:'weaver-removal', era:'removal', lin:'Weaver',      sym:'◈', name:'Aunt Hattie Root',    role:'Root Woman',            type:'monologue',medium:'cloth flour sack, pencil nub, phonetic spelling',flavor:'This root fixes what white medicine will not see.',artifacts:['Root medicine bundle','Flour sack recipe notes','Dried herbs']},
+  {id:'weaver-delta',   era:'delta',   lin:'Weaver',      sym:'◈', name:'Miss Roxie Baines',   role:'Conjure Woman',         type:'monologue',medium:'brown paper bag, pencil, folded in apron pocket', flavor:'I do not work magic. I work knowledge older than this county.',artifacts:['Conjure bottle','Paper charm','Hex signs']},
+  // RiverVoice lineage ≋
+  {id:'river-mound',   era:'mound',   lin:'RiverVoice',  sym:'≋', name:'The River Speaker',   role:'Water Liturgist',       type:'chant',    medium:'log drum surface with carved symbols',          flavor:'The river does not ask permission. Neither do I.',artifacts:['Ceremonial log drum','River stone altar piece','Copper rattle']},
+  {id:'river-nations', era:'nations', lin:'RiverVoice',  sym:'≋', name:'Treaty Singer',        role:'Voice Between',         type:'monologue',medium:'trade paper with bilingual text',               flavor:'I translate everything except what cannot be translated.',artifacts:['Treaty document copy','Bilingual prayer card','Ink horn']},
+  {id:'river-removal', era:'removal', lin:'RiverVoice',  sym:'≋', name:'Brother Elias',        role:'Praise House Elder',    type:'sermon',   medium:'hidden Bible with pencil marks in margins',     flavor:'God hears us even when they say we are not speaking to God.',artifacts:['Marked Bible','Hidden prayer notes','Carved wooden cross']},
+  {id:'river-delta',   era:'delta',   lin:'RiverVoice',  sym:'≋', name:'Rev. C.L. Moses',     role:'The Preacher',          type:'sermon',   medium:'church ledger, copperplate entries, sermon notes',flavor:'The flood is coming. I have been saying so.',artifacts:['Church ledger','Sermon manuscript','Letter to bishop']},
+  // FireKeeper lineage △
+  {id:'fire-mound',   era:'mound',   lin:'FireKeeper',   sym:'△', name:'Fire Keeper',          role:'Sacred Flame Guardian', type:'chant',    medium:'copper authority plate, stamped symbols',       flavor:"The fire I keep tonight was lit before my grandfather's birth.",artifacts:['Copper fire plate','Cedar fire-starting bundle','Ember carrier']},
+  {id:'fire-nations', era:'nations', lin:'FireKeeper',   sym:'△', name:'Drum Hider',           role:'Memory Carrier',        type:'monologue',medium:'deerskin pouch with hidden symbols burned with coal',flavor:'They burned our drums. They did not know we were the drums.',artifacts:['Hidden drum wrapped in deerskin','Burned symbol map','False-bottom basket']},
+  {id:'fire-removal', era:'removal', lin:'FireKeeper',   sym:'△', name:'Solomon Field',        role:'Field Holler',          type:'worksong', medium:'voice only — sound carved into air',             flavor:'They think the holler is nothing. The holler is everything.',artifacts:['Sound only — nothing written','Whistling pattern','Rhythm']},
+  {id:'fire-delta',   era:'delta',   lin:'FireKeeper',   sym:'△', name:'Robert Lee Simms',    role:'The Bluesman',          type:'song',     medium:'brown paper bag with pencil stub, whiskey stain', flavor:'I wrote this song on a Tuesday. By Wednesday it was already mine.',artifacts:['Brown paper bag lyrics','Battered guitar','Pawn ticket']},
+  // EarthShaper lineage ▣
+  {id:'earth-mound',   era:'mound',   lin:'EarthShaper', sym:'▣', name:'The Mound Builder',   role:'Earth Architect',       type:'chant',    medium:'carved post with structural notches',            flavor:'We do not build on the earth. We build the earth.',artifacts:['Alignment post','Basket of earth','Copper measuring cord']},
+  {id:'earth-nations', era:'nations', lin:'EarthShaper', sym:'▣', name:'Fort Builder',         role:'Colonial Engineer',     type:'map',      medium:'vellum survey with compass marks',               flavor:'I build their fort and they call it their idea.',artifacts:['Vellum site survey','Trade compass','Gunpowder cartridge box']},
+  {id:'earth-removal', era:'removal', lin:'EarthShaper', sym:'▣', name:'Overseer James',       role:'Plantation Architect',  type:'ledger',   medium:'leather-bound ledger, copperplate, architectural drawings',flavor:'Every building I design is a mechanism of control.',artifacts:['Plantation ledger','Architectural drawings','Property deed']},
+  {id:'earth-delta',   era:'delta',   lin:'EarthShaper', sym:'▣', name:'Luther Tate',          role:'Levee Worker',          type:'worksong', medium:"work gang manifest, foreman's tally on lumber scrap",flavor:'My back built the levee. The levee will break my back.',artifacts:['Work tally scrap','Shovel mark on levee face','Dog tags']},
+  // CornMother lineage ❋
+  {id:'corn-mound',   era:'mound',   lin:'CornMother',   sym:'❋', name:'Corn Mother',          role:'Sacred Agriculture',    type:'chant',    medium:'pottery vessel with pressed corn pattern',       flavor:'The corn remembers everything the people have forgotten.',artifacts:['Seed corn vessel','Grinding stone','First green corn bundle']},
+  {id:'corn-nations', era:'nations', lin:'CornMother',   sym:'❋', name:'Hidden Farmer',        role:'Preserving Woman',      type:'prayer',   medium:'cloth bundle with seed list in Choctaw',         flavor:'They took the land. They did not take the seed.',artifacts:['Seed bundle','Hidden corn cache','Choctaw seed names cloth']},
+  {id:'corn-removal', era:'removal', lin:'CornMother',   sym:'❋', name:'Big Mama Ruth',        role:'Enslaved Field Hand',   type:'tally',    medium:'cabin beam scratched tally marks, coal stylus',  flavor:'I am counting my children on the cabin beam.',artifacts:['Scratched beam tallies','Hidden seed pouch','Tallow candle stub']},
+  {id:'corn-delta',   era:'delta',   lin:'CornMother',   sym:'❋', name:'Ida Mae Stubbs',      role:'The Sharecropper',      type:'worksong', medium:'flour sack with pencil, cotton yield notes',      flavor:'I grow cotton for a man who keeps the books I cannot see.',artifacts:['Sharecrop contract copy','Flour sack accounts','Cotton bale tally']},
+  // StarWatcher lineage ✧
+  {id:'star-mound',   era:'mound',   lin:'StarWatcher',  sym:'✧', name:'Star Watcher',         role:'Celestial Navigator',   type:'chant',    medium:'flat limestone with astronomical marks',         flavor:'The stars are writing. I am only reading.',artifacts:['Star alignment stone','Solstice marker post','Copper sun symbol']},
+  {id:'star-nations', era:'nations', lin:'StarWatcher',  sym:'✧', name:'Path Reader',           role:'Direction Keeper',      type:'map',      medium:'deerskin map with charcoal constellation lines', flavor:'The path is in the stars. The stars do not care about the treaty.',artifacts:['Deerskin star map','Carved compass stone','River ford marker']},
+  {id:'star-removal', era:'removal', lin:'StarWatcher',  sym:'✧', name:"Harriet's Network",    role:'Underground Conductor', type:'map',      medium:'quilt pattern with coded escape route',          flavor:'North is north is north. The sky does not lie.',artifacts:['Escape route quilt','North Star marker rock','Safe house token']},
+  {id:'star-delta',   era:'delta',   lin:'StarWatcher',  sym:'✧', name:'Lila Mae Vaughn',      role:'The Wanderer',          type:'monologue',medium:'train ticket stub, pencil address on back',       flavor:'I follow the rails north because nothing is here for me anymore.',artifacts:['Train ticket stub','Torn letter from Chicago','Cardboard suitcase']},
+  // BirthKeeper lineage ◎
+  {id:'birth-mound',  era:'mound',   lin:'BirthKeeper',  sym:'◎', name:'The Threshold Woman',  role:'Sacred Midwife',        type:'chant',    medium:'knotted cord with birth tallies',                flavor:'I have held every life in this village at its first and last breath.',artifacts:['Knotted birth cord','Medicine bundle','Ceremonial birth basin']},
+  {id:'birth-nations',era:'nations', lin:'BirthKeeper',  sym:'◎', name:'Between Woman',         role:'Two-World Keeper',      type:'prayer',   medium:'mission record with birth dates in Spanish',     flavor:'I deliver children into a world that has no name for what they are.',artifacts:['Mission birth record','Hidden name cloth','Medicine pouch']},
+  {id:'birth-removal',era:'removal', lin:'BirthKeeper',  sym:'◎', name:'Catch-Hand Delia',     role:'The Catch Woman',       type:'tally',    medium:'scrap cloth with birth tallies in blood-stain dots',flavor:'I catch what the master will sell. I do not say this. I do my work.',artifacts:['Cloth birth record','Midwife kit','Hidden freedom paper']},
+  {id:'birth-delta',  era:'delta',   lin:'BirthKeeper',  sym:'◎', name:'Granny Lou Harper',    role:'The Midwife',           type:'monologue',medium:'composition book with pencil birth records',     flavor:'I have delivered three hundred lives in this county. The county does not know my name.',artifacts:['Composition book records','Medicine chest','Letter requesting certification']},
+  // PowerHolder lineage ♛
+  {id:'power-mound',  era:'mound',   lin:'PowerHolder',  sym:'♛', name:'The Sun Chief',        role:'Paramount Authority',   type:'chant',    medium:'copper authority plate with stamped office marks',flavor:'My authority flows from the harvest. When the corn fails, so do I.',artifacts:['Copper authority plate','Eagle feather regalia','Mound apex throne stone']},
+  {id:'power-nations',era:'nations', lin:'PowerHolder',  sym:'♛', name:'Treaty Chief',          role:'Political Negotiator',  type:'ledger',   medium:'treaty parchment with formal signature',         flavor:'I sign this paper. I do not agree with this paper. These are different things.',artifacts:['Treaty copy','Wampum belt','Letter to President Jefferson']},
+  {id:'power-removal',era:'removal', lin:'PowerHolder',  sym:'♛', name:'Col. Edmund Stott',    role:'Plantation Owner',      type:'ledger',   medium:'leather-bound ledger listing human beings as property',flavor:'I am building the future of this republic, one row at a time.',artifacts:['Property ledger','Cotton merchant contract','Land grant deed']},
+  {id:'power-delta',  era:'delta',   lin:'PowerHolder',  sym:'♛', name:'Mr. Hiram Shelby',    role:'The Planter',           type:'ledger',   medium:'plantation ledger, sharecrop accounts, debt records',flavor:"My grandfather owned four hundred people. I own their children's debt.",artifacts:['Sharecrop ledger','Cotton gin receipt','Bank loan document']},
+];
+
+const OT_DIRECTORS = [
+  {id:'archivist', name:'Archivist', sub:'Lomax documentary', tone:'clinical observation, field notes, ethnographic precision'},
+  {id:'poet',      name:'Poet',      sub:'Malick drift',       tone:'lyrical, light-drunk, interior monologue, sensation over plot'},
+  {id:'witness',   name:'Witness',   sub:'Parks documentary',  tone:'dignified, unflinching, Black life with full humanity and weight'},
+  {id:'oracle',    name:'Oracle',    sub:'Haynes fractured',   tone:'fragmented, myth-adjacent, time as landscape not sequence'},
+  {id:'griot',     name:'Griot',     sub:'Elder's fire',      tone:'call-and-response, ancestral memory, communal witness'},
+  {id:'dreamer',   name:'Dreamer',   sub:'Morrison / Jenkins', tone:'interior emotional truth, tenderness, oblique and luminous'},
+];
+
+let otState = {
+  era: 'delta',
+  selectedChars: [],
+  director: 'witness',
+  panelCount: 6,
+  script: null, // [{type, desc, caption}]
+};
+
+function openOtModal(){
+  otState.selectedChars = [];
+  otState.script = null;
+  document.getElementById('otModal').style.display='flex';
+  document.getElementById('otScriptPreview').style.display='none';
+  renderOtModal();
+}
+function closeOtModal(){ document.getElementById('otModal').style.display='none'; }
+
+function renderOtModal(){
+  // Era grid
+  document.getElementById('otEraGrid').innerHTML = OT_ERAS.map(e=>`
+    <div class="era-btn ${e.id===otState.era?'active':''}" onclick="otSetEra('${e.id}')">
+      <span style="font-size:.82rem;font-weight:700">${e.name}</span>
+      <span class="eb-year">${e.year}</span>
+    </div>`).join('');
+
+  // Char grid (filtered by era)
+  const era = otState.era;
+  document.getElementById('otCharGrid').innerHTML = OT_CHARS.filter(c=>c.era===era).map(c=>`
+    <div class="ot-char-card ${otState.selectedChars.find(x=>x.id===c.id)?'selected':''}"
+      onclick="otToggleChar('${c.id}')">
+      <span class="occ-sym">${c.sym}</span>
+      <div class="occ-name">${c.name}</div>
+      <div class="occ-role">${c.role}</div>
+      <div class="occ-type">${c.type}</div>
+    </div>`).join('');
+
+  // Director grid
+  document.getElementById('otDirGrid').innerHTML = OT_DIRECTORS.map(d=>`
+    <div class="dir-btn ${d.id===otState.director?'active':''}" onclick="otSetDir('${d.id}')">
+      <div style="font-weight:600;margin-bottom:2px">${d.name}</div>
+      <div style="font-size:.55rem;color:var(--t3)">${d.sub}</div>
+    </div>`).join('');
+
+  // Panel count
+  document.getElementById('otPcGrid').innerHTML = [4,6,8,10].map(n=>`
+    <div class="pc-btn ${n===otState.panelCount?'active':''}" onclick="otSetPc(${n})">${n}</div>`).join('');
+}
+
+function otSetEra(era){ otState.era=era; otState.selectedChars=[]; renderOtModal(); }
+function otSetDir(id){ otState.director=id; renderOtModal(); }
+function otSetPc(n){ otState.panelCount=n; renderOtModal(); }
+function otToggleChar(id){
+  const c = OT_CHARS.find(x=>x.id===id);
+  if(!c) return;
+  const idx = otState.selectedChars.findIndex(x=>x.id===id);
+  if(idx>=0){ otState.selectedChars.splice(idx,1); }
+  else if(otState.selectedChars.length<3){ otState.selectedChars.push(c); }
+  else { toast('Max 3 characters','err'); return; }
+  renderOtModal();
+}
+
+async function otGenerateScript(){
+  const btn = document.getElementById('otGenScriptBtn');
+  if(!otState.selectedChars.length){ toast('Pick at least one character','err'); return; }
+  btn.disabled=true; btn.textContent='✦ Writing story script…';
+  const era = OT_ERAS.find(e=>e.id===otState.era);
+  const dir = OT_DIRECTORS.find(d=>d.id===otState.director);
+  const spark = document.getElementById('otSpark').value.trim();
+  const chars = otState.selectedChars;
+  const n = otState.panelCount;
+
+  const charBlock = chars.map(c=>`
+- ${c.sym} ${c.name} (${c.role}, ${c.lin} lineage)
+  Medium: ${c.medium}
+  Voice: ${c.type}
+  Key artifact: ${c.artifacts[0]}
+  Flavor: "${c.flavor}"`).join('\n');
+
+  const prompt = `You are the director of an Ontological Theatre infinity comic strip.
+
+ERA: ${era.name} (${era.year}) — Mississippi Delta, American South
+DIRECTOR STYLE: ${dir.name} — ${dir.tone}
+CHARACTERS:
+${charBlock}
+${spark?'CENTRAL SPARK/TENSION: '+spark:'TENSION: You decide the central tension between these characters and this moment in history.'}
+
+Generate a comic strip script with exactly ${n} panels in this era.
+Each panel must: be specific to this historical moment, use the characters' actual materials and literacy levels, avoid generic poetic language, center the humanity and power of Black and Indigenous subjects, follow the director style.
+
+Return ONLY valid JSON: an array of ${n} objects, each with:
+  "type": one of standard|portrait|cinematic|tall|splash
+  "desc": scene description for the image generator (vivid, specific, no text/words/speech bubbles in image) — mention character's artifacts and body language
+  "caption": 1-2 sentence narration in the director's voice, or null
+
+JSON only. No markdown. No explanation.`;
+
+  try{
+    const r = await fetch(GEM,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        system_instruction:{parts:[{text:'You generate comic strip scripts as JSON. Return ONLY valid JSON arrays, no markdown, no explanation.'}]},
+        contents:[{parts:[{text:prompt}]}]
+      })
+    });
+    const data = await r.json();
+    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    const cleaned = raw.replace(/```json\n?|```/g,'').trim();
+    otState.script = JSON.parse(cleaned);
+    document.getElementById('otScriptPreview').style.display='block';
+    document.getElementById('otScriptPreview').textContent = otState.script.map((p,i)=>
+      `[${i+1}] ${p.type.toUpperCase()}\n${p.desc}\n${p.caption?'Caption: '+p.caption:''}\n`
+    ).join('\n');
+    toast(`${otState.script.length} panels scripted ✓`,'ok');
+  } catch(e){
+    toast('Script generation failed: '+e.message,'err');
+    console.error(e);
+  }
+  btn.disabled=false; btn.textContent='✦ Generate Story Script';
+}
+
+function otLoadAndClose(){
+  if(!otState.script){ toast('Generate the script first','err'); return; }
+  const era = OT_ERAS.find(e=>e.id===otState.era);
+  const chars = otState.selectedChars;
+  // Set up state
+  state.title = chars.map(c=>c.name).join(' & ') + ' — ' + era.name;
+  state.style = 'noir'; // Default for OT — dark ink graphic novel
+  state.premise = 'Ontological Theatre: '+era.name+' ('+era.year+'). Characters: '+chars.map(c=>c.name+' ('+c.role+')').join(', ');
+  state.characters = chars.map(c=>({name:c.name, desc:c.role+'. Carries: '+c.artifacts[0]+'. '+c.flavor}));
+  state.panels = otState.script.map(p=>({
+    id: state.nextId++,
+    type: p.type||'standard',
+    prompt: p.desc,
+    imageUrl: null,
+    generating: false,
+    overlays: p.caption ? [{id:Date.now()+Math.random(),type:'narration',text:p.caption,x:5,y:72,w:90,h:20}] : [],
+  }));
+  state.selectedId = state.panels[0]?.id||null;
+  document.getElementById('seriesTitle').textContent = state.title;
+  document.getElementById('styleBadge').textContent = 'OT · ' + otState.era;
+  closeOtModal();
+  renderAll();
+  toast('OT story loaded — hit ✦ Generate Episode to build','ok');
+}
+
+// ── URL PARAM DEEP LINK ── 
+function checkUrlParams(){
+  const p = new URLSearchParams(location.search);
+  const charId  = p.get('char');
+  const charIds = p.get('chars');  // comma-separated for multi
+  const era     = p.get('era');
+  const autoGen = p.get('auto');   // ?auto=1 skips modal, goes straight to script gen
+
+  // multi-char
+  if(charIds){
+    const ids = charIds.split(',');
+    const found = ids.map(id=>OT_CHARS.find(x=>x.id===id)).filter(Boolean);
+    if(found.length){
+      otState.era = found[0].era;
+      otState.selectedChars = found.slice(0,3);
+      setTimeout(()=>{ openOtModal(); },400);
+      return;
+    }
+  }
+  // single char
+  if(charId){
+    const c = OT_CHARS.find(x=>x.id===charId);
+    if(c){
+      otState.era = c.era;
+      otState.selectedChars = [c];
+      setTimeout(()=>{ openOtModal(); },400);
+      return;
+    }
+  }
+  // era only
+  if(era){
+    otState.era = era;
+    setTimeout(()=>{ openOtModal(); },400);
+  }
+}
+
+// ── INIT ────────────────────────────────────────────────────────────────────
+buildStyleGrid();
+renderAll();
+checkUrlParams();
+</script>
+
+<!-- OT AUTO-BUILD MODAL -->
+<div class="ot-modal-bg" id="otModal" style="display:none">
+  <div class="ot-modal">
+    <div class="ot-modal-title">⊕ Build from Ontological Theatre</div>
+    <div class="ot-modal-sub">Select characters from the OT universe — Gemini writes the full comic script, Fal generates every panel</div>
+
+    <div class="ot-section-label">Era</div>
+    <div class="era-grid" id="otEraGrid"></div>
+
+    <div class="ot-section-label">Characters — pick 1 to 3</div>
+    <div class="char-grid" id="otCharGrid"></div>
+
+    <div class="ot-section-label">Spark / Central Tension (optional — leave blank to let Gemini decide)</div>
+    <textarea class="pe-textarea" id="otSpark" rows="2"
+      placeholder="e.g. The River Speaker challenges the Sun Chief's authority during the flood. Or: Two women from different eras share one artifact…"
+      style="margin-bottom:14px"></textarea>
+
+    <div class="ot-section-label">Director Style</div>
+    <div class="dir-grid" id="otDirGrid"></div>
+
+    <div class="ot-section-label">Panel Count</div>
+    <div class="pc-grid" id="otPcGrid"></div>
+
+    <button class="ot-gen-btn" id="otGenScriptBtn" onclick="otGenerateScript()">✦ Generate Story Script</button>
+    <div class="script-preview" id="otScriptPreview" style="display:none"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="tbtn" style="flex:1" onclick="otLoadAndClose()">→ Load into Builder</button>
+      <button class="tbtn" style="flex:1;color:var(--fire)" onclick="closeOtModal()">× Cancel</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trinity Graph × Block BMOS — CFO Intelligence</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--black:#000;--blue:#2871FF;--blue-dim:#1a4ecc;--blue-glow:rgba(40,113,255,.15);--gray1:#0a0a0a;--gray2:#141414;--gray3:#1e1e1e;--gray4:#2a2a2a;--gray5:#888;--green:#00d4aa;--red:#ff4757;--amber:#ffb347;--white:#e8e8e8}
+body{background:var(--black);color:var(--white);font-family:'SF Mono',SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace;overflow-x:hidden;font-size:13px;line-height:1.5}
+a{color:var(--blue);text-decoration:none}
+
+/* Top bar */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 24px;border-bottom:1px solid var(--gray3);background:var(--gray1);position:sticky;top:0;z-index:100}
+.topbar .logo{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;letter-spacing:1px}
+.topbar .logo span{color:var(--blue)}
+.topbar .meta{color:var(--gray5);font-size:11px}
+.topbar .status{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--green)}
+.topbar .status::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Toggle */
+.toggle-bar{display:flex;justify-content:center;padding:16px;gap:0;background:var(--gray1);border-bottom:1px solid var(--gray3)}
+.toggle-btn{padding:10px 32px;font-family:inherit;font-size:12px;font-weight:600;letter-spacing:1px;border:1px solid var(--gray4);background:var(--gray2);color:var(--gray5);cursor:pointer;transition:all .2s}
+.toggle-btn:first-child{border-radius:4px 0 0 4px}
+.toggle-btn:last-child{border-radius:0 4px 4px 0}
+.toggle-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* Sections */
+.section{padding:32px 24px;max-width:1400px;margin:0 auto}
+.section-title{font-size:11px;letter-spacing:2px;color:var(--blue);margin-bottom:16px;text-transform:uppercase}
+.section h2{font-size:20px;font-weight:600;margin-bottom:8px}
+.section .sub{color:var(--gray5);font-size:12px;margin-bottom:24px}
+
+/* Graph canvas */
+.graph-wrap{position:relative;width:100%;height:520px;background:var(--gray1);border:1px solid var(--gray3);border-radius:6px;overflow:hidden;margin-bottom:32px}
+canvas#graph{width:100%;height:100%}
+.graph-legend{position:absolute;bottom:12px;left:12px;display:flex;gap:14px;font-size:10px;color:var(--gray5)}
+.graph-legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle}
+
+/* Cards grid */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-bottom:32px}
+.card{background:var(--gray2);border:1px solid var(--gray3);border-radius:6px;padding:20px;transition:border-color .2s}
+.card:hover{border-color:var(--blue)}
+.card h3{font-size:13px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.card h3 .icon{font-size:16px}
+.card .desc{color:var(--gray5);font-size:12px;margin-bottom:12px}
+.card .example{background:var(--gray1);border-left:2px solid var(--blue);padding:8px 12px;font-size:11px;color:var(--white);border-radius:0 4px 4px 0}
+
+/* Before/After */
+.ba-container{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--gray3);border-radius:6px;overflow:hidden;margin-bottom:32px}
+.ba-col{padding:24px}
+.ba-col.before{background:var(--gray2)}
+.ba-col.after{background:var(--gray1);border-left:1px solid var(--blue)}
+.ba-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;font-weight:700}
+.ba-col.before .ba-label{color:var(--gray5)}
+.ba-col.after .ba-label{color:var(--blue)}
+.ba-line{margin-bottom:10px;font-size:12px;line-height:1.6}
+.ba-line .tag{display:inline-block;font-size:9px;padding:1px 6px;border-radius:3px;margin-right:6px;font-weight:600;letter-spacing:.5px;vertical-align:middle}
+.tag-kg{background:rgba(0,212,170,.15);color:var(--green)}
+.tag-gg{background:rgba(40,113,255,.15);color:var(--blue)}
+.tag-sg{background:rgba(255,179,71,.15);color:var(--amber)}
+.ba-net{margin-top:16px;padding:12px;background:var(--black);border:1px solid var(--green);border-radius:4px;font-size:12px;color:var(--green);font-weight:600}
+
+/* SAVESUCCESS */
+.ss-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.ss-item{display:flex;gap:12px;align-items:flex-start;background:var(--gray2);border:1px solid var(--gray3);border-radius:6px;padding:14px}
+.ss-item .ss-name{font-size:12px;font-weight:700;color:var(--blue);white-space:nowrap}
+.ss-item .ss-arrow{color:var(--gray5);font-size:11px}
+.ss-item .ss-desc{font-size:11px;color:var(--gray5)}
+
+/* Ticker */
+.ticker{overflow:hidden;border-top:1px solid var(--gray3);border-bottom:1px solid var(--gray3);padding:8px 0;background:var(--gray1);margin-bottom:0}
+.ticker-inner{display:flex;gap:40px;animation:scroll 30s linear infinite;white-space:nowrap;width:max-content}
+.ticker-item{font-size:11px;color:var(--gray5)}
+.ticker-item .val{color:var(--green);font-weight:600}
+.ticker-item .neg{color:var(--red)}
+@keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* Responsive */
+@media(max-width:768px){
+  .ba-container{grid-template-columns:1fr}
+  .ba-col.after{border-left:none;border-top:1px solid var(--blue)}
+  .cards{grid-template-columns:1fr}
+  .section{padding:24px 16px}
+}
+
+/* Fade-in */
+.fade{opacity:0;transform:translateY(12px);transition:all .5s ease}
+.fade.visible{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="logo">BLOCK <span>BMOS</span></div>
+  <div class="meta">Trinity Graph × Financial Intelligence Platform</div>
+  <div class="status">ALL SYSTEMS NOMINAL</div>
+</div>
+
+<!-- Ticker -->
+<div class="ticker"><div class="ticker-inner" id="ticker"></div></div>
+
+<!-- Toggle -->
+<div class="toggle-bar">
+  <button class="toggle-btn active" onclick="setView('overview')">OVERVIEW</button>
+  <button class="toggle-btn" onclick="setView('scenario')">SETTLEMENT SCENARIO</button>
+  <button class="toggle-btn" onclick="setView('savesuccess')">SAVESUCCESS</button>
+</div>
+
+<!-- VIEW: Overview -->
+<div id="view-overview">
+  <div class="section">
+    <div class="section-title">Trinity Graph — Force-Directed Entity Map</div>
+    <div class="graph-wrap">
+      <canvas id="graph"></canvas>
+      <div class="graph-legend">
+        <span><i style="background:var(--blue)"></i>Entities / LLCs</span>
+        <span><i style="background:var(--green)"></i>Revenue Streams</span>
+        <span><i style="background:var(--amber)"></i>Vendors / Promoters</span>
+        <span><i style="background:var(--red)"></i>Tax Jurisdictions</span>
+        <span><i style="background:#c084fc"></i>Venues</span>
+        <span><i style="background:var(--gray5)"></i>Contracts</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section fade">
+    <div class="section-title">Social Graph — Relationship Intelligence for Finance</div>
+    <div class="cards">
+      <div class="card">
+        <h3><span class="icon">🔗</span> Counterparty Risk Scoring</h3>
+        <div class="desc">Historical payment patterns across every vendor, promoter, and venue — scored and ranked.</div>
+        <div class="example">"This promoter has disputed 3 of last 10 settlements — flag for pre-show deposit requirement"</div>
+      </div>
+      <div class="card">
+        <h3><span class="icon">🏛</span> Entity Relationship Mapping</h3>
+        <div class="desc">Who owes what to whom across the entire LLC structure. AP/AR across all entities at a glance.</div>
+        <div class="example">"Entity A owes Entity C $47K in cross-collateralized tour advances — net against Q1 merch revenue"</div>
+      </div>
+      <div class="card">
+        <h3><span class="icon">⚡</span> Vendor Payment Velocity</h3>
+        <div class="desc">Track payment patterns by counterparty. Predict cash flow timing based on historical behavior.</div>
+        <div class="example">"Live Nation settles in avg 28 days. AEG: 41 days. Indie promoters: 53 days. Adjust forecasts accordingly."</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section fade">
+    <div class="section-title">Knowledge Graph — Financial Knowledge Base</div>
+    <div class="cards">
+      <div class="card">
+        <h3><span class="icon">📊</span> Settlement Benchmarks</h3>
+        <div class="desc">Historical data across venues and markets. Know what's normal and what's anomalous — instantly.</div>
+        <div class="example">"Average arena merch per-head is $12.40. This show came in at $8.20 — investigate"</div>
+      </div>
+      <div class="card">
+        <h3><span class="icon">🗂</span> Tax Jurisdiction Intelligence</h3>
+        <div class="desc">State-by-state withholding rules, international tax treaty implications, filing deadlines by entity.</div>
+        <div class="example">"California withholding: 7% on all payments to out-of-state talent. File Form 592 within 20 days."</div>
+      </div>
+      <div class="card">
+        <h3><span class="icon">📋</span> Contract Term Database</h3>
+        <div class="desc">Rate cards, split structures, merch deals by venue type — all searchable, all cross-referenced.</div>
+        <div class="example">"Standard arena merch split: 70/30 artist-favorable. This venue's contract says 60/40 — renegotiate?"</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section fade">
+    <div class="section-title">Generative Graph — Predictive Financial Intelligence</div>
+    <div class="cards">
+      <div class="card">
+        <h3><span class="icon">📈</span> Cash Flow Forecasting</h3>
+        <div class="desc">Multi-entity cash flow projections based on historical patterns, pending settlements, and known obligations.</div>
+        <div class="example">"Based on 47 comparable settlements, projected gross for Chicago is $1.8–2.2M"</div>
+      </div>
+      <div class="card">
+        <h3><span class="icon">🔍</span> Anomaly Detection</h3>
+        <div class="desc">Every invoice checked against historical averages. Outliers flagged before they hit the books.</div>
+        <div class="example">"This invoice is 340% above the historical average for this vendor category"</div>
+      </div>
+      <div class="card">
+        <h3><span class="icon">🔄</span> Auto-Reconciliation</h3>
+        <div class="desc">Match streaming line items to distributor payments. Match PO line items to invoices. Automatically.</div>
+        <div class="example">"These 3 streaming line items likely match these 3 distributor payments — confirm?"</div>
+      </div>
+      <div class="card">
+        <h3><span class="icon">💰</span> Tax Optimization</h3>
+        <div class="desc">Route income through the optimal entity structure. Model scenarios across jurisdictions.</div>
+        <div class="example">"Routing Q4 income through Entity B saves $180K in state taxes"</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW: Scenario -->
+<div id="view-scenario" style="display:none">
+  <div class="section">
+    <div class="section-title">Live Settlement Scenario — Boston Arena, Feb 2026</div>
+    <h2>Before & After Trinity Graph</h2>
+    <div class="sub">Same show. Same settlement. Different intelligence layer.</div>
+
+    <div class="ba-container">
+      <div class="ba-col before">
+        <div class="ba-label">Without Trinity</div>
+        <div class="ba-line">Boston settled at <strong>$2.1M gross</strong>.</div>
+        <div class="ba-line">47 invoices processed manually.</div>
+        <div class="ba-line">3 variances flagged by hand.</div>
+        <div class="ba-line">Settlement reconciliation took <strong>14 days</strong>.</div>
+        <div class="ba-line">No historical context on venue-specific cost patterns.</div>
+        <div class="ba-line">Promoter payment timeline: unknown.</div>
+        <div class="ba-line">Cash flow forecast: updated manually next week.</div>
+        <div class="ba-line" style="margin-top:16px;color:var(--gray5)">Total time: 14 days<br>Errors caught: 3 (maybe)<br>Revenue leaked: unknown</div>
+      </div>
+      <div class="ba-col after">
+        <div class="ba-label">With Trinity</div>
+        <div class="ba-line"><span class="tag tag-kg">KNOWLEDGE</span>Historical Boston arena settlements average 12% production cost ratio. This show is at 15.3% — <strong>3.3% above benchmark</strong>. Top variance: Stagehand overtime ($23K over budget) correlated with venue's known difficult load-in requirements.</div>
+        <div class="ba-line"><span class="tag tag-gg">GENERATIVE</span>Auto-matched <strong>44 of 47</strong> invoices to PO line items. 3 require manual review: (1) $4,200 generator rental not in budget, (2) duplicate catering charge $1,100, (3) insurance rider adjustment +$2,800.</div>
+        <div class="ba-line"><span class="tag tag-sg">SOCIAL</span>Settlement submitted to promoter. Historical pattern: <strong>67% probability</strong> of payment within 30 days, 28% within 45 days. Recommend: follow up at day 21.</div>
+        <div class="ba-net">NET EFFECT → Settlement: 14 days → <strong>3 days</strong> · Caught <strong>$5,300</strong> in duplicate/unauthorized charges · Cash flow forecast updated automatically</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deeper scenario detail -->
+  <div class="section fade">
+    <div class="section-title">What the CFO Sees — Settlement Dashboard</div>
+    <div class="cards">
+      <div class="card">
+        <h3>📄 Invoice Match Rate</h3>
+        <div class="desc" style="color:var(--green);font-size:18px;font-weight:700">93.6%</div>
+        <div class="desc">44 of 47 invoices auto-matched. 3 flagged for review.</div>
+      </div>
+      <div class="card">
+        <h3>⏱ Settlement Velocity</h3>
+        <div class="desc" style="color:var(--blue);font-size:18px;font-weight:700">3 days</div>
+        <div class="desc">Down from 14-day average. 78% faster than manual process.</div>
+      </div>
+      <div class="card">
+        <h3>🚨 Variances Caught</h3>
+        <div class="desc" style="color:var(--red);font-size:18px;font-weight:700">$5,300</div>
+        <div class="desc">Duplicate catering ($1,100) + unbudgeted generator ($4,200).</div>
+      </div>
+      <div class="card">
+        <h3>📐 Cost Ratio vs Benchmark</h3>
+        <div class="desc" style="color:var(--amber);font-size:18px;font-weight:700">+3.3%</div>
+        <div class="desc">15.3% production cost vs 12% historical average. Root cause identified.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section fade">
+    <div class="section-title">Across the Full Tour — Aggregate Intelligence</div>
+    <div class="cards">
+      <div class="card">
+        <h3>💵 Cross-Collateralized Tour Pot</h3>
+        <div class="desc">Real-time tracking across all dates. Know the net position at any moment.</div>
+        <div class="example">"Tour pot after 23 of 47 dates: +$4.2M net. On pace for $8.8M total — 12% above projection."</div>
+      </div>
+      <div class="card">
+        <h3>📊 Streaming Royalty Reconciliation</h3>
+        <div class="desc">Match every streaming penny to the right entity and split structure.</div>
+        <div class="example">"Q4 Spotify statement: $847K across 3 entities. 14 line items auto-matched. 2 variances: publishing split discrepancy on Track 7 ($2,400)."</div>
+      </div>
+      <div class="card">
+        <h3>🏦 Multi-Entity Cash Position</h3>
+        <div class="desc">Single view across all LLCs, holding companies, and brand entities.</div>
+        <div class="example">"Combined liquid: $12.4M. Entity A: $6.1M (operating). Entity B: $4.8M (touring). Entity C: $1.5M (merch). Tax reserve needed: $3.2M."</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW: SAVESUCCESS -->
+<div id="view-savesuccess" style="display:none">
+  <div class="section">
+    <div class="section-title">SAVESUCCESS Framework — CFO Application</div>
+    <h2>Ten Dimensions of Financial Intelligence</h2>
+    <div class="sub">Each SAVESUCCESS dimension maps to a concrete CFO capability powered by the Trinity Graph.</div>
+    <div class="ss-grid">
+      <div class="ss-item"><div><div class="ss-name">Serendipity</div><div class="ss-arrow">Pattern Discovery</div></div><div class="ss-desc">Finding hidden revenue leaks across 100+ settlements. The patterns no human would spot in spreadsheets.</div></div>
+      <div class="ss-item"><div><div class="ss-name">Artiquity</div><div class="ss-arrow">Royalty Attribution</div></div><div class="ss-desc">Matching every streaming penny to the right entity and split. Perfect provenance for every dollar.</div></div>
+      <div class="ss-item"><div><div class="ss-name">Vitality</div><div class="ss-arrow">Financial Health</div></div><div class="ss-desc">Cash reserves, burn rate, runway — the vital signs of the business itself, not the artist.</div></div>
+      <div class="ss-item"><div><div class="ss-name">Enginuity</div><div class="ss-arrow">Reconciliation Engine</div></div><div class="ss-desc">Settlement reconciliation, automated invoice matching. The mechanical precision a CFO demands.</div></div>
+      <div class="ss-item"><div><div class="ss-name">Synchronicity</div><div class="ss-arrow">Cash Flow Orchestration</div></div><div class="ss-desc">Right payment, right entity, right time. Optimized across all obligations and income streams.</div></div>
+      <div class="ss-item"><div><div class="ss-name">Ubiquity</div><div class="ss-arrow">Unified Financial View</div></div><div class="ss-desc">Single pane of glass across all entities, all revenue streams, all jurisdictions. One source of truth.</div></div>
+      <div class="ss-item"><div><div class="ss-name">Clarity</div><div class="ss-arrow">Real-Time P&L</div></div><div class="ss-desc">Profit and loss across the entire entity tree, updated in real time. Not last month — right now.</div></div>
+      <div class="ss-item"><div><div class="ss-name">Certainty</div><div class="ss-arrow">Verified Numbers</div></div><div class="ss-desc">Every number verified, every variance explained. The confidence to sign off without second-guessing.</div></div>
+      <div class="ss-item"><div><div class="ss-name">Ethics</div><div class="ss-arrow">Fiduciary Compliance</div></div><div class="ss-desc">Transparent settlements, auditable trail, regulatory compliance. Clean books, always.</div></div>
+      <div class="ss-item"><div><div class="ss-name">Sagacity</div><div class="ss-arrow">Strategic Modeling</div></div><div class="ss-desc">"If we restructure the merch deal from flat fee to percentage, here's the 3-year impact across all entities."</div></div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;padding:40px 24px;color:var(--gray5);font-size:10px;letter-spacing:1px;border-top:1px solid var(--gray3)">
+  BLOCK BMOS × TRINITY GRAPH &nbsp;·&nbsp; CONFIDENTIAL &nbsp;·&nbsp; 2026
+</div>
+
+<script>
+// Ticker
+const tickerData=[
+  {l:'TOUR POT',v:'+$4.2M',c:'val'},{l:'SETTLEMENTS PENDING',v:'7',c:''},{l:'AP OUTSTANDING',v:'$1.8M',c:'neg'},
+  {l:'AR OUTSTANDING',v:'$3.4M',c:'val'},{l:'INVOICE MATCH RATE',v:'94.2%',c:'val'},{l:'AVG SETTLE TIME',v:'4.1 days',c:'val'},
+  {l:'ENTITIES ACTIVE',v:'6',c:''},{l:'TAX RESERVES',v:'$3.2M',c:''},{l:'STREAMING Q4',v:'$847K',c:'val'},
+  {l:'VARIANCES FLAGGED',v:'12',c:'neg'},{l:'MERCH PER-HEAD',v:'$11.80',c:''},{l:'CASH POSITION',v:'$12.4M',c:'val'}
+];
+const tickerEl=document.getElementById('ticker');
+let th='';for(let r=0;r<2;r++)tickerData.forEach(d=>{th+=`<span class="ticker-item">${d.l} <span class="${d.c||''}">${d.v}</span></span>`;});
+tickerEl.innerHTML=th;
+
+// View toggle
+function setView(v){
+  document.querySelectorAll('[id^="view-"]').forEach(e=>e.style.display='none');
+  document.getElementById('view-'+v).style.display='block';
+  document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  initFades();
+  if(v==='overview')requestAnimationFrame(()=>initGraph());
+}
+
+// Fade-in observer
+function initFades(){
+  document.querySelectorAll('.fade').forEach(el=>{el.classList.remove('visible')});
+  const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target)}})},{threshold:.15});
+  document.querySelectorAll('.fade').forEach(el=>obs.observe(el));
+}
+initFades();
+
+// Force-directed graph
+const canvas=document.getElementById('graph');
+const ctx=canvas.getContext('2d');
+let W,H,nodes=[],edges=[],animId;
+
+const nodeTypes={
+  entity:{color:'#2871FF',r:22},revenue:{color:'#00d4aa',r:16},vendor:{color:'#ffb347',r:14},
+  tax:{color:'#ff4757',r:12},venue:{color:'#c084fc',r:15},contract:{color:'#888',r:10}
+};
+
+const nodeDefs=[
+  {id:'artist-llc',label:'Artist LLC',type:'entity'},{id:'tour-llc',label:'Touring LLC',type:'entity'},
+  {id:'merch-llc',label:'Merch Co',type:'entity'},{id:'pub-entity',label:'Publishing',type:'entity'},
+  {id:'hold-co',label:'Holding Co',type:'entity'},
+  {id:'live',label:'Live Revenue',type:'revenue'},{id:'stream',label:'Streaming',type:'revenue'},
+  {id:'merch-rev',label:'Merch Revenue',type:'revenue'},{id:'sync',label:'Sync/License',type:'revenue'},
+  {id:'ln',label:'Live Nation',type:'vendor'},{id:'aeg',label:'AEG',type:'vendor'},
+  {id:'indie-p',label:'Indie Promoter',type:'vendor'},{id:'caterer',label:'Caterer',type:'vendor'},
+  {id:'ca-tax',label:'CA Tax',type:'tax'},{id:'ny-tax',label:'NY Tax',type:'tax'},{id:'fed-tax',label:'Federal',type:'tax'},
+  {id:'boston',label:'Boston Arena',type:'venue'},{id:'chicago',label:'Chicago United',type:'venue'},
+  {id:'la',label:'LA Forum',type:'venue'},
+  {id:'arena-deal',label:'Arena Deal',type:'contract'},{id:'merch-deal',label:'Merch Split',type:'contract'},
+  {id:'dist-deal',label:'Distribution',type:'contract'}
+];
+
+const edgeDefs=[
+  ['hold-co','artist-llc'],['hold-co','tour-llc'],['hold-co','merch-llc'],['hold-co','pub-entity'],
+  ['tour-llc','live'],['artist-llc','stream'],['merch-llc','merch-rev'],['pub-entity','sync'],
+  ['live','ln'],['live','aeg'],['live','indie-p'],['tour-llc','caterer'],
+  ['tour-llc','ca-tax'],['tour-llc','ny-tax'],['hold-co','fed-tax'],
+  ['ln','boston'],['aeg','chicago'],['indie-p','la'],
+  ['boston','arena-deal'],['merch-llc','merch-deal'],['stream','dist-deal']
+];
+
+function initGraph(){
+  cancelAnimationFrame(animId);
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.parentElement.getBoundingClientRect();
+  W=rect.width;H=rect.height;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  nodes=nodeDefs.map((n,i)=>({
+    ...n,...nodeTypes[n.type],
+    x:W/2+(Math.random()-.5)*W*.6,
+    y:H/2+(Math.random()-.5)*H*.6,
+    vx:0,vy:0
+  }));
+  const nodeMap={};nodes.forEach((n,i)=>nodeMap[n.id]=i);
+  edges=edgeDefs.map(([a,b])=>({source:nodeMap[a],target:nodeMap[b]}));
+  simulate();
+}
+
+function simulate(){
+  for(let tick=0;tick<3;tick++){
+    // Repulsion
+    for(let i=0;i<nodes.length;i++){
+      for(let j=i+1;j<nodes.length;j++){
+        let dx=nodes[j].x-nodes[i].x,dy=nodes[j].y-nodes[i].y;
+        let d=Math.sqrt(dx*dx+dy*dy)||1;
+        let f=800/(d*d);
+        nodes[i].vx-=f*dx/d;nodes[i].vy-=f*dy/d;
+        nodes[j].vx+=f*dx/d;nodes[j].vy+=f*dy/d;
+      }
+    }
+    // Attraction
+    edges.forEach(e=>{
+      let s=nodes[e.source],t=nodes[e.target];
+      let dx=t.x-s.x,dy=t.y-s.y,d=Math.sqrt(dx*dx+dy*dy)||1;
+      let f=(d-100)*.02;
+      s.vx+=f*dx/d;s.vy+=f*dy/d;
+      t.vx-=f*dx/d;t.vy-=f*dy/d;
+    });
+    // Center gravity
+    nodes.forEach(n=>{
+      n.vx+=(W/2-n.x)*.001;n.vy+=(H/2-n.y)*.001;
+      n.vx*=.85;n.vy*=.85;
+      n.x+=n.vx;n.y+=n.vy;
+      n.x=Math.max(30,Math.min(W-30,n.x));
+      n.y=Math.max(30,Math.min(H-30,n.y));
+    });
+  }
+  draw();
+  animId=requestAnimationFrame(simulate);
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  // Edges
+  ctx.strokeStyle='rgba(40,113,255,.12)';ctx.lineWidth=1;
+  edges.forEach(e=>{
+    ctx.beginPath();ctx.moveTo(nodes[e.source].x,nodes[e.source].y);
+    ctx.lineTo(nodes[e.target].x,nodes[e.target].y);ctx.stroke();
+  });
+  // Nodes
+  nodes.forEach(n=>{
+    ctx.beginPath();ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+    ctx.fillStyle=n.color+'22';ctx.fill();
+    ctx.strokeStyle=n.color;ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle='#ccc';ctx.font='9px SF Mono,Consolas,monospace';
+    ctx.textAlign='center';ctx.fillText(n.label,n.x,n.y+n.r+12);
+  });
+}
+
+window.addEventListener('resize',()=>{if(document.getElementById('view-overview').style.display!=='none')initGraph()});
+initGraph();
+</script>
+</body>
+</html>

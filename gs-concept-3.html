@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Living Pattern — Verneccia Étienne Garment Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --white: #FFFFFF;
+    --gold: #B8933A;
+    --gold-light: #D4AF6A;
+    --gold-pale: #F5EDD8;
+    --silver: #A0A0A8;
+    --silver-light: #D8D8DC;
+    --silver-pale: #F4F4F6;
+    --ink: #1A1A1E;
+    --ink-mid: #3A3A42;
+    --ink-light: #6A6A74;
+    --border: #E4E4E8;
+    --warn: #C0622A;
+    --warn-pale: #FDF1EB;
+    --ok: #3A8A5A;
+    --ok-pale: #EBF5EF;
+    --info: #3A5A8A;
+    --info-pale: #EBF0F8;
+    --font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'Courier New', monospace;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--white);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    overflow: hidden;
+  }
+
+  /* ── Top Nav ── */
+  .top-nav {
+    height: 50px;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+  }
+  .nav-brand {
+    font-family: var(--font-serif);
+    font-size: 15px;
+    letter-spacing: 0.05em;
+  }
+  .nav-brand em { color: var(--gold); font-style: normal; }
+  .nav-center-label {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--silver);
+    font-weight: 500;
+  }
+  .nav-right { display: flex; gap: 12px; align-items: center; }
+  .nav-back {
+    font-size: 11px;
+    color: var(--silver);
+    text-decoration: none;
+    transition: color 0.2s;
+    letter-spacing: 0.04em;
+  }
+  .nav-back:hover { color: var(--gold); }
+  .nav-pill {
+    font-size: 10px;
+    padding: 4px 12px;
+    background: var(--gold-pale);
+    border: 1px solid var(--gold-light);
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .garment-selector {
+    font-size: 12px;
+    border: 1px solid var(--border);
+    padding: 5px 10px;
+    color: var(--ink);
+    background: var(--white);
+    outline: none;
+    font-family: var(--font-sans);
+    cursor: pointer;
+  }
+
+  /* ── 3-Column Layout ── */
+  .main-layout {
+    display: flex;
+    height: calc(100vh - 50px - 68px);
+    margin-top: 50px;
+  }
+
+  /* ── LEFT: Collection Column ── */
+  .collection-col {
+    width: 220px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    background: var(--silver-pale);
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+  .collection-col::-webkit-scrollbar { width: 3px; }
+  .collection-col::-webkit-scrollbar-thumb { background: var(--silver-light); }
+
+  .col-header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--white);
+    flex-shrink: 0;
+  }
+  .col-title {
+    font-family: var(--font-serif);
+    font-size: 14px;
+    color: var(--ink);
+    margin-bottom: 1px;
+  }
+  .col-sub {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--silver);
+  }
+
+  .garment-list { padding: 8px 0; }
+  .garment-item {
+    padding: 0;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    background: var(--white);
+    transition: background 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .garment-item:last-child { border-bottom: none; }
+  .garment-item.active { background: var(--gold-pale); }
+  .garment-item.active .gi-name { color: var(--gold); }
+  .garment-item-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+  }
+  .gi-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .gi-info { flex: 1; min-width: 0; }
+  .gi-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .gi-season {
+    font-size: 10px;
+    color: var(--silver);
+    letter-spacing: 0.04em;
+  }
+  .gi-arrow {
+    font-size: 10px;
+    color: var(--silver-light);
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+  .garment-item:hover .gi-arrow { color: var(--gold); }
+
+  .gi-expand {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    border-top: 0px solid transparent;
+  }
+  .garment-item:hover .gi-expand,
+  .garment-item.active .gi-expand {
+    max-height: 100px;
+    border-top: 1px solid var(--border);
+  }
+  .gi-expand-content {
+    padding: 8px 14px 10px 32px;
+    font-size: 11px;
+    color: var(--ink-light);
+    line-height: 1.55;
+    background: var(--silver-pale);
+  }
+
+  .add-piece-btn {
+    margin: 12px 14px;
+    padding: 8px 12px;
+    border: 1px dashed var(--silver-light);
+    background: transparent;
+    color: var(--silver);
+    font-size: 11px;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    width: calc(100% - 28px);
+    letter-spacing: 0.06em;
+  }
+  .add-piece-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: var(--gold-pale);
+  }
+
+  /* ── CENTER: Pattern Room ── */
+  .pattern-room {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--white);
+    overflow: hidden;
+  }
+  .pattern-room-header {
+    padding: 12px 20px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .pr-title {
+    font-family: var(--font-serif);
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .pr-garment {
+    font-size: 11px;
+    color: var(--silver);
+    font-style: italic;
+  }
+  .pr-fabric-badge {
+    font-size: 10px;
+    padding: 3px 10px;
+    background: var(--silver-pale);
+    border: 1px solid var(--silver-light);
+    color: var(--ink-light);
+    letter-spacing: 0.06em;
+  }
+
+  .pattern-canvas {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background:
+      linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+    background-color: var(--white);
+    min-height: 0;
+  }
+
+  /* ── Pattern Pieces ── */
+  .pattern-piece {
+    position: absolute;
+    cursor: pointer;
+    transition: filter 0.2s;
+  }
+  .pattern-piece:hover { filter: drop-shadow(0 4px 16px rgba(184,147,58,0.25)); }
+  .pattern-piece:hover .piece-outline { stroke: var(--gold); stroke-width: 1.5; }
+  .pattern-piece:hover .intel-dot { animation: none; background: var(--gold); transform: scale(1.4); }
+
+  .piece-outline {
+    stroke: var(--silver);
+    stroke-width: 1;
+    fill: var(--silver-pale);
+    transition: stroke 0.2s, stroke-width 0.2s;
+  }
+  .piece-grain-line {
+    stroke: var(--silver-light);
+    stroke-width: 0.8;
+    stroke-dasharray: 4 2;
+  }
+  .piece-label-text {
+    font-family: var(--font-sans);
+    font-size: 8px;
+    letter-spacing: 0.12em;
+    fill: var(--silver);
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+  .piece-notch {
+    fill: var(--silver);
+  }
+
+  /* Intelligence dot on each piece */
+  .intel-dot {
+    position: absolute;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--gold);
+    border: 2px solid var(--white);
+    box-shadow: 0 0 0 0 rgba(184,147,58,0.4);
+    animation: intel-pulse 2.5s ease-in-out infinite;
+    cursor: pointer;
+    z-index: 10;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .intel-dot.warn {
+    background: var(--warn);
+    box-shadow: 0 0 0 0 rgba(192,98,42,0.4);
+    animation: warn-pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes intel-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(184,147,58,0.5); }
+    50% { box-shadow: 0 0 0 6px rgba(184,147,58,0); }
+  }
+  @keyframes warn-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(192,98,42,0.5); }
+    50% { box-shadow: 0 0 0 6px rgba(192,98,42,0); }
+  }
+
+  /* ── Living Label ── */
+  .living-label {
+    position: absolute;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+    padding: 12px 14px;
+    width: 240px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 50;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  }
+  .living-label.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .living-label.warn-label { border-left-color: var(--warn); }
+  .ll-piece-name {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .ll-piece-name.warn-name { color: var(--warn); }
+  .ll-role {
+    font-size: 11px;
+    color: var(--ink-light);
+    margin-bottom: 8px;
+    line-height: 1.4;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ll-insight {
+    font-size: 11px;
+    color: var(--ink-mid);
+    line-height: 1.5;
+    margin-bottom: 6px;
+    font-style: italic;
+  }
+  .ll-warning {
+    font-size: 10.5px;
+    color: var(--warn);
+    line-height: 1.45;
+    margin-bottom: 6px;
+    display: flex;
+    gap: 5px;
+  }
+  .ll-compat {
+    font-size: 10px;
+    color: var(--ok);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── RIGHT: Material Dialogue ── */
+  .dialogue-col {
+    width: 280px;
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    background: var(--white);
+    flex-shrink: 0;
+  }
+  .dialogue-header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .dialogue-title {
+    font-family: var(--font-serif);
+    font-size: 14px;
+    color: var(--ink);
+    margin-bottom: 1px;
+  }
+  .dialogue-sub {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--silver);
+  }
+
+  .dialogue-feed {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .dialogue-feed::-webkit-scrollbar { width: 3px; }
+  .dialogue-feed::-webkit-scrollbar-thumb { background: var(--silver-light); }
+
+  .dialogue-entry {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--ink-mid);
+    position: relative;
+  }
+  .dialogue-entry::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 3px;
+  }
+  .de-ok::before { background: var(--ok); }
+  .de-warn::before { background: var(--warn); }
+  .de-info::before { background: var(--info); }
+  .de-link::before { background: var(--gold); }
+
+  .de-icon { font-size: 13px; margin-right: 4px; }
+  .de-pair {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: 0.04em;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .de-text { font-size: 11.5px; color: var(--ink-light); }
+
+  .de-ok .de-pair { color: var(--ok); }
+  .de-warn .de-pair { color: var(--warn); }
+  .de-info .de-pair { color: var(--info); }
+  .de-link .de-pair { color: var(--gold); }
+
+  .de-ts {
+    font-size: 9px;
+    color: var(--silver-light);
+    margin-top: 5px;
+    letter-spacing: 0.04em;
+  }
+
+  /* Ask section */
+  .ask-section {
+    border-top: 1px solid var(--border);
+    padding: 12px 14px;
+    flex-shrink: 0;
+  }
+  .ask-label {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--silver);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .ask-input-row {
+    display: flex;
+    gap: 6px;
+  }
+  .ask-input {
+    flex: 1;
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    font-family: var(--font-sans);
+    font-size: 11.5px;
+    color: var(--ink);
+    outline: none;
+    background: var(--white);
+    transition: border-color 0.2s;
+  }
+  .ask-input:focus { border-color: var(--gold); }
+  .ask-btn {
+    padding: 8px 12px;
+    background: var(--gold);
+    border: none;
+    color: white;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    transition: background 0.15s;
+  }
+  .ask-btn:hover { background: var(--gold-light); }
+
+  /* ── Bottom: Construction Intelligence Bar ── */
+  .construction-bar {
+    height: 68px;
+    border-top: 1px solid var(--border);
+    background: var(--white);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    position: fixed;
+    bottom: 0; left: 220px; right: 280px;
+    z-index: 100;
+    overflow: hidden;
+  }
+  .cb-label {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--silver);
+    font-weight: 500;
+    white-space: nowrap;
+    margin-right: 16px;
+    flex-shrink: 0;
+  }
+  .cb-steps {
+    display: flex;
+    gap: 0;
+    flex: 1;
+    height: 100%;
+    align-items: center;
+  }
+  .cb-step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 100%;
+    border-right: 1px solid var(--border);
+    padding: 8px 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+    position: relative;
+  }
+  .cb-step:last-child { border-right: none; }
+  .cb-step:hover { background: var(--silver-pale); }
+  .cb-step-num {
+    font-size: 9px;
+    color: var(--silver);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+  }
+  .cb-checkbox {
+    width: 14px; height: 14px;
+    border: 1px solid var(--silver-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: var(--ok);
+    background: var(--white);
+    flex-shrink: 0;
+  }
+  .cb-checkbox.checked {
+    background: var(--ok-pale);
+    border-color: var(--ok);
+  }
+  .cb-step-label {
+    font-size: 8.5px;
+    color: var(--ink-light);
+    text-align: center;
+    line-height: 1.3;
+    letter-spacing: 0.02em;
+  }
+  .cb-annotation {
+    position: absolute;
+    top: 4px;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    border: 1.5px solid var(--white);
+  }
+  .ann-warn { background: var(--warn); }
+  .ann-ok { background: var(--ok); }
+  .ann-info { background: var(--info); }
+
+  /* Tooltip on step hover */
+  .cb-step:hover .cb-tooltip { display: block; }
+  .cb-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: white;
+    font-size: 10px;
+    padding: 5px 8px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 200;
+    max-width: 200px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .cb-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%; left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: var(--ink);
+  }
+</style>
+</head>
+<body>
+
+<!-- Top Nav -->
+<nav class="top-nav">
+  <div class="nav-brand">Verneccia <em>Étienne</em></div>
+  <div class="nav-center-label">The Living Pattern — Object Intelligence</div>
+  <div class="nav-right">
+    <span class="nav-pill">Concept III</span>
+    <a href="garment-studio.html" class="nav-back">← Studio</a>
+  </div>
+</nav>
+
+<!-- 3-Column Layout -->
+<div class="main-layout">
+
+  <!-- LEFT: Collection -->
+  <div class="collection-col">
+    <div class="col-header">
+      <div class="col-title">The Collection</div>
+      <div class="col-sub">SS 2026 · 6 Pieces</div>
+    </div>
+
+    <div class="garment-list">
+
+      <div class="garment-item active" onclick="selectGarment(this,'Power Gown I')">
+        <div class="garment-item-header">
+          <div class="gi-dot" style="background:#4CAF78;"></div>
+          <div class="gi-info">
+            <div class="gi-name">Power Gown I</div>
+            <div class="gi-season">SS 2026 · In Progress</div>
+          </div>
+          <div class="gi-arrow">▸</div>
+        </div>
+        <div class="gi-expand">
+          <div class="gi-expand-content">
+            Foundation of the Power series. Zero-ease sleeve set. Geometric shoulder pad at 3-point anchor. Merino column skirt — bias-cut with twill tape stay.
+          </div>
+        </div>
+      </div>
+
+      <div class="garment-item" onclick="selectGarment(this,'Power Gown II')">
+        <div class="garment-item-header">
+          <div class="gi-dot" style="background:#4CAF78;"></div>
+          <div class="gi-info">
+            <div class="gi-name">Power Gown II</div>
+            <div class="gi-season">SS 2026 · Complete</div>
+          </div>
+          <div class="gi-arrow">▸</div>
+        </div>
+        <div class="gi-expand">
+          <div class="gi-expand-content">
+            Evolved shoulder geometry. Extended column hem. Same sloper family as Gown I — sleeve block transferable.
+          </div>
+        </div>
+      </div>
+
+      <div class="garment-item" onclick="selectGarment(this,'Power Gown III')">
+        <div class="garment-item-header">
+          <div class="gi-dot" style="background:#E8A84A;"></div>
+          <div class="gi-info">
+            <div class="gi-name">Power Gown III</div>
+            <div class="gi-season">SS 2026 · Draft</div>
+          </div>
+          <div class="gi-arrow">▸</div>
+        </div>
+        <div class="gi-expand">
+          <div class="gi-expand-content">
+            Statement collar variant. Lapel removed. Same bonded crepe specification. Travel packability confirmed — folds to 28×34cm.
+          </div>
+        </div>
+      </div>
+
+      <div class="garment-item" onclick="selectGarment(this,'Xanadu')">
+        <div class="garment-item-header">
+          <div class="gi-dot" style="background:#4CAF78;"></div>
+          <div class="gi-info">
+            <div class="gi-name">Xanadu</div>
+            <div class="gi-season">SS 2026 · Complete</div>
+          </div>
+          <div class="gi-arrow">▸</div>
+        </div>
+        <div class="gi-expand">
+          <div class="gi-expand-content">
+            Drape-forward construction. No geometric shoulder — contrast piece to Power series. Silk charmeuse with hand-rolled hem.
+          </div>
+        </div>
+      </div>
+
+      <div class="garment-item" onclick="selectGarment(this,'AnDreeAna')">
+        <div class="garment-item-header">
+          <div class="gi-dot" style="background:#C05A3A;"></div>
+          <div class="gi-info">
+            <div class="gi-name">AnDreeAna</div>
+            <div class="gi-season">SS 2026 · ⚠ Issue</div>
+          </div>
+          <div class="gi-arrow">▸</div>
+        </div>
+        <div class="gi-expand">
+          <div class="gi-expand-content">
+            Bias skirt panel flagged: Merino stretch exceeds spec. Twill tape stay not yet applied. Bodice attachment at risk.
+          </div>
+        </div>
+      </div>
+
+      <div class="garment-item" onclick="selectGarment(this,'Japanese Transformational')">
+        <div class="garment-item-header">
+          <div class="gi-dot" style="background:#A0A0A8;"></div>
+          <div class="gi-info">
+            <div class="gi-name">Japanese Transformational</div>
+            <div class="gi-season">SS 2026 · Concept</div>
+          </div>
+          <div class="gi-arrow">▸</div>
+        </div>
+        <div class="gi-expand">
+          <div class="gi-expand-content">
+            Multi-configuration garment. Three wear states: gown, coat, separates. Modular seam system — no permanent closures.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <button class="add-piece-btn">+ Add Piece</button>
+  </div>
+
+  <!-- CENTER: Pattern Room -->
+  <div class="pattern-room">
+    <div class="pattern-room-header">
+      <div>
+        <div class="pr-title">The Pattern Room</div>
+        <div class="pr-garment">Power Gown I — SS 2026</div>
+      </div>
+      <div class="pr-fabric-badge">Merino Wool · Bonded Crepe · 380g</div>
+    </div>
+
+    <div class="pattern-canvas" id="patternCanvas">
+
+      <!-- BODICE FRONT -->
+      <div class="pattern-piece" style="left:80px;top:30px;" id="piece-bodice-front"
+        onmouseenter="showLabel('bodice-front',event)"
+        onmouseleave="hideLabel()">
+        <svg width="160" height="200" viewBox="0 0 160 200">
+          <polygon class="piece-outline" points="20,10 140,10 155,60 150,180 80,195 10,180 5,60"/>
+          <!-- Grain line -->
+          <line class="piece-grain-line" x1="80" y1="30" x2="80" y2="170"/>
+          <line class="piece-grain-line" x1="73" y1="38" x2="80" y2="30" />
+          <line class="piece-grain-line" x1="87" y1="38" x2="80" y2="30"/>
+          <!-- Notch marks -->
+          <polygon class="piece-notch" points="35,10 45,10 40,18"/>
+          <polygon class="piece-notch" points="115,10 125,10 120,18"/>
+          <!-- Label -->
+          <text class="piece-label-text" x="50" y="105" text-anchor="middle">BODICE</text>
+          <text class="piece-label-text" x="50" y="117" text-anchor="middle">FRONT</text>
+          <text class="piece-label-text" x="110" y="60" text-anchor="middle" style="fill:#A0A0A8;font-size:7px">Cut 1</text>
+        </svg>
+        <div class="intel-dot" style="top:18px;right:28px;" title="Intelligence"></div>
+      </div>
+
+      <!-- BODICE BACK -->
+      <div class="pattern-piece" style="left:260px;top:30px;" id="piece-bodice-back"
+        onmouseenter="showLabel('bodice-back',event)"
+        onmouseleave="hideLabel()">
+        <svg width="140" height="195" viewBox="0 0 140 195">
+          <polygon class="piece-outline" points="15,10 125,10 138,55 133,175 70,190 7,175 2,55"/>
+          <line class="piece-grain-line" x1="70" y1="28" x2="70" y2="165"/>
+          <line class="piece-grain-line" x1="63" y1="36" x2="70" y2="28"/>
+          <line class="piece-grain-line" x1="77" y1="36" x2="70" y2="28"/>
+          <polygon class="piece-notch" points="28,10 38,10 33,17"/>
+          <polygon class="piece-notch" points="102,10 112,10 107,17"/>
+          <text class="piece-label-text" x="70" y="102" text-anchor="middle">BODICE</text>
+          <text class="piece-label-text" x="70" y="114" text-anchor="middle">BACK</text>
+          <text class="piece-label-text" x="100" y="55" text-anchor="middle" style="fill:#A0A0A8;font-size:7px">Cut 1</text>
+        </svg>
+        <div class="intel-dot" style="top:16px;right:22px;" title="Intelligence"></div>
+      </div>
+
+      <!-- SLEEVE -->
+      <div class="pattern-piece" style="left:430px;top:20px;" id="piece-sleeve"
+        onmouseenter="showLabel('sleeve',event)"
+        onmouseleave="hideLabel()">
+        <svg width="150" height="180" viewBox="0 0 150 180">
+          <path class="piece-outline" d="M75,8 Q130,10 142,40 L140,155 Q140,168 75,172 Q10,168 10,155 L8,40 Q20,10 75,8 Z"/>
+          <line class="piece-grain-line" x1="75" y1="25" x2="75" y2="155"/>
+          <line class="piece-grain-line" x1="68" y1="33" x2="75" y2="25"/>
+          <line class="piece-grain-line" x1="82" y1="33" x2="75" y2="25"/>
+          <!-- Sleeve cap notch -->
+          <polygon class="piece-notch" points="60,8 70,8 65,15"/>
+          <polygon class="piece-notch" points="80,8 90,8 85,15"/>
+          <text class="piece-label-text" x="75" y="92" text-anchor="middle">SLEEVE</text>
+          <text class="piece-label-text" x="75" y="104" text-anchor="middle" style="fill:#A0A0A8;font-size:7px">Cut 2</text>
+        </svg>
+        <div class="intel-dot warn" style="top:14px;right:24px;" title="Warning"></div>
+      </div>
+
+      <!-- SKIRT PANEL -->
+      <div class="pattern-piece" style="left:80px;top:260px;" id="piece-skirt"
+        onmouseenter="showLabel('skirt',event)"
+        onmouseleave="hideLabel()">
+        <svg width="200" height="160" viewBox="0 0 200 160">
+          <polygon class="piece-outline" points="10,8 190,8 195,155 5,155"/>
+          <line class="piece-grain-line" x1="100" y1="22" x2="100" y2="142"/>
+          <line class="piece-grain-line" x1="93" y1="30" x2="100" y2="22"/>
+          <line class="piece-grain-line" x1="107" y1="30" x2="100" y2="22"/>
+          <polygon class="piece-notch" points="55,8 65,8 60,16"/>
+          <polygon class="piece-notch" points="135,8 145,8 140,16"/>
+          <text class="piece-label-text" x="100" y="82" text-anchor="middle">SKIRT PANEL</text>
+          <text class="piece-label-text" x="100" y="94" text-anchor="middle" style="fill:#A0A0A8;font-size:7px">Cut 2 · Bias</text>
+          <!-- Bias arrow -->
+          <line stroke="#D8D8DC" stroke-width="0.8" x1="40" y1="70" x2="160" y2="100"/>
+          <text style="font-size:7px;fill:#D8D8DC;" x="85" y="91" transform="rotate(14,100,85)">45° bias</text>
+        </svg>
+        <div class="intel-dot warn" style="top:14px;right:28px;" title="Bias Warning"></div>
+      </div>
+
+      <!-- SHOULDER PAD -->
+      <div class="pattern-piece" style="left:320px;top:255px;" id="piece-shoulder"
+        onmouseenter="showLabel('shoulder',event)"
+        onmouseleave="hideLabel()">
+        <svg width="130" height="100" viewBox="0 0 130 100">
+          <polygon class="piece-outline" points="10,80 65,8 120,80 90,92 65,88 40,92"/>
+          <line class="piece-grain-line" x1="65" y1="25" x2="65" y2="80"/>
+          <text class="piece-label-text" x="65" y="58" text-anchor="middle">SHOULDER</text>
+          <text class="piece-label-text" x="65" y="70" text-anchor="middle">PAD</text>
+          <text class="piece-label-text" x="65" y="40" text-anchor="middle" style="fill:#A0A0A8;font-size:7px">Cut 2 · Bonded</text>
+        </svg>
+        <div class="intel-dot" style="top:14px;right:22px;" title="Intelligence"></div>
+      </div>
+
+    </div><!-- /pattern-canvas -->
+
+    <!-- Living Label (tooltip) -->
+    <div class="living-label" id="livingLabel">
+      <div class="ll-piece-name" id="llPieceName">—</div>
+      <div class="ll-role" id="llRole">—</div>
+      <div class="ll-insight" id="llInsight">—</div>
+      <div class="ll-warning" id="llWarning" style="display:none;"></div>
+      <div class="ll-compat" id="llCompat">—</div>
+    </div>
+
+  </div><!-- /pattern-room -->
+
+  <!-- RIGHT: Material Dialogue -->
+  <div class="dialogue-col">
+    <div class="dialogue-header">
+      <div class="dialogue-title">The Material Dialogue</div>
+      <div class="dialogue-sub">Live AI Observations</div>
+    </div>
+
+    <div class="dialogue-feed">
+
+      <div class="dialogue-entry de-ok">
+        <span class="de-pair">
+          <span class="de-icon">🧵</span>
+          Bodice × Sleeve
+        </span>
+        <div class="de-text">Zero-ease set confirmed. Shoulder geometry intact. Sleeve cap sits precisely at geometric anchor point. Press hot before attaching.</div>
+        <div class="de-ts">Just now · Power Gown I</div>
+      </div>
+
+      <div class="dialogue-entry de-warn">
+        <span class="de-pair">
+          <span class="de-icon">⚠</span>
+          Waist Seam × Merino
+        </span>
+        <div class="de-text">Bias stretch detected at waist seam — 4.2mm drift on 60cm panel. Recommend twill tape stay before attaching skirt to bodice. Do not skip.</div>
+        <div class="de-ts">2 min ago · Power Gown I</div>
+      </div>
+
+      <div class="dialogue-entry de-ok">
+        <span class="de-pair">
+          <span class="de-icon">✓</span>
+          Shoulder Pad × Bodice
+        </span>
+        <div class="de-text">Geometric pad anchored at 3 basting points. Geometry locked. Press cold — heat will distort bonded layer.</div>
+        <div class="de-ts">5 min ago · Power Gown I</div>
+      </div>
+
+      <div class="dialogue-entry de-link">
+        <span class="de-pair">
+          <span class="de-icon">💡</span>
+          Power Gown I × Power Gown III
+        </span>
+        <div class="de-text">Same sloper family. Transferring sleeve block from Gown I to Gown III will save 2 full pattern sessions. Collar attachment point differs — adjust 8mm at neckline seam.</div>
+        <div class="de-ts">12 min ago · Cross-garment</div>
+      </div>
+
+      <div class="dialogue-entry de-info">
+        <span class="de-pair">
+          <span class="de-icon">📐</span>
+          Skirt Panel × Grain
+        </span>
+        <div class="de-text">45° bias cut confirmed for drape behavior. Stabilize all seam allowances before construction begins. Allow 48h for bias to settle after cutting.</div>
+        <div class="de-ts">18 min ago · Power Gown I</div>
+      </div>
+
+      <div class="dialogue-entry de-ok">
+        <span class="de-pair">
+          <span class="de-icon">✓</span>
+          Bonded Crepe × Shoulder Geometry
+        </span>
+        <div class="de-text">Bonded construction holds geometric shoulder without boning. No interfacing required. Confirmed travel-packable — folds to 28×34cm without deformation.</div>
+        <div class="de-ts">24 min ago · Fabric analysis</div>
+      </div>
+
+    </div>
+
+    <div class="ask-section">
+      <div class="ask-label">Ask about this garment</div>
+      <div class="ask-input-row">
+        <input class="ask-input" type="text" placeholder="Ask the pattern..." id="askInput">
+        <button class="ask-btn" onclick="askPattern()">Ask</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main-layout -->
+
+<!-- Construction Intelligence Bar (fixed bottom, spans center only) -->
+<div class="construction-bar">
+  <div class="cb-label">Construction<br>Intelligence</div>
+  <div class="cb-steps">
+
+    <div class="cb-step">
+      <div class="ann-ok cb-annotation" style="right:4px;"></div>
+      <div class="cb-step-num">01</div>
+      <div class="cb-checkbox checked">✓</div>
+      <div class="cb-step-label">Cut &amp; Mark</div>
+      <div class="cb-tooltip">All pieces cut. Notches marked. Bias grain confirmed on skirt panels.</div>
+    </div>
+
+    <div class="cb-step">
+      <div class="ann-ok cb-annotation" style="right:4px;"></div>
+      <div class="cb-step-num">02</div>
+      <div class="cb-checkbox checked">✓</div>
+      <div class="cb-step-label">Stay &amp; Stabilise</div>
+      <div class="cb-tooltip">Twill tape stays applied. Bias seams stabilised. Shoulder seam reinforced.</div>
+    </div>
+
+    <div class="cb-step">
+      <div class="ann-warn cb-annotation" style="right:4px;"></div>
+      <div class="cb-step-num">03</div>
+      <div class="cb-checkbox"></div>
+      <div class="cb-step-label">Skirt Attach</div>
+      <div class="cb-tooltip">⚠ Do not proceed until twill tape stay is confirmed at waist seam. Merino bias drift detected.</div>
+    </div>
+
+    <div class="cb-step">
+      <div class="cb-step-num">04</div>
+      <div class="cb-checkbox"></div>
+      <div class="cb-step-label">Bodice Seams</div>
+      <div class="cb-tooltip">Stitch bodice side seams. Press all seams open — do not topstitch at this stage.</div>
+    </div>
+
+    <div class="cb-step">
+      <div class="ann-info cb-annotation" style="right:4px;"></div>
+      <div class="cb-step-num">05</div>
+      <div class="cb-checkbox"></div>
+      <div class="cb-step-label">Sleeve Set</div>
+      <div class="cb-tooltip">💡 Zero-ease sleeve. Ease cap precisely — deviation of &gt;2mm will distort the shoulder geometry. Pin at 3 geometric anchor points before stitching.</div>
+    </div>
+
+    <div class="cb-step">
+      <div class="cb-step-num">06</div>
+      <div class="cb-checkbox"></div>
+      <div class="cb-step-label">Shoulder Pad</div>
+      <div class="cb-tooltip">Tack geometric pad at 3 basting points. Press cold only — heat distorts bonded layer.</div>
+    </div>
+
+    <div class="cb-step">
+      <div class="ann-warn cb-annotation" style="right:4px;"></div>
+      <div class="cb-step-num">07</div>
+      <div class="cb-checkbox"></div>
+      <div class="cb-step-label">Final Press</div>
+      <div class="cb-tooltip">⚠ Cold press only for bonded areas. Steam on reverse only. Do not iron direct on face — Merino bonding will separate.</div>
+    </div>
+
+    <div class="cb-step">
+      <div class="cb-step-num">08</div>
+      <div class="cb-checkbox"></div>
+      <div class="cb-step-label">QA &amp; Sign-off</div>
+      <div class="cb-tooltip">Measure shoulder geometry against spec. Confirm sleeve hang. Photograph finished garment before handover.</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ── Living Labels data ──
+  const labelData = {
+    'bodice-front': {
+      name: 'Bodice Front',
+      role: 'Step 4 in construction sequence. Foundation of the column silhouette — sets the geometric line of the entire garment.',
+      insight: '"The bust dart is suppressed into the princess seam — this is what gives the Power Gown its column discipline. Do not introduce ease here."',
+      warning: null,
+      compat: '✓ Compatible with bonded wool-crepe. No interlining required.'
+    },
+    'bodice-back': {
+      name: 'Bodice Back',
+      role: 'Step 4 concurrent. The back neckline determines the shoulder pad anchoring — precision at this seam is critical.',
+      insight: '"Back bodice carries 3 basting anchor points for the shoulder pad. Anchor at centre back seam first, then work outward."',
+      warning: null,
+      compat: '✓ Same grain as bodice front. Press seams together before pad attachment.'
+    },
+    'sleeve': {
+      name: 'Sleeve',
+      role: 'Step 5 — set after shoulder pad is anchored. Most technically demanding piece in Power Gown I.',
+      insight: '"This sleeve cap has zero ease — precision set only. Deviation of >2mm will distort the shoulder line and compromise the geometric architecture."',
+      warning: '⚠ Pin at 3 anchor points before stitching. Do not steam the cap before it is set. Single pass on the machine only.',
+      compat: '✓ Bonded crepe holds cap shape without support. Confirm seam allowance is exactly 15mm.'
+    },
+    'skirt': {
+      name: 'Skirt Panel',
+      role: 'Step 3 — attach after waist stay is confirmed. Cut on 45° bias for column drape behavior.',
+      insight: '"The bias cut creates the column fall. Allow 48h after cutting before attaching — Merino continues to settle. Check grain against plumb line."',
+      warning: '⚠ Merino stretch on bias exceeds spec — stabilize with twill tape before attaching to bodice. 4.2mm drift detected.',
+      compat: '⚠ Merino on bias: high-risk seam. Twill tape stay is mandatory, not optional.'
+    },
+    'shoulder': {
+      name: 'Shoulder Pad',
+      role: 'Step 6 — final structural element. The geometric pad defines the Power Gown\'s signature silhouette.',
+      insight: '"Pad is bonded and pre-shaped. Do not press hot — bonded layer will delaminate above 140°C. Cold press only. Anchor at 3 basting points."',
+      warning: null,
+      compat: '✓ Bonded pad compatible with bonded crepe body. No additional interfacing at attachment seam.'
+    }
+  };
+
+  function showLabel(pieceId, event) {
+    const data = labelData[pieceId];
+    if (!data) return;
+
+    const label = document.getElementById('livingLabel');
+    document.getElementById('llPieceName').textContent = data.name;
+    document.getElementById('llRole').textContent = data.role;
+    document.getElementById('llInsight').textContent = data.insight;
+
+    const warnEl = document.getElementById('llWarning');
+    if (data.warning) {
+      warnEl.textContent = data.warning;
+      warnEl.style.display = 'flex';
+      label.classList.add('warn-label');
+      document.getElementById('llPieceName').classList.add('warn-name');
+    } else {
+      warnEl.style.display = 'none';
+      label.classList.remove('warn-label');
+      document.getElementById('llPieceName').classList.remove('warn-name');
+    }
+    document.getElementById('llCompat').textContent = data.compat;
+
+    // Position label near cursor
+    const canvas = document.getElementById('patternCanvas');
+    const canvasRect = canvas.getBoundingClientRect();
+    const pieceEl = document.getElementById('piece-' + pieceId.replace('-',''));
+    const pieceRect = event.target.closest('.pattern-piece').getBoundingClientRect();
+
+    let lx = pieceRect.right - canvasRect.left + 10;
+    let ly = pieceRect.top - canvasRect.top;
+
+    // Keep within canvas
+    if (lx + 250 > canvasRect.width) lx = pieceRect.left - canvasRect.left - 260;
+    if (ly + 220 > canvasRect.height) ly = canvasRect.height - 230;
+    if (ly < 0) ly = 0;
+
+    label.style.left = lx + 'px';
+    label.style.top = ly + 'px';
+    label.classList.add('visible');
+  }
+
+  function hideLabel() {
+    document.getElementById('livingLabel').classList.remove('visible');
+  }
+
+  // ── Garment Selection ──
+  function selectGarment(el, name) {
+    document.querySelectorAll('.garment-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  // ── Ask Pattern ──
+  function askPattern() {
+    const input = document.getElementById('askInput');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+
+    const feed = document.querySelector('.dialogue-feed');
+    const entry = document.createElement('div');
+    entry.className = 'dialogue-entry de-info';
+    entry.innerHTML = `
+      <span class="de-pair"><span class="de-icon">🤔</span>Your Question</span>
+      <div class="de-text">${text}</div>
+      <div class="de-ts">Processing...</div>
+    `;
+    feed.insertBefore(entry, feed.firstChild);
+
+    setTimeout(() => {
+      entry.querySelector('.de-ts').textContent = 'Just now · AI response';
+      const responses = {
+        default: 'Analysing Power Gown I pattern relationships. The zero-ease sleeve set is the primary technical constraint — all construction decisions trace back to maintaining the geometric shoulder precision. Work from the shoulder outward.',
+      };
+      entry.querySelector('.de-text').textContent = responses.default;
+      entry.querySelector('.de-icon').textContent = '💡';
+      entry.querySelector('.de-pair').innerHTML = '<span class="de-icon">💡</span>Atelier Response';
+      entry.className = 'dialogue-entry de-link';
+    }, 1800);
+  }
+
+  // ── Keyboard on ask input ──
+  document.getElementById('askInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') askPattern();
+  });
+</script>
+</body>
+</html>

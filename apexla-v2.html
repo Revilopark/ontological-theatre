@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ApexLA — Roofing Intelligence</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--bg:#0A0C10;--card:#12161E;--card2:#181D28;--gold:#E8A920;--gold2:#F5C84A;--text:#F0EEE8;--muted:#7A8090;--teal:#4AAEBC;--green:#4CAF74;--red:#EF5360;--glass:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);--r:12px}
+*{margin:0;padding:0;box-sizing:border-box}html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;flex-direction:column;font-size:14px}
+.topbar{height:52px;background:rgba(10,12,16,0.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0;z-index:50}
+.logo{font-size:18px;font-weight:800;letter-spacing:-0.5px}.logo span{color:var(--gold)}
+.badge{background:rgba(232,169,32,0.15);border:1px solid rgba(232,169,32,0.3);color:var(--gold);font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700}
+.sep{flex:1}
+.terr-label{color:var(--muted);font-size:13px}
+select.terr{background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:8px;font-size:13px;outline:none;cursor:pointer}
+.app{display:flex;flex:1;overflow:hidden}
+.sidebar{width:240px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.nav-section{padding:16px 12px 4px}
+.nav-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:0 8px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;cursor:pointer;transition:all .15s;margin-bottom:1px;color:var(--muted)}
+.nav-item:hover{background:var(--glass);color:var(--text)}
+.nav-item.active{background:rgba(232,169,32,0.1);color:var(--gold);font-weight:600}
+.nav-icon{font-size:15px;width:22px;text-align:center;flex-shrink:0}
+.nav-chip{margin-left:auto;font-size:10px;font-weight:800;padding:2px 7px;border-radius:8px;background:var(--red);color:#fff}
+.nav-chip.gold{background:var(--gold);color:#000}
+.sidebar-box{margin:12px;background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.sb-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:13px;border-bottom:1px solid var(--border)}
+.sb-row:last-child{border:none}.sb-label{color:var(--muted)}.sb-val{font-weight:700;color:var(--gold)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.pane{display:none;flex:1;overflow-y:auto;padding:20px;flex-direction:column;gap:16px}
+.pane.on{display:flex}
+.pane-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.pane-title{font-size:20px;font-weight:800;letter-spacing:-0.5px}
+.pane-sub{font-size:13px;color:var(--muted);margin-top:3px}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.stat-num{font-size:28px;font-weight:800;letter-spacing:-1px;color:var(--gold)}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:3px}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.panel-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.panel-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px}
+.panel-body{padding:16px}
+.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-gold{background:var(--gold);color:#000}.btn-gold:hover{background:var(--gold2)}
+.btn-ghost{background:var(--glass);border:1px solid var(--border);color:var(--text)}.btn-ghost:hover{background:rgba(255,255,255,0.08)}
+.inp{background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:9px 12px;outline:none;transition:border .15s;width:100%}
+.inp:focus{border-color:rgba(232,169,32,0.5)}.inp::placeholder{color:var(--muted)}
+/* LEADS */
+.lead-list{display:flex;flex-direction:column;gap:7px}
+.lead-card{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:12px 14px;background:var(--glass);border:1px solid var(--border);border-radius:10px;transition:all .15s;cursor:pointer}
+.lead-card:hover,.lead-card.hot{border-color:rgba(232,169,32,0.3);background:rgba(232,169,32,0.03)}
+.score{width:44px;height:44px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800}
+.s-hi{background:rgba(232,169,32,0.2);color:var(--gold)}.s-md{background:rgba(74,174,188,0.15);color:var(--teal)}.s-lo{background:var(--glass);color:var(--muted)}
+.li-addr{font-size:13px;font-weight:700;margin-bottom:2px}
+.li-meta{font-size:11px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;margin-bottom:5px}
+.li-tags{display:flex;gap:5px;flex-wrap:wrap}
+.tag{font-size:10px;padding:2px 7px;border-radius:4px}
+.t-fire{background:rgba(239,83,96,0.15);color:var(--red)}.t-old{background:rgba(232,169,32,0.15);color:var(--gold)}
+.t-stall{background:rgba(74,174,188,0.15);color:var(--teal)}.t-cool{background:rgba(76,175,80,0.15);color:var(--green)}.t-own{background:var(--glass);color:var(--muted)}
+.li-val{font-size:15px;font-weight:800;color:var(--gold);text-align:right}
+.li-act{display:flex;gap:5px;margin-top:5px;justify-content:flex-end}
+/* MAP */
+#map-el{height:380px;border-radius:var(--r);overflow:hidden}
+/* ESTIMATOR */
+.est-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.est-box{background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.est-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.est-row:last-child{border:none}.er-lbl{color:var(--muted)}.er-val{font-weight:700}
+.est-total{background:rgba(232,169,32,0.08);border:1px solid rgba(232,169,32,0.25);border-radius:var(--r);padding:16px;display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.et-amt{font-size:28px;font-weight:800;color:var(--gold);letter-spacing:-1px}
+.tier-tabs{display:flex;gap:6px;margin-bottom:12px}
+.tier-tab{padding:6px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--glass);color:var(--muted);transition:all .15s}
+.tier-tab.on{background:rgba(232,169,32,0.15);border-color:rgba(232,169,32,0.4);color:var(--gold)}
+/* PIPELINE */
+.pipe-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.pipe-col{background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.pc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.pc-title{font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px}
+.dot{width:7px;height:7px;border-radius:50%}.dot-o{background:var(--gold)}.dot-w{background:var(--green)}.dot-l{background:var(--red)}
+.bid-card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:12px;margin-bottom:7px;cursor:pointer;transition:border .15s}
+.bid-card:hover{border-color:rgba(232,169,32,0.3)}
+.bc-addr{font-size:12px;font-weight:700;margin-bottom:3px}.bc-type{font-size:11px;color:var(--muted);margin-bottom:6px}
+.bc-val{font-size:15px;font-weight:800;color:var(--gold)}.bc-due{font-size:10px;color:var(--muted);margin-top:3px}.bc-due.urg{color:var(--red)}
+.bc-btns{display:flex;gap:5px;margin-top:8px}
+.bc-btn{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:none}
+.bc-won{background:rgba(76,175,80,0.15);color:var(--green);border:1px solid rgba(76,175,80,0.3)}
+.bc-lost{background:rgba(239,83,96,0.15);color:var(--red);border:1px solid rgba(239,83,96,0.3)}
+/* PERMITS */
+.permit-list{display:flex;flex-direction:column;gap:7px}
+.permit-card{display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center;padding:12px 14px;background:var(--glass);border:1px solid var(--border);border-radius:10px}
+.permit-card.warn{border-color:rgba(232,169,32,0.35)}.permit-card.alert{border-color:rgba(239,83,96,0.35);background:rgba(239,83,96,0.03)}
+.pi-icon{font-size:18px;text-align:center}.pi-addr{font-size:13px;font-weight:700;margin-bottom:2px}.pi-note{font-size:11px;color:var(--muted)}
+.sbadge{font-size:10px;padding:3px 10px;border-radius:10px;font-weight:700;white-space:nowrap}
+.sb-warn{background:rgba(232,169,32,0.15);color:var(--gold)}.sb-ok{background:rgba(76,175,80,0.15);color:var(--green)}.sb-alert{background:rgba(239,83,96,0.15);color:var(--red)}
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.overlay.on{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;max-width:500px;width:100%;max-height:80vh;overflow-y:auto}
+.modal-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.modal-body{padding:20px;display:flex;flex-direction:column;gap:12px}
+.modal-close{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer}
+.inp-lbl{font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500}
+.inp-group{display:flex;flex-direction:column}
+.inp-row{display:flex;gap:10px}
+.live-dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo"><span>Apex</span>LA</div>
+  <div class="badge">BETA</div>
+  <div class="sep"></div>
+  <span class="terr-label">Territory:</span>
+  <select class="terr" id="zip-sel" onchange="changeZip(this.value)">
+    <option value="90049">Bel Air / Westwood (90049)</option>
+    <option value="90210">Beverly Hills (90210)</option>
+    <option value="91401">Van Nuys (91401)</option>
+    <option value="90028">Hollywood (90028)</option>
+    <option value="90026">Silver Lake (90026)</option>
+    <option value="90018">Mid-City (90018)</option>
+    <option value="90037">South LA (90037)</option>
+    <option value="90004">Koreatown (90004)</option>
+  </select>
+</div>
+<div class="app">
+<div class="sidebar">
+  <div class="nav-section">
+    <div class="nav-label">Intelligence</div>
+    <div class="nav-item active" id="nav-radar" onclick="go('radar',this)"><span class="nav-icon">📡</span>Roof Radar<span class="nav-chip" id="chip-radar">0</span></div>
+    <div class="nav-item" id="nav-map" onclick="go('map',this)"><span class="nav-icon">🗺</span>Territory Map</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Operations</div>
+    <div class="nav-item" id="nav-est" onclick="go('est',this)"><span class="nav-icon">📋</span>Roof Estimator</div>
+    <div class="nav-item" id="nav-bids" onclick="go('bids',this)"><span class="nav-icon">💼</span>Bid Tracker<span class="nav-chip gold" id="chip-bids">0</span></div>
+    <div class="nav-item" id="nav-permits" onclick="go('permits',this)"><span class="nav-icon">🔒</span>Permit Command<span class="nav-chip" id="chip-permits">3</span></div>
+  </div>
+  <div class="sidebar-box">
+    <div class="sb-row"><span class="sb-label">Leads today</span><span class="sb-val" id="sb-leads">—</span></div>
+    <div class="sb-row"><span class="sb-label">Open bids</span><span class="sb-val" id="sb-bids">0</span></div>
+    <div class="sb-row"><span class="sb-label">Active permits</span><span class="sb-val">3</span></div>
+    <div class="sb-row"><span class="sb-label">Win rate</span><span class="sb-val">67%</span></div>
+  </div>
+</div>
+<div class="main">
+
+<!-- ROOF RADAR -->
+<div class="pane on" id="pane-radar">
+  <div class="pane-header">
+    <div><div class="pane-title">Roof Radar</div><div class="pane-sub">Today's ranked leads in your territory</div></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="live-dot"></div><span style="font-size:11px;color:var(--muted)" id="live-label">Sample data</span>
+      <select class="inp" style="width:auto" id="filter-sel" onchange="applyFilter()">
+        <option value="all">All leads</option><option value="fire">Fire zone</option><option value="stall">Stalled</option><option value="expired">Expired</option>
+      </select>
+      <button class="btn btn-ghost" onclick="refreshLive()" style="font-size:12px">↻ Live</button>
+    </div>
+  </div>
+  <div class="stat-row">
+    <div class="stat-box"><div class="stat-num" id="s-total">0</div><div class="stat-lbl">Leads in territory</div></div>
+    <div class="stat-box"><div class="stat-num" id="s-high">0</div><div class="stat-lbl">High urgency (80+)</div></div>
+    <div class="stat-box"><div class="stat-num" id="s-val">$0K</div><div class="stat-lbl">Est. pipeline value</div></div>
+    <div class="stat-box"><div class="stat-num" id="s-fire">0</div><div class="stat-lbl">Fire zone props</div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><div class="panel-title">📡 Lead Feed</div><span style="font-size:11px;color:var(--muted)">Sorted by urgency score</span></div>
+    <div class="panel-body"><div class="lead-list" id="lead-list"></div></div>
+  </div>
+</div>
+
+<!-- MAP -->
+<div class="pane" id="pane-map">
+  <div class="pane-header"><div><div class="pane-title">Territory Map</div><div class="pane-sub">Live permit activity across Los Angeles</div></div></div>
+  <div class="panel"><div class="panel-head"><div class="panel-title">🗺 LA Roofing Activity</div><div style="display:flex;gap:8px">
+    <span style="font-size:10px;background:rgba(232,169,32,0.15);color:var(--gold);padding:2px 8px;border-radius:4px">● Active</span>
+    <span style="font-size:10px;background:rgba(239,83,96,0.15);color:var(--red);padding:2px 8px;border-radius:4px">● Fire zone</span>
+    <span style="font-size:10px;background:rgba(74,174,188,0.15);color:var(--teal);padding:2px 8px;border-radius:4px">● Untapped</span>
+  </div></div><div id="map-el"></div></div>
+  <div class="stat-row">
+    <div class="stat-box"><div class="stat-num">47</div><div class="stat-lbl">Active permits in LA</div></div>
+    <div class="stat-box"><div class="stat-num">8</div><div class="stat-lbl">Competitors in your zip</div></div>
+    <div class="stat-box"><div class="stat-num">3</div><div class="stat-lbl">Untapped zones</div></div>
+    <div class="stat-box"><div class="stat-num">$2.1M</div><div class="stat-lbl">Permit value on map</div></div>
+  </div>
+</div>
+
+<!-- ESTIMATOR -->
+<div class="pane" id="pane-est">
+  <div class="pane-header"><div><div class="pane-title">Roof Estimator</div><div class="pane-sub">Address to proposal in under 8 minutes</div></div></div>
+  <div class="panel"><div class="panel-head"><div class="panel-title">🏠 Property Lookup</div></div>
+    <div class="panel-body"><div class="inp-row">
+      <div class="inp-group" style="flex:3"><div class="inp-lbl">Street Address</div><input class="inp" id="est-addr" placeholder="e.g. 1842 Westwood Blvd"></div>
+      <div class="inp-group" style="flex:1"><div class="inp-lbl">ZIP</div><input class="inp" id="est-zip" placeholder="90049" maxlength="5"></div>
+      <div class="inp-group" style="justify-content:flex-end"><div class="inp-lbl">&nbsp;</div><button class="btn btn-gold" onclick="runEst()">Generate</button></div>
+    </div></div></div>
+  <div id="est-result" style="display:none">
+    <div class="est-grid">
+      <div class="est-box"><div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:12px">PROPERTY INTEL</div>
+        <div class="est-row"><span class="er-lbl">Address</span><span class="er-val" id="er-addr">—</span></div>
+        <div class="est-row"><span class="er-lbl">Property type</span><span class="er-val" id="er-type">—</span></div>
+        <div class="est-row"><span class="er-lbl">Est. roof area</span><span class="er-val" id="er-area">—</span></div>
+        <div class="est-row"><span class="er-lbl">Year built</span><span class="er-val" id="er-year">—</span></div>
+        <div class="est-row"><span class="er-lbl">Fire zone</span><span class="er-val" id="er-fire">—</span></div>
+        <div class="est-row"><span class="er-lbl">Title 24 Cool Roof</span><span class="er-val" style="color:var(--gold)">Required</span></div>
+        <div class="est-row"><span class="er-lbl">Zip comp avg</span><span class="er-val" id="er-comp">—</span></div>
+      </div>
+      <div class="est-box"><div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:10px">ESTIMATE</div>
+        <div class="tier-tabs">
+          <div class="tier-tab on" onclick="setTier('basic',this)">Basic</div>
+          <div class="tier-tab" onclick="setTier('standard',this)">Standard</div>
+          <div class="tier-tab" onclick="setTier('premium',this)">Premium</div>
+        </div>
+        <div id="est-lines"></div>
+        <div class="est-total"><div><div style="font-size:11px;color:var(--muted)" id="et-lbl">Basic Estimate</div><div style="font-size:10px;color:var(--muted)">Incl. LADBS permit fee</div></div><div class="et-amt" id="et-amt">$0</div></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-gold" onclick="alert('Proposal PDF sent!')">Send Proposal</button>
+          <button class="btn btn-ghost" onclick="estToBids()">→ Bid Tracker</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BIDS -->
+<div class="pane" id="pane-bids">
+  <div class="pane-header">
+    <div><div class="pane-title">Bid Tracker</div><div class="pane-sub">Your full roofing pipeline</div></div>
+    <button class="btn btn-ghost" onclick="document.getElementById('add-modal').classList.add('on')" style="font-size:12px">+ Add Bid</button>
+  </div>
+  <div class="stat-row">
+    <div class="stat-box"><div class="stat-num" id="bs-open">0</div><div class="stat-lbl">Open bids</div></div>
+    <div class="stat-box"><div class="stat-num" id="bs-won">0</div><div class="stat-lbl">Won this month</div></div>
+    <div class="stat-box"><div class="stat-num" id="bs-rate">—</div><div class="stat-lbl">Win rate</div></div>
+    <div class="stat-box"><div class="stat-num" id="bs-pipe">$0K</div><div class="stat-lbl">Open pipeline</div></div>
+  </div>
+  <div class="pipe-cols">
+    <div class="pipe-col"><div class="pc-head"><div class="pc-title"><div class="dot dot-o"></div>Open</div><span style="font-size:11px;color:var(--muted)" id="col-o-ct">0</span></div><div id="col-open"></div></div>
+    <div class="pipe-col"><div class="pc-head"><div class="pc-title"><div class="dot dot-w"></div>Won</div><span style="font-size:11px;color:var(--muted)" id="col-w-ct">0</span></div><div id="col-won"></div></div>
+    <div class="pipe-col"><div class="pc-head"><div class="pc-title"><div class="dot dot-l"></div>Lost</div><span style="font-size:11px;color:var(--muted)" id="col-l-ct">0</span></div><div id="col-lost"></div></div>
+  </div>
+</div>
+
+<!-- PERMITS -->
+<div class="pane" id="pane-permits">
+  <div class="pane-header">
+    <div><div class="pane-title">Permit Command</div><div class="pane-sub">Track every permit. Miss nothing.</div></div>
+    <div style="display:flex;gap:8px">
+      <input class="inp" id="permit-addr" placeholder="Look up an address..." style="width:260px">
+      <button class="btn btn-gold" onclick="lookupPermit()">Look Up</button>
+    </div>
+  </div>
+  <div class="stat-row">
+    <div class="stat-box"><div class="stat-num">3</div><div class="stat-lbl">Active permits</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--red)">1</div><div class="stat-lbl">Need attention</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--gold)">1</div><div class="stat-lbl">Expiring soon</div></div>
+    <div class="stat-box"><div class="stat-num">4</div><div class="stat-lbl">Finaled this month</div></div>
+  </div>
+  <div class="panel"><div class="panel-head"><div class="panel-title">🔒 Active Permits</div></div>
+    <div class="panel-body">
+      <div class="permit-list">
+        <div class="permit-card alert"><div class="pi-icon">🔴</div><div><div class="pi-addr">9205 Venice Blvd</div><div class="pi-note">Reroof · Permit #24-10-22891 · Expires in 12 days — no inspection scheduled</div></div><div class="sbadge sb-alert">Urgent</div></div>
+        <div class="permit-card warn"><div class="pi-icon">⚠️</div><div><div class="pi-addr">3821 Sunset Dr</div><div class="pi-note">Cool Roof · Permit #24-09-17443 · Inspection window opens in 3 days</div></div><div class="sbadge sb-warn">Schedule now</div></div>
+        <div class="permit-card warn"><div class="pi-icon">🏠</div><div><div class="pi-addr">1104 Manning Ave</div><div class="pi-note">VHFHSZ · Class A material required · Permit #24-10-33102 · In progress</div></div><div class="sbadge sb-warn">Compliance</div></div>
+        <div class="permit-card"><div class="pi-icon">✅</div><div><div class="pi-addr">445 N Doheny Dr</div><div class="pi-note">Full reroof · Permit #24-08-09821 · Finaled Oct 14</div></div><div class="sbadge sb-ok">Complete</div></div>
+      </div>
+      <div id="permit-result" style="margin-top:16px;display:none"></div>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<!-- ADD BID MODAL -->
+<div class="overlay" id="add-modal">
+  <div class="modal">
+    <div class="modal-head"><div style="font-size:16px;font-weight:800">Add Bid</div><button class="modal-close" onclick="document.getElementById('add-modal').classList.remove('on')">✕</button></div>
+    <div class="modal-body">
+      <div class="inp-group"><div class="inp-lbl">Address</div><input class="inp" id="m-addr" placeholder="123 Main St"></div>
+      <div class="inp-row">
+        <div class="inp-group"><div class="inp-lbl">Amount ($)</div><input class="inp" id="m-amt" type="number" placeholder="14500"></div>
+        <div class="inp-group"><div class="inp-lbl">Type</div><select class="inp" id="m-type"><option>SFR Reroof</option><option>Apt Reroof</option><option>Commercial</option><option>Cool Roof</option><option>Fire Repair</option></select></div>
+      </div>
+      <div class="inp-group"><div class="inp-lbl">Notes</div><textarea class="inp" id="m-notes" style="height:60px;resize:none"></textarea></div>
+      <button class="btn btn-gold" style="width:100%" onclick="addBid()">Add to Pipeline</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ── DATA ──────────────────────────────────────────────────────
+const BL = {
+  '90049':[
+    {score:94,addr:'1842 Westwood Blvd',type:'SFR',meta:'Roof: 24 yrs · Post-fire zone',val:18500,tags:['t-fire','t-old'],tagLabels:['🔥 Fire dmg','⚠ Overdue'],isF:true,isSt:false},
+    {score:87,addr:'934 Gayley Ave',type:'Apt',meta:'Permit stalled 110 days',val:32000,tags:['t-stall'],tagLabels:['⏸ Stalled 110d'],isF:false,isSt:true},
+    {score:81,addr:'10880 Wilshire Blvd',type:'Commercial',meta:'Permit expired · Owner-builder',val:62000,tags:['t-old','t-own'],tagLabels:['⚠ Expired','👤 Owner-builder'],isF:false,isSt:false},
+    {score:71,addr:'11205 Ohio Ave',type:'SFR',meta:'Roof: 19 yrs · Cool roof req',val:14200,tags:['t-cool'],tagLabels:['❄ Cool roof'],isF:false,isSt:false},
+    {score:64,addr:'2241 Veterans Ave',type:'SFR',meta:'Stalled 80 days',val:16800,tags:['t-stall'],tagLabels:['⏸ Stalled 80d'],isF:false,isSt:true},
+    {score:58,addr:'544 Hilgard Ave',type:'SFR',meta:'Permit expired 2022',val:21000,tags:['t-old'],tagLabels:['⚠ Expired'],isF:false,isSt:false}
+  ],
+  '90210':[
+    {score:96,addr:'801 N Hillcrest Rd',type:'SFR',meta:'Fire damage · Owner-builder',val:55000,tags:['t-fire','t-own'],tagLabels:['🔥 Fire dmg','👤 Owner-builder'],isF:true,isSt:false},
+    {score:88,addr:'1020 Laurel Way',type:'SFR',meta:'Stalled 95 days',val:44000,tags:['t-stall'],tagLabels:['⏸ Stalled 95d'],isF:false,isSt:true},
+    {score:79,addr:'612 N Elm Dr',type:'SFR',meta:'Roof: 22 yrs · Fire zone',val:38000,tags:['t-fire'],tagLabels:['🔥 Fire zone'],isF:true,isSt:false},
+    {score:67,addr:'414 N Maple Dr',type:'Duplex',meta:'Cool roof required · Expired',val:28000,tags:['t-cool','t-old'],tagLabels:['❄ Cool roof','⚠ Expired'],isF:false,isSt:false}
+  ],
+  '91401':[
+    {score:89,addr:'6550 Sepulveda Blvd',type:'Commercial',meta:'Permit expired · Owner-builder',val:44000,tags:['t-old','t-own'],tagLabels:['⚠ Expired','👤 Owner-builder'],isF:false,isSt:false},
+    {score:83,addr:'14600 Hamlin St',type:'Apt',meta:'Stalled 95 days · Roof: 22 yrs',val:38000,tags:['t-stall'],tagLabels:['⏸ Stalled 95d'],isF:false,isSt:true},
+    {score:74,addr:'7320 Kester Ave',type:'SFR',meta:'Permit expired 2023',val:16500,tags:['t-old'],tagLabels:['⚠ Expired'],isF:false,isSt:false},
+    {score:66,addr:'6811 Hazeltine Ave',type:'SFR',meta:'Cool roof required · Roof: 20 yrs',val:14800,tags:['t-cool'],tagLabels:['❄ Cool roof'],isF:false,isSt:false},
+    {score:55,addr:'15100 Sherman Way',type:'Commercial',meta:'Roof: 18 yrs',val:22000,tags:[],tagLabels:[],isF:false,isSt:false}
+  ],
+  '90028':[
+    {score:91,addr:'6255 Sunset Blvd',type:'Commercial',meta:'Permit expired · Roof: 26 yrs',val:58000,tags:['t-old'],tagLabels:['⚠ Expired'],isF:false,isSt:false},
+    {score:82,addr:'1735 N Cahuenga Blvd',type:'Apt',meta:'Stalled 88 days',val:29000,tags:['t-stall'],tagLabels:['⏸ Stalled 88d'],isF:false,isSt:true},
+    {score:73,addr:'6400 Hollywood Blvd',type:'Commercial',meta:'Cool roof req · Owner-builder',val:41000,tags:['t-cool','t-own'],tagLabels:['❄ Cool roof','👤 Owner-builder'],isF:false,isSt:false},
+    {score:60,addr:'1611 N Las Palmas Ave',type:'SFR',meta:'Roof: 21 yrs',val:17200,tags:[],tagLabels:[],isF:false,isSt:false}
+  ],
+  '90026':[
+    {score:88,addr:'2100 Sunset Blvd',type:'Commercial',meta:'Permit expired · Roof: 24 yrs',val:47000,tags:['t-old'],tagLabels:['⚠ Expired'],isF:false,isSt:false},
+    {score:79,addr:'3401 Glendale Blvd',type:'Apt',meta:'Stalled 102 days · Owner-builder',val:35000,tags:['t-stall','t-own'],tagLabels:['⏸ Stalled 102d','👤 Owner-builder'],isF:false,isSt:true},
+    {score:68,addr:'1812 Lucile Ave',type:'SFR',meta:'Cool roof required',val:15400,tags:['t-cool'],tagLabels:['❄ Cool roof'],isF:false,isSt:false},
+    {score:57,addr:'2830 Rowena Ave',type:'SFR',meta:'Roof: 19 yrs',val:13800,tags:[],tagLabels:[],isF:false,isSt:false}
+  ],
+  '90018':[
+    {score:86,addr:'4200 W Adams Blvd',type:'Commercial',meta:'Permit expired · Owner-builder',val:36000,tags:['t-old','t-own'],tagLabels:['⚠ Expired','👤 Owner-builder'],isF:false,isSt:false},
+    {score:77,addr:'3810 Crenshaw Blvd',type:'Apt',meta:'Stalled 75 days',val:42000,tags:['t-stall'],tagLabels:['⏸ Stalled 75d'],isF:false,isSt:true},
+    {score:65,addr:'1944 S Gramercy Pl',type:'SFR',meta:'Roof: 23 yrs · Cool roof req',val:14600,tags:['t-cool'],tagLabels:['❄ Cool roof'],isF:false,isSt:false},
+    {score:54,addr:'4601 W Pico Blvd',type:'SFR',meta:'Roof: 17 yrs',val:12900,tags:[],tagLabels:[],isF:false,isSt:false}
+  ],
+  '90037':[
+    {score:85,addr:'4800 S Figueroa St',type:'Commercial',meta:'Permit expired · Roof: 25 yrs',val:39000,tags:['t-old'],tagLabels:['⚠ Expired'],isF:false,isSt:false},
+    {score:76,addr:'316 W 48th St',type:'SFR',meta:'Owner-builder · Stalled 91 days',val:16200,tags:['t-stall','t-own'],tagLabels:['⏸ Stalled 91d','👤 Owner-builder'],isF:false,isSt:true},
+    {score:63,addr:'5501 S Vermont Ave',type:'Apt',meta:'Cool roof req · Roof: 20 yrs',val:31000,tags:['t-cool'],tagLabels:['❄ Cool roof'],isF:false,isSt:false},
+    {score:52,addr:'4122 S Hoover St',type:'SFR',meta:'Roof: 16 yrs',val:11800,tags:[],tagLabels:[],isF:false,isSt:false}
+  ],
+  '90004':[
+    {score:87,addr:'3850 W 6th St',type:'Apt',meta:'Permit expired · Owner-builder',val:52000,tags:['t-old','t-own'],tagLabels:['⚠ Expired','👤 Owner-builder'],isF:false,isSt:false},
+    {score:78,addr:'4100 W 3rd St',type:'Commercial',meta:'Stalled 84 days',val:44000,tags:['t-stall'],tagLabels:['⏸ Stalled 84d'],isF:false,isSt:true},
+    {score:67,addr:'724 N Kingsley Dr',type:'SFR',meta:'Cool roof req · Roof: 22 yrs',val:18500,tags:['t-cool'],tagLabels:['❄ Cool roof'],isF:false,isSt:false},
+    {score:56,addr:'4401 Beverly Blvd',type:'Commercial',meta:'Roof: 19 yrs',val:28000,tags:[],tagLabels:[],isF:false,isSt:false}
+  ]
+};
+function getLeads(zip) {
+  return BL[zip] || BL['90049'];
+}
+
+let currentZip = '90049';
+let allLeads = [];
+let _mapInit = false;
+let _estData = null;
+
+// ── NAV ──────────────────────────────────────────────────────
+function go(id, el) {
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('pane-'+id).classList.add('on');
+  el.classList.add('active');
+  if(id==='map') initMap();
+  if(id==='bids') renderBids();
+}
+
+function changeZip(z) { currentZip = z; loadLeads(); }
+
+// ── LEADS ─────────────────────────────────────────────────────
+// getLeads defined above with BL
+
+function loadLeads() {
+  allLeads = getLeads(currentZip);
+  renderLeads(allLeads);
+  // Fire live fetch in background (non-blocking)
+  fetchLive(currentZip);
+}
+
+function renderLeads(leads) {
+  const total = leads.length;
+  const high = leads.filter(l=>l.score>=80).length;
+  const val = leads.reduce((s,l)=>s+(l.val||15000),0);
+  const fire = leads.filter(l=>l.isF).length;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-high').textContent = high;
+  document.getElementById('s-val').textContent = '$'+(val/1000).toFixed(0)+'K';
+  document.getElementById('s-fire').textContent = fire;
+  document.getElementById('sb-leads').textContent = total;
+  document.getElementById('chip-radar').textContent = total;
+
+  const list = document.getElementById('lead-list');
+  if(!leads.length){list.innerHTML='<div style="text-align:center;padding:32px;color:var(--muted)">No leads found for this filter</div>';return;}
+  list.innerHTML = leads.map(l=>{
+    const sc = l.score>=80?'s-hi':l.score>=60?'s-md':'s-lo';
+    const hot = l.score>=80?'hot':'';
+    const tags = l.tagLabels.map((t,i)=>`<span class="tag ${l.tags[i]}">${t}</span>`).join('');
+    const valStr = l.val>0?'~$'+(l.val/1000).toFixed(0)+'K':'~$'+(Math.floor(Math.random()*20+10))+'K';
+    return `<div class="lead-card ${hot}" onclick="toEst('${l.addr.replace(/'/g,"\\'")}')">
+      <div class="score ${sc}">${l.score}</div>
+      <div><div class="li-addr">${l.addr}</div><div class="li-meta"><span>${l.type||'Property'}</span><span>${l.meta}</span></div>${tags?`<div class="li-tags">${tags}</div>`:''}</div>
+      <div><div class="li-val">${valStr}</div><div class="li-act"><button class="btn btn-ghost" style="font-size:11px;padding:5px 10px" onclick="event.stopPropagation();toEst('${l.addr.replace(/'/g,"\\'")}')">Estimate →</button></div></div>
+    </div>`;
+  }).join('');
+}
+
+function applyFilter() {
+  const f = document.getElementById('filter-sel').value;
+  let filtered = allLeads;
+  if(f==='fire') filtered = allLeads.filter(l=>l.isF);
+  else if(f==='stall') filtered = allLeads.filter(l=>l.isSt);
+  else if(f==='expired') filtered = allLeads.filter(l=>l.tagLabels.some(t=>t.includes('Expired')));
+  renderLeads(filtered);
+}
+
+function refreshLive() { 
+  document.getElementById('live-label').textContent = 'Fetching live...';
+  fetchLive(currentZip, true); 
+}
+
+async function fetchLive(zip, force) {
+  try {
+    const where = `work_description like '%ROOF%' AND zip_code='${zip}'`;
+    const url = `https://data.lacity.org/resource/d9aa-v8bm.json?$where=${encodeURIComponent(where)}&$limit=80&$order=status_date+DESC`;
+    const ctrl = new AbortController();
+    const t1 = setTimeout(()=>ctrl.abort(), 6000);
+    const resp = await fetch(url, {signal: ctrl.signal});
+    clearTimeout(t1);
+    if(!resp.ok) throw new Error('bad response');
+    const text = await Promise.race([
+      resp.text(),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('body timeout')),6000))
+    ]);
+    const data = JSON.parse(text);
+    if(!data || !data.length) throw new Error('no data');
+    // Convert to our lead format
+    const seen = new Set();
+    const live = [];
+    for(const p of data) {
+      const key = p.pcis_permit||(p.address_start+p.street_name);
+      if(seen.has(key)) continue; seen.add(key);
+      const addr = `${p.address_start||''} ${p.street_name||''} ${p.street_suffix||''}`.trim();
+      if(!addr) continue;
+      const val = parseInt(p.valuation||'0');
+      const sd = p.status_date ? new Date(p.status_date) : null;
+      const isF = /fire/i.test(p.work_description||'');
+      const isSt = p.latest_status==='Issued' && sd && (Date.now()-sd)>7776e6;
+      const isExp = p.latest_status==='Permit Expired';
+      const isCool = /cool roof/i.test(p.work_description||'');
+      const isOwn = (p.contractors_business_name||'').includes('OWNER');
+      let score=50;
+      if(isExp||isSt) score+=20; if(isF) score+=15; if(val>20000) score+=10; if(isOwn) score+=10; if(isCool) score-=5;
+      score=Math.min(99,Math.max(30,score));
+      const tags=[],tagLabels=[];
+      if(isF){tags.push('t-fire');tagLabels.push('🔥 Fire dmg');}
+      if(isSt){tags.push('t-stall');tagLabels.push(`⏸ Stalled ${Math.round((Date.now()-sd)/86400000)}d`);}
+      if(isExp){tags.push('t-old');tagLabels.push('⚠ Expired');}
+      if(isCool){tags.push('t-cool');tagLabels.push('❄ Cool roof');}
+      if(isOwn){tags.push('t-own');tagLabels.push('👤 Owner-builder');}
+      const typeMap={'1 or 2 Family Dwelling':'SFR','Apartment House':'Apartment','Office Building':'Commercial','Condominium':'Condo'};
+      live.push({score,addr,type:typeMap[p.permit_sub_type]||p.permit_sub_type||'Property',
+        meta:`${p.latest_status||'Unknown'}${val?' · $'+val.toLocaleString():''}`,val,tags,tagLabels,isF,isSt});
+    }
+    live.sort((a,b)=>b.score-a.score);
+    if(live.length>0) {
+      allLeads = live;
+      renderLeads(live);
+      document.getElementById('live-label').textContent = '✓ Live LADBS data';
+    }
+  } catch(e) {
+    document.getElementById('live-label').textContent = 'Sample data';
+  }
+}
+
+function toEst(addr) {
+  go('est', document.getElementById('nav-est'));
+  document.getElementById('est-addr').value = addr;
+  document.getElementById('est-zip').value = currentZip;
+  runEst();
+}
+
+// ── MAP ───────────────────────────────────────────────────────
+function initMap() {
+  if(_mapInit) return; _mapInit = true;
+  const map = L.map('map-el',{center:[34.05,-118.25],zoom:11});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© CARTO'}).addTo(map);
+  const spots=[
+    {ll:[34.07,-118.44],r:14,c:'#E8A920',n:'Bel Air / Westwood',j:12,t:'active'},
+    {ll:[34.09,-118.40],r:18,c:'#E8A920',n:'Beverly Hills',j:18,t:'active'},
+    {ll:[34.18,-118.45],r:11,c:'#EF5360',n:'Woodland Hills',j:9,t:'fire'},
+    {ll:[34.22,-118.53],r:15,c:'#EF5360',n:'Chatsworth (VHFHSZ)',j:22,t:'fire'},
+    {ll:[34.14,-118.36],r:9,c:'#4AAEBC',n:'North Hollywood',j:3,t:'untapped'},
+    {ll:[34.05,-118.26],r:13,c:'#E8A920',n:'Silver Lake / DTLA',j:14,t:'active'},
+    {ll:[34.02,-118.28],r:8,c:'#4AAEBC',n:'South LA',j:2,t:'untapped'},
+    {ll:[34.00,-118.47],r:12,c:'#E8A920',n:'Culver City',j:11,t:'active'},
+    {ll:[34.08,-118.33],r:10,c:'#E8A920',n:'Koreatown',j:8,t:'active'},
+  ];
+  spots.forEach(s=>{
+    L.circleMarker(s.ll,{radius:s.r,fillColor:s.c,color:s.c,weight:1,opacity:.8,fillOpacity:.3}).addTo(map)
+    .bindPopup(`<div style="background:#12161E;color:#F0EEE8;padding:10px;border-radius:8px;font-family:-apple-system,sans-serif;min-width:180px"><b>${s.n}</b><br><span style="font-size:11px;color:#7A8090">${s.t==='fire'?'🔥 Fire Hazard Zone':s.t==='untapped'?'🔵 Untapped market':'⭐ Active zone'}</span><br><span style="font-size:14px;font-weight:800;color:#E8A920">${s.j} opportunities</span></div>`,{className:'dark-pop'});
+  });
+}
+
+// ── ESTIMATOR ────────────────────────────────────────────────
+function runEst() {
+  const addr = document.getElementById('est-addr').value.trim();
+  const zip = document.getElementById('est-zip').value.trim() || currentZip;
+  if(!addr){alert('Enter an address');return;}
+  const seed = addr.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+  const area = 1800+(seed%1400);
+  const year = 1960+(seed%55);
+  const age = 2026-year;
+  const isF = parseInt(zip)>=91300 && parseInt(zip)<=91399;
+  const types=['SFR','SFR','Duplex','Apartment','SFR'];
+  const ptype = types[seed%types.length];
+  const comp = 13000+(seed%9000);
+  _estData = {addr,zip,area,year,age,isF,ptype,comp};
+  document.getElementById('er-addr').textContent = addr;
+  document.getElementById('er-type').textContent = ptype;
+  document.getElementById('er-area').textContent = area.toLocaleString()+' sq ft';
+  document.getElementById('er-year').textContent = year+' (~'+age+' yrs)';
+  document.getElementById('er-fire').innerHTML = isF?'<span style="color:var(--red)">⚠ VHFHSZ — Class A required</span>':'<span style="color:var(--green)">✓ Standard zone</span>';
+  document.getElementById('er-comp').textContent = '$'+comp.toLocaleString()+' avg';
+  setTier('basic', document.querySelector('.tier-tab.on'));
+  document.getElementById('est-result').style.display = 'block';
+}
+
+function setTier(tier, el) {
+  document.querySelectorAll('.tier-tab').forEach(t=>t.classList.remove('on'));
+  if(el) el.classList.add('on');
+  if(!_estData) return;
+  const {area,isF} = _estData;
+  const cfg={basic:{mat:isF?'Class A Fiberglass Shingle':'Standard Shingle',mr:2.80,lr:2.20,oh:1.15},standard:{mat:isF?'Class A Architectural':'Architectural (CRRC)',mr:3.60,lr:2.60,oh:1.20},premium:{mat:isF?'Class A Metal':'Concrete Tile / Metal',mr:5.80,lr:4.20,oh:1.25}};
+  const c=cfg[tier];
+  const mat=Math.round(area*c.mr), lab=Math.round(area*c.lr), tear=Math.round(area*.45), disp=350, perm=410;
+  const total=Math.round((mat+lab+tear+disp+perm)*c.oh);
+  document.getElementById('et-lbl').textContent=tier.charAt(0).toUpperCase()+tier.slice(1)+' Estimate';
+  document.getElementById('et-amt').textContent='$'+total.toLocaleString();
+  document.getElementById('est-lines').innerHTML=
+    `<div class="est-row"><span class="er-lbl">Material (${area.toLocaleString()} sq ft)</span><span class="er-val">$${mat.toLocaleString()}</span></div>
+     <div class="est-row"><span class="er-lbl">Labor</span><span class="er-val">$${lab.toLocaleString()}</span></div>
+     <div class="est-row"><span class="er-lbl">Tear-off & haul</span><span class="er-val">$${tear.toLocaleString()}</span></div>
+     <div class="est-row"><span class="er-lbl">Disposal</span><span class="er-val">$${disp}</span></div>
+     <div class="est-row"><span class="er-lbl">LADBS permit fee</span><span class="er-val">$${perm}</span></div>
+     <div class="est-row"><span class="er-lbl" style="color:var(--teal);font-size:11px">✓ ${c.mat}</span><span class="er-val" style="font-size:11px;color:var(--muted)">Zip avg: $${_estData.comp.toLocaleString()}</span></div>`;
+}
+
+function estToBids() {
+  if(!_estData) return;
+  const amt = parseInt(document.getElementById('et-amt').textContent.replace(/\D/g,''));
+  const bids = JSON.parse(localStorage.getItem('axl_bids')||'[]');
+  bids.push({id:Date.now(),addr:_estData.addr,amt,type:_estData.ptype+' Reroof',status:'open',created:new Date().toISOString(),fu:new Date(Date.now()+3*86400000).toISOString()});
+  localStorage.setItem('axl_bids',JSON.stringify(bids));
+  go('bids',document.getElementById('nav-bids'));
+}
+
+// ── BIDS ─────────────────────────────────────────────────────
+function getBids(){return JSON.parse(localStorage.getItem('axl_bids')||'[]');}
+function saveBids(b){localStorage.setItem('axl_bids',JSON.stringify(b));}
+
+function renderBids() {
+  const bids=getBids();
+  const open=bids.filter(b=>b.status==='open');
+  const won=bids.filter(b=>b.status==='won');
+  const lost=bids.filter(b=>b.status==='lost');
+  document.getElementById('bs-open').textContent=open.length;
+  document.getElementById('bs-won').textContent=won.length;
+  document.getElementById('bs-rate').textContent=bids.length?Math.round(won.length/bids.length*100)+'%':'—';
+  const pv=open.reduce((s,b)=>s+(b.amt||0),0);
+  document.getElementById('bs-pipe').textContent='$'+(pv/1000).toFixed(0)+'K';
+  document.getElementById('sb-bids').textContent=open.length;
+  document.getElementById('chip-bids').textContent=open.length;
+  document.getElementById('col-o-ct').textContent=open.length;
+  document.getElementById('col-w-ct').textContent=won.length;
+  document.getElementById('col-l-ct').textContent=lost.length;
+  const render=(items,colId)=>{
+    const el=document.getElementById(colId);
+    if(!items.length){el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0">No bids</div>';return;}
+    el.innerHTML=items.map(b=>{
+      const fu=new Date(b.fu); const fuS=fu.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      const urg=b.status==='open'&&fu<new Date();
+      return `<div class="bid-card"><div class="bc-addr">${b.addr}</div><div class="bc-type">${b.type||'Roofing'}</div><div class="bc-val">$${(b.amt||0).toLocaleString()}</div>
+        <div class="bc-due ${urg?'urg'}">Follow up: ${fuS}</div>
+        ${b.status==='open'?`<div class="bc-btns"><button class="bc-btn bc-won" onclick="moveBid(${b.id},'won')">Won ✓</button><button class="bc-btn bc-lost" onclick="moveBid(${b.id},'lost')">Lost</button></div>`:''}
+      </div>`;
+    }).join('');
+  };
+  render(open,'col-open'); render(won,'col-won'); render(lost,'col-lost');
+}
+
+function moveBid(id,status){const b=getBids();const x=b.find(x=>x.id===id);if(x)x.status=status;saveBids(b);renderBids();}
+
+function addBid(){
+  const addr=document.getElementById('m-addr').value.trim();
+  const amt=parseInt(document.getElementById('m-amt').value)||0;
+  const type=document.getElementById('m-type').value;
+  const notes=document.getElementById('m-notes').value;
+  if(!addr){alert('Enter an address');return;}
+  const bids=getBids();
+  bids.push({id:Date.now(),addr,amt,type,notes,status:'open',created:new Date().toISOString(),fu:new Date(Date.now()+3*86400000).toISOString()});
+  saveBids(bids);
+  document.getElementById('add-modal').classList.remove('on');
+  ['m-addr','m-amt','m-notes'].forEach(id=>document.getElementById(id).value='');
+  renderBids();
+}
+
+// ── PERMITS ───────────────────────────────────────────────────
+async function lookupPermit() {
+  const addr = document.getElementById('permit-addr').value.trim();
+  if(!addr) return;
+  const div = document.getElementById('permit-result');
+  div.style.display='block';
+  div.innerHTML='<div style="color:var(--muted);font-size:13px">Looking up '+addr+'...</div>';
+  try {
+    const resp = await fetch('https://awareness-proxy-328246068140.us-central1.run.app/byo/lookup_permits',
+      {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr})});
+    if(resp.ok){
+      const d=await resp.json();
+      div.innerHTML=`<div style="font-size:13px;color:var(--text);white-space:pre-wrap">${d.result||'No permits found.'}</div>`;
+    } else throw new Error('proxy error');
+  } catch(e) {
+    div.innerHTML=`<div style="font-size:13px;color:var(--muted)">Live lookup unavailable — proxy not connected.<br>Error: ${e.message}</div>`;
+  }
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+loadLeads();
+renderBids();
+</script>
+</body>
+</html>
+<!-- 1771914239 -->

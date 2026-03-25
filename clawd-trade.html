@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clawd Trade — A Bot for Every Trade</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ink:#0a0a14;--navy:#12122a;--deep:#1a1a3e;
+  --fire:#e94560;--fire-glow:#ff6b8a;--gold:#d4a017;--teal:#16a596;
+  --amber:#f39c12;--violet:#8e44ad;--pine:#27ae60;--sky:#2980b9;
+  --slate:#6a6a8e;--mist:#9a9ab4;--cloud:#c8c8dc;--white:#ffffff;
+  --serif:'Instrument Serif',Georgia,serif;
+  --sans:'DM Sans',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{background:var(--ink);color:var(--cloud);font-family:var(--sans);line-height:1.7;overflow-x:hidden}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  background-repeat:repeat;opacity:0.4}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--ink)}::-webkit-scrollbar-thumb{background:#2a3a6e;border-radius:3px}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,20,0.9);
+  backdrop-filter:blur(20px);border-bottom:1px solid rgba(233,69,96,0.12);
+  padding:0 2.5rem;height:64px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--serif);font-size:1.5rem;color:var(--white);text-decoration:none;letter-spacing:-0.02em}
+.logo span{color:var(--fire)}.logo sup{font-size:0.55em;color:var(--mist);font-family:var(--sans);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;vertical-align:super}
+nav ul{list-style:none;display:flex;gap:1.75rem;align-items:center}
+nav ul li a{color:var(--mist);text-decoration:none;font-size:0.78rem;font-weight:500;letter-spacing:0.05em;text-transform:uppercase;transition:color 0.3s}
+nav ul li a:hover{color:var(--white)}
+.nav-cta{background:var(--fire)!important;color:var(--white)!important;padding:0.42rem 1.1rem;border-radius:4px;font-weight:600!important}
+@media(max-width:768px){nav ul{display:none}}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;
+  text-align:center;padding:8rem 2rem 5rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:-20%;
+  background:radial-gradient(ellipse at 25% 35%,rgba(233,69,96,0.08) 0%,transparent 50%),
+    radial-gradient(ellipse at 75% 65%,rgba(22,165,150,0.07) 0%,transparent 50%),
+    radial-gradient(ellipse at 50% 80%,rgba(212,160,23,0.05) 0%,transparent 45%);
+  animation:shift 24s ease-in-out infinite alternate}
+@keyframes shift{0%{transform:translate(0,0)}100%{transform:translate(-2%,1.5%)}}
+.eyebrow{display:inline-flex;align-items:center;gap:0.5rem;padding:0.35rem 1rem;
+  border:1px solid rgba(233,69,96,0.3);border-radius:100px;font-size:0.7rem;font-weight:500;
+  color:var(--fire);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:2rem;
+  animation:up 0.8s ease-out both}
+.eyebrow .dot{width:6px;height:6px;background:var(--fire);border-radius:50%;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.25}}
+@keyframes up{0%{opacity:0;transform:translateY(28px)}100%{opacity:1;transform:translateY(0)}}
+.hero h1{font-family:var(--serif);font-size:clamp(3rem,8vw,6.5rem);line-height:0.93;
+  color:var(--white);margin-bottom:1.5rem;animation:up 0.8s 0.1s ease-out both}
+.hero h1 em{font-style:italic;color:var(--fire)}
+.hero-sub{font-size:clamp(1rem,1.8vw,1.2rem);color:var(--mist);max-width:580px;
+  font-weight:300;line-height:1.65;margin-bottom:2.5rem;animation:up 0.8s 0.2s ease-out both}
+.hero-actions{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;
+  animation:up 0.8s 0.3s ease-out both;margin-bottom:3.5rem}
+.btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.85rem 2rem;border-radius:4px;
+  font-size:0.88rem;font-weight:600;text-decoration:none;letter-spacing:0.04em;transition:all 0.3s;cursor:pointer;border:none}
+.btn-primary{background:var(--fire);color:var(--white)}
+.btn-primary:hover{background:var(--fire-glow);transform:translateY(-2px);box-shadow:0 8px 28px rgba(233,69,96,0.3)}
+.btn-ghost{background:transparent;color:var(--cloud);border:1px solid rgba(200,200,220,0.2)}
+.btn-ghost:hover{border-color:var(--fire);color:var(--white);transform:translateY(-2px)}
+.trade-icons{display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;animation:up 0.8s 0.4s ease-out both}
+.trade-icon-pill{display:flex;align-items:center;gap:0.5rem;padding:0.4rem 1rem;
+  border-radius:100px;border:1px solid rgba(100,100,140,0.18);background:rgba(18,18,42,0.5);
+  font-size:0.78rem;color:var(--mist);backdrop-filter:blur(8px);transition:all 0.3s}
+.trade-icon-pill:hover{border-color:rgba(233,69,96,0.3);color:var(--white)}
+.trade-icon-pill .icon{font-size:1rem}
+
+/* SHARED */
+section{padding:5rem 2rem;position:relative}
+.container{max-width:1100px;margin:0 auto}
+.section-label{font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.16em;
+  color:var(--fire);margin-bottom:0.6rem;display:flex;align-items:center;gap:0.5rem}
+.section-label::before{content:'';width:22px;height:1px;background:var(--fire)}
+.section-title{font-family:var(--serif);font-size:clamp(2rem,4vw,3rem);color:var(--white);line-height:1.1;margin-bottom:1rem}
+.section-title em{font-style:italic;color:var(--fire)}
+.section-desc{font-size:1rem;color:var(--mist);max-width:600px;line-height:1.7;margin-bottom:3rem;font-weight:300}
+.reveal{opacity:0;transform:translateY(22px);transition:all 0.6s ease-out}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.divider{width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(100,100,140,0.15),transparent)}
+
+/* HOW IT WORKS */
+.how{background:linear-gradient(180deg,var(--ink) 0%,var(--navy) 100%)}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;position:relative}
+@media(max-width:800px){.steps{grid-template-columns:1fr 1fr}}
+@media(max-width:500px){.steps{grid-template-columns:1fr}}
+.steps::before{content:'';position:absolute;top:28px;left:5%;right:5%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(233,69,96,0.2),transparent);z-index:0}
+.step{text-align:center;position:relative;z-index:1;padding:0 0.5rem}
+.step-num{width:56px;height:56px;border-radius:50%;border:1px solid rgba(233,69,96,0.3);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;
+  font-family:var(--mono);font-size:0.8rem;color:var(--fire);background:var(--ink)}
+.step h4{font-size:0.88rem;color:var(--white);font-weight:600;margin-bottom:0.4rem}
+.step p{font-size:0.78rem;color:var(--mist);line-height:1.55}
+
+/* TRADE BOTS GRID */
+.trades{background:var(--navy)}
+.bots-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+@media(max-width:900px){.bots-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.bots-grid{grid-template-columns:1fr}}
+
+.bot-card{border-radius:14px;overflow:hidden;transition:all 0.4s;position:relative;
+  background:rgba(18,18,42,0.7);border:1px solid rgba(100,100,140,0.12)}
+.bot-card:hover{transform:translateY(-5px)}
+.bot-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+
+.bot-card.roof::before{background:linear-gradient(90deg,#e94560,#ff6b8a)}
+.bot-card.plumb::before{background:linear-gradient(90deg,#2980b9,#3498db)}
+.bot-card.walk::before{background:linear-gradient(90deg,#27ae60,#2ecc71)}
+.bot-card.garden::before{background:linear-gradient(90deg,#27ae60,#d4a017)}
+.bot-card.fashion::before{background:linear-gradient(90deg,#8e44ad,#e91e8c)}
+.bot-card.party::before{background:linear-gradient(90deg,#d4a017,#f39c12)}
+
+.bot-head{padding:1.5rem 1.5rem 1rem}
+.bot-icon{font-size:2.2rem;margin-bottom:0.75rem;display:block}
+.bot-name{font-family:var(--serif);font-size:1.6rem;color:var(--white);line-height:1}
+.bot-trade{font-size:0.68rem;color:var(--mist);text-transform:uppercase;letter-spacing:0.08em;margin-top:0.2rem;font-weight:500}
+.bot-price{font-family:var(--mono);font-size:1rem;color:var(--fire);margin-top:0.5rem;display:block}
+
+.bot-body{padding:0 1.5rem 1.5rem}
+.bot-tagline{font-size:0.88rem;color:var(--cloud);line-height:1.6;margin-bottom:1rem;font-style:italic}
+.bot-features{list-style:none;margin-bottom:1rem}
+.bot-features li{font-size:0.78rem;color:var(--mist);padding:0.22rem 0 0.22rem 1.1rem;position:relative;line-height:1.5}
+.bot-features li::before{content:'→';position:absolute;left:0;font-size:0.72rem}
+
+.bot-card.roof .bot-features li::before{color:#e94560}
+.bot-card.plumb .bot-features li::before{color:#2980b9}
+.bot-card.walk .bot-features li::before{color:#27ae60}
+.bot-card.garden .bot-features li::before{color:#27ae60}
+.bot-card.fashion .bot-features li::before{color:#8e44ad}
+.bot-card.party .bot-features li::before{color:#d4a017}
+
+.bot-data{padding-top:0.75rem;border-top:1px solid rgba(100,100,140,0.1);
+  font-size:0.68rem;color:var(--slate);display:flex;flex-wrap:wrap;gap:0.35rem}
+.data-tag{padding:0.12rem 0.45rem;border-radius:3px;background:rgba(42,58,110,0.35);color:var(--cloud);border:1px solid rgba(100,100,140,0.12)}
+.bot-alert{margin-top:0.6rem;padding:0.6rem 0.8rem;border-radius:6px;font-size:0.72rem;
+  color:var(--cloud);line-height:1.5;border:1px solid rgba(100,100,140,0.12)}
+.bot-card.roof .bot-alert{background:rgba(233,69,96,0.06);border-color:rgba(233,69,96,0.15)}
+.bot-card.plumb .bot-alert{background:rgba(41,128,185,0.06);border-color:rgba(41,128,185,0.15)}
+.bot-card.walk .bot-alert{background:rgba(39,174,96,0.06);border-color:rgba(39,174,96,0.15)}
+.bot-card.garden .bot-alert{background:rgba(39,174,96,0.06);border-color:rgba(39,174,96,0.15)}
+.bot-card.fashion .bot-alert{background:rgba(142,68,173,0.06);border-color:rgba(142,68,173,0.15)}
+.bot-card.party .bot-alert{background:rgba(212,160,23,0.06);border-color:rgba(212,160,23,0.15)}
+.alert-label{font-weight:700;text-transform:uppercase;letter-spacing:0.06em;font-size:0.6rem;margin-right:0.3rem}
+.bot-card.roof .alert-label{color:#e94560}
+.bot-card.plumb .alert-label{color:#2980b9}
+.bot-card.walk .alert-label{color:#27ae60}
+.bot-card.garden .alert-label{color:#27ae60}
+.bot-card.fashion .alert-label{color:#8e44ad}
+.bot-card.party .alert-label{color:#d4a017}
+
+/* PRICING */
+.pricing{background:linear-gradient(180deg,var(--navy) 0%,var(--ink) 100%)}
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:2rem}
+@media(max-width:800px){.pricing-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:500px){.pricing-grid{grid-template-columns:1fr}}
+.price-card{background:rgba(18,18,42,0.6);border:1px solid rgba(100,100,140,0.12);
+  border-radius:12px;padding:1.75rem 1.5rem;transition:all 0.4s;position:relative}
+.price-card:hover{transform:translateY(-3px);border-color:rgba(233,69,96,0.2)}
+.price-card.featured{border-color:var(--fire);background:rgba(233,69,96,0.04)}
+.price-card.featured::before{content:'TRADES FAVORITE';position:absolute;top:-10px;left:50%;
+  transform:translateX(-50%);background:var(--fire);color:var(--white);
+  font-size:0.58rem;font-weight:700;letter-spacing:0.1em;padding:0.18rem 0.8rem;border-radius:3px}
+.price-name{font-family:var(--serif);font-size:1.25rem;color:var(--white);margin-bottom:0.3rem}
+.price-range{font-family:var(--mono);font-size:1.8rem;color:var(--fire);margin-bottom:0.2rem}
+.price-per{font-size:0.75rem;color:var(--mist);margin-bottom:1rem}
+.price-bots{font-size:0.8rem;color:var(--teal);margin-bottom:0.75rem;font-weight:600}
+.price-features{list-style:none;margin-bottom:1.5rem}
+.price-features li{font-size:0.78rem;color:var(--mist);padding:0.35rem 0 0.35rem 1.1rem;
+  position:relative;border-bottom:1px solid rgba(100,100,140,0.06)}
+.price-features li::before{content:'✓';position:absolute;left:0;color:var(--teal);font-weight:700;font-size:0.72rem}
+.price-features li.hl{color:var(--white);font-weight:500}
+.price-btn{display:block;width:100%;padding:0.65rem;border-radius:4px;font-size:0.78rem;
+  font-weight:600;text-transform:uppercase;letter-spacing:0.06em;text-decoration:none;
+  text-align:center;transition:all 0.3s;border:none;cursor:pointer}
+.pbtn-primary{background:var(--fire);color:var(--white)}
+.pbtn-primary:hover{background:var(--fire-glow)}
+.pbtn-outline{background:transparent;color:var(--cloud);border:1px solid rgba(200,200,220,0.15)}
+.pbtn-outline:hover{border-color:var(--fire);color:var(--white)}
+
+/* VS TABLE */
+.vs{background:var(--ink)}
+.vs-wrap{overflow-x:auto;border-radius:8px;border:1px solid rgba(100,100,140,0.14)}
+table{width:100%;border-collapse:collapse;font-size:0.8rem;min-width:700px}
+th{background:var(--navy);color:var(--white);font-weight:600;padding:0.75rem 1rem;
+  text-align:left;border-bottom:2px solid rgba(233,69,96,0.25);font-size:0.72rem;
+  text-transform:uppercase;letter-spacing:0.07em}
+th.c{background:rgba(233,69,96,0.12);color:var(--fire);border-bottom-color:var(--fire)}
+td{padding:0.6rem 1rem;border-bottom:1px solid rgba(100,100,140,0.07);vertical-align:middle;background:rgba(10,10,20,0.3)}
+tr:hover td{background:rgba(26,26,62,0.35)}
+td:first-child{font-weight:600;color:var(--white);background:rgba(18,18,42,0.55);border-right:1px solid rgba(100,100,140,0.08)}
+td.c{background:rgba(233,69,96,0.04);border-left:2px solid rgba(233,69,96,0.18);border-right:2px solid rgba(233,69,96,0.18)}
+tr:hover td.c{background:rgba(233,69,96,0.07)}
+.y{color:var(--teal);font-weight:600}.n{color:#e74c3c;opacity:0.7}.p{color:var(--gold)}
+
+/* DATA SOURCES */
+.data-section{background:linear-gradient(180deg,var(--ink) 0%,var(--navy) 100%)}
+.data-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem}
+@media(max-width:700px){.data-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:450px){.data-grid{grid-template-columns:1fr}}
+.data-card{padding:1.25rem 1.4rem;background:rgba(18,18,42,0.5);border:1px solid rgba(100,100,140,0.1);border-radius:8px}
+.data-card h4{font-size:0.85rem;color:var(--white);font-weight:600;margin-bottom:0.3rem;display:flex;align-items:center;gap:0.4rem}
+.data-card p{font-size:0.78rem;color:var(--mist);line-height:1.5}
+.data-card .used-by{font-size:0.65rem;color:var(--slate);margin-top:0.4rem}
+
+/* ENTERPRISE/FRANCHISE SECTION */
+.franchise{background:var(--navy)}
+.franchise-inner{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center}
+@media(max-width:700px){.franchise-inner{grid-template-columns:1fr}}
+.franchise-text h2{font-family:var(--serif);font-size:clamp(1.8rem,3.5vw,2.6rem);color:var(--white);margin-bottom:1rem;line-height:1.1}
+.franchise-text h2 em{font-style:italic;color:var(--fire)}
+.franchise-text p{font-size:0.9rem;color:var(--mist);line-height:1.7;margin-bottom:1.25rem}
+.franchise-cta{background:rgba(233,69,96,0.06);border:1px solid rgba(233,69,96,0.2);
+  border-radius:12px;padding:2rem}
+.franchise-cta h3{font-family:var(--serif);font-size:1.4rem;color:var(--white);margin-bottom:0.75rem}
+.franchise-cta p{font-size:0.85rem;color:var(--mist);line-height:1.65;margin-bottom:1.5rem}
+.use-cases{display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.5rem}
+.uc{font-size:0.68rem;padding:0.18rem 0.55rem;border-radius:3px;background:rgba(42,58,110,0.4);color:var(--cloud)}
+
+/* FOOTER */
+footer{background:var(--ink);border-top:1px solid rgba(100,100,140,0.08);padding:2.5rem}
+.footer-inner{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1.5rem;margin-bottom:1.5rem}
+.footer-brand{font-family:var(--serif);font-size:1.5rem;color:var(--white)}
+.footer-brand span{color:var(--fire)}
+.footer-brand sup{font-size:0.5em;color:var(--mist);font-family:var(--sans);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;vertical-align:super}
+.footer-links{display:flex;gap:1.5rem;flex-wrap:wrap}
+.footer-links a{color:var(--mist);text-decoration:none;font-size:0.78rem;transition:color 0.3s}
+.footer-links a:hover{color:var(--white)}
+.footer-meta{max-width:1100px;margin:0 auto;font-size:0.7rem;color:var(--slate);line-height:1.7;border-top:1px solid rgba(100,100,140,0.06);padding-top:1.5rem}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="#">Clawd<span>.</span><sup>Trade</sup></a>
+  <ul>
+    <li><a href="#bots">The Bots</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#data">Data Sources</a></li>
+    <li><a href="#franchise">Scale Your Fleet</a></li>
+    <li><a href="#pricing" class="nav-cta">Get Your Bot</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="eyebrow"><div class="dot"></div>WhatsApp-Native · Voice-First · Built for the Field</div>
+  <h1>A bot for<br><em>every trade.</em></h1>
+  <p class="hero-sub">Six WhatsApp bots purpose-built for people who work with their hands, their eye, and their hustle. Lead alerts, job intelligence, client management — all via voice note, all without an app.</p>
+  <div class="hero-actions">
+    <a href="#bots" class="btn btn-primary">See All 6 Bots →</a>
+    <a href="#pricing" class="btn btn-ghost">Pricing</a>
+  </div>
+  <div class="trade-icons">
+    <div class="trade-icon-pill"><span class="icon">🏠</span> RoofBot</div>
+    <div class="trade-icon-pill"><span class="icon">🔧</span> PlumbBot</div>
+    <div class="trade-icon-pill"><span class="icon">🐕</span> WalkBot</div>
+    <div class="trade-icon-pill"><span class="icon">🌿</span> GardenBot</div>
+    <div class="trade-icon-pill"><span class="icon">👗</span> FashionBot</div>
+    <div class="trade-icon-pill"><span class="icon">🎉</span> PartyBot</div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="container">
+    <div class="section-label reveal">How It Works</div>
+    <h2 class="section-title reveal">Your business intelligence.<br><em>In your WhatsApp.</em></h2>
+    <p class="section-desc reveal">No app. No dashboard. No login. Just a WhatsApp number that knows your trade and works as hard as you do.</p>
+
+    <div class="steps reveal">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h4>Add the number</h4>
+        <p>Save your trade bot's WhatsApp number. No app download, no account creation beyond your existing WhatsApp identity.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h4>Send a voice note</h4>
+        <p>Ask anything. "What roofing permits filed near me this week?" "What's fair price for a 3-bed garden in Silverlake?" Your bot answers.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h4>Get field-ready intel</h4>
+        <p>Addresses, contact info, estimates, job histories, competitor pricing — delivered as voice or text, ready to act on right now.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <h4>Close more jobs</h4>
+        <p>Follow-up sequences, bid documents, invoice drafts, customer check-ins — all from the same conversation, no context switching.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- THE 6 TRADE BOTS -->
+<section class="trades" id="bots">
+  <div class="container">
+    <div class="section-label reveal">The Six Trade Bots</div>
+    <h2 class="section-title reveal">Built for the trade.<br><em>Not adapted for it.</em></h2>
+    <p class="section-desc reveal">Each bot is a standalone product engineered from the ground up for one trade — its data sources, its workflow, its language. Not a generic AI with a new name.</p>
+
+    <div class="bots-grid reveal">
+
+      <!-- ROOFBOT -->
+      <div class="bot-card roof">
+        <div class="bot-head">
+          <span class="bot-icon">🏠</span>
+          <div class="bot-name">RoofBot</div>
+          <div class="bot-trade">Roofing Contractors</div>
+          <span class="bot-price">$39/mo per operator</span>
+        </div>
+        <div class="bot-body">
+          <p class="bot-tagline">"3 expired permits near 90049. Storm damage zone just activated in Bel Air. Want the addresses?"</p>
+          <ul class="bot-features">
+            <li>Permit radar — new and expired roofing permits by zip, ranked by lead score</li>
+            <li>Storm zone alerts — NOAA damage areas overlaid with permit density</li>
+            <li>Roof area estimator — address to sq footage to material/labor/permit cost</li>
+            <li>Bid tracker — open/won/lost pipeline via voice, no CRM login required</li>
+            <li>Customer follow-up sequences — automated check-ins after 30/60/90 days</li>
+            <li>Competitor activity monitor — public permits filed by competing contractors</li>
+          </ul>
+          <div class="bot-data">
+            <span class="data-tag">Shovels API</span><span class="data-tag">LADBS Socrata</span>
+            <span class="data-tag">NOAA Weather</span><span class="data-tag">Rentcast</span>
+          </div>
+          <div class="bot-alert"><span class="alert-label">Live Alert:</span> "5 new ROOF permits filed in 90210 this week. Avg job value $18,400. Want owner contacts?"</div>
+        </div>
+      </div>
+
+      <!-- PLUMBBOT -->
+      <div class="bot-card plumb">
+        <div class="bot-head">
+          <span class="bot-icon">🔧</span>
+          <div class="bot-name">PlumbBot</div>
+          <div class="bot-trade">Plumbers &amp; Pipe Trades</div>
+          <span class="bot-price">$39/mo per operator</span>
+        </div>
+        <div class="bot-body">
+          <p class="bot-tagline">"17 water damage permits filed in 90028 this week. Aging infrastructure zone flagged. That's your next 3 months."</p>
+          <ul class="bot-features">
+            <li>Water damage permit alerts — filed within 24 hours of permit submission</li>
+            <li>Aging infrastructure zones — pipe age data overlaid with zip code heat maps</li>
+            <li>Emergency dispatch routing — nearest active job + travel time + callback templates</li>
+            <li>Supplier price checker — real-time PVC, copper, and fitting prices by distributor</li>
+            <li>License compliance calendar — renewal reminders, CE credit tracking, inspection deadlines</li>
+            <li>Job estimate generator — scope + materials + labor from voice description</li>
+          </ul>
+          <div class="bot-data">
+            <span class="data-tag">Shovels API</span><span class="data-tag">311 Open Data</span>
+            <span class="data-tag">LADBS Socrata</span><span class="data-tag">Supply Distributor APIs</span>
+          </div>
+          <div class="bot-alert"><span class="alert-label">Live Alert:</span> "Water main break reported at 3rd &amp; Vermont. 4 surrounding properties filed damage claims today."</div>
+        </div>
+      </div>
+
+      <!-- WALKBOT -->
+      <div class="bot-card walk">
+        <div class="bot-head">
+          <span class="bot-icon">🐕</span>
+          <div class="bot-name">WalkBot</div>
+          <div class="bot-trade">Dog Walkers &amp; Pet Sitters</div>
+          <span class="bot-price">$19/mo per operator</span>
+        </div>
+        <div class="bot-body">
+          <p class="bot-tagline">"6 active clients this week. 2 haven't booked in 30 days. Should I send them a check-in? One word: yes."</p>
+          <ul class="bot-features">
+            <li>Client roster management — add, update, notes via voice note</li>
+            <li>Route optimizer — shortest path across today's clients with weather overlay</li>
+            <li>Re-engagement sequences — auto-flag clients gone cold, draft personalized check-ins</li>
+            <li>Service upsell prompts — seasonal, holiday, and weather-triggered suggestions</li>
+            <li>Invoice generator — session count to invoice to send in 90 seconds</li>
+            <li>Insurance reminder calendar — policy renewal dates, coverage gap alerts</li>
+          </ul>
+          <div class="bot-data">
+            <span class="data-tag">Google Maps API</span><span class="data-tag">OpenWeather</span>
+            <span class="data-tag">Stripe Billing</span><span class="data-tag">Twilio SMS</span>
+          </div>
+          <div class="bot-alert"><span class="alert-label">Smart Prompt:</span> "3 clients in your area haven't been walked in 2 weeks. Heat wave coming Thursday — good time to offer extra sessions."</div>
+        </div>
+      </div>
+
+      <!-- GARDENBOT -->
+      <div class="bot-card garden">
+        <div class="bot-head">
+          <span class="bot-icon">🌿</span>
+          <div class="bot-name">GardenBot</div>
+          <div class="bot-trade">Gardeners &amp; Landscapers</div>
+          <span class="bot-price">$29/mo per operator</span>
+        </div>
+        <div class="bot-body">
+          <p class="bot-tagline">"Rain forecast 5 days. 8 clients need rescheduling. Hardscape permit just filed at 4 addresses near you — potential new jobs."</p>
+          <ul class="bot-features">
+            <li>Seasonal job calendar — auto-populated with climate zone planting and pruning cycles</li>
+            <li>Hardscape permit radar — new deck, fence, and patio permits = landscaping work incoming</li>
+            <li>Weather-aware scheduling — rain forecast triggers client reschedule sequences automatically</li>
+            <li>Plant and supply pricing — nursery and wholesale prices by species and quantity</li>
+            <li>Neighborhood job clustering — identify streets with 3+ clients for route efficiency</li>
+            <li>Upsell prompt engine — seasonal services (aeration, mulch, holiday lights) at right moment</li>
+          </ul>
+          <div class="bot-data">
+            <span class="data-tag">Shovels API</span><span class="data-tag">NOAA/OpenWeather</span>
+            <span class="data-tag">USDA Plant Hardiness</span><span class="data-tag">Google Maps</span>
+          </div>
+          <div class="bot-alert"><span class="alert-label">Seasonal Alert:</span> "Spring aeration window opens in 3 weeks for your climate zone. 12 clients due — start booking now."</div>
+        </div>
+      </div>
+
+      <!-- FASHIONBOT -->
+      <div class="bot-card fashion">
+        <div class="bot-head">
+          <span class="bot-icon">👗</span>
+          <div class="bot-name">FashionBot</div>
+          <div class="bot-trade">Independent Fashion Designers</div>
+          <span class="bot-price">$29/mo per operator</span>
+        </div>
+        <div class="bot-body">
+          <p class="bot-tagline">"Fabric order confirmed. Trunk show in 12 days. 3 consignment accounts overdue. Here's what needs your attention today."</p>
+          <ul class="bot-features">
+            <li>Wholesale sourcing assistant — fabric, trims, and findings by spec and price point</li>
+            <li>Trunk show logistics — venue checklist, inventory list, day-of sequence via WhatsApp</li>
+            <li>Consignment tracker — stock out, stock returned, payment overdue flags per account</li>
+            <li>DM-to-invoice pipeline — forward a customer DM, get a draft invoice back in 60 seconds</li>
+            <li>Production timeline manager — cutting, sewing, finishing, delivery milestones tracked by voice</li>
+            <li>Reorder trigger — low inventory alerts by SKU with reorder cost estimation</li>
+          </ul>
+          <div class="bot-data">
+            <span class="data-tag">FashionGo Wholesale</span><span class="data-tag">Faire API</span>
+            <span class="data-tag">Shopify API</span><span class="data-tag">Stripe Billing</span>
+          </div>
+          <div class="bot-alert"><span class="alert-label">Business Alert:</span> "Consignment at Silverlake Boutique: 4 pieces sold, $340 owed, 14 days overdue. Draft a payment request?"</div>
+        </div>
+      </div>
+
+      <!-- PARTYBOT -->
+      <div class="bot-card party">
+        <div class="bot-head">
+          <span class="bot-icon">🎉</span>
+          <div class="bot-name">PartyBot</div>
+          <div class="bot-trade">Event &amp; Party Planners</div>
+          <span class="bot-price">$29/mo per operator</span>
+        </div>
+        <div class="bot-body">
+          <p class="bot-tagline">"4 events this month. Florist deposit due Friday. DJ contract unsigned. You have 2 days on the venue hold for the March 22nd event."</p>
+          <ul class="bot-features">
+            <li>Event dashboard — all active events, deadlines, and vendor status by voice query</li>
+            <li>Vendor coordination board — contracts, deposits, confirmations tracked per vendor per event</li>
+            <li>Deposit and payment tracker — who's paid, who's overdue, next payment due dates</li>
+            <li>Venue hold management — expiry alerts 48h before holds lapse</li>
+            <li>Day-of logistics sequence — auto-generated timeline from event brief, shareable with vendors</li>
+            <li>Post-event invoice generator — summary + add-ons to final invoice in 2 minutes</li>
+          </ul>
+          <div class="bot-data">
+            <span class="data-tag">Google Calendar API</span><span class="data-tag">Airtable API</span>
+            <span class="data-tag">Stripe Billing</span><span class="data-tag">Twilio SMS</span>
+          </div>
+          <div class="bot-alert"><span class="alert-label">Urgent:</span> "Venue hold for March 22nd expires in 47 hours. 3 vendors still unsigned. Draft a confirmation request?"</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="container">
+    <div class="section-label reveal">Pricing</div>
+    <h2 class="section-title reveal">Pay for your trade.<br><em>Nothing else.</em></h2>
+    <p class="section-desc reveal">One operator, one bot, one monthly fee. No per-message charges. No setup costs. No CRM seats. Just unlimited field intelligence on the phone you already carry.</p>
+
+    <div class="pricing-grid reveal">
+      <div class="price-card">
+        <div class="price-name">Light Trades</div>
+        <div class="price-range">$19/mo</div>
+        <div class="price-per">per operator</div>
+        <div class="price-bots">WalkBot only</div>
+        <ul class="price-features">
+          <li class="hl">Unlimited WhatsApp messages</li>
+          <li>Voice note input &amp; output</li>
+          <li>Client roster management</li>
+          <li>Route optimization</li>
+          <li>Invoice generation</li>
+          <li>Re-engagement sequences</li>
+          <li>Insurance calendar</li>
+        </ul>
+        <a href="#" class="price-btn pbtn-outline">Get WalkBot</a>
+      </div>
+
+      <div class="price-card featured">
+        <div class="price-name">Core Trades</div>
+        <div class="price-range">$29/mo</div>
+        <div class="price-per">per operator</div>
+        <div class="price-bots">GardenBot · FashionBot · PartyBot</div>
+        <ul class="price-features">
+          <li class="hl">Unlimited WhatsApp messages</li>
+          <li class="hl">Voice note input &amp; output</li>
+          <li>Full bot feature set for chosen trade</li>
+          <li>Live data alerts (permits, weather, supply)</li>
+          <li>Document generation (invoices, estimates)</li>
+          <li>Client/vendor management</li>
+          <li>Seasonal intelligence engine</li>
+          <li>14-day free trial</li>
+        </ul>
+        <a href="#" class="price-btn pbtn-primary">Get Your Bot</a>
+      </div>
+
+      <div class="price-card">
+        <div class="price-name">Heavy Trades</div>
+        <div class="price-range">$39/mo</div>
+        <div class="price-per">per operator</div>
+        <div class="price-bots">RoofBot · PlumbBot</div>
+        <ul class="price-features">
+          <li class="hl">Everything in Core Trades</li>
+          <li class="hl">Real-time permit radar</li>
+          <li class="hl">Lead scoring &amp; prioritization</li>
+          <li>Property data integration (Shovels, Rentcast)</li>
+          <li>Storm/damage zone alerts</li>
+          <li>Competitor activity monitoring</li>
+          <li>Emergency dispatch routing (PlumbBot)</li>
+          <li>14-day free trial</li>
+        </ul>
+        <a href="#" class="price-btn pbtn-outline">Get Your Bot</a>
+      </div>
+    </div>
+
+    <div style="background:rgba(22,165,150,0.06);border:1px solid rgba(22,165,150,0.18);border-radius:10px;padding:1.5rem 2rem;display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap">
+      <div style="font-family:var(--mono);font-size:2.2rem;color:var(--teal);flex-shrink:0">Fleet</div>
+      <div>
+        <h4 style="font-size:0.92rem;color:var(--white);font-weight:600;margin-bottom:0.25rem">Running a team? Get fleet pricing.</h4>
+        <p style="font-size:0.82rem;color:var(--mist);line-height:1.6">5+ operators on the same bot type: 20% per seat. 20+ operators: 35% per seat. Franchise networks and staffing agencies: contact sales for custom pricing. One WhatsApp number per operator, centralized billing.</p>
+      </div>
+      <a href="#franchise" class="btn btn-ghost" style="flex-shrink:0;padding:0.65rem 1.5rem;font-size:0.8rem">Fleet Pricing →</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- VS TABLE -->
+<section class="vs" id="vs">
+  <div class="container">
+    <div class="section-label reveal">Why Not Just Google It</div>
+    <h2 class="section-title reveal">What trade bots replace.<br><em>And what they don't.</em></h2>
+    <p class="section-desc reveal">Clawd Trade bots replace the manual research, the context-switching, and the tools that weren't built for field operators. They don't replace your skill.</p>
+
+    <div class="vs-wrap reveal">
+      <table>
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th class="c">Clawd Trade Bot</th>
+            <th>HomeAdvisor / Angi</th>
+            <th>Generic CRM</th>
+            <th>Google + Manual</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Lead alerts (proactive, not reactive)</td>
+            <td class="c"><span class="y">✓ Real-time permit alerts</span></td>
+            <td><span class="p">Pay per lead, no permit data</span></td>
+            <td><span class="n">✗ You enter leads manually</span></td>
+            <td><span class="n">✗ Manual permit search, daily</span></td>
+          </tr>
+          <tr>
+            <td>Voice-first field operation</td>
+            <td class="c"><span class="y">✓ WhatsApp voice notes</span></td>
+            <td><span class="n">✗ App required</span></td>
+            <td><span class="n">✗ Desktop-first</span></td>
+            <td><span class="n">✗ Typing required</span></td>
+          </tr>
+          <tr>
+            <td>Trade-specific data intelligence</td>
+            <td class="c"><span class="y">✓ Permits, weather, pricing, zones</span></td>
+            <td><span class="p">Review matching only</span></td>
+            <td><span class="n">✗ No external data</span></td>
+            <td><span class="p">Scattered across 10+ sites</span></td>
+          </tr>
+          <tr>
+            <td>Instant estimate / invoice generation</td>
+            <td class="c"><span class="y">✓ From voice description</span></td>
+            <td><span class="n">✗ No</span></td>
+            <td><span class="p">Template-based, manual entry</span></td>
+            <td><span class="n">✗ Spreadsheet or Word</span></td>
+          </tr>
+          <tr>
+            <td>Client follow-up automation</td>
+            <td class="c"><span class="y">✓ Smart re-engagement sequences</span></td>
+            <td><span class="n">✗ No</span></td>
+            <td><span class="p">Manual sequences, config required</span></td>
+            <td><span class="n">✗ Calendar reminders only</span></td>
+          </tr>
+          <tr>
+            <td>Seasonal &amp; weather intelligence</td>
+            <td class="c"><span class="y">✓ Auto-triggered by conditions</span></td>
+            <td><span class="n">✗ No</span></td>
+            <td><span class="n">✗ No</span></td>
+            <td><span class="n">✗ You check manually</span></td>
+          </tr>
+          <tr>
+            <td>No app. No account. No login.</td>
+            <td class="c"><span class="y">✓ Just a WhatsApp number</span></td>
+            <td><span class="n">✗ App + account</span></td>
+            <td><span class="n">✗ App + account + training</span></td>
+            <td><span class="p">Google account required</span></td>
+          </tr>
+          <tr>
+            <td>Monthly cost for a solo operator</td>
+            <td class="c"><span class="y">$19–39/mo flat</span></td>
+            <td><span class="n">$30–80 per lead + 15–20% fee</span></td>
+            <td><span class="p">$25–79/mo + setup</span></td>
+            <td><span class="y">$0 (but ~4 hrs/week manual)</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- DATA SOURCES -->
+<section class="data-section" id="data">
+  <div class="container">
+    <div class="section-label reveal">What Powers It</div>
+    <h2 class="section-title reveal">Real data.<br><em>Not scraped guesses.</em></h2>
+    <p class="section-desc reveal">Every alert, lead, and estimate is grounded in live public data and verified commercial APIs — not AI hallucinations or stale databases.</p>
+
+    <div class="data-grid reveal">
+      <div class="data-card">
+        <h4>🏗️ Shovels API</h4>
+        <p>Building permit data across 130M+ US properties. New filings, expired permits, contractor history, permit valuation.</p>
+        <div class="used-by">Used by: RoofBot, PlumbBot, GardenBot</div>
+      </div>
+      <div class="data-card">
+        <h4>📋 LADBS / Socrata</h4>
+        <p>Los Angeles Department of Building and Safety open data. Real-time permit filings, work descriptions, zip-code level search.</p>
+        <div class="used-by">Used by: RoofBot, PlumbBot, GardenBot (LA market)</div>
+      </div>
+      <div class="data-card">
+        <h4>🏘️ Rentcast API</h4>
+        <p>Property data, home valuations, and rental market intelligence. Roof age, property size, and owner contact lookup.</p>
+        <div class="used-by">Used by: RoofBot, PlumbBot</div>
+      </div>
+      <div class="data-card">
+        <h4>🌩️ NOAA / OpenWeather</h4>
+        <p>Storm events, precipitation forecasts, extreme weather alerts. Mapped to zip code for trade-relevant triggers.</p>
+        <div class="used-by">Used by: RoofBot, GardenBot, WalkBot</div>
+      </div>
+      <div class="data-card">
+        <h4>🗺️ Google Maps API</h4>
+        <p>Route optimization, address geocoding, neighborhood clustering, travel time estimates for field routing.</p>
+        <div class="used-by">Used by: WalkBot, GardenBot, PlumbBot</div>
+      </div>
+      <div class="data-card">
+        <h4>📞 311 Open Data</h4>
+        <p>City service requests — water main breaks, flooding complaints, infrastructure failures. Early signal for plumbing demand.</p>
+        <div class="used-by">Used by: PlumbBot</div>
+      </div>
+      <div class="data-card">
+        <h4>🌱 USDA Plant Database</h4>
+        <p>Hardiness zones, planting calendars, species requirements. Seasonal intelligence for landscape and garden operations.</p>
+        <div class="used-by">Used by: GardenBot</div>
+      </div>
+      <div class="data-card">
+        <h4>🛍️ Faire / FashionGo</h4>
+        <p>Wholesale marketplace APIs. Fabric, trim, and finished goods pricing and availability for independent designers.</p>
+        <div class="used-by">Used by: FashionBot</div>
+      </div>
+      <div class="data-card">
+        <h4>📅 Google Calendar + Stripe</h4>
+        <p>Event scheduling, vendor deadline management, payment tracking, and invoice generation for event and service operators.</p>
+        <div class="used-by">Used by: PartyBot, WalkBot, FashionBot</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FRANCHISE / SCALE -->
+<section class="franchise" id="franchise">
+  <div class="container">
+    <div class="franchise-inner reveal">
+      <div class="franchise-text">
+        <div class="section-label">Scale Your Fleet</div>
+        <h2>One franchise.<br><em>Every operator.</em></h2>
+        <p>Running a roofing company with 20 field crews? A dog walking franchise across 5 cities? A landscape staffing agency with 50 independents? Clawd Trade scales with you.</p>
+        <p>Every operator gets their own WhatsApp number, their own lead feed, their own client roster. You get centralized billing, aggregate intelligence across the whole fleet, and a custom bot configured to your service area, pricing, and workflow.</p>
+        <p>Fleet pricing kicks in at 5 operators. At 20+ operators, we build a dedicated bot instance tuned to your data, your branding, and your market. This is the enterprise tier for the trades — not for Fortune 500s, for the people who actually build and maintain the world.</p>
+      </div>
+      <div class="franchise-cta">
+        <h3>Fleet and franchise pricing</h3>
+        <p>Custom configuration for franchisors, staffing agencies, and trade companies running 5+ operators on the same bot type.</p>
+        <div class="use-cases">
+          <span class="uc">Roofing Companies</span><span class="uc">Plumbing Franchises</span>
+          <span class="uc">Landscaping Agencies</span><span class="uc">Pet Service Networks</span>
+          <span class="uc">Fashion Collectives</span><span class="uc">Event Agency Groups</span>
+          <span class="uc">Trade Schools</span><span class="uc">Union Locals</span>
+        </div>
+        <a href="#" class="btn btn-primary">Talk Fleet Pricing →</a>
+        <p style="font-size:0.72rem;color:var(--slate);margin-top:1rem">5+ operators: 20% per seat. 20+ operators: 35% per seat. Custom dedicated instance at 50+ operators.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">Clawd<span>.</span><sup>Trade</sup></div>
+    <div class="footer-links">
+      <a href="#bots">The Bots</a><a href="#pricing">Pricing</a>
+      <a href="#data">Data Sources</a><a href="#franchise">Fleet Pricing</a>
+      <a href="clawd.html">Clawd Consumer ↗</a>
+    </div>
+  </div>
+  <div class="footer-meta" style="max-width:1100px;margin:0 auto">
+    Clawd Trade is a product of AI Inkwell. Powered by the Inkwell Awareness Graph — Trinity Architecture.<br>
+    Clawd Trade bots provide business intelligence, not licensed professional advice. Lead data sourced from public permit records and verified commercial APIs.<br>
+    Permit data accuracy varies by jurisdiction and filing date. Always verify before contacting property owners.<br>
+    © 2026 AI Inkwell. All rights reserved. · clawd.ai/trade
+  </div>
+</footer>
+
+<script>
+const obs = new IntersectionObserver(e => e.forEach(x => { if(x.isIntersecting) x.target.classList.add('visible') }), {threshold:0.07,rootMargin:'0px 0px -35px 0px'});
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+window.addEventListener('scroll', () => {
+  document.querySelector('nav').style.borderBottomColor = window.scrollY > 80 ? 'rgba(233,69,96,0.22)' : 'rgba(233,69,96,0.12)';
+});
+</script>
+</body>
+</html>

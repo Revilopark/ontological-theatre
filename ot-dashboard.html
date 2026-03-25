@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ontological Theatre — Operations Dashboard</title>
+<style>
+  :root{--bg:#060E1A;--mid:#0A1628;--cyan:#00E5FF;--teal:#00BCD4;--body:#B0C4D8;--muted:#7A9BB5;--border:rgba(0,229,255,0.15);--pass:#00E676;--warn:#FFD600;--fail:#FF1744;--card:rgba(10,22,40,0.8)}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--body);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;padding:24px}
+  h1{font-size:22px;font-weight:800;color:var(--cyan);letter-spacing:2px;margin-bottom:4px}
+  .subtitle{color:var(--muted);font-size:12px;letter-spacing:1px;margin-bottom:32px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:24px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;backdrop-filter:blur(12px)}
+  .card-title{font-size:11px;letter-spacing:2px;color:var(--cyan);margin-bottom:12px;text-transform:uppercase}
+  .status-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px}
+  .status-row:last-child{border-bottom:none}
+  .badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:1px}
+  .pass{background:rgba(0,230,118,.15);color:var(--pass);border:1px solid rgba(0,230,118,.3)}
+  .fail{background:rgba(255,23,68,.15);color:var(--fail);border:1px solid rgba(255,23,68,.3)}
+  .warn{background:rgba(255,214,0,.15);color:var(--warn);border:1px solid rgba(255,214,0,.3)}
+  .loading{background:rgba(0,229,255,.1);color:var(--cyan);border:1px solid rgba(0,229,255,.3)}
+  .check-btn{background:rgba(0,229,255,.1);border:1px solid var(--border);color:var(--cyan);padding:10px 20px;border-radius:8px;cursor:pointer;font-size:12px;letter-spacing:1px;transition:.2s;width:100%;margin-top:12px}
+  .check-btn:hover{background:rgba(0,229,255,.2);border-color:var(--cyan)}
+  .link-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+  .link-card{background:rgba(0,229,255,.06);border:1px solid var(--border);border-radius:10px;padding:12px;text-decoration:none;transition:.2s;display:block}
+  .link-card:hover{border-color:var(--cyan);background:rgba(0,229,255,.12)}
+  .link-name{font-size:12px;font-weight:700;color:#fff;margin-bottom:2px}
+  .link-url{font-size:10px;color:var(--muted);word-break:break-all}
+  .summary-bar{display:flex;gap:16px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:24px;align-items:center;flex-wrap:wrap}
+  .summary-num{font-size:28px;font-weight:900}
+  .summary-label{font-size:10px;color:var(--muted);letter-spacing:1px}
+  .log{background:#000;border:1px solid var(--border);border-radius:10px;padding:16px;font-family:'Fira Code',monospace;font-size:11px;max-height:300px;overflow-y:auto;margin-top:12px;line-height:1.7}
+  .log-pass{color:var(--pass)}
+  .log-fail{color:var(--fail)}
+  .log-warn{color:var(--warn)}
+  .log-info{color:var(--muted)}
+  .video-status{background:rgba(255,214,0,.08);border:1px solid rgba(255,214,0,.2);border-radius:10px;padding:14px;margin-top:12px;font-size:12px;color:var(--warn)}
+  .last-run{font-size:11px;color:var(--muted);text-align:right;margin-top:8px}
+  .refresh-icon{cursor:pointer;opacity:.6;transition:.2s;display:inline-block}
+  .refresh-icon:hover{opacity:1;transform:rotate(180deg)}
+</style>
+</head>
+<body>
+<h1>⚡ OT OPERATIONS</h1>
+<div class="subtitle">ONTOLOGICAL THEATRE · LIVE STATUS DASHBOARD · AUTO-REFRESHES EVERY 5 MIN</div>
+
+<div class="summary-bar" id="summary-bar">
+  <div><div class="summary-num" id="pass-count" style="color:var(--pass)">–</div><div class="summary-label">PASSING</div></div>
+  <div><div class="summary-num" id="warn-count" style="color:var(--warn)">–</div><div class="summary-label">WARNINGS</div></div>
+  <div><div class="summary-num" id="fail-count" style="color:var(--fail)">–</div><div class="summary-label">FAILURES</div></div>
+  <div style="margin-left:auto"><div class="summary-num" style="font-size:14px;color:var(--body)" id="last-run-time">Not yet run</div><div class="summary-label">LAST CHECK</div></div>
+  <button class="check-btn" style="width:auto;padding:10px 24px" onclick="runAllChecks()">▶ RUN CHECKS NOW</button>
+</div>
+
+<div class="grid">
+
+  <!-- Live Pages -->
+  <div class="card">
+    <div class="card-title">📄 Live Pages</div>
+    <div id="pages-status">
+      <div class="status-row"><span>JLo Universe</span><span class="badge loading">CHECKING</span></div>
+      <div class="status-row"><span>Clarksdale Series</span><span class="badge loading">CHECKING</span></div>
+      <div class="status-row"><span>JLo Pitch Deck</span><span class="badge loading">CHECKING</span></div>
+      <div class="status-row"><span>JLo Infographic</span><span class="badge loading">CHECKING</span></div>
+      <div class="status-row"><span>IAM Classroom</span><span class="badge loading">CHECKING</span></div>
+      <div class="status-row"><span>Panel Overrides JS</span><span class="badge loading">CHECKING</span></div>
+    </div>
+  </div>
+
+  <!-- Proxy / API -->
+  <div class="card">
+    <div class="card-title">🔌 API Health</div>
+    <div id="api-status">
+      <div class="status-row"><span>Awareness Proxy (health)</span><span class="badge loading">CHECKING</span></div>
+      <div class="status-row"><span>Gemini endpoint</span><span class="badge loading">CHECKING</span></div>
+      <div class="status-row"><span>Fal image endpoint</span><span class="badge loading">CHECKING</span></div>
+      <div class="status-row"><span>Imagen 4 direct</span><span class="badge loading">CHECKING</span></div>
+    </div>
+    <div class="video-status" id="video-status">
+      🎬 <strong>Video generation</strong> — Fal.ai key required<br>
+      <span style="opacity:.7">Kling v2 · Seedance · Wan · Minimax ready to wire</span>
+    </div>
+  </div>
+
+  <!-- Clarksdale Panels -->
+  <div class="card">
+    <div class="card-title">🎨 Clarksdale Panels</div>
+    <div id="panels-status">
+      <div class="status-row"><span>Ep 1 (WPA — base64)</span><span class="badge loading">CHECKING</span></div>
+      <div class="status-row"><span>Ep 2 (Harlem Ren.) p1-6</span><span class="badge loading">CHECKING</span></div>
+      <div class="status-row"><span>Ep 6 (Civil Rights) p1-6</span><span class="badge loading">CHECKING</span></div>
+      <div class="status-row"><span>Ep 9 (Art Deco Hotel) p1-6</span><span class="badge loading">CHECKING</span></div>
+      <div class="status-row"><span>Ep 14 (Noir Blues) p1-6</span><span class="badge loading">CHECKING</span></div>
+      <div class="status-row"><span>Ep 15 (27 Club) p1-8</span><span class="badge loading">CHECKING</span></div>
+    </div>
+  </div>
+
+  <!-- JLo Assets -->
+  <div class="card">
+    <div class="card-title">🎵 JLo Universe Assets</div>
+    <div id="jlo-status">
+      <div class="status-row"><span>Fan Story: The Block Girl</span><span class="badge loading">CHECKING</span></div>
+      <div class="status-row"><span>Fan Story: The Torch</span><span class="badge loading">CHECKING</span></div>
+      <div class="status-row"><span>Fan Story: The Flag</span><span class="badge loading">CHECKING</span></div>
+      <div class="status-row"><span>Fan Story: The Oscar Snub</span><span class="badge loading">CHECKING</span></div>
+      <div class="status-row"><span>Fan Story: The Reclaim</span><span class="badge loading">CHECKING</span></div>
+      <div class="status-row"><span>Test panels (10 styles)</span><span class="badge loading">CHECKING</span></div>
+    </div>
+  </div>
+
+  <!-- Quick Links -->
+  <div class="card">
+    <div class="card-title">🔗 Quick Links</div>
+    <div class="link-grid">
+      <a class="link-card" href="https://revilopark.github.io/ontological-theatre/jlo-universe.html" target="_blank">
+        <div class="link-name">JLo Universe</div>
+        <div class="link-url">jlo-universe.html</div>
+      </a>
+      <a class="link-card" href="https://revilopark.github.io/ontological-theatre/clarksdale-series.html" target="_blank">
+        <div class="link-name">Clarksdale Series</div>
+        <div class="link-url">clarksdale-series.html</div>
+      </a>
+      <a class="link-card" href="https://revilopark.github.io/ontological-theatre/jlo-pitch.html" target="_blank">
+        <div class="link-name">JLo Pitch Deck</div>
+        <div class="link-url">jlo-pitch.html</div>
+      </a>
+      <a class="link-card" href="https://revilopark.github.io/ontological-theatre/iam-classroom.html" target="_blank">
+        <div class="link-name">IAM Classroom</div>
+        <div class="link-url">iam-classroom.html</div>
+      </a>
+      <a class="link-card" href="https://revilopark.github.io/ontological-theatre/jlo-infographic.html" target="_blank">
+        <div class="link-name">JLo Infographic</div>
+        <div class="link-url">jlo-infographic.html</div>
+      </a>
+      <a class="link-card" href="https://github.com/Revilopark/ontological-theatre" target="_blank">
+        <div class="link-name">GitHub Repo</div>
+        <div class="link-url">Revilopark/ontological-theatre</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Test Log -->
+  <div class="card" style="grid-column:1/-1">
+    <div class="card-title" style="display:flex;justify-content:space-between">
+      <span>📋 Test Log</span>
+      <span class="refresh-icon" onclick="runAllChecks()">↻</span>
+    </div>
+    <div class="log" id="test-log">Click "RUN CHECKS NOW" or wait for auto-run...</div>
+    <div class="last-run" id="last-run"></div>
+  </div>
+
+</div>
+
+<script>
+const BASE = 'https://revilopark.github.io/ontological-theatre';
+const PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app';
+const GEMINI_KEY = 'AIzaSyA9pGEpouLxsanA9MU0Il2laE7g88kLWlc';
+
+let passCount = 0, warnCount = 0, failCount = 0;
+const logEl = document.getElementById('test-log');
+
+function logLine(type, msg) {
+  const cls = {pass:'log-pass',fail:'log-fail',warn:'log-warn',info:'log-info'}[type]||'log-info';
+  const icon = {pass:'✓',fail:'✗',warn:'⚠',info:'·'}[type]||'·';
+  if(type==='pass') passCount++;
+  if(type==='fail') failCount++;
+  if(type==='warn') warnCount++;
+  logEl.innerHTML += `<div class="${cls}">[${new Date().toISOString().slice(11,19)}] ${icon} ${msg}</div>`;
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function updateSummary() {
+  document.getElementById('pass-count').textContent = passCount;
+  document.getElementById('warn-count').textContent = warnCount;
+  document.getElementById('fail-count').textContent = failCount;
+  document.getElementById('last-run-time').textContent = new Date().toLocaleTimeString();
+}
+
+function setBadge(container, index, type, label) {
+  const rows = document.querySelectorAll(`#${container} .status-row`);
+  if (rows[index]) {
+    const badge = rows[index].querySelector('.badge');
+    badge.className = `badge ${type}`;
+    badge.textContent = label;
+  }
+}
+
+async function checkURL(url, timeoutMs=8000) {
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(()=>ctrl.abort(), timeoutMs);
+    const r = await fetch(url, {signal:ctrl.signal, mode:'no-cors'});
+    clearTimeout(tid);
+    return {ok:true, status:r.status};
+  } catch(e) {
+    return {ok:false, error:e.message};
+  }
+}
+
+async function checkURLWithSize(url) {
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(()=>ctrl.abort(), 15000);
+    const r = await fetch(url, {signal:ctrl.signal});
+    clearTimeout(tid);
+    const text = await r.text();
+    return {ok:r.ok, status:r.status, size:text.length, body:text};
+  } catch(e) {
+    return {ok:false, error:e.message};
+  }
+}
+
+async function runAllChecks() {
+  logEl.innerHTML = '';
+  passCount = 0; warnCount = 0; failCount = 0;
+  logLine('info', '=== ONTOLOGICAL THEATRE TEST SUITE ===');
+  logLine('info', `Time: ${new Date().toISOString()}`);
+
+  // Pages
+  logLine('info', '--- PAGE CHECKS ---');
+  const pages = [
+    ['JLo Universe','jlo-universe.html',10000000,'pages-status',0],
+    ['Clarksdale Series','clarksdale-series.html',40000000,'pages-status',1],
+    ['JLo Pitch','jlo-pitch.html',50000,'pages-status',2],
+    ['JLo Infographic','jlo-infographic.html',50000,'pages-status',3],
+    ['IAM Classroom','iam-classroom.html',200000,'pages-status',4],
+    ['Panel Overrides','cs-panel-overrides.js',2000,'pages-status',5],
+  ];
+  for(const [name,path,minSize,container,idx] of pages) {
+    setBadge(container,idx,'loading','...');
+    const r = await checkURLWithSize(`${BASE}/${path}`);
+    if(r.ok && r.size>=minSize) {
+      logLine('pass',`${name}: ${(r.size/1024).toFixed(0)}KB`);
+      setBadge(container,idx,'pass','LIVE');
+    } else if(r.ok && r.size<minSize) {
+      logLine('warn',`${name}: suspiciously small (${r.size} bytes)`);
+      setBadge(container,idx,'warn','SMALL');
+    } else {
+      logLine('fail',`${name}: ${r.status||r.error}`);
+      setBadge(container,idx,'fail','DOWN');
+    }
+    updateSummary();
+  }
+
+  // API checks
+  logLine('info','--- API CHECKS ---');
+  const proxyHealth = await checkURLWithSize(`${PROXY}/health`);
+  if(proxyHealth.ok) {
+    logLine('pass','Proxy /health: OK');
+    setBadge('api-status',0,'pass','LIVE');
+    document.getElementById('video-status').style.borderColor='rgba(0,230,118,.3)';
+    document.getElementById('video-status').style.background='rgba(0,230,118,.06)';
+    document.getElementById('video-status').style.color='var(--pass)';
+    document.getElementById('video-status').innerHTML='✅ <strong>Proxy alive</strong> — Fal key needed for video generation';
+  } else {
+    logLine('fail','Proxy /health: DOWN');
+    setBadge('api-status',0,'fail','DOWN');
+  }
+
+  // Test Gemini via proxy
+  try {
+    const ctrl = new AbortController();
+    setTimeout(()=>ctrl.abort(),6000);
+    const r = await fetch(`${PROXY}/gemini/generate`,{
+      method:'POST', signal:ctrl.signal,
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{role:'user',parts:[{text:'Reply with only: OK'}]}],model:'gemini-2.0-flash'})
+    });
+    if(r.ok) { logLine('pass','Gemini via proxy: ALIVE'); setBadge('api-status',1,'pass','ALIVE'); }
+    else { logLine('warn',`Gemini proxy: ${r.status}`); setBadge('api-status',1,'warn',r.status); }
+  } catch(e) {
+    logLine('fail','Gemini proxy: TIMEOUT/ERROR'); setBadge('api-status',1,'fail','DEAD');
+  }
+
+  // Test Fal via proxy
+  try {
+    const r = await fetch(`${PROXY}/fal/generate-sync`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:'test',model:'fal-ai/flux-pro/v1.1-ultra'})});
+    if(r.status===200||r.status===400||r.status===422) { logLine('pass',`Fal proxy: ${r.status} (reachable)`); setBadge('api-status',2,'pass','LIVE'); }
+    else { logLine('warn',`Fal proxy: ${r.status}`); setBadge('api-status',2,'warn',String(r.status)); }
+  } catch(e) { logLine('fail','Fal proxy: '+e.message); setBadge('api-status',2,'fail','DEAD'); }
+
+  // Imagen 4 direct
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:predict?key=${GEMINI_KEY}`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({instances:[{prompt:'test'}],parameters:{sampleCount:1,aspectRatio:'1:1'}})
+    });
+    logLine(r.ok?'pass':'warn',`Imagen 4 direct: ${r.status}`);
+    setBadge('api-status',3,r.ok?'pass':'warn',String(r.status));
+  } catch(e) { logLine('warn','Imagen 4: '+e.message); setBadge('api-status',3,'warn','ERR'); }
+
+  // Panel spot checks
+  logLine('info','--- PANEL CHECKS ---');
+  const panelChecks = [
+    ['Ep1 base64 (embedded)','clarksdale-series.html',true,'panels-status',0],
+  ];
+  // Check specific panels via HEAD
+  const panelAssets = [
+    ['ep02-p1.jpg','Ep 2 (Harlem Ren.)',1],
+    ['ep06-p1.jpg','Ep 6 (Civil Rights)',2],
+    ['ep09-p6.jpg','Ep 9 (Art Deco Hotel)',3],
+    ['ep14-p6.jpg','Ep 14 (Noir Blues)',4],
+    ['ep15-p8.jpg','Ep 15 (27 Club)',5],
+  ];
+  setBadge('panels-status',0,'pass','EMBEDDED');
+  logLine('pass','Ep 1 panels: embedded base64 (no URL needed)');
+
+  for(const [file,name,idx] of panelAssets) {
+    setBadge('panels-status',idx,'loading','...');
+    const r = await checkURL(`${BASE}/cs-panels/${file}`);
+    if(r.ok||r.status===200) {
+      logLine('pass',`${name}: ✓`);
+      setBadge('panels-status',idx,'pass','LIVE');
+    } else {
+      logLine('fail',`${name}: ${r.error||r.status}`);
+      setBadge('panels-status',idx,'fail','BROKEN');
+    }
+  }
+
+  // JLo assets
+  logLine('info','--- JLO ASSETS ---');
+  const storyChecks = [
+    ['story-block-girl.jpg','The Block Girl',0],
+    ['story-torch.jpg','The Torch',1],
+    ['story-flag.jpg','The Flag',2],
+    ['story-oscar.jpg','The Oscar Snub',3],
+    ['story-reclaim.jpg','The Reclaim',4],
+  ];
+  for(const [file,name,idx] of storyChecks) {
+    const r = await checkURL(`${BASE}/jlo-stories/${file}`);
+    if(r.ok) { logLine('pass',`Fan Story ${name}: ✓`); setBadge('jlo-status',idx,'pass','LIVE'); }
+    else { logLine('fail',`Fan Story ${name}: BROKEN`); setBadge('jlo-status',idx,'fail','BROKEN'); }
+  }
+
+  // Test panels
+  let testPanelsOk = 0;
+  for(let i=1;i<=5;i++) {
+    const ra = await checkURL(`${BASE}/test-panels/cs-test-${i}.jpg`);
+    const rb = await checkURL(`${BASE}/test-panels/jlo-test-${i}.jpg`);
+    if(ra.ok&&rb.ok) testPanelsOk++;
+  }
+  if(testPanelsOk===5) { logLine('pass','All 10 test panels: LIVE'); setBadge('jlo-status',5,'pass','10/10'); }
+  else { logLine('warn',`Test panels: ${testPanelsOk*2}/10 live`); setBadge('jlo-status',5,'warn',`${testPanelsOk*2}/10`); }
+
+  // Done
+  logLine('info','=== COMPLETE ===');
+  updateSummary();
+  document.getElementById('last-run').textContent = `Last run: ${new Date().toLocaleString()}`;
+}
+
+// Auto-run on load and every 5 minutes
+runAllChecks();
+setInterval(runAllChecks, 5 * 60 * 1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Enginuity ATLAS — VNY 16425 Hart Street · Configuration Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --ink:#0a0e1a;--navy:#0d1830;--blue:#1a3a6e;--sky:#2d6be4;--cyan:#00d4ff;
+  --bg-primary:#0a0e1a;--accent-cyan:#00d4ff;--accent-blue:#4facfe;--accent-gold:#D4AF37;
+  --glass:rgba(255,255,255,.04);--glass2:rgba(255,255,255,.08);--border:rgba(255,255,255,.1);
+  --text:#e8f0ff;--muted:rgba(232,240,255,.45);
+  --green:#00e5a0;--gold:#D4AF37;--red:#ff4d6d;--purple:#a855f7;
+  --sans:'Inter',system-ui,sans-serif
+}
+body{background:var(--ink);color:var(--text);font-family:var(--sans);min-height:100dvh;overflow-x:hidden}
+input,select,textarea{font-size:16px!important}
+button,.btn{min-height:44px}
+.bg{position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(45,107,228,.09) 0%,transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(0,194,255,.06) 0%,transparent 60%);pointer-events:none}
+
+/* NAV */
+nav{backdrop-filter:blur(20px);background:rgba(8,12,24,.85);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:99}
+.nav-l{display:flex;align-items:center;gap:10px}
+.nav-icon{width:26px;height:26px;background:linear-gradient(135deg,var(--sky),var(--cyan));border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:800}
+.nav-name{font-size:.8rem;font-weight:700}.nav-name span{color:var(--cyan)}
+.nav-badge{background:rgba(0,194,255,.1);border:1px solid rgba(0,194,255,.2);color:var(--cyan);padding:4px 10px;border-radius:16px;font-size:.5rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+
+/* HEADER */
+.header{max-width:960px;margin:0 auto;padding:44px 24px 32px;position:relative;z-index:1}
+.h-eye{font-size:.48rem;letter-spacing:.28em;text-transform:uppercase;color:var(--cyan);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.h-eye::before{content:'';width:20px;height:1px;background:var(--cyan)}
+.h-title{font-size:2rem;font-weight:800;line-height:1.1;margin-bottom:8px}
+.h-title span{background:linear-gradient(90deg,var(--sky),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.h-sub{font-size:.8rem;color:var(--muted);max-width:580px;line-height:1.7;margin-bottom:20px}
+.site-facts{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.sf{background:var(--glass);border:1px solid var(--border);border-radius:6px;padding:8px 14px;font-size:.62rem}
+.sf strong{color:var(--cyan);display:block;font-size:.75rem;font-weight:700}
+
+/* WEIGHT CONTROLS */
+.weights{max-width:960px;margin:0 auto 24px;padding:0 24px;position:relative;z-index:1}
+.weights-card{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:18px 20px;backdrop-filter:blur(16px)}
+.wc-title{font-size:.55rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.w-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.w-item label{font-size:.5rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px}
+.w-item input[type=range]{width:100%;accent-color:var(--cyan);cursor:pointer}
+.w-val{font-size:.65rem;font-weight:700;color:var(--cyan);text-align:center;margin-top:2px}
+.run-btn{display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--sky),var(--cyan));color:#fff;border:none;border-radius:7px;padding:10px 20px;font-size:.68rem;font-weight:700;letter-spacing:.06em;cursor:pointer;transition:.2s;font-family:var(--sans);margin-top:14px}
+.run-btn:hover{opacity:.85;transform:translateY(-1px)}
+.run-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.run-btn.loading .spinner{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* CONFIGS GRID */
+.configs{max-width:960px;margin:0 auto;padding:0 24px 56px;position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* CONFIG CARD */
+.cfg{background:var(--glass);border:1px solid var(--border);border-radius:12px;backdrop-filter:blur(16px);overflow:hidden;transition:.2s}
+.cfg:hover{border-color:rgba(0,194,255,.25)}
+.cfg-hdr{padding:18px 20px 0}
+.cfg-tag{font-size:.45rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;padding:3px 8px;border-radius:8px;display:inline-block;margin-bottom:10px}
+.cfg-letter{font-size:2rem;font-weight:800;line-height:1;margin-bottom:4px}
+.cfg-name{font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.2}
+.cfg-desc{font-size:.68rem;color:var(--muted);line-height:1.65;margin-bottom:14px}
+
+/* COLOR THEMES */
+.cfg-a .cfg-tag{background:rgba(0,194,255,.12);color:var(--cyan)} .cfg-a .cfg-letter{color:var(--cyan)}
+.cfg-b .cfg-tag{background:rgba(0,229,160,.12);color:var(--green)} .cfg-b .cfg-letter{color:var(--green)}
+.cfg-c .cfg-tag{background:rgba(240,180,41,.12);color:var(--gold)} .cfg-c .cfg-letter{color:var(--gold)}
+.cfg-d .cfg-tag{background:rgba(168,85,247,.12);color:var(--purple)} .cfg-d .cfg-letter{color:var(--purple)}
+
+/* SCORE BARS */
+.scores{padding:0 20px 18px;border-top:1px solid var(--border);margin-top:14px;padding-top:14px}
+.score-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.score-lbl{font-size:.55rem;color:var(--muted);width:110px;flex-shrink:0}
+.score-bar-wrap{flex:1;height:5px;background:rgba(255,255,255,.07);border-radius:3px}
+.score-bar{height:5px;border-radius:3px;transition:width .5s ease}
+.score-num{font-size:.6rem;font-weight:700;width:28px;text-align:right;flex-shrink:0}
+.composite{display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.2);border-radius:6px;padding:10px 12px;margin-top:10px}
+.comp-lbl{font-size:.52rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.comp-val{font-size:1.4rem;font-weight:800}
+.comp-rank{font-size:.52rem;font-weight:700;padding:3px 8px;border-radius:10px}
+
+/* RISK FLAGS */
+.risks{padding:0 20px 16px;display:flex;flex-wrap:wrap;gap:6px}
+.risk-flag{font-size:.52rem;padding:3px 9px;border-radius:10px;display:flex;align-items:center;gap:4px}
+.rf-hi{background:rgba(255,77,109,.12);color:var(--red)}
+.rf-mid{background:rgba(240,180,41,.10);color:var(--gold)}
+.rf-lo{background:rgba(0,229,160,.10);color:var(--green)}
+
+/* AI OUTPUT */
+.ai-panel{max-width:960px;margin:0 auto 40px;padding:0 24px;position:relative;z-index:1}
+.ai-out{background:rgba(0,0,0,.4);border:1px solid rgba(0,194,255,.15);border-radius:10px;padding:20px;display:none}
+.ai-out.visible{display:block}
+.ai-head{font-size:.5rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.ai-head::before{content:'◈';font-size:.6rem}
+.ai-text{font-size:.78rem;line-height:1.9;color:rgba(232,240,255,.82);white-space:pre-wrap}
+
+/* WINNER BANNER */
+.winner-banner{background:linear-gradient(135deg,rgba(45,107,228,.15),rgba(0,194,255,.1));border:1px solid rgba(0,194,255,.25);border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;display:none}
+.winner-banner.visible{display:flex}
+.wb-icon{font-size:1.4rem}
+.wb-title{font-size:.75rem;font-weight:700;color:var(--cyan)}
+.wb-sub{font-size:.62rem;color:var(--muted);margin-top:2px}
+
+footer{background:rgba(0,0,0,.5);border-top:1px solid var(--border);padding:18px 24px;text-align:center;font-size:.52rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+footer a{color:var(--cyan);text-decoration:none}
+/* Glass panel depth */
+.card,.panel,.config-card,.stat{box-shadow:0 8px 32px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.06)}
+/* Mobile bottom nav */
+.atlas-mobile-nav{
+  display:none;position:fixed;bottom:0;left:0;right:0;
+  z-index:9999;background:rgba(10,14,26,0.94);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-top:1px solid rgba(255,255,255,0.1);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.atlas-mn-tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:56px;border:none;background:none;cursor:pointer;text-decoration:none;
+  color:rgba(255,255,255,.4);font-family:var(--sans);
+  font-size:9px;font-weight:700;gap:4px;padding:8px 4px;
+  text-transform:uppercase;letter-spacing:.06em;transition:color 0.2s;
+}
+.atlas-mn-tab:hover,.atlas-mn-tab.active{color:var(--cyan)}
+.atlas-mn-tab svg{opacity:.5;transition:opacity 0.2s}
+.atlas-mn-tab:hover svg,.atlas-mn-tab.active svg{opacity:1}
+@media(max-width:768px){
+  .atlas-mobile-nav{display:flex}
+  body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+  nav{padding:0 16px}
+  .header{padding:32px 16px 24px}
+  .h-title{font-size:1.5rem}
+  .grid-2,.config-grid,.comparison-grid,.chart-grid{grid-template-columns:1fr!important}
+  .content-main{max-width:100%;padding:0 16px}
+  .container{padding:0 16px!important}
+  table{font-size:.7rem}
+}
+@media(max-width:480px){
+  .h-title{font-size:1.25rem}
+  nav{height:48px}
+}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+
+<nav>
+  <div class="nav-l">
+    <div class="nav-icon">E</div>
+    <div class="nav-name">Enginuity <span>ATLAS</span></div>
+  </div>
+  <div class="nav-badge">VNY · 16425 Hart Street · Configuration Analysis</div>
+  <div style="display:flex;gap:7px;margin-left:auto">
+    <a href="vny-scenario.html" style="display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:6px;background:rgba(0,200,255,.08);border:1px solid rgba(0,200,255,.2);color:#00c8ff;font-size:10px;font-weight:600;text-decoration:none">← Scenarios</a>
+    <a href="vny-gis.html" style="display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#aaa;font-size:10px;font-weight:600;text-decoration:none">🗺 GIS</a>
+  </div>
+</nav>
+
+<div class="header">
+  <div class="h-eye">Configuration Intelligence · ATLAS Module</div>
+  <h1 class="h-title">Van Nuys Airport<br><span>4 Development Concepts · Scored</span></h1>
+  <div class="h-sub">AI-powered evaluation of four development configurations for the 10-acre aviation lease at 16425 Hart Street. Weighted against revenue potential, FAA compliance risk, community impact, phasing flexibility, and long-range resilience.</div>
+  <div class="site-facts">
+    <div class="sf"><strong>10 Acres</strong>Site Area</div>
+    <div class="sf"><strong>Non-FBO</strong>RFP Mandate</div>
+    <div class="sf"><strong>LAWA</strong>Owner/Operator</div>
+    <div class="sf"><strong>Active</strong>RFP Status 2026</div>
+    <div class="sf"><strong>⚠️ Contested</strong>Specific Plan + FAA Risk</div>
+    <div class="sf"><strong>35yr Tenant</strong>Southwest Aviation</div>
+  </div>
+</div>
+
+<div class="weights">
+  <div class="weights-card">
+    <div class="wc-title">Evaluation Criteria Weights — Adjust to re-score</div>
+    <div class="w-grid">
+      <div class="w-item">
+        <label>Revenue / Lease Value</label>
+        <input type="range" min="5" max="40" value="25" id="w-rev" oninput="updateWeights()">
+        <div class="w-val" id="wv-rev">25%</div>
+      </div>
+      <div class="w-item">
+        <label>FAA Compliance</label>
+        <input type="range" min="5" max="40" value="25" id="w-faa" oninput="updateWeights()">
+        <div class="w-val" id="wv-faa">25%</div>
+      </div>
+      <div class="w-item">
+        <label>Community Impact</label>
+        <input type="range" min="5" max="40" value="20" id="w-com" oninput="updateWeights()">
+        <div class="w-val" id="wv-com">20%</div>
+      </div>
+      <div class="w-item">
+        <label>Phasing Flexibility</label>
+        <input type="range" min="5" max="40" value="15" id="w-pha" oninput="updateWeights()">
+        <div class="w-val" id="wv-pha">15%</div>
+      </div>
+      <div class="w-item">
+        <label>Long-Range Resilience</label>
+        <input type="range" min="5" max="40" value="15" id="w-res" oninput="updateWeights()">
+        <div class="w-val" id="wv-res">15%</div>
+      </div>
+    </div>
+    <button class="run-btn" id="run-btn" onclick="runAnalysis()">
+      <div class="spinner"></div>
+      <span>Run AI Configuration Analysis</span>
+    </button>
+  </div>
+</div>
+
+<!-- WINNER BANNER -->
+<div class="ai-panel">
+  <div class="winner-banner" id="winner-banner">
+    <div class="wb-icon">🏆</div>
+    <div>
+      <div class="wb-title" id="winner-title">—</div>
+      <div class="wb-sub" id="winner-sub">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- 4 CONFIG CARDS -->
+<div class="configs">
+
+  <!-- A: Full Jet Private Terminal -->
+  <div class="cfg cfg-a" id="cfg-a">
+    <div class="cfg-hdr">
+      <div class="cfg-tag">Concept A · High Revenue</div>
+      <div class="cfg-letter">A</div>
+      <div class="cfg-name">Full Private Jet Campus</div>
+      <div class="cfg-desc">Complete redevelopment as premium private jet facility. Full tenant displacement. Large-cabin jet parking (Gulfstream G650, Global 7500 class). Private terminal building, VIP lounge, ground support. Maximizes LAWA lease revenue. Attracts Signature/Atlantic-class operators.</div>
+    </div>
+    <div class="risks">
+      <div class="risk-flag rf-hi">🔴 FAA Part 13/16 risk</div>
+      <div class="risk-flag rf-hi">🔴 SW Aviation litigation</div>
+      <div class="risk-flag rf-hi">🔴 CEQA / Noise EIR</div>
+      <div class="risk-flag rf-mid">🟡 Specific plan ambiguity</div>
+      <div class="risk-flag rf-lo">🟢 Highest revenue</div>
+    </div>
+    <div class="scores">
+      <div class="score-row"><span class="score-lbl">Revenue / Lease</span><div class="score-bar-wrap"><div class="score-bar" id="sb-a-rev" style="width:92%;background:var(--cyan)"></div></div><span class="score-num" style="color:var(--cyan)">9.2</span></div>
+      <div class="score-row"><span class="score-lbl">FAA Compliance</span><div class="score-bar-wrap"><div class="score-bar" id="sb-a-faa" style="width:32%;background:var(--red)"></div></div><span class="score-num" style="color:var(--red)">3.2</span></div>
+      <div class="score-row"><span class="score-lbl">Community Impact</span><div class="score-bar-wrap"><div class="score-bar" id="sb-a-com" style="width:18%;background:var(--red)"></div></div><span class="score-num" style="color:var(--red)">1.8</span></div>
+      <div class="score-row"><span class="score-lbl">Phasing Flexibility</span><div class="score-bar-wrap"><div class="score-bar" id="sb-a-pha" style="width:40%;background:var(--gold)"></div></div><span class="score-num" style="color:var(--gold)">4.0</span></div>
+      <div class="score-row"><span class="score-lbl">Long-Range Resilience</span><div class="score-bar-wrap"><div class="score-bar" id="sb-a-res" style="width:45%;background:var(--gold)"></div></div><span class="score-num" style="color:var(--gold)">4.5</span></div>
+      <div class="composite">
+        <div class="comp-lbl">Weighted Score</div>
+        <div class="comp-val" id="cv-a" style="color:var(--cyan)">—</div>
+        <div class="comp-rank" id="cr-a">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B: Hybrid Prop + Jet Campus -->
+  <div class="cfg cfg-b" id="cfg-b">
+    <div class="cfg-hdr">
+      <div class="cfg-tag">Concept B · Balanced</div>
+      <div class="cfg-letter">B</div>
+      <div class="cfg-name">Hybrid Aviation Campus</div>
+      <div class="cfg-desc">Mixed-use aviation campus retaining a designated propeller/light aircraft zone alongside mid-cabin jet operations. Addresses FAA Part 13/16 equal access requirements. Negotiated relocation of Southwest Aviation to smaller designated area. Reduced noise vs. full-jet. Satisfies more stakeholders.</div>
+    </div>
+    <div class="risks">
+      <div class="risk-flag rf-lo">🟢 FAA Part 13/16 compliant</div>
+      <div class="risk-flag rf-mid">🟡 SW Aviation negotiation</div>
+      <div class="risk-flag rf-mid">🟡 Mixed ops complexity</div>
+      <div class="risk-flag rf-lo">🟢 Community defensible</div>
+      <div class="risk-flag rf-mid">🟡 Lower revenue/acre</div>
+    </div>
+    <div class="scores">
+      <div class="score-row"><span class="score-lbl">Revenue / Lease</span><div class="score-bar-wrap"><div class="score-bar" id="sb-b-rev" style="width:62%;background:var(--gold)"></div></div><span class="score-num" style="color:var(--gold)">6.2</span></div>
+      <div class="score-row"><span class="score-lbl">FAA Compliance</span><div class="score-bar-wrap"><div class="score-bar" id="sb-b-faa" style="width:85%;background:var(--green)"></div></div><span class="score-num" style="color:var(--green)">8.5</span></div>
+      <div class="score-row"><span class="score-lbl">Community Impact</span><div class="score-bar-wrap"><div class="score-bar" id="sb-b-com" style="width:72%;background:var(--green)"></div></div><span class="score-num" style="color:var(--green)">7.2</span></div>
+      <div class="score-row"><span class="score-lbl">Phasing Flexibility</span><div class="score-bar-wrap"><div class="score-bar" id="sb-b-pha" style="width:80%;background:var(--green)"></div></div><span class="score-num" style="color:var(--green)">8.0</span></div>
+      <div class="score-row"><span class="score-lbl">Long-Range Resilience</span><div class="score-bar-wrap"><div class="score-bar" id="sb-b-res" style="width:78%;background:var(--green)"></div></div><span class="score-num" style="color:var(--green)">7.8</span></div>
+      <div class="composite">
+        <div class="comp-lbl">Weighted Score</div>
+        <div class="comp-val" id="cv-b" style="color:var(--green)">—</div>
+        <div class="comp-rank" id="cr-b">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C: Sustainable / eVTOL Forward -->
+  <div class="cfg cfg-c" id="cfg-c">
+    <div class="cfg-hdr">
+      <div class="cfg-tag">Concept C · Future-Forward</div>
+      <div class="cfg-letter">C</div>
+      <div class="cfg-name">Sustainable Aviation + eVTOL Hub</div>
+      <div class="cfg-desc">Position VNY 16425 Hart as LA's premier sustainable aviation campus. SAF (Sustainable Aviation Fuel) infrastructure, electric/hybrid aircraft charging, eVTOL vertiport pad (Joby, Archer, Wisk class). Partners: aircraft OEMs, NASA UAM. Addresses community noise concerns directly. Aligns with LAWA sustainability mandates and Mayor Bass climate commitments.</div>
+    </div>
+    <div class="risks">
+      <div class="risk-flag rf-lo">🟢 Community champion story</div>
+      <div class="risk-flag rf-lo">🟢 LAWA sustainability goals</div>
+      <div class="risk-flag rf-mid">🟡 eVTOL timing uncertainty</div>
+      <div class="risk-flag rf-mid">🟡 Lower near-term revenue</div>
+      <div class="risk-flag rf-lo">🟢 Federal grant eligible</div>
+    </div>
+    <div class="scores">
+      <div class="score-row"><span class="score-lbl">Revenue / Lease</span><div class="score-bar-wrap"><div class="score-bar" id="sb-c-rev" style="width:52%;background:var(--gold)"></div></div><span class="score-num" style="color:var(--gold)">5.2</span></div>
+      <div class="score-row"><span class="score-lbl">FAA Compliance</span><div class="score-bar-wrap"><div class="score-bar" id="sb-c-faa" style="width:90%;background:var(--green)"></div></div><span class="score-num" style="color:var(--green)">9.0</span></div>
+      <div class="score-row"><span class="score-lbl">Community Impact</span><div class="score-bar-wrap"><div class="score-bar" id="sb-c-com" style="width:88%;background:var(--green)"></div></div><span class="score-num" style="color:var(--green)">8.8</span></div>
+      <div class="score-row"><span class="score-lbl">Phasing Flexibility</span><div class="score-bar-wrap"><div class="score-bar" id="sb-c-pha" style="width:75%;background:var(--green)"></div></div><span class="score-num" style="color:var(--green)">7.5</span></div>
+      <div class="score-row"><span class="score-lbl">Long-Range Resilience</span><div class="score-bar-wrap"><div class="score-bar" id="sb-c-res" style="width:92%;background:var(--green)"></div></div><span class="score-num" style="color:var(--green)">9.2</span></div>
+      <div class="composite">
+        <div class="comp-lbl">Weighted Score</div>
+        <div class="comp-val" id="cv-c" style="color:var(--gold)">—</div>
+        <div class="comp-rank" id="cr-c">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- D: Charter + MRO Campus -->
+  <div class="cfg cfg-d" id="cfg-d">
+    <div class="cfg-hdr">
+      <div class="cfg-tag">Concept D · Operational</div>
+      <div class="cfg-letter">D</div>
+      <div class="cfg-name">Charter + MRO Operations Campus</div>
+      <div class="cfg-desc">Non-FBO charter operations hub with Maintenance, Repair & Overhaul (MRO) capabilities. Attracts aircraft management companies, Part 135 charter operators, avionics shops. MRO generates steady, recession-resistant revenue. Daytime-dominant operations reduce noise impact vs. 24hr private jet terminal. Compliant with non-FBO mandate.</div>
+    </div>
+    <div class="risks">
+      <div class="risk-flag rf-lo">🟢 Non-FBO compliant</div>
+      <div class="risk-flag rf-mid">🟡 MRO demand uncertain</div>
+      <div class="risk-flag rf-mid">🟡 FAA Part 145 certification</div>
+      <div class="risk-flag rf-lo">🟢 Daytime ops = less noise</div>
+      <div class="risk-flag rf-mid">🟡 Mid-tier revenue</div>
+    </div>
+    <div class="scores">
+      <div class="score-row"><span class="score-lbl">Revenue / Lease</span><div class="score-bar-wrap"><div class="score-bar" id="sb-d-rev" style="width:68%;background:var(--gold)"></div></div><span class="score-num" style="color:var(--gold)">6.8</span></div>
+      <div class="score-row"><span class="score-lbl">FAA Compliance</span><div class="score-bar-wrap"><div class="score-bar" id="sb-d-faa" style="width:82%;background:var(--green)"></div></div><span class="score-num" style="color:var(--green)">8.2</span></div>
+      <div class="score-row"><span class="score-lbl">Community Impact</span><div class="score-bar-wrap"><div class="score-bar" id="sb-d-com" style="width:65%;background:var(--green)"></div></div><span class="score-num" style="color:var(--green)">6.5</span></div>
+      <div class="score-row"><span class="score-lbl">Phasing Flexibility</span><div class="score-bar-wrap"><div class="score-bar" id="sb-d-pha" style="width:70%;background:var(--green)"></div></div><span class="score-num" style="color:var(--green)">7.0</span></div>
+      <div class="score-row"><span class="score-lbl">Long-Range Resilience</span><div class="score-bar-wrap"><div class="score-bar" id="sb-d-res" style="width:68%;background:var(--gold)"></div></div><span class="score-num" style="color:var(--gold)">6.8</span></div>
+      <div class="composite">
+        <div class="comp-lbl">Weighted Score</div>
+        <div class="comp-val" id="cv-d" style="color:var(--purple)">—</div>
+        <div class="comp-rank" id="cr-d">—</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- AI OUTPUT -->
+<div class="ai-panel">
+  <div class="ai-out" id="ai-out">
+    <div class="ai-head">ATLAS Analysis — VNY 16425 Hart Street</div>
+    <div class="ai-text" id="ai-text"></div>
+  </div>
+</div>
+
+<footer>
+  Enginuity ATLAS · Configuration Intelligence · Van Nuys Airport 16425 Hart Street · LAWA RFP 2026<br>
+  <a href="enginuity-scenario.html">← Full Scenario Tool (TPA)</a> · <a href="https://www.iflyvny.com" target="_blank">iflyvny.com</a>
+</footer>
+
+<script>
+// ── AI: Proxy → Direct Gemini 2.5-flash → 2.0-flash ─────────────────────────
+const GEMINI_PROXY='https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+const GEMINI_DIRECT='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyDmqhRDt2eJ-RO-gcRP3c1Sa85wk_E8KJ4';
+const GEMINI_FAST='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyDmqhRDt2eJ-RO-gcRP3c1Sa85wk_E8KJ4';
+async function callAI(prompt,sys,onStatus){
+  const body=JSON.stringify({contents:[{parts:[{text:prompt}]}],system_instruction:{parts:[{text:sys}]}});
+  const hdr={'Content-Type':'application/json'};
+  try{
+    const r=await fetch(GEMINI_PROXY,{method:'POST',headers:hdr,body});
+    if(r.ok){const d=await r.json();const t=d?.candidates?.[0]?.content?.parts?.[0]?.text;if(t)return t;}
+  }catch(e){}
+  if(onStatus)onStatus('⟳ Switching to Gemini 2.5…');
+  for(let i=0;i<2;i++){
+    try{
+      const r=await fetch(GEMINI_DIRECT,{method:'POST',headers:hdr,body});
+      if(r.ok){const d=await r.json();const t=d?.candidates?.[0]?.content?.parts?.[0]?.text;if(t)return t;}
+      if((r.status===503||r.status===429)&&i<1){await new Promise(res=>setTimeout(res,3000));continue;}
+      break;
+    }catch(e){if(i<1){await new Promise(res=>setTimeout(res,2000));continue;}}
+  }
+  if(onStatus)onStatus('⟳ Switching to Gemini 2.0…');
+  try{
+    const r=await fetch(GEMINI_FAST,{method:'POST',headers:hdr,body});
+    if(r.ok){const d=await r.json();const t=d?.candidates?.[0]?.content?.parts?.[0]?.text;if(t)return t;}
+  }catch(e){}
+  throw new Error('All AI providers unavailable — please retry in a moment.');
+}
+
+// Legacy reference:
+
+const RAW = {
+  a:{rev:9.2,faa:3.2,com:1.8,pha:4.0,res:4.5},
+  b:{rev:6.2,faa:8.5,com:7.2,pha:8.0,res:7.8},
+  c:{rev:5.2,faa:9.0,com:8.8,pha:7.5,res:9.2},
+  d:{rev:6.8,faa:8.2,com:6.5,pha:7.0,res:6.8}
+};
+const NAMES = {a:'Concept A — Full Private Jet Campus',b:'Concept B — Hybrid Aviation Campus',c:'Concept C — Sustainable Aviation + eVTOL Hub',d:'Concept D — Charter + MRO Campus'};
+
+function updateWeights(){
+  const w = weights();
+  ['a','b','c','d'].forEach(k=>{
+    const score = (RAW[k].rev*w.rev + RAW[k].faa*w.faa + RAW[k].com*w.com + RAW[k].pha*w.pha + RAW[k].res*w.res)/100;
+    document.getElementById(`cv-${k}`).textContent = score.toFixed(1);
+  });
+  // rank them
+  const scored = ['a','b','c','d'].map(k=>({k,s:parseFloat(document.getElementById(`cv-${k}`).textContent)})).sort((a,b)=>b.s-a.s);
+  const ranks = ['🥇 #1','🥈 #2','🥉 #3','#4'];
+  const rankColors = ['var(--green)','var(--cyan)','var(--gold)','var(--muted)'];
+  scored.forEach((item,i)=>{
+    const el = document.getElementById(`cr-${item.k}`);
+    el.textContent = ranks[i];
+    el.style.background = i===0?'rgba(0,229,160,.15)':i===1?'rgba(0,194,255,.1)':i===2?'rgba(240,180,41,.1)':'rgba(255,255,255,.05)';
+    el.style.color = rankColors[i];
+  });
+  // winner banner
+  const winner = scored[0];
+  const wb = document.getElementById('winner-banner');
+  wb.classList.add('visible');
+  document.getElementById('winner-title').textContent = `Leading Concept: ${NAMES[winner.k]} — ${winner.s.toFixed(1)}/10`;
+  document.getElementById('winner-sub').textContent = `Under current weight distribution (Revenue ${weights().rev}% · FAA ${weights().faa}% · Community ${weights().com}% · Phasing ${weights().pha}% · Resilience ${weights().res}%)`;
+}
+
+function weights(){
+  return {
+    rev: parseInt(document.getElementById('w-rev').value),
+    faa: parseInt(document.getElementById('w-faa').value),
+    com: parseInt(document.getElementById('w-com').value),
+    pha: parseInt(document.getElementById('w-pha').value),
+    res: parseInt(document.getElementById('w-res').value)
+  };
+}
+
+// sync labels
+['rev','faa','com','pha','res'].forEach(k=>{
+  document.getElementById(`w-${k}`).addEventListener('input',()=>{
+    document.getElementById(`wv-${k}`).textContent = document.getElementById(`w-${k}`).value+'%';
+  });
+});
+
+async function runAnalysis(){
+  const btn = document.getElementById('run-btn');
+  btn.disabled=true;
+  btn.classList.add('loading');
+  const w = weights();
+  const prompt = `You are conducting a development configuration analysis for LAWA's (Los Angeles World Airports) 16425 Hart Street lease at Van Nuys Airport (VNY). This is a 10-acre aviation land lease for non-FBO aviation operations.
+
+CURRENT SITUATION:
+- LAWA issued 6 RFPs for ~35 acres at VNY; 16425 Hart Street is 10 acres
+- Currently occupied by Southwest Aviation (35-year prop aircraft tenant), flight schools, tie-down operations
+- RFP mandates: General Aviation above 12,500 lbs (jets), non-FBO operation
+- Risk factors: FAA Part 13/16 equal access grant compliance; 2006 Specific Plan under revision; CEQA noise EIR; Southwest Aviation class action threat; Hayvenhurst lot zoning contested
+- Likely bidders: Signature Aviation, Atlantic Aviation, Aeroplex/Centerline
+- Community: strong opposition from Encino/Van Nuys residents, VNY CAC
+
+FOUR CONCEPTS EVALUATED (weights: Revenue ${w.rev}%, FAA Compliance ${w.faa}%, Community Impact ${w.com}%, Phasing Flexibility ${w.pha}%, Long-Range Resilience ${w.res}%):
+
+Concept A — Full Private Jet Campus: Revenue 9.2, FAA 3.2, Community 1.8, Phasing 4.0, Resilience 4.5
+Concept B — Hybrid Aviation Campus (mixed prop+jet): Revenue 6.2, FAA 8.5, Community 7.2, Phasing 8.0, Resilience 7.8
+Concept C — Sustainable Aviation + eVTOL Hub: Revenue 5.2, FAA 9.0, Community 8.8, Phasing 7.5, Resilience 9.2
+Concept D — Charter + MRO Operations Campus: Revenue 6.8, FAA 8.2, Community 6.5, Phasing 7.0, Resilience 6.8
+
+Produce a rigorous configuration analysis:
+
+WINNING CONCEPT — identify which concept wins under these weights and explain specifically why
+CRITICAL TRADE-OFF — where does the winning concept most sacrifice (lowest raw score) and how should that risk be managed
+HYBRID RECOMMENDATION — is there a combination of two concepts that outperforms any single option? Describe it specifically
+FAA COMPLIANCE ANALYSIS — specifically address how Concept A's Part 13/16 risk could derail LAWA's entire redevelopment program across all 6 RFPs, not just this parcel
+COMMUNITY STRATEGY — for whichever concept scores highest, describe a specific community engagement strategy that could neutralize opposition
+LAWA'S ACTUAL INTEREST — separate from community preferences, what does LAWA most want from this lease? Which concept best serves LAWA's institutional goals?
+ENGINUITY PROVENANCE — tag key claims as CONFIRMED, CITED, INFERRED, or ASSUMED.`;
+
+  const SYS_ATL='You are Enginuity, AI scenario planning intelligence for aviation infrastructure. Produce precise, data-grounded professional analysis with specific numbers and recommendations. Use section labels followed by em-dash. Write in flowing professional paragraphs, not bullet points.';
+  const el=document.getElementById('ai-text');
+  try{
+    const result=await callAI(prompt,SYS_ATL,t=>{btn.textContent=t;el.textContent=t;});
+    el.textContent=result;
+  }catch(e){
+    el.textContent='⚠ '+e.message;
+  }
+  document.getElementById('ai-out').classList.add('visible');
+  btn.disabled=false; btn.classList.remove('loading'); btn.textContent='Run Analysis';
+}
+
+// init weights on load
+document.addEventListener('DOMContentLoaded', updateWeights);
+</script>
+
+<nav class="atlas-mobile-nav" aria-label="Main navigation">
+  <a class="atlas-mn-tab active" href="#">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+    <span>Overview</span>
+  </a>
+  <a class="atlas-mn-tab" href="#configs">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    <span>Configs</span>
+  </a>
+  <a class="atlas-mn-tab" href="#analysis">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    <span>Analysis</span>
+  </a>
+  <a class="atlas-mn-tab" href="#comparison">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <span>Compare</span>
+  </a>
+</nav>
+</body>
+</html>

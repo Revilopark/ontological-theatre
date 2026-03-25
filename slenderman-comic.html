@@ -1,0 +1,2277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>THE OCCURRENCE — A Slenderman Comic</title>
+<style>
+/* ============================================================
+   HORROR DESIGN SYSTEM — The Occurrence
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Creepster&family=Share+Tech+Mono&family=Inter:wght@300;400;600;700&display=swap');
+
+:root {
+  --black: #04040a;
+  --deep: #080812;
+  --void: #020206;
+  --red: #8b0000;
+  --red-bright: #c0392b;
+  --red-glow: #ff1a1a;
+  --blood: #660000;
+  --white: #e8e4dc;
+  --bone: #c8c0b0;
+  --muted: #5a5560;
+  --green: #00ff41;
+  --cyan: #00ffff;
+  --glitch1: #ff0040;
+  --glitch2: #00ffff;
+  --fog: rgba(200, 200, 210, 0.03);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-snap-type: y proximity; }
+
+body {
+  background: var(--black);
+  color: var(--white);
+  font-family: 'Inter', -apple-system, sans-serif;
+  overflow-x: hidden;
+  cursor: crosshair;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   NOISE + SCANLINE OVERLAYS
+   ============================================================ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+  background-size: 256px;
+  pointer-events: none;
+  z-index: 10000;
+  opacity: 0.6;
+  mix-blend-mode: overlay;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 10001;
+}
+
+.scanline {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 3px;
+  background: rgba(0, 255, 65, 0.04);
+  animation: scanline 6s linear infinite;
+  pointer-events: none;
+  z-index: 10002;
+}
+
+/* ============================================================
+   KEYFRAMES
+   ============================================================ */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes glitch {
+  0%, 88%, 100% { clip-path: none; transform: none; }
+  90% { clip-path: polygon(0 10%, 100% 10%, 100% 35%, 0 35%); transform: translate(-4px, 0); color: var(--glitch1); }
+  92% { clip-path: polygon(0 50%, 100% 50%, 100% 70%, 0 70%); transform: translate(4px, 0); color: var(--glitch2); }
+  94% { clip-path: polygon(0 75%, 100% 75%, 100% 90%, 0 90%); transform: translate(-2px, 0); }
+  96% { clip-path: none; transform: none; }
+}
+
+@keyframes glitchHard {
+  0%, 80% { clip-path: none; transform: none; opacity: 1; }
+  82% { clip-path: polygon(0 5%, 100% 5%, 100% 25%, 0 25%); transform: translate(-6px, 2px) skewX(-2deg); color: var(--glitch1); }
+  84% { clip-path: polygon(0 40%, 100% 40%, 100% 55%, 0 55%); transform: translate(5px, -1px) skewX(1deg); color: var(--glitch2); }
+  86% { clip-path: polygon(0 65%, 100% 65%, 100% 85%, 0 85%); transform: translate(-3px, 0); opacity: 0.8; }
+  88% { clip-path: none; transform: none; opacity: 0.3; }
+  90% { opacity: 1; }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  48% { opacity: 1; }
+  50% { opacity: 0.6; }
+  52% { opacity: 1; }
+  78% { opacity: 1; }
+  80% { opacity: 0.3; }
+  82% { opacity: 1; }
+}
+
+@keyframes drift {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  25% { transform: translateX(-3px) translateY(2px); }
+  75% { transform: translateX(3px) translateY(-2px); }
+}
+
+@keyframes fogDrift {
+  0% { transform: translateX(-5%) scaleX(1); opacity: 0.3; }
+  50% { transform: translateX(3%) scaleX(1.05); opacity: 0.5; }
+  100% { transform: translateX(-5%) scaleX(1); opacity: 0.3; }
+}
+
+@keyframes fogDrift2 {
+  0% { transform: translateX(5%); opacity: 0.2; }
+  50% { transform: translateX(-3%); opacity: 0.4; }
+  100% { transform: translateX(5%); opacity: 0.2; }
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.02; }
+  50% { opacity: 0.08; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 99% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes redPulse {
+  0%, 100% { box-shadow: 0 0 5px rgba(139,0,0,0.3); }
+  50% { box-shadow: 0 0 20px rgba(139,0,0,0.6); }
+}
+
+@keyframes screenFlicker {
+  0%, 95%, 100% { opacity: 1; }
+  96% { opacity: 0.85; }
+  97% { opacity: 1; }
+  98% { opacity: 0.9; }
+}
+
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes cursorBlink {
+  0%, 49% { border-right-color: var(--red); }
+  50%, 100% { border-right-color: transparent; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tentacleWave {
+  0%, 100% { d: path("M0,0 Q5,-15 2,-30 Q-3,-45 4,-60"); }
+  50% { d: path("M0,0 Q-5,-15 -2,-30 Q3,-45 -4,-60"); }
+}
+
+@keyframes figureAppear {
+  0% { opacity: 0; filter: blur(10px); }
+  100% { opacity: var(--target-opacity, 0.05); filter: blur(0px); }
+}
+
+@keyframes staticNoise {
+  0% { background-position: 0 0; }
+  100% { background-position: 100% 100%; }
+}
+
+@keyframes bloodDrip {
+  0% { height: 0; }
+  100% { height: 60px; }
+}
+
+/* ============================================================
+   PANEL SYSTEM
+   ============================================================ */
+.panel {
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  scroll-snap-align: start;
+  animation: screenFlicker 10s infinite;
+}
+
+.panel-counter {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 3px;
+  color: rgba(139, 0, 0, 0.4);
+  z-index: 100;
+}
+
+.panel-border {
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139,0,0,0.3), transparent);
+}
+
+/* ============================================================
+   FOG LAYERS
+   ============================================================ */
+.fog {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.fog-layer-1 {
+  background: linear-gradient(180deg, transparent 0%, rgba(200,200,210,0.04) 40%, transparent 100%);
+  animation: fogDrift 15s ease-in-out infinite;
+}
+
+.fog-layer-2 {
+  background: radial-gradient(ellipse 120% 40% at 30% 80%, rgba(200,200,210,0.05) 0%, transparent 70%);
+  animation: fogDrift2 20s ease-in-out infinite;
+}
+
+.fog-layer-3 {
+  background: radial-gradient(ellipse 80% 30% at 70% 60%, rgba(200,200,210,0.03) 0%, transparent 60%);
+  animation: fogDrift 25s ease-in-out infinite reverse;
+}
+
+/* ============================================================
+   THE FIGURE — Reusable SVG Component
+   ============================================================ */
+.figure-container {
+  position: absolute;
+  pointer-events: none;
+}
+
+.figure-container svg {
+  animation: drift 8s ease-in-out infinite;
+}
+
+/* ============================================================
+   PANEL 1: TITLE
+   ============================================================ */
+.panel-title {
+  background: radial-gradient(ellipse at 50% 70%, rgba(139,0,0,0.06) 0%, transparent 60%), var(--void);
+}
+
+.title-warning {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 6px;
+  color: var(--red-bright);
+  border: 1px solid var(--red);
+  padding: 6px 18px;
+  margin-bottom: 48px;
+  animation: flicker 4s infinite;
+  text-transform: uppercase;
+}
+
+.title-main {
+  font-family: 'Special Elite', serif;
+  font-size: clamp(3rem, 10vw, 8rem);
+  font-weight: 400;
+  letter-spacing: -2px;
+  line-height: 0.95;
+  text-align: center;
+  position: relative;
+  color: var(--white);
+  animation: glitchHard 6s infinite;
+  text-shadow: 0 0 40px rgba(139,0,0,0.3);
+}
+
+.title-main::before,
+.title-main::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+}
+
+.title-main::before {
+  animation: glitch 5s infinite 0.15s;
+  color: var(--glitch1);
+  opacity: 0.4;
+  z-index: -1;
+}
+
+.title-main::after {
+  animation: glitch 5s infinite 0.4s;
+  color: var(--glitch2);
+  opacity: 0.25;
+  z-index: -1;
+}
+
+.title-sub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 20px;
+}
+
+.title-date {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 4px;
+  color: var(--red);
+  margin-top: 40px;
+  animation: blink 2.5s infinite;
+}
+
+.title-scroll {
+  position: absolute;
+  bottom: 30px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  animation: pulse 3s infinite;
+}
+
+.title-figure {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0.04;
+  animation: breathe 8s ease-in-out infinite;
+}
+
+/* ============================================================
+   PANEL 2: THE WOODS
+   ============================================================ */
+.panel-woods {
+  background: linear-gradient(180deg, #020208 0%, #04040c 50%, #060610 100%);
+}
+
+.woods-caption {
+  position: absolute;
+  bottom: 80px;
+  left: 40px;
+  font-family: 'Special Elite', serif;
+  font-size: clamp(0.8rem, 2vw, 1rem);
+  color: var(--bone);
+  opacity: 0.8;
+  max-width: 400px;
+}
+
+.woods-location {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 3px;
+  color: var(--red);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   PANEL 3: JAKE'S DISCOVERY
+   ============================================================ */
+.panel-jake {
+  background: linear-gradient(180deg, #0a0a12 0%, #04040a 100%);
+}
+
+.jake-scene {
+  width: 100%;
+  max-width: 900px;
+  position: relative;
+  padding: 40px;
+}
+
+.speech-bubble {
+  position: absolute;
+  background: rgba(255,255,255,0.95);
+  color: #111;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 12px 18px;
+  border-radius: 16px;
+  max-width: 300px;
+  line-height: 1.4;
+}
+
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 30px;
+  width: 0; height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 14px solid rgba(255,255,255,0.95);
+}
+
+.phone-frame {
+  position: absolute;
+  width: 140px;
+  height: 240px;
+  background: #111;
+  border: 2px solid #333;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 0 30px rgba(0,0,0,0.8);
+}
+
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  background: #0a0a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================================
+   PANEL 4: REDDIT THREAD
+   ============================================================ */
+.panel-reddit {
+  background: #0d0d0d;
+  justify-content: flex-start;
+  padding: 60px 20px;
+}
+
+.reddit-container {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.reddit-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.reddit-logo {
+  color: #ff4500;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.reddit-sub {
+  font-size: 0.8rem;
+  color: #818384;
+}
+
+.reddit-post {
+  background: #1a1a1b;
+  border: 1px solid #343536;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.reddit-post-meta {
+  padding: 8px 12px;
+  font-size: 0.65rem;
+  color: #818384;
+  border-bottom: 1px solid #272729;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.reddit-flair {
+  background: rgba(139,0,0,0.3);
+  border: 1px solid #8b0000;
+  color: #ff6b6b;
+  font-size: 0.55rem;
+  padding: 1px 6px;
+  border-radius: 2px;
+  letter-spacing: 1px;
+}
+
+.reddit-post-title {
+  padding: 12px 12px 4px;
+  font-size: 1rem;
+  color: #d7dadc;
+  font-weight: 500;
+}
+
+.reddit-post-body {
+  padding: 8px 12px 12px;
+  font-size: 0.8rem;
+  color: #a0a0a0;
+  line-height: 1.7;
+}
+
+.reddit-post-body p { margin-bottom: 8px; }
+.reddit-post-body strong { color: #d7dadc; }
+
+.reddit-actions {
+  padding: 6px 12px;
+  display: flex;
+  gap: 16px;
+  font-size: 0.65rem;
+  color: #818384;
+  background: rgba(0,0,0,0.3);
+}
+
+.reddit-comment {
+  border-left: 2px solid #343536;
+  margin-left: 16px;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  color: #a0a0a0;
+  margin-top: 8px;
+}
+
+.reddit-comment .user { color: #4fbcff; font-size: 0.65rem; margin-bottom: 4px; }
+.reddit-comment.deleted { opacity: 0.3; font-style: italic; }
+
+.reddit-caption {
+  font-family: 'Special Elite', serif;
+  font-size: 0.85rem;
+  color: var(--bone);
+  margin-top: 24px;
+  padding: 16px;
+  border-left: 2px solid var(--red);
+  background: rgba(139,0,0,0.05);
+}
+
+/* ============================================================
+   PANEL 5: ELENA'S INSTAGRAM
+   ============================================================ */
+.panel-instagram {
+  background: #0a0a0f;
+  justify-content: flex-start;
+  padding: 60px 20px;
+}
+
+.ig-container {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.ig-profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.ig-avatar {
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  border: 2px solid rgba(139,0,0,0.5);
+  background: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.ig-info .name { font-size: 0.9rem; font-weight: 600; color: #e0dcd4; }
+.ig-info .handle { font-size: 0.72rem; color: #666; }
+.ig-info .bio { font-size: 0.72rem; color: #888; margin-top: 4px; font-style: italic; }
+.ig-info .last { font-family: 'Share Tech Mono', monospace; font-size: 0.6rem; color: var(--red); margin-top: 6px; animation: pulse 3s infinite; }
+
+.ig-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+}
+
+.ig-cell {
+  aspect-ratio: 1;
+  background: #111;
+  position: relative;
+  overflow: hidden;
+}
+
+.ig-cell .overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  color: rgba(255,255,255,0.1);
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 2px;
+}
+
+.ig-cell.corrupted {
+  background: repeating-linear-gradient(
+    45deg, #0d0d0d, #0d0d0d 2px, #111 2px, #111 6px
+  );
+}
+
+.ig-cell.corrupted::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 60%, rgba(139,0,0,0.15) 100%);
+}
+
+.ig-cell.last-post {
+  border: 1px solid rgba(139,0,0,0.4);
+  animation: redPulse 4s infinite;
+}
+
+.ig-caption {
+  font-family: 'Special Elite', serif;
+  font-size: 0.85rem;
+  color: var(--bone);
+  margin-top: 20px;
+  text-align: center;
+}
+
+.ig-caption .highlight {
+  color: var(--red);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.75rem;
+}
+
+/* ============================================================
+   PANEL 6: TIKTOK
+   ============================================================ */
+.panel-tiktok {
+  background: #020203;
+}
+
+.tiktok-phone {
+  width: 280px;
+  height: 500px;
+  background: #0a0a0a;
+  border: 2px solid #222;
+  border-radius: 28px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 2px rgba(139,0,0,0.3);
+}
+
+.tiktok-screen {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.tiktok-video-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #0a0812 0%, #0f0a18 100%);
+}
+
+.tiktok-comments {
+  position: absolute;
+  bottom: 80px;
+  left: 12px;
+  right: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tt-comment {
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.8);
+  font-family: -apple-system, sans-serif;
+  background: rgba(0,0,0,0.4);
+  padding: 4px 8px;
+  border-radius: 10px;
+  display: inline-block;
+  max-width: fit-content;
+}
+
+.tt-comment .user { font-weight: 600; }
+.tt-comment.scared { color: #ff6b6b; }
+
+.tiktok-sidebar {
+  position: absolute;
+  right: 8px;
+  bottom: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.tt-stat {
+  text-align: center;
+  font-size: 0.5rem;
+  color: white;
+  font-family: -apple-system, sans-serif;
+}
+
+.tt-stat .icon { font-size: 1.2rem; margin-bottom: 2px; }
+
+.tiktok-username {
+  position: absolute;
+  bottom: 50px;
+  left: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  font-family: -apple-system, sans-serif;
+}
+
+.tiktok-desc {
+  position: absolute;
+  bottom: 28px;
+  left: 12px;
+  right: 60px;
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.7);
+  font-family: -apple-system, sans-serif;
+}
+
+.tiktok-desc .tag { color: #fe2c55; }
+
+.tiktok-views {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-top: 24px;
+}
+
+.tiktok-caption {
+  font-family: 'Special Elite', serif;
+  font-size: 0.85rem;
+  color: var(--bone);
+  margin-top: 16px;
+  max-width: 400px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ============================================================
+   PANEL 7: THE PATTERN
+   ============================================================ */
+.panel-pattern {
+  background: radial-gradient(ellipse at 50% 50%, #0c0808 0%, var(--black) 100%);
+}
+
+.evidence-board {
+  width: 90%;
+  max-width: 800px;
+  min-height: 500px;
+  background: #1a1612;
+  border: 2px solid #2a2420;
+  position: relative;
+  padding: 40px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+}
+
+.evidence-board::before {
+  content: 'EVIDENCE — DO NOT REMOVE';
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 3px;
+  color: rgba(139,0,0,0.4);
+}
+
+.pin {
+  position: absolute;
+  width: 10px; height: 10px;
+  background: var(--red);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--red);
+}
+
+.string {
+  position: absolute;
+  height: 1px;
+  background: var(--red);
+  opacity: 0.4;
+  transform-origin: left center;
+}
+
+.evidence-photo {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  background: #111;
+  border: 1px solid #333;
+  transform: rotate(var(--rot, 0deg));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.4rem;
+  color: #444;
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 1px;
+}
+
+.evidence-note {
+  position: absolute;
+  background: #d4c87a;
+  color: #333;
+  padding: 8px;
+  font-size: 0.55rem;
+  font-family: 'Special Elite', serif;
+  transform: rotate(var(--rot, 0deg));
+  max-width: 120px;
+  line-height: 1.3;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.4);
+}
+
+.pattern-caption {
+  font-family: 'Special Elite', serif;
+  font-size: 0.85rem;
+  color: var(--bone);
+  margin-top: 32px;
+  max-width: 600px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ============================================================
+   PANEL 8: PROFESSOR WREN
+   ============================================================ */
+.panel-wren {
+  background: linear-gradient(180deg, #060608 0%, #08080c 100%);
+}
+
+.wren-scene {
+  width: 90%;
+  max-width: 800px;
+  position: relative;
+}
+
+.chalkboard {
+  width: 100%;
+  background: #1a2a1a;
+  border: 8px solid #3a2a1a;
+  padding: 40px;
+  min-height: 300px;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+}
+
+.chalk-text {
+  font-family: 'Special Elite', serif;
+  color: rgba(255,255,255,0.75);
+  font-size: clamp(0.9rem, 2.5vw, 1.3rem);
+  line-height: 1.8;
+}
+
+.chalk-text .highlight {
+  color: #ff9999;
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  display: block;
+  margin: 16px 0;
+}
+
+.chalk-text .underline {
+  text-decoration: underline;
+  text-decoration-color: rgba(255,100,100,0.5);
+  text-underline-offset: 4px;
+}
+
+.wren-speech {
+  background: rgba(255,255,255,0.92);
+  color: #111;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 16px 22px;
+  border-radius: 16px;
+  max-width: 500px;
+  margin-top: 24px;
+  position: relative;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.wren-speech::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 40px;
+  width: 0; height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 14px solid rgba(255,255,255,0.92);
+}
+
+.wren-caption {
+  font-family: 'Special Elite', serif;
+  font-size: 0.85rem;
+  color: var(--red);
+  margin-top: 20px;
+  font-style: italic;
+}
+
+/* ============================================================
+   PANEL 9: THE DISAPPEARANCE
+   ============================================================ */
+.panel-disappear {
+  background: linear-gradient(180deg, #080808 0%, #04040a 100%);
+}
+
+.apartment-scene {
+  width: 90%;
+  max-width: 800px;
+  position: relative;
+}
+
+.disappear-caption {
+  font-family: 'Special Elite', serif;
+  font-size: 1rem;
+  color: var(--bone);
+  margin-top: 24px;
+  text-align: center;
+}
+
+.disappear-detail {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 3px;
+  color: var(--red);
+  margin-top: 12px;
+  text-align: center;
+  animation: pulse 3s infinite;
+}
+
+/* ============================================================
+   PANEL 10: THE CHILD'S DRAWING
+   ============================================================ */
+.panel-child {
+  background: #080806;
+}
+
+.fridge {
+  width: 320px;
+  min-height: 450px;
+  background: linear-gradient(180deg, #d0d0c8, #b8b8b0);
+  border-radius: 4px;
+  position: relative;
+  padding: 30px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+.fridge-handle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 80px;
+  background: #999;
+  border-radius: 3px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+.magnet {
+  position: absolute;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.drawing-paper {
+  width: 220px;
+  height: 280px;
+  background: #fff;
+  margin: 20px auto;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transform: rotate(-2deg);
+}
+
+.child-caption {
+  font-family: 'Special Elite', serif;
+  font-size: 0.9rem;
+  color: var(--bone);
+  margin-top: 32px;
+  max-width: 450px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.child-question {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.8rem;
+  letter-spacing: 3px;
+  color: var(--red);
+  margin-top: 16px;
+  animation: flicker 5s infinite;
+}
+
+/* ============================================================
+   PANEL 11: THE WOODS AGAIN
+   ============================================================ */
+.panel-woods-again {
+  background: linear-gradient(180deg, #0a0204 0%, #080008 50%, #04040a 100%);
+}
+
+.woods-again-caption {
+  position: absolute;
+  bottom: 60px;
+  left: 0; right: 0;
+  text-align: center;
+  font-family: 'Special Elite', serif;
+  font-size: 1rem;
+  color: var(--bone);
+  padding: 0 20px;
+}
+
+/* ============================================================
+   PANEL 12: THREE ENDINGS
+   ============================================================ */
+.panel-endings {
+  background: var(--void);
+}
+
+.endings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  width: 90%;
+  max-width: 900px;
+  min-height: 60vh;
+}
+
+.ending-card {
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  border: 1px solid;
+}
+
+.ending-card.catalogued {
+  border-color: rgba(0,100,0,0.3);
+  background: rgba(0,40,0,0.08);
+}
+
+.ending-card.believed {
+  border-color: rgba(139,0,0,0.4);
+  background: rgba(80,0,0,0.08);
+}
+
+.ending-card.disappeared {
+  border-color: rgba(100,100,100,0.2);
+  background: rgba(40,40,40,0.08);
+}
+
+.ending-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.ending-card.catalogued .ending-label { color: #4a8; }
+.ending-card.believed .ending-label { color: var(--red-bright); }
+.ending-card.disappeared .ending-label { color: var(--muted); }
+
+.ending-title {
+  font-family: 'Special Elite', serif;
+  font-size: clamp(1rem, 2.5vw, 1.4rem);
+  margin-bottom: 16px;
+}
+
+.ending-card.catalogued .ending-title { color: #6c9; }
+.ending-card.believed .ending-title { color: var(--red-bright); }
+.ending-card.disappeared .ending-title { color: #777; }
+
+.ending-desc {
+  font-size: 0.75rem;
+  color: var(--bone);
+  line-height: 1.6;
+  opacity: 0.7;
+}
+
+.endings-caption {
+  font-family: 'Special Elite', serif;
+  font-size: 0.85rem;
+  color: var(--bone);
+  margin-top: 32px;
+  max-width: 600px;
+  text-align: center;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+/* ============================================================
+   PANEL 13: FINAL
+   ============================================================ */
+.panel-final {
+  background: #010102;
+  min-height: 120vh;
+}
+
+.final-text {
+  font-family: 'Special Elite', serif;
+  font-size: clamp(0.8rem, 2vw, 1.1rem);
+  color: rgba(232,228,220,0.5);
+  text-align: center;
+  max-width: 500px;
+  line-height: 1.8;
+  letter-spacing: 1px;
+}
+
+.final-figure {
+  margin-top: 60px;
+  opacity: 0.03;
+  animation: breathe 10s ease-in-out infinite;
+}
+
+.after-scroll {
+  position: fixed;
+  bottom: 0;
+  right: -200px;
+  opacity: 0;
+  transition: all 2s ease;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.after-scroll.visible {
+  right: 20px;
+  opacity: 0.04;
+}
+
+/* ============================================================
+   INTERSECTION OBSERVER ANIMATIONS
+   ============================================================ */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 1.2s ease, transform 1.2s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  .endings-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .evidence-board {
+    padding: 20px;
+    min-height: 400px;
+  }
+
+  .ig-grid {
+    gap: 1px;
+  }
+
+  .fridge {
+    width: 260px;
+    min-height: 380px;
+  }
+
+  .drawing-paper {
+    width: 180px;
+    height: 230px;
+  }
+
+  .tiktok-phone {
+    width: 240px;
+    height: 420px;
+  }
+
+  .chalkboard {
+    padding: 24px;
+    border-width: 4px;
+  }
+
+  .panel { padding: 20px; }
+  .woods-caption { left: 20px; bottom: 60px; }
+}
+
+@media (max-width: 480px) {
+  .title-main { letter-spacing: -1px; }
+  .evidence-board { min-height: 350px; }
+  .tiktok-phone { width: 220px; height: 380px; }
+}
+</style>
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<!-- ============================================================
+     PANEL 1: TITLE
+     ============================================================ -->
+<div class="panel panel-title" id="panel-1">
+  <div class="panel-counter">01 / 13</div>
+  <div class="fog fog-layer-1"></div>
+  <div class="fog fog-layer-2"></div>
+
+  <div class="title-figure">
+    <svg width="120" height="600" viewBox="0 0 120 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- The Figure — barely visible -->
+      <ellipse cx="60" cy="35" rx="14" ry="20" fill="rgba(232,228,220,0.15)"/>
+      <rect x="55" y="55" width="10" height="280" fill="rgba(232,228,220,0.1)" rx="5"/>
+      <line x1="60" y1="100" x2="15" y2="220" stroke="rgba(232,228,220,0.08)" stroke-width="4" stroke-linecap="round"/>
+      <line x1="60" y1="100" x2="105" y2="230" stroke="rgba(232,228,220,0.08)" stroke-width="4" stroke-linecap="round"/>
+      <!-- tentacles -->
+      <path d="M15,220 Q5,250 12,280 Q18,310 8,340" stroke="rgba(232,228,220,0.05)" stroke-width="2" fill="none"/>
+      <path d="M105,230 Q115,260 108,290 Q100,320 112,350" stroke="rgba(232,228,220,0.05)" stroke-width="2" fill="none"/>
+      <path d="M20,210 Q8,240 15,270" stroke="rgba(232,228,220,0.04)" stroke-width="2" fill="none"/>
+      <path d="M100,225 Q112,255 105,280" stroke="rgba(232,228,220,0.04)" stroke-width="2" fill="none"/>
+      <line x1="55" y1="335" x2="35" y2="580" stroke="rgba(232,228,220,0.08)" stroke-width="5" stroke-linecap="round"/>
+      <line x1="65" y1="335" x2="85" y2="580" stroke="rgba(232,228,220,0.08)" stroke-width="5" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <div class="title-warning">⚠ CASE FILE 0x4F43 — CLASSIFIED</div>
+  <h1 class="title-main" data-text="THE OCCURRENCE">THE OCCURRENCE</h1>
+  <div class="title-sub">A Living Horror</div>
+  <div class="title-date">PINE RIDGE, OREGON — CASE STILL OPEN</div>
+  <div class="title-scroll">▼ SCROLL TO ENTER ▼</div>
+  <div class="panel-border"></div>
+</div>
+
+<!-- ============================================================
+     PANEL 2: THE WOODS AT NIGHT
+     ============================================================ -->
+<div class="panel panel-woods" id="panel-2">
+  <div class="panel-counter">02 / 13</div>
+  <div class="fog fog-layer-1"></div>
+  <div class="fog fog-layer-2"></div>
+  <div class="fog fog-layer-3"></div>
+
+  <svg width="100%" height="100%" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;">
+    <defs>
+      <linearGradient id="nightSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#020208"/>
+        <stop offset="60%" stop-color="#04040c"/>
+        <stop offset="100%" stop-color="#080812"/>
+      </linearGradient>
+      <linearGradient id="treeFade" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0a0a14"/>
+        <stop offset="100%" stop-color="#04040a"/>
+      </linearGradient>
+      <radialGradient id="moonGlow" cx="50%" cy="20%" r="30%">
+        <stop offset="0%" stop-color="rgba(200,200,220,0.06)"/>
+        <stop offset="100%" stop-color="transparent"/>
+      </radialGradient>
+      <filter id="treeShadow">
+        <feGaussianBlur stdDeviation="2"/>
+      </filter>
+    </defs>
+
+    <rect width="1200" height="800" fill="url(#nightSky)"/>
+    <rect width="1200" height="800" fill="url(#moonGlow)"/>
+
+    <!-- Ground fog -->
+    <ellipse cx="600" cy="780" rx="800" ry="120" fill="rgba(200,200,210,0.03)"/>
+    <ellipse cx="400" cy="760" rx="500" ry="80" fill="rgba(200,200,210,0.02)"/>
+
+    <!-- Trees — dark vertical lines, varying heights -->
+    <g opacity="0.9">
+      <line x1="80" y1="100" x2="80" y2="800" stroke="#0a0a12" stroke-width="16"/>
+      <line x1="70" y1="200" x2="40" y2="160" stroke="#0a0a12" stroke-width="5"/>
+      <line x1="90" y1="250" x2="120" y2="200" stroke="#0a0a12" stroke-width="4"/>
+
+      <line x1="200" y1="50" x2="200" y2="800" stroke="#0c0c16" stroke-width="20"/>
+      <line x1="190" y1="150" x2="155" y2="110" stroke="#0c0c16" stroke-width="6"/>
+      <line x1="210" y1="200" x2="250" y2="150" stroke="#0c0c16" stroke-width="5"/>
+      <line x1="195" y1="300" x2="165" y2="260" stroke="#0c0c16" stroke-width="4"/>
+
+      <line x1="340" y1="80" x2="340" y2="800" stroke="#080812" stroke-width="18"/>
+      <line x1="330" y1="180" x2="295" y2="140" stroke="#080812" stroke-width="5"/>
+      <line x1="350" y1="240" x2="385" y2="190" stroke="#080812" stroke-width="5"/>
+
+      <line x1="460" y1="120" x2="460" y2="800" stroke="#0b0b15" stroke-width="14"/>
+      <line x1="452" y1="220" x2="420" y2="180" stroke="#0b0b15" stroke-width="4"/>
+
+      <line x1="560" y1="40" x2="560" y2="800" stroke="#090913" stroke-width="22"/>
+      <line x1="548" y1="150" x2="510" y2="100" stroke="#090913" stroke-width="6"/>
+      <line x1="572" y1="220" x2="610" y2="170" stroke="#090913" stroke-width="5"/>
+      <line x1="555" y1="320" x2="525" y2="280" stroke="#090913" stroke-width="4"/>
+
+      <line x1="700" y1="90" x2="700" y2="800" stroke="#0a0a14" stroke-width="16"/>
+      <line x1="690" y1="190" x2="660" y2="150" stroke="#0a0a14" stroke-width="5"/>
+      <line x1="710" y1="260" x2="745" y2="210" stroke="#0a0a14" stroke-width="4"/>
+
+      <line x1="830" y1="60" x2="830" y2="800" stroke="#0c0c16" stroke-width="19"/>
+      <line x1="820" y1="170" x2="785" y2="130" stroke="#0c0c16" stroke-width="5"/>
+      <line x1="840" y1="230" x2="875" y2="180" stroke="#0c0c16" stroke-width="5"/>
+
+      <line x1="950" y1="110" x2="950" y2="800" stroke="#080812" stroke-width="15"/>
+      <line x1="942" y1="210" x2="910" y2="170" stroke="#080812" stroke-width="4"/>
+
+      <line x1="1080" y1="70" x2="1080" y2="800" stroke="#0b0b15" stroke-width="17"/>
+      <line x1="1070" y1="180" x2="1040" y2="140" stroke="#0b0b15" stroke-width="5"/>
+      <line x1="1090" y1="250" x2="1120" y2="200" stroke="#0b0b15" stroke-width="4"/>
+    </g>
+
+    <!-- THE FIGURE — hidden among trees, elongated shadow -->
+    <g opacity="0.08" class="figure-woods">
+      <ellipse cx="620" cy="320" rx="8" ry="14" fill="#e8e4dc"/>
+      <rect x="616" y="334" width="8" height="200" fill="#e8e4dc" rx="4"/>
+      <line x1="620" y1="370" x2="595" y2="440" stroke="#e8e4dc" stroke-width="3" stroke-linecap="round"/>
+      <line x1="620" y1="370" x2="645" y2="445" stroke="#e8e4dc" stroke-width="3" stroke-linecap="round"/>
+      <line x1="616" y1="534" x2="605" y2="700" stroke="#e8e4dc" stroke-width="4" stroke-linecap="round"/>
+      <line x1="624" y1="534" x2="635" y2="700" stroke="#e8e4dc" stroke-width="4" stroke-linecap="round"/>
+    </g>
+
+    <!-- Elongated shadow that doesn't match any tree -->
+    <line x1="620" y1="700" x2="620" y2="800" stroke="rgba(232,228,220,0.03)" stroke-width="30" filter="url(#treeShadow)"/>
+  </svg>
+
+  <div class="woods-caption reveal">
+    <div class="woods-location">CASE FILE — LOCATION ZERO</div>
+    Pine Ridge, Oregon. Three weeks ago.<br>
+    <span style="font-size:0.7rem;color:var(--muted);margin-top:8px;display:block;">
+      The shadow between the fifth and sixth tree doesn't belong to anything.
+    </span>
+  </div>
+  <div class="panel-border"></div>
+</div>
+
+<!-- ============================================================
+     PANEL 3: JAKE'S DISCOVERY
+     ============================================================ -->
+<div class="panel panel-jake" id="panel-3">
+  <div class="panel-counter">03 / 13</div>
+
+  <svg width="100%" height="100%" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;">
+    <!-- Dusk sky -->
+    <defs>
+      <linearGradient id="duskSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0c0814"/>
+        <stop offset="40%" stop-color="#1a1028"/>
+        <stop offset="70%" stop-color="#2a1a1a"/>
+        <stop offset="100%" stop-color="#0a0a0a"/>
+      </linearGradient>
+    </defs>
+    <rect width="1200" height="800" fill="url(#duskSky)"/>
+
+    <!-- Construction equipment silhouettes -->
+    <g fill="#0a0a10" opacity="0.9">
+      <!-- Crane -->
+      <rect x="800" y="200" width="20" height="500" />
+      <rect x="700" y="200" width="200" height="15"/>
+      <line x1="900" y1="215" x2="820" y2="200" stroke="#0a0a10" stroke-width="4"/>
+      <rect x="890" y="215" width="4" height="60"/>
+      <!-- Scaffolding -->
+      <rect x="100" y="400" width="200" height="8"/>
+      <rect x="100" y="400" width="8" height="350"/>
+      <rect x="292" y="400" width="8" height="350"/>
+      <rect x="100" y="500" width="200" height="6"/>
+      <rect x="100" y="600" width="200" height="6"/>
+      <!-- Excavator outline -->
+      <rect x="450" y="550" width="150" height="80" rx="8"/>
+      <rect x="470" y="500" width="80" height="55" rx="4"/>
+      <rect x="550" y="480" width="120" height="12" rx="2" transform="rotate(-25 550 480)"/>
+      <!-- Ground -->
+      <rect x="0" y="700" width="1200" height="100"/>
+    </g>
+
+    <!-- Jake silhouette -->
+    <g transform="translate(380, 520)">
+      <ellipse cx="0" cy="-10" rx="12" ry="14" fill="#111"/>
+      <rect x="-8" y="4" width="16" height="50" fill="#111" rx="4"/>
+      <rect x="-15" y="15" width="10" height="3" fill="#111" rx="1" transform="rotate(30 -15 15)"/>
+      <!-- Arm holding phone -->
+      <rect x="8" y="15" width="30" height="3" fill="#111" rx="1" transform="rotate(-50 8 15)"/>
+      <!-- Phone glow -->
+      <rect x="28" y="-10" width="18" height="30" rx="3" fill="#1a1a2a" stroke="#333" stroke-width="1"/>
+      <rect x="30" y="-7" width="14" height="24" rx="1" fill="#111822"/>
+      <!-- Tiny figure in phone screen -->
+      <line x1="37" y1="2" x2="37" y2="14" stroke="rgba(232,228,220,0.3)" stroke-width="1"/>
+      <ellipse cx="37" cy="1" rx="2" ry="3" fill="rgba(232,228,220,0.2)"/>
+    </g>
+
+    <!-- THE FIGURE between equipment — more visible now -->
+    <g opacity="0.12">
+      <ellipse cx="650" cy="400" rx="9" ry="16" fill="#e8e4dc"/>
+      <rect x="645" y="416" width="10" height="230" fill="#e8e4dc" rx="4"/>
+      <line x1="650" y1="450" x2="625" y2="530" stroke="#e8e4dc" stroke-width="3" stroke-linecap="round"/>
+      <line x1="650" y1="450" x2="675" y2="535" stroke="#e8e4dc" stroke-width="3" stroke-linecap="round"/>
+      <path d="M625,530 Q615,555 622,575" stroke="#e8e4dc" stroke-width="2" fill="none" opacity="0.5"/>
+      <path d="M675,535 Q685,560 678,580" stroke="#e8e4dc" stroke-width="2" fill="none" opacity="0.5"/>
+    </g>
+  </svg>
+
+  <!-- Speech bubble -->
+  <div class="speech-bubble reveal" style="top:25%;right:15%;z-index:10;">
+    "What the hell is that in the background?"
+  </div>
+
+  <div style="position:absolute;bottom:60px;left:40px;z-index:10;" class="reveal">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;letter-spacing:3px;color:var(--red);margin-bottom:8px;">WITNESS 002 — JAKE TORRANCE</div>
+    <div style="font-family:'Special Elite',serif;font-size:0.9rem;color:var(--bone);max-width:350px;line-height:1.6;">
+      Construction worker. Night shift. Took a photo of the site to send to his foreman.<br>
+      <span style="color:var(--muted);font-size:0.75rem;">He didn't notice it until he got home.</span>
+    </div>
+  </div>
+  <div class="panel-border"></div>
+</div>
+
+<!-- ============================================================
+     PANEL 4: REDDIT THREAD
+     ============================================================ -->
+<div class="panel panel-reddit" id="panel-4">
+  <div class="panel-counter">04 / 13</div>
+
+  <div class="reddit-container reveal">
+    <div class="reddit-header">
+      <span class="reddit-logo">⬆ reddit</span>
+      <span class="reddit-sub">r/UnexplainedPhotos</span>
+      <span style="margin-left:auto;font-size:0.6rem;color:#818384;">Sort by: Top</span>
+    </div>
+
+    <div class="reddit-post">
+      <div class="reddit-post-meta">
+        <span style="color:#4fbcff;">u/MargotDelvane</span>
+        <span>• 18d</span>
+        <span class="reddit-flair">EVIDENCE THREAD</span>
+        <span style="margin-left:auto;color:#ff4500;">⬆ 4,287</span>
+      </div>
+      <div class="reddit-post-title">
+        [MEGATHREAD] The Pine Ridge Anomaly — Compiled Evidence, Geographic Analysis, and Timeline of All Reported Sightings
+      </div>
+      <div class="reddit-post-body">
+        <p>I've been cataloguing anomalous sightings for <strong>three years</strong>. In that time, I've documented 142 cases across the Pacific Northwest. Most are misidentifications, hoaxes, or pareidolia.</p>
+        <p><strong>This is different.</strong></p>
+        <p>In the last 14 days, seven independent witnesses — none of whom know each other — have reported seeing the same anomaly within a 12-mile radius of coordinates <strong>44.2153°N, 122.7847°W</strong>. All descriptions match. All photos contain the same morphological features.</p>
+        <p>I've created a full evidence table below. If you have information, DM me. <span style="color:var(--red);">Do NOT go looking for it.</span></p>
+      </div>
+      <div class="reddit-actions">
+        <span>💬 1,847 comments</span>
+        <span>↗ Share</span>
+        <span>⭐ Save</span>
+        <span>🏆 4× Gold</span>
+      </div>
+    </div>
+
+    <!-- Comments -->
+    <div class="reddit-comment">
+      <div class="user">u/NightHiker_PDX • 17d</div>
+      Holy shit. I was camping near those coordinates last month. I heard something moving between the trees at 3am. Something TALL. I thought it was a bear standing up.
+    </div>
+
+    <div class="reddit-comment">
+      <div class="user">u/SkepticalSam99 • 17d</div>
+      This is clearly edited. You can see JPEG artifacts around the figure in photo 3.
+      <div class="reddit-comment" style="margin-left:12px;">
+        <div class="user" style="color:#ff4500;">u/MargotDelvane • 17d</div>
+        I've run full EXIF and ELA analysis on every image. None show signs of manipulation. The artifacts you're seeing are compression from the original camera app, not Photoshop. <strong>Full report linked in the thread.</strong>
+      </div>
+    </div>
+
+    <div class="reddit-comment deleted">
+      <div class="user">[deleted] • 16d</div>
+      [removed by moderators]
+    </div>
+
+    <div class="reddit-comment">
+      <div class="user">u/ForestWatch_OR • 15d</div>
+      I'm a ranger at the McKenzie District. We've had three missing hikers in the last month. All within that radius. This is being treated as coincidence by the department but I'm not so sure anymore.
+    </div>
+
+    <div class="reddit-caption reveal">
+      MargotDelvane has been cataloguing incidents for 3 years.<br>
+      <span style="font-size:0.7rem;color:var(--muted);">This is the first time she's been afraid of what she found.</span>
+    </div>
+  </div>
+  <div class="panel-border"></div>
+</div>
+
+<!-- ============================================================
+     PANEL 5: ELENA'S LAST INSTAGRAM
+     ============================================================ -->
+<div class="panel panel-instagram" id="panel-5">
+  <div class="panel-counter">05 / 13</div>
+
+  <div class="ig-container reveal">
+    <div class="ig-profile">
+      <div class="ig-avatar">
+        <svg width="40" height="40" viewBox="0 0 40 40">
+          <circle cx="20" cy="16" r="8" fill="#444"/>
+          <ellipse cx="20" cy="38" rx="14" ry="12" fill="#444"/>
+        </svg>
+      </div>
+      <div class="ig-info">
+        <div class="name">Elena Vasquez</div>
+        <div class="handle">@elena.explores • 23.4K followers</div>
+        <div class="bio">📷 Travel photographer • Portland, OR • "The world is wider than we think"</div>
+        <div class="last">⊘ LAST ACTIVE: 11 DAYS AGO</div>
+      </div>
+    </div>
+
+    <div class="ig-grid">
+      <!-- Row 1: Normal photos -->
+      <div class="ig-cell" style="background:linear-gradient(135deg,#2a3a4a,#1a2a3a);">
+        <div class="overlay">SUNSET<br>MT HOOD</div>
+      </div>
+      <div class="ig-cell" style="background:linear-gradient(135deg,#3a2a1a,#2a1a0a);">
+        <div class="overlay">COFFEE<br>PORTLAND</div>
+      </div>
+      <div class="ig-cell" style="background:linear-gradient(135deg,#1a3a2a,#0a2a1a);">
+        <div class="overlay">TRAIL<br>SILVER FALLS</div>
+      </div>
+
+      <!-- Row 2: Getting darker -->
+      <div class="ig-cell" style="background:linear-gradient(135deg,#1a1a2a,#0a0a1a);">
+        <div class="overlay">FOREST<br>DUSK</div>
+      </div>
+      <div class="ig-cell" style="background:#0f0f14;">
+        <div class="overlay" style="color:rgba(139,0,0,0.3);">TREES<br>NIGHT</div>
+        <!-- Tiny figure barely visible -->
+        <svg width="100%" height="100%" viewBox="0 0 100 100" style="position:absolute;inset:0;opacity:0.06;">
+          <line x1="72" y1="30" x2="72" y2="85" stroke="#e8e4dc" stroke-width="1.5"/>
+          <ellipse cx="72" cy="28" rx="3" ry="4" fill="#e8e4dc"/>
+        </svg>
+      </div>
+      <div class="ig-cell corrupted">
+        <div class="overlay" style="color:rgba(139,0,0,0.3);">FOG<br>CLEARING</div>
+      </div>
+
+      <!-- Row 3: Disturbing -->
+      <div class="ig-cell corrupted" style="background:#0a0808;">
+        <div class="overlay" style="color:rgba(139,0,0,0.4);">BLURRED<br>UNKNOWN</div>
+        <svg width="100%" height="100%" viewBox="0 0 100 100" style="position:absolute;inset:0;opacity:0.1;">
+          <line x1="50" y1="15" x2="50" y2="80" stroke="#e8e4dc" stroke-width="1.5"/>
+          <ellipse cx="50" cy="13" rx="3" ry="5" fill="#e8e4dc"/>
+          <line x1="50" y1="35" x2="35" y2="55" stroke="#e8e4dc" stroke-width="1"/>
+          <line x1="50" y1="35" x2="65" y2="55" stroke="#e8e4dc" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="ig-cell corrupted" style="background:#080404;">
+        <div class="overlay" style="color:var(--red);">CORRUPTED<br>FILE</div>
+      </div>
+      <div class="ig-cell last-post" style="background:#060204;">
+        <div class="overlay" style="color:var(--red);font-size:0.65rem;">LAST<br>POST</div>
+        <!-- Figure clearly visible in last photo -->
+        <svg width="100%" height="100%" viewBox="0 0 100 100" style="position:absolute;inset:0;opacity:0.2;">
+          <!-- Trees -->
+          <line x1="20" y1="10" x2="20" y2="100" stroke="#1a1a1a" stroke-width="4"/>
+          <line x1="80" y1="15" x2="80" y2="100" stroke="#1a1a1a" stroke-width="4"/>
+          <!-- Figure center -->
+          <ellipse cx="50" cy="18" rx="5" ry="8" fill="#e8e4dc"/>
+          <rect x="47" y="26" width="6" height="50" fill="#e8e4dc" rx="3"/>
+          <line x1="50" y1="40" x2="30" y2="60" stroke="#e8e4dc" stroke-width="2"/>
+          <line x1="50" y1="40" x2="70" y2="60" stroke="#e8e4dc" stroke-width="2"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="ig-caption">
+      <span class="highlight">LAST POST: 11 DAYS AGO</span><br>
+      <span style="font-size:0.8rem;color:var(--muted);margin-top:8px;display:block;">
+        Look at the last three photos carefully.<br>The figure is in all of them.
+      </span>
+    </div>
+  </div>
+  <div class="panel-border"></div>
+</div>
+
+<!-- ============================================================
+     PANEL 6: THE TIKTOK
+     ============================================================ -->
+<div class="panel panel-tiktok" id="panel-6">
+  <div class="panel-counter">06 / 13</div>
+
+  <div style="display:flex;flex-direction:column;align-items:center;" class="reveal">
+    <div class="tiktok-phone">
+      <div class="tiktok-screen">
+        <div class="tiktok-video-bg">
+          <!-- Room scene -->
+          <svg width="100%" height="100%" viewBox="0 0 280 500" preserveAspectRatio="xMidYMid slice">
+            <!-- Room background -->
+            <rect width="280" height="500" fill="#12101a"/>
+            <!-- Wall -->
+            <rect x="0" y="0" width="280" height="350" fill="#1a1620"/>
+            <!-- Window -->
+            <rect x="160" y="40" width="100" height="140" fill="#08080f" stroke="#2a2530" stroke-width="2"/>
+            <line x1="210" y1="40" x2="210" y2="180" stroke="#2a2530" stroke-width="1"/>
+            <line x1="160" y1="110" x2="260" y2="110" stroke="#2a2530" stroke-width="1"/>
+
+            <!-- THE FIGURE IN THE WINDOW — clearly visible -->
+            <g opacity="0.35">
+              <ellipse cx="195" cy="65" rx="6" ry="10" fill="#d0ccc4"/>
+              <rect x="191" y="75" width="8" height="85" fill="#d0ccc4" rx="3"/>
+              <line x1="195" y1="95" x2="178" y2="125" stroke="#d0ccc4" stroke-width="2"/>
+              <line x1="195" y1="95" x2="212" y2="128" stroke="#d0ccc4" stroke-width="2"/>
+            </g>
+
+            <!-- Teen silhouette (filming selfie) -->
+            <g transform="translate(100, 200)">
+              <ellipse cx="0" cy="0" rx="18" ry="22" fill="#2a2535"/>
+              <rect x="-16" y="22" width="32" height="60" fill="#2a2535" rx="6"/>
+              <!-- Hair -->
+              <ellipse cx="0" cy="-8" rx="20" ry="16" fill="#1a1525"/>
+              <!-- Eyes -->
+              <circle cx="-5" cy="2" r="2" fill="#444"/>
+              <circle cx="5" cy="2" r="2" fill="#444"/>
+              <!-- Phone in hand -->
+              <rect x="20" y="0" width="14" height="24" rx="2" fill="#333" stroke="#444" stroke-width="0.5"/>
+            </g>
+
+            <!-- Bed -->
+            <rect x="0" y="380" width="180" height="120" fill="#1e1a28" rx="4"/>
+            <!-- Lamp -->
+            <rect x="230" y="300" width="6" height="50" fill="#2a2530"/>
+            <ellipse cx="233" cy="300" rx="16" ry="10" fill="#2a2230" stroke="#3a3040" stroke-width="1"/>
+            <circle cx="233" cy="300" r="3" fill="rgba(255,200,100,0.15)"/>
+          </svg>
+        </div>
+
+        <!-- TikTok comments overlay -->
+        <div class="tiktok-comments">
+          <div class="tt-comment scared">OMG LOOK AT THE WINDOW 😱</div>
+          <div class="tt-comment">this has to be fake right???</div>
+          <div class="tt-comment scared">I'm literally shaking rn</div>
+          <div class="tt-comment">pause at 0:14... that is NOT a reflection</div>
+          <div class="tt-comment">why does it have no face 💀</div>
+        </div>
+
+        <!-- Sidebar stats -->
+        <div class="tiktok-sidebar">
+          <div class="tt-stat"><div class="icon">♥</div>847K</div>
+          <div class="tt-stat"><div class="icon">💬</div>52.3K</div>
+          <div class="tt-stat"><div class="icon">↗</div>184K</div>
+        </div>
+
+        <div class="tiktok-username">@dreamcatcher_444</div>
+        <div class="tiktok-desc">just vibing before bed lol <span class="tag">#nighttime</span> <span class="tag">#fyp</span></div>
+      </div>
+    </div>
+
+    <div class="tiktok-views">2.1M VIEWS • 52.3K COMMENTS</div>
+    <div class="tiktok-caption">
+      She still doesn't know what she captured.<br>
+      <span style="color:var(--muted);font-size:0.75rem;">The comments know. She hasn't read them yet.</span>
+    </div>
+  </div>
+  <div class="panel-border"></div>
+</div>
+
+<!-- ============================================================
+     PANEL 7: THE PATTERN
+     ============================================================ -->
+<div class="panel panel-pattern" id="panel-7">
+  <div class="panel-counter">07 / 13</div>
+
+  <div class="evidence-board reveal">
+    <!-- Red strings (CSS lines) -->
+    <svg width="100%" height="100%" style="position:absolute;inset:0;pointer-events:none;z-index:2;">
+      <line x1="15%" y1="20%" x2="50%" y2="35%" stroke="rgba(139,0,0,0.5)" stroke-width="1"/>
+      <line x1="50%" y1="35%" x2="80%" y2="25%" stroke="rgba(139,0,0,0.5)" stroke-width="1"/>
+      <line x1="50%" y1="35%" x2="30%" y2="65%" stroke="rgba(139,0,0,0.5)" stroke-width="1"/>
+      <line x1="80%" y1="25%" x2="70%" y2="70%" stroke="rgba(139,0,0,0.5)" stroke-width="1"/>
+      <line x1="30%" y1="65%" x2="70%" y2="70%" stroke="rgba(139,0,0,0.4)" stroke-width="1"/>
+      <line x1="70%" y1="70%" x2="50%" y2="85%" stroke="rgba(139,0,0,0.3)" stroke-width="1"/>
+      <!-- Pins -->
+      <circle cx="15%" cy="20%" r="5" fill="#8b0000" filter="url(#glow)"/>
+      <circle cx="50%" cy="35%" r="6" fill="#8b0000" filter="url(#glow)"/>
+      <circle cx="80%" cy="25%" r="5" fill="#8b0000" filter="url(#glow)"/>
+      <circle cx="30%" cy="65%" r="5" fill="#8b0000" filter="url(#glow)"/>
+      <circle cx="70%" cy="70%" r="5" fill="#8b0000" filter="url(#glow)"/>
+      <circle cx="50%" cy="85%" r="5" fill="#8b0000" filter="url(#glow)"/>
+      <defs>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="2" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+    </svg>
+
+    <!-- Evidence photos -->
+    <div class="evidence-photo" style="top:12%;left:8%;--rot:-3deg;">
+      <svg width="60" height="60" viewBox="0 0 60 60"><rect width="60" height="60" fill="#0a0a0a"/><line x1="30" y1="10" x2="30" y2="50" stroke="rgba(232,228,220,0.15)" stroke-width="1.5"/><ellipse cx="30" cy="8" rx="3" ry="4" fill="rgba(232,228,220,0.1)"/></svg>
+    </div>
+    <div class="evidence-photo" style="top:18%;right:12%;--rot:2deg;">SITE PHOTO<br>10/14</div>
+    <div class="evidence-photo" style="top:55%;left:22%;--rot:-5deg;">TRAIL CAM<br>10/17</div>
+    <div class="evidence-photo" style="bottom:15%;right:20%;--rot:4deg;">
+      <svg width="60" height="60" viewBox="0 0 60 60"><rect width="60" height="60" fill="#080808"/><line x1="15" y1="5" x2="15" y2="55" stroke="#1a1a1a" stroke-width="3"/><line x1="45" y1="8" x2="45" y2="55" stroke="#1a1a1a" stroke-width="3"/><line x1="30" y1="12" x2="30" y2="48" stroke="rgba(232,228,220,0.2)" stroke-width="1.5"/><ellipse cx="30" cy="10" rx="3" ry="5" fill="rgba(232,228,220,0.15)"/></svg>
+    </div>
+
+    <!-- Sticky notes -->
+    <div class="evidence-note" style="top:30%;left:40%;--rot:1deg;">
+      ALL within 12mi radius<br>Same coordinates<br>44.2153°N, 122.7847°W
+    </div>
+    <div class="evidence-note" style="bottom:25%;left:8%;--rot:-4deg;background:#ff9999;">
+      WHY DOES IT GET<br>TALLER IN EACH<br>PHOTO???
+    </div>
+    <div class="evidence-note" style="top:15%;left:55%;--rot:3deg;">
+      7 witnesses<br>0 connections<br>Same description
+    </div>
+
+    <!-- Map outline -->
+    <svg width="140" height="100" viewBox="0 0 140 100" style="position:absolute;bottom:12%;right:8%;opacity:0.6;">
+      <rect width="140" height="100" fill="#1a1612" stroke="#333" stroke-width="1"/>
+      <text x="70" y="12" text-anchor="middle" fill="#666" font-size="6" font-family="Share Tech Mono">PINE RIDGE AREA</text>
+      <!-- Simple topo lines -->
+      <path d="M20,40 Q40,30 60,45 Q80,55 100,40 Q120,30 130,35" stroke="#2a2620" stroke-width="0.5" fill="none"/>
+      <path d="M20,50 Q45,40 65,55 Q85,65 105,50 Q125,38 135,42" stroke="#2a2620" stroke-width="0.5" fill="none"/>
+      <path d="M20,60 Q50,50 70,65 Q90,75 110,60 Q130,48 135,52" stroke="#2a2620" stroke-width="0.5" fill="none"/>
+      <!-- Red zone -->
+      <circle cx="70" cy="55" r="20" fill="rgba(139,0,0,0.2)" stroke="#8b0000" stroke-width="1" stroke-dasharray="3,2"/>
+      <circle cx="70" cy="55" r="3" fill="#8b0000"/>
+      <text x="70" y="82" text-anchor="middle" fill="#8b0000" font-size="5" font-family="Share Tech Mono">EPICENTER</text>
+    </svg>
+  </div>
+
+  <div class="pattern-caption reveal">
+    "The geographic clustering matches. Every sighting within 12 miles of the same coordinates."<br>
+    <span style="color:var(--red);font-size:0.7rem;">Seven witnesses. Zero connections. One anomaly.</span>
+  </div>
+  <div class="panel-border"></div>
+</div>
+
+<!-- ============================================================
+     PANEL 8: PROFESSOR WREN'S THEORY
+     ============================================================ -->
+<div class="panel panel-wren" id="panel-8">
+  <div class="panel-counter">08 / 13</div>
+  <div class="fog fog-layer-1"></div>
+
+  <div class="wren-scene reveal">
+    <div class="chalkboard">
+      <div class="chalk-text">
+        <span class="highlight">TULPA</span>
+        <em>n. (Tibetan: སྤྲུལ་པ)</em><br><br>
+        A thought-form made real through<br>
+        <span class="underline">collective belief</span><br><br>
+        <span style="font-size:0.8rem;opacity:0.6;">
+          Stage 1: Narrative creation → widespread sharing<br>
+          Stage 2: Pattern recognition → belief consolidation<br>
+          Stage 3: Manifestation threshold → ???<br>
+          Stage 4: <span style="color:#ff6666;">AUTONOMOUS EXISTENCE</span>
+        </span><br><br>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.4);">
+          ↳ See also: Philip Experiment (1972)<br>
+          ↳ See also: Thoughtform Tulpa - Alexandra David-Néel<br>
+          ↳ <span style="color:#ff6666;text-decoration:line-through;">See also: Pine Ridge file</span>
+        </span>
+      </div>
+
+      <!-- Small figure drawn in chalk on the board edge -->
+      <svg width="40" height="100" viewBox="0 0 40 100" style="position:absolute;bottom:20px;right:20px;opacity:0.2;">
+        <ellipse cx="20" cy="10" rx="6" ry="9" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
+        <line x1="20" y1="19" x2="20" y2="70" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+        <line x1="20" y1="35" x2="8" y2="50" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+        <line x1="20" y1="35" x2="32" y2="50" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+        <line x1="20" y1="70" x2="12" y2="95" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+        <line x1="20" y1="70" x2="28" y2="95" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+        <text x="20" y="100" text-anchor="middle" fill="rgba(255,100,100,0.4)" font-size="4">?</text>
+      </svg>
+    </div>
+
+    <div class="wren-speech">
+      "You're not documenting something that exists. You're <strong>CREATING</strong> it by documenting it. Every photograph, every Reddit post, every TikTok — you're feeding it. The paradox is inescapable: the more you investigate, the more real it becomes."
+    </div>
+
+    <div class="wren-caption">
+      The paradox: the more you investigate, the more real it becomes.
+    </div>
+  </div>
+  <div class="panel-border"></div>
+</div>
+
+<!-- ============================================================
+     PANEL 9: THE DISAPPEARANCE
+     ============================================================ -->
+<div class="panel panel-disappear" id="panel-9">
+  <div class="panel-counter">09 / 13</div>
+  <div class="fog fog-layer-2"></div>
+
+  <div class="apartment-scene reveal">
+    <svg width="100%" height="auto" viewBox="0 0 800 500" style="max-width:800px;">
+      <defs>
+        <linearGradient id="apartFloor" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#1a1a1e"/>
+          <stop offset="100%" stop-color="#111115"/>
+        </linearGradient>
+        <linearGradient id="apartWall" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#181820"/>
+          <stop offset="100%" stop-color="#14141c"/>
+        </linearGradient>
+      </defs>
+
+      <!-- Room -->
+      <rect width="800" height="500" fill="url(#apartWall)"/>
+      <rect y="320" width="800" height="180" fill="url(#apartFloor)"/>
+
+      <!-- Window with moonlight -->
+      <rect x="500" y="60" width="160" height="200" fill="#0a0a14" stroke="#2a2a32" stroke-width="2"/>
+      <line x1="580" y1="60" x2="580" y2="260" stroke="#2a2a32" stroke-width="1"/>
+      <line x1="500" y1="160" x2="660" y2="160" stroke="#2a2a32" stroke-width="1"/>
+      <!-- Moonlight beam -->
+      <polygon points="500,260 660,260 750,500 420,500" fill="rgba(200,200,220,0.015)"/>
+
+      <!-- Desk with laptop -->
+      <rect x="80" y="240" width="200" height="8" fill="#2a2a30"/>
+      <rect x="90" y="248" width="6" height="72" fill="#222228"/>
+      <rect x="268" y="248" width="6" height="72" fill="#222228"/>
+      <!-- Laptop open -->
+      <rect x="120" y="190" width="120" height="50" fill="#111" stroke="#333" stroke-width="1" rx="2"/>
+      <rect x="125" y="195" width="110" height="40" fill="#0a0a12"/>
+      <!-- Instagram grid on laptop screen -->
+      <rect x="128" y="198" width="12" height="12" fill="#1a1a20"/>
+      <rect x="142" y="198" width="12" height="12" fill="#1a1a20"/>
+      <rect x="156" y="198" width="12" height="12" fill="#1a1a20"/>
+      <rect x="128" y="212" width="12" height="12" fill="#1a1a20"/>
+      <rect x="142" y="212" width="12" height="12" fill="#1a1a20"/>
+      <rect x="156" y="212" width="12" height="12" fill="#180808"/>
+      <rect x="120" y="240" width="120" height="6" fill="#1a1a20" rx="1"/>
+
+      <!-- Phone on table -->
+      <rect x="260" y="232" width="22" height="12" fill="#111" stroke="#333" stroke-width="0.5" rx="2"/>
+
+      <!-- Coffee mug -->
+      <ellipse cx="200" cy="237" rx="10" ry="4" fill="#1a1a1e" stroke="#333" stroke-width="0.5"/>
+      <rect x="190" y="237" width="20" height="12" fill="#1a1a1e" stroke="#333" stroke-width="0.5"/>
+
+      <!-- Door slightly ajar -->
+      <rect x="700" y="80" width="80" height="240" fill="#12121a"/>
+      <rect x="700" y="80" width="4" height="240" fill="#1a1a24"/>
+      <!-- Gap in door — darkness beyond -->
+      <rect x="704" y="80" width="12" height="240" fill="#020204"/>
+
+      <!-- THE SHADOW stretching through the door -->
+      <g opacity="0.15">
+        <polygon points="710,320 716,150 720,150 714,320" fill="#020204"/>
+        <!-- Extended shadow on floor -->
+        <polygon points="710,320 714,320 580,500 500,500" fill="rgba(2,2,4,0.3)"/>
+      </g>
+
+      <!-- Empty chair -->
+      <rect x="140" y="280" width="50" height="6" fill="#222228"/>
+      <rect x="140" y="286" width="6" height="34" fill="#1e1e24"/>
+      <rect x="184" y="286" width="6" height="34" fill="#1e1e24"/>
+      <rect x="138" y="260" width="54" height="20" fill="#222228" rx="2"/>
+    </svg>
+
+    <div class="disappear-caption">
+      Elena Vasquez hasn't been seen in 11 days.
+    </div>
+    <div class="disappear-detail">
+      COFFEE: COLD • PHONE: UNLOCKED • DOOR: AJAR • ELENA: GONE
+    </div>
+  </div>
+  <div class="panel-border"></div>
+</div>
+
+<!-- ============================================================
+     PANEL 10: THE CHILD'S DRAWING
+     ============================================================ -->
+<div class="panel panel-child" id="panel-10">
+  <div class="panel-counter">10 / 13</div>
+
+  <div style="display:flex;flex-direction:column;align-items:center;" class="reveal">
+    <div class="fridge">
+      <div class="fridge-handle"></div>
+
+      <!-- Magnets -->
+      <div class="magnet" style="top:15px;left:20px;background:#e44;"></div>
+      <div class="magnet" style="top:12px;right:40px;background:#4a4;"></div>
+      <div class="magnet" style="bottom:80px;left:30px;background:#44e;"></div>
+      <div class="magnet" style="top:50%;left:15px;background:#ea4;"></div>
+
+      <!-- The Drawing -->
+      <div class="drawing-paper">
+        <svg width="100%" height="100%" viewBox="0 0 220 280" style="position:absolute;inset:0;">
+          <!-- Child's crayon-style background -->
+          <rect width="220" height="280" fill="#fff"/>
+
+          <!-- Green ground (crayon style) -->
+          <path d="M0,230 Q30,225 60,230 Q90,235 120,228 Q150,222 180,230 Q200,234 220,228 L220,280 L0,280 Z" fill="#5a5" opacity="0.5"/>
+
+          <!-- Blue sky -->
+          <circle cx="180" cy="40" r="25" fill="#ff0" opacity="0.3"/>
+
+          <!-- Simple trees (crayon) -->
+          <rect x="30" y="120" width="8" height="110" fill="#654" opacity="0.6"/>
+          <circle cx="34" cy="110" r="20" fill="#3a3" opacity="0.4"/>
+
+          <rect x="170" y="130" width="8" height="100" fill="#654" opacity="0.6"/>
+          <circle cx="174" cy="120" r="18" fill="#3a3" opacity="0.4"/>
+
+          <!-- THE TALL MAN — child's drawing, terrifying in its simplicity -->
+          <g>
+            <!-- Body — impossibly tall stick figure -->
+            <line x1="110" y1="35" x2="110" y2="210" stroke="#111" stroke-width="4" stroke-linecap="round"/>
+            <!-- Head — no face, just an oval -->
+            <ellipse cx="110" cy="28" rx="14" ry="18" fill="none" stroke="#111" stroke-width="3"/>
+            <!-- Arms — too many, tentacle-like -->
+            <line x1="110" y1="80" x2="70" y2="120" stroke="#111" stroke-width="3" stroke-linecap="round"/>
+            <line x1="110" y1="80" x2="150" y2="125" stroke="#111" stroke-width="3" stroke-linecap="round"/>
+            <line x1="110" y1="95" x2="65" y2="145" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="110" y1="95" x2="155" y2="150" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="110" y1="110" x2="60" y2="165" stroke="#111" stroke-width="2" stroke-linecap="round"/>
+            <line x1="110" y1="110" x2="160" y2="168" stroke="#111" stroke-width="2" stroke-linecap="round"/>
+            <!-- Legs -->
+            <line x1="110" y1="210" x2="90" y2="255" stroke="#111" stroke-width="3" stroke-linecap="round"/>
+            <line x1="110" y1="210" x2="130" y2="255" stroke="#111" stroke-width="3" stroke-linecap="round"/>
+          </g>
+
+          <!-- Child's writing at top -->
+          <text x="110" y="275" text-anchor="middle" fill="#d44" font-family="Creepster, cursive" font-size="14" opacity="0.8">the tall man</text>
+        </svg>
+      </div>
+
+      <!-- Parent's hand reaching for drawing -->
+      <svg width="80" height="60" viewBox="0 0 80 60" style="position:absolute;bottom:60px;right:20px;opacity:0.4;">
+        <path d="M80,30 Q60,25 45,20 Q35,18 30,22 Q25,26 20,24 Q15,22 12,25 Q8,28 5,26" stroke="#c0b0a0" stroke-width="6" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <div class="child-caption">
+      She drew this three weeks before Jake's photo.<br>
+      Before any news coverage. Before the Reddit thread.<br>
+      Before anyone said anything.
+    </div>
+    <div class="child-question">HOW DID SHE KNOW?</div>
+  </div>
+  <div class="panel-border"></div>
+</div>
+
+<!-- ============================================================
+     PANEL 11: THE WOODS AGAIN
+     ============================================================ -->
+<div class="panel panel-woods-again" id="panel-11">
+  <div class="panel-counter">11 / 13</div>
+  <div class="fog fog-layer-1"></div>
+  <div class="fog fog-layer-2"></div>
+  <div class="fog fog-layer-3"></div>
+
+  <svg width="100%" height="100%" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;">
+    <defs>
+      <linearGradient id="redSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0a0204"/>
+        <stop offset="40%" stop-color="#120408"/>
+        <stop offset="100%" stop-color="#08020a"/>
+      </linearGradient>
+      <filter id="distort">
+        <feTurbulence type="turbulence" baseFrequency="0.01" numOctaves="2" result="turbulence"/>
+        <feDisplacementMap in="SourceGraphic" in2="turbulence" scale="5"/>
+      </filter>
+    </defs>
+
+    <rect width="1200" height="800" fill="url(#redSky)"/>
+
+    <!-- Red fog glow -->
+    <ellipse cx="600" cy="400" rx="500" ry="300" fill="rgba(139,0,0,0.06)"/>
+
+    <!-- Trees — BENT, WRONG, distorted -->
+    <g opacity="0.85">
+      <line x1="80" y1="80" x2="75" y2="800" stroke="#0c0408" stroke-width="18"/>
+      <line x1="70" y1="180" x2="35" y2="140" stroke="#0c0408" stroke-width="5"/>
+
+      <path d="M200,50 Q195,300 205,800" stroke="#0e0610" stroke-width="22" fill="none"/>
+      <line x1="190" y1="160" x2="150" y2="120" stroke="#0e0610" stroke-width="6"/>
+
+      <path d="M340,70 Q350,250 335,800" stroke="#0a040c" stroke-width="20" fill="none"/>
+      <line x1="330" y1="180" x2="290" y2="140" stroke="#0a040c" stroke-width="5"/>
+      <line x1="350" y1="230" x2="390" y2="180" stroke="#0a040c" stroke-width="5"/>
+
+      <path d="M460,100 Q455,350 470,800" stroke="#0c0610" stroke-width="16" fill="none"/>
+
+      <!-- The trees near the figure BEND TOWARD IT -->
+      <path d="M530,60 Q540,200 570,400 Q580,600 560,800" stroke="#0b050e" stroke-width="18" fill="none"/>
+      <path d="M680,50 Q670,200 640,400 Q630,600 650,800" stroke="#0b050e" stroke-width="18" fill="none"/>
+
+      <path d="M800,80 Q795,300 810,800" stroke="#0c0408" stroke-width="20" fill="none"/>
+      <line x1="790" y1="190" x2="755" y2="150" stroke="#0c0408" stroke-width="5"/>
+
+      <path d="M930,60 Q940,250 925,800" stroke="#0a040c" stroke-width="16" fill="none"/>
+
+      <path d="M1060,90 Q1055,350 1070,800" stroke="#0e0610" stroke-width="19" fill="none"/>
+      <line x1="1050" y1="200" x2="1015" y2="160" stroke="#0e0610" stroke-width="5"/>
+    </g>
+
+    <!-- THE FIGURE — CLEARLY VISIBLE NOW, IMPOSSIBLY TALL -->
+    <g opacity="0.45" class="figure-final">
+      <ellipse cx="600" cy="100" rx="18" ry="30" fill="#d8d0c8"/>
+      <rect x="590" y="130" width="20" height="400" fill="#d0c8c0" rx="8"/>
+
+      <!-- Long arms -->
+      <line x1="600" y1="200" x2="500" y2="350" stroke="#d0c8c0" stroke-width="6" stroke-linecap="round"/>
+      <line x1="600" y1="200" x2="700" y2="360" stroke="#d0c8c0" stroke-width="6" stroke-linecap="round"/>
+
+      <!-- Tentacles -->
+      <path d="M500,350 Q480,380 490,420 Q500,460 480,500" stroke="#c8c0b8" stroke-width="3" fill="none" opacity="0.6"/>
+      <path d="M500,350 Q470,370 475,400" stroke="#c8c0b8" stroke-width="2.5" fill="none" opacity="0.5"/>
+      <path d="M700,360 Q720,390 710,430 Q700,470 720,510" stroke="#c8c0b8" stroke-width="3" fill="none" opacity="0.6"/>
+      <path d="M700,360 Q730,380 725,410" stroke="#c8c0b8" stroke-width="2.5" fill="none" opacity="0.5"/>
+
+      <!-- Extra tentacle arms -->
+      <line x1="600" y1="240" x2="520" y2="400" stroke="#c8c0b8" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
+      <line x1="600" y1="240" x2="680" y2="410" stroke="#c8c0b8" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
+
+      <!-- Legs -->
+      <line x1="595" y1="530" x2="560" y2="800" stroke="#d0c8c0" stroke-width="8" stroke-linecap="round"/>
+      <line x1="605" y1="530" x2="640" y2="800" stroke="#d0c8c0" stroke-width="8" stroke-linecap="round"/>
+    </g>
+
+    <!-- Witnesses — small silhouettes at bottom -->
+    <g transform="translate(300, 650)" opacity="0.7">
+      <!-- Margot with flashlight -->
+      <ellipse cx="0" cy="0" rx="6" ry="8" fill="#1a1a20"/>
+      <rect x="-5" y="8" width="10" height="25" fill="#1a1a20" rx="2"/>
+      <!-- Flashlight beam -->
+      <polygon points="10,15 80,0 80,30" fill="rgba(255,230,150,0.04)"/>
+      <rect x="6" y="12" width="12" height="4" fill="#333" rx="1"/>
+    </g>
+
+    <g transform="translate(450, 670)" opacity="0.6">
+      <!-- Jake with camera -->
+      <ellipse cx="0" cy="0" rx="7" ry="9" fill="#1e1e24"/>
+      <rect x="-6" y="9" width="12" height="28" fill="#1e1e24" rx="2"/>
+      <rect x="8" y="10" width="10" height="8" fill="#222" rx="1"/>
+    </g>
+
+    <g transform="translate(380, 680)" opacity="0.5">
+      <!-- Officer Chen -->
+      <ellipse cx="0" cy="0" rx="6" ry="8" fill="#1a1a24"/>
+      <rect x="-5" y="8" width="10" height="25" fill="#1a1a24" rx="2"/>
+    </g>
+  </svg>
+
+  <div style="position:absolute;top:30px;left:24px;font-family:'Share Tech Mono',monospace;font-size:0.55rem;letter-spacing:3px;color:var(--red);animation:flicker 3s infinite;z-index:10;">
+    ACT IV — WEEK 9
+  </div>
+
+  <div class="woods-again-caption">
+    Week 9. They went looking for answers.<br>
+    <span style="color:var(--red);font-size:0.75rem;font-family:'Share Tech Mono',monospace;">The answers were already looking at them.</span>
+  </div>
+  <div class="panel-border"></div>
+</div>
+
+<!-- ============================================================
+     PANEL 12: THE THREE ENDINGS
+     ============================================================ -->
+<div class="panel panel-endings" id="panel-12">
+  <div class="panel-counter">12 / 13</div>
+
+  <div style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;letter-spacing:4px;color:var(--red);margin-bottom:32px;text-transform:uppercase;">
+    Three possible outcomes — Choose what you believe
+  </div>
+
+  <div class="endings-grid reveal">
+    <div class="ending-card catalogued">
+      <div class="ending-label">ENDING A</div>
+      <div class="ending-title">THE CATALOGUED</div>
+      <svg width="60" height="80" viewBox="0 0 60 80" style="margin:16px 0;opacity:0.5;">
+        <rect x="5" y="5" width="50" height="65" fill="none" stroke="#4a8" stroke-width="1" rx="2"/>
+        <line x1="15" y1="20" x2="45" y2="20" stroke="#4a8" stroke-width="0.5"/>
+        <line x1="15" y1="28" x2="45" y2="28" stroke="#4a8" stroke-width="0.5"/>
+        <line x1="15" y1="36" x2="35" y2="36" stroke="#4a8" stroke-width="0.5"/>
+        <text x="30" y="58" text-anchor="middle" fill="#4a8" font-size="6" font-family="Share Tech Mono">CLOSED</text>
+      </svg>
+      <div class="ending-desc">
+        Margot publishes her findings. The case is filed away. The photos are archived in a university database. Life goes on. The files gather digital dust.
+        <br><br>
+        <em style="color:#4a8;font-size:0.65rem;">The rational ending.</em>
+      </div>
+    </div>
+
+    <div class="ending-card believed">
+      <div class="ending-label">ENDING B</div>
+      <div class="ending-title">THE BELIEVED</div>
+      <svg width="60" height="80" viewBox="0 0 60 80" style="margin:16px 0;opacity:0.7;">
+        <ellipse cx="30" cy="15" rx="8" ry="12" fill="none" stroke="var(--red-bright)" stroke-width="1"/>
+        <line x1="30" y1="27" x2="30" y2="60" stroke="var(--red-bright)" stroke-width="1.5"/>
+        <line x1="30" y1="38" x2="15" y2="50" stroke="var(--red-bright)" stroke-width="1"/>
+        <line x1="30" y1="38" x2="45" y2="52" stroke="var(--red-bright)" stroke-width="1"/>
+        <!-- Glow -->
+        <circle cx="30" cy="40" r="25" fill="rgba(139,0,0,0.1)"/>
+      </svg>
+      <div class="ending-desc">
+        Professor Wren was right. The tulpa completes. Belief made manifest — enough people saw it, shared it, feared it. It doesn't need belief anymore.
+        <br><br>
+        <em style="color:var(--red-bright);font-size:0.65rem;">It's real now.</em>
+      </div>
+    </div>
+
+    <div class="ending-card disappeared">
+      <div class="ending-label">ENDING C</div>
+      <div class="ending-title">THE DISAPPEARED</div>
+      <svg width="60" height="80" viewBox="0 0 60 80" style="margin:16px 0;opacity:0.3;">
+        <rect x="10" y="10" width="40" height="30" fill="none" stroke="#555" stroke-width="1" rx="2"/>
+        <line x1="10" y1="10" x2="50" y2="40" stroke="#555" stroke-width="0.5"/>
+        <line x1="50" y1="10" x2="10" y2="40" stroke="#555" stroke-width="0.5"/>
+        <text x="30" y="60" text-anchor="middle" fill="#555" font-size="5" font-family="Share Tech Mono">404</text>
+        <text x="30" y="70" text-anchor="middle" fill="#444" font-size="4" font-family="Share Tech Mono">NOT FOUND</text>
+      </svg>
+      <div class="ending-desc">
+        Nothing resolves. Margot's account goes private. Jake deletes his photos. Elena is never found. The Reddit thread is archived. Only traces remain.
+        <br><br>
+        <em style="color:#666;font-size:0.65rem;">The most likely ending.</em>
+      </div>
+    </div>
+  </div>
+
+  <div class="endings-caption reveal">
+    Three endings exist. Which one activated depends on what you chose to believe.<br>
+    <span style="color:var(--red);font-size:0.7rem;font-family:'Share Tech Mono',monospace;">
+      You've already chosen. You just don't know it yet.
+    </span>
+  </div>
+  <div class="panel-border"></div>
+</div>
+
+<!-- ============================================================
+     PANEL 13: FINAL
+     ============================================================ -->
+<div class="panel panel-final" id="panel-13">
+  <div class="panel-counter" style="color:rgba(139,0,0,0.15);">13 / 13</div>
+
+  <div class="final-text reveal">
+    He was here before the story.<br><br>
+    He'll be here after you close this page.<br><br>
+    <span style="font-size:0.7rem;color:rgba(139,0,0,0.3);font-family:'Share Tech Mono',monospace;letter-spacing:3px;">
+      YOU LOOKED. THAT'S ALL IT TAKES.
+    </span>
+  </div>
+
+  <div class="final-figure">
+    <svg width="100" height="500" viewBox="0 0 100 500" fill="none">
+      <ellipse cx="50" cy="30" rx="12" ry="20" fill="rgba(232,228,220,0.08)"/>
+      <rect x="44" y="50" width="12" height="250" fill="rgba(232,228,220,0.05)" rx="5"/>
+      <line x1="50" y1="100" x2="20" y2="200" stroke="rgba(232,228,220,0.04)" stroke-width="4" stroke-linecap="round"/>
+      <line x1="50" y1="100" x2="80" y2="210" stroke="rgba(232,228,220,0.04)" stroke-width="4" stroke-linecap="round"/>
+      <path d="M20,200 Q10,230 18,260 Q25,290 15,320" stroke="rgba(232,228,220,0.03)" stroke-width="2" fill="none"/>
+      <path d="M80,210 Q90,240 82,270 Q75,300 85,330" stroke="rgba(232,228,220,0.03)" stroke-width="2" fill="none"/>
+      <path d="M25,195 Q12,225 20,255" stroke="rgba(232,228,220,0.02)" stroke-width="2" fill="none"/>
+      <path d="M75,205 Q88,235 80,265" stroke="rgba(232,228,220,0.02)" stroke-width="2" fill="none"/>
+      <line x1="44" y1="300" x2="30" y2="480" stroke="rgba(232,228,220,0.04)" stroke-width="5" stroke-linecap="round"/>
+      <line x1="56" y1="300" x2="70" y2="480" stroke="rgba(232,228,220,0.04)" stroke-width="5" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <!-- Bottom text that appears after scrolling -->
+  <div style="position:absolute;bottom:30px;font-family:'Share Tech Mono',monospace;font-size:0.5rem;letter-spacing:4px;color:rgba(139,0,0,0.15);">
+    CASE FILE 0x4F43 — STATUS: OPEN — WITNESSES: INCREASING
+  </div>
+</div>
+
+<!-- The figure that appears at screen edge after you scroll past -->
+<div class="after-scroll" id="afterScroll">
+  <svg width="60" height="300" viewBox="0 0 60 300" fill="none">
+    <ellipse cx="30" cy="20" rx="8" ry="14" fill="rgba(232,228,220,0.5)"/>
+    <rect x="26" y="34" width="8" height="160" fill="rgba(232,228,220,0.4)" rx="3"/>
+    <line x1="30" y1="60" x2="10" y2="120" stroke="rgba(232,228,220,0.3)" stroke-width="2" stroke-linecap="round"/>
+    <line x1="30" y1="60" x2="50" y2="125" stroke="rgba(232,228,220,0.3)" stroke-width="2" stroke-linecap="round"/>
+    <path d="M10,120 Q4,140 8,160" stroke="rgba(232,228,220,0.2)" stroke-width="1.5" fill="none"/>
+    <path d="M50,125 Q56,145 52,165" stroke="rgba(232,228,220,0.2)" stroke-width="1.5" fill="none"/>
+    <line x1="26" y1="194" x2="18" y2="290" stroke="rgba(232,228,220,0.3)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="34" y1="194" x2="42" y2="290" stroke="rgba(232,228,220,0.3)" stroke-width="3" stroke-linecap="round"/>
+  </svg>
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+// Intersection Observer for reveal animations
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.15 });
+
+reveals.forEach(el => observer.observe(el));
+
+// Panel counter update on scroll
+const panels = document.querySelectorAll('.panel');
+const panelObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      const num = id.replace('panel-', '');
+      document.title = `THE OCCURRENCE — Panel ${num}/13`;
+    }
+  });
+}, { threshold: 0.5 });
+
+panels.forEach(p => panelObserver.observe(p));
+
+// After-scroll figure effect
+const afterScroll = document.getElementById('afterScroll');
+const finalPanel = document.getElementById('panel-13');
+
+const finalObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting && entry.intersectionRatio > 0.8) {
+      setTimeout(() => {
+        afterScroll.classList.add('visible');
+      }, 3000);
+    }
+  });
+}, { threshold: 0.8 });
+
+finalObserver.observe(finalPanel);
+
+// Random screen flicker effect
+function randomFlicker() {
+  const body = document.body;
+  body.style.opacity = '0.85';
+  setTimeout(() => {
+    body.style.opacity = '1';
+  }, 50 + Math.random() * 100);
+  setTimeout(randomFlicker, 8000 + Math.random() * 20000);
+}
+setTimeout(randomFlicker, 5000);
+
+// Cursor changes to 'none' briefly when near the figure panels
+document.addEventListener('mousemove', (e) => {
+  const panel11 = document.getElementById('panel-11');
+  const rect = panel11.getBoundingClientRect();
+  if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
+    if (Math.random() < 0.005) {
+      document.body.style.cursor = 'none';
+      setTimeout(() => {
+        document.body.style.cursor = 'crosshair';
+      }, 500);
+    }
+  }
+});
+
+// Console warning
+console.log('%c⚠ CASE FILE 0x4F43', 'color: #8b0000; font-size: 20px; font-weight: bold;');
+console.log('%cYou opened the console. That means you\'re looking for something.', 'color: #5a5560; font-size: 12px;');
+console.log('%cStop looking.', 'color: #c0392b; font-size: 14px; font-weight: bold;');
+</script>
+
+</body>
+</html>

@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>OAHM Biomechanical Assessment</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#080808;--cyan:#00D4FF;--gold:#C9A84C;--red:#FF4444;--green:#44FF88;--yellow:#FFD644;--text:#E8E8E8;--muted:#888}
+body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100vh;overflow-x:hidden}
+h1,h2,h3{font-family:'Playfair Display',serif}
+.header{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(8,8,8,0.95);border-bottom:1px solid #222;padding:12px 20px}
+.header-inner{max-width:700px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--gold)}
+.progress-bar{display:flex;gap:4px;flex:1;margin-left:20px;max-width:300px}
+.progress-step{flex:1;height:4px;background:#222;border-radius:2px;transition:background 0.5s}
+.progress-step.done{background:var(--cyan)}
+.progress-step.active{background:var(--gold);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.container{max-width:700px;margin:0 auto;padding:70px 16px 40px}
+.camera-wrap{position:relative;width:100%;max-width:640px;margin:0 auto;border-radius:12px;overflow:hidden;background:#111;aspect-ratio:4/3}
+.camera-wrap video,.camera-wrap canvas{position:absolute;top:0;left:0;width:100%;height:100%}
+.camera-wrap video{object-fit:cover}
+#overlay{z-index:2}
+.countdown-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;font-size:6rem;font-weight:700;color:var(--cyan);text-shadow:0 0 40px rgba(0,212,255,0.5);pointer-events:none;font-family:'Playfair Display',serif}
+.flip-btn{position:absolute;top:12px;right:12px;z-index:15;background:rgba(0,0,0,0.6);border:1px solid rgba(0,212,255,0.4);color:var(--cyan);border-radius:8px;padding:8px 12px;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;cursor:pointer;backdrop-filter:blur(8px);display:flex;align-items:center;gap:6px;transition:background 0.2s,border-color 0.2s}
+.flip-btn:hover{background:rgba(0,212,255,0.15);border-color:var(--cyan)}
+.flip-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.instruction-overlay{position:absolute;top:0;left:0;right:0;bottom:0;z-index:8;background:rgba(8,8,8,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
+.instruction-overlay h2{color:var(--gold);font-size:1.4rem;margin-bottom:12px}
+.instruction-overlay p{color:var(--text);font-size:1rem;max-width:400px;line-height:1.5;margin-bottom:16px}
+.btn{background:transparent;border:2px solid var(--cyan);color:var(--cyan);padding:12px 32px;border-radius:8px;font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;cursor:pointer;transition:all 0.3s}
+.btn:hover{background:var(--cyan);color:var(--bg)}
+.btn:disabled{opacity:0.3;cursor:not-allowed}
+.btn:disabled:hover{background:transparent;color:var(--cyan)}
+.btn-gold{border-color:var(--gold);color:var(--gold)}
+.btn-gold:hover{background:var(--gold);color:var(--bg)}
+.status-badge{display:inline-block;padding:6px 16px;border-radius:20px;font-size:0.85rem;font-weight:600;margin:8px 0}
+.status-ok{background:rgba(68,255,136,0.15);color:var(--green);border:1px solid var(--green)}
+.status-warn{background:rgba(255,68,68,0.15);color:var(--red);border:1px solid var(--red)}
+.live-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.metric-card{background:#111;border:1px solid #222;border-radius:8px;padding:12px;text-align:center}
+.metric-card .label{font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.metric-card .value{font-size:1.6rem;font-weight:700;color:var(--cyan);margin-top:4px}
+.progress-timer{width:100%;height:6px;background:#222;border-radius:3px;margin-top:16px;overflow:hidden}
+.progress-timer .fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--gold));transition:width 0.3s;border-radius:3px}
+.report{margin-top:20px}
+.report-header{text-align:center;padding:30px 0;border-bottom:1px solid #222}
+.report-header h1{color:var(--gold);font-size:1.6rem;margin-bottom:4px}
+.report-header p{color:var(--muted);font-size:0.85rem}
+.section{margin-top:30px}
+.section h3{color:var(--cyan);font-size:1rem;text-transform:uppercase;letter-spacing:2px;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid #1a1a1a}
+.metric-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #111}
+.metric-row .name{font-size:0.85rem;color:var(--muted)}
+.metric-row .bar-wrap{flex:1;margin:0 16px;height:6px;background:#222;border-radius:3px;overflow:hidden}
+.metric-row .bar{height:100%;border-radius:3px;transition:width 1s ease-out}
+.metric-row .val{font-size:0.9rem;font-weight:600;min-width:60px;text-align:right}
+.color-green{color:var(--green)}.color-yellow{color:var(--yellow)}.color-red{color:var(--red)}
+.bar-green{background:var(--green)}.bar-yellow{background:var(--yellow)}.bar-red{background:var(--red)}
+.rom-table{width:100%;border-collapse:collapse;font-size:0.85rem}
+.rom-table th{text-align:left;color:var(--muted);font-weight:400;padding:8px;border-bottom:1px solid #222;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px}
+.rom-table td{padding:8px;border-bottom:1px solid #111}
+.gauges{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:10px}
+.gauge{text-align:center}
+.gauge svg{width:120px;height:80px}
+.gauge .gauge-label{font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:6px}
+.gauge .gauge-value{font-size:1.4rem;font-weight:700;color:var(--cyan)}
+.narrative{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:12px;padding:24px;margin-top:10px;line-height:1.7;font-size:0.9rem;color:#ccc}
+.narrative p{margin-bottom:12px}
+.recommendations{display:flex;flex-direction:column;gap:12px;margin-top:10px}
+.rec-card{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;padding:16px}
+.rec-card h4{color:var(--gold);font-size:0.95rem;margin-bottom:6px}
+.rec-card p{color:#aaa;font-size:0.85rem;line-height:1.5}
+.share-btn{display:block;width:100%;margin-top:30px;padding:16px;text-align:center}
+.camera-error{text-align:center;padding:60px 20px}
+.camera-error h2{color:var(--red);margin-bottom:12px}
+.camera-error p{color:var(--muted);line-height:1.6}
+.hidden{display:none!important}
+@media(max-width:500px){.camera-wrap{aspect-ratio:3/4}.gauges{grid-template-columns:1fr 1fr}.live-metrics{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="header"><div class="header-inner">
+<div class="logo">OAHM</div>
+<div class="progress-bar">
+<div class="progress-step" id="ps0"></div>
+<div class="progress-step" id="ps1"></div>
+<div class="progress-step" id="ps2"></div>
+<div class="progress-step" id="ps3"></div>
+<div class="progress-step" id="ps4"></div>
+</div>
+</div></div>
+
+<div class="container">
+<div id="camera-error" class="camera-error hidden">
+<h2>📷 Camera Access Required</h2>
+<p>This assessment needs your camera to track body movements.<br><br>
+<strong>To enable:</strong><br>
+• iOS Safari: Settings → Safari → Camera → Allow<br>
+• Android Chrome: Tap the 🔒 icon in the address bar → Permissions → Camera<br>
+• Desktop: Click the camera icon in the address bar and allow access<br><br>
+Then refresh this page.</p>
+</div>
+
+<div id="camera-section">
+<div class="camera-wrap">
+<video id="video" playsinline></video>
+<canvas id="overlay"></canvas>
+<button class="flip-btn" onclick="flipCamera()" title="Switch camera">
+  <svg viewBox="0 0 24 24"><path d="M20 7h-4l-2-3H10L8 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="13" r="3"/></svg>
+  FLIP
+</button>
+<div id="countdown-el" class="countdown-overlay hidden"></div>
+<div id="instruction-el" class="instruction-overlay hidden">
+<h2 id="inst-title"></h2>
+<p id="inst-text"></p>
+<div id="inst-status"></div>
+<button id="inst-btn" class="btn" onclick="onInstructionBtn()">Continue</button>
+</div>
+</div>
+<div id="live-metrics" class="live-metrics hidden"></div>
+<div id="timer-bar" class="progress-timer hidden"><div class="fill" id="timer-fill"></div></div>
+</div>
+
+<div id="report-section" class="report hidden"></div>
+</div>
+
+<script>
+// ─── STATE ───
+let currentStage = -1; // -1=init, 0=calib, 1=postural, 2=rom, 3=balance, 4=report
+let landmarks = null;
+let bodyDetected = false;
+let baseline = {};
+let frameBuffer = [];
+let timerInterval = null;
+let romSubTest = 0;
+let romResults = {flexL:0,flexR:0,abdL:0,abdR:0,cervL:0,cervR:0,hipShiftL:0,hipShiftR:0};
+let posturalResults = {};
+let balanceResults = {biSway:{x:0,y:0,excursions:0},leftSway:{amp:0,rescues:0},rightSway:{amp:0,rescues:0}};
+let swayBuffer = [];
+let peakAngle = 0;
+let rescueCount = 0;
+let baselineAnkleY = 0;
+let capturing = false;
+
+// ─── HELPERS ───
+function angle3(a,b,c){
+  const ba={x:a.x-b.x,y:a.y-b.y},bc={x:c.x-b.x,y:c.y-b.y};
+  const dot=ba.x*bc.x+ba.y*bc.y;
+  const mag=Math.sqrt(ba.x**2+ba.y**2)*Math.sqrt(bc.x**2+bc.y**2);
+  if(mag===0)return 0;
+  return Math.acos(Math.max(-1,Math.min(1,dot/mag)))*(180/Math.PI);
+}
+function asymmetryPct(l,r){const d=Math.abs(l-r),a=(l+r)/2;return a>0?(d/a*100):0}
+function vis(lm,i){return lm[i]&&lm[i].visibility>0.5}
+function lm(i){return landmarks[i]}
+function mid(a,b){return{x:(a.x+b.x)/2,y:(a.y+b.y)/2}}
+function stdDev(arr){if(!arr.length)return 0;const m=arr.reduce((a,b)=>a+b,0)/arr.length;return Math.sqrt(arr.reduce((a,b)=>a+(b-m)**2,0)/arr.length)}
+function statusColor(v){return v<=5?'green':v<=15?'yellow':'red'}
+function clamp(v,mn,mx){return Math.max(mn,Math.min(mx,v))}
+
+// ─── MEDIAPIPE INIT ───
+const videoEl = document.getElementById('video');
+const canvasEl = document.getElementById('overlay');
+const ctx = canvasEl.getContext('2d');
+
+const pose = new Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`});
+pose.setOptions({modelComplexity:1,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
+pose.onResults(onResults);
+
+let currentFacingMode = 'environment'; // default: back camera
+let currentStream = null;
+let poseLoopRunning = false;
+
+async function startCamera(facingMode){
+  facingMode = facingMode || currentFacingMode;
+  currentFacingMode = facingMode;
+
+  // Stop any existing stream
+  if(currentStream){
+    currentStream.getTracks().forEach(t=>t.stop());
+    currentStream = null;
+  }
+
+  const constraints = {
+    video: {
+      facingMode: {ideal: facingMode},
+      width: {ideal: 640},
+      height: {ideal: 480}
+    }
+  };
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    currentStream = stream;
+    videoEl.srcObject = stream;
+    await new Promise(res => { videoEl.onloadedmetadata = res; });
+    videoEl.play();
+    canvasEl.width = videoEl.videoWidth || 640;
+    canvasEl.height = videoEl.videoHeight || 480;
+
+    // Start pose loop if not already running
+    if(!poseLoopRunning){
+      poseLoopRunning = true;
+      (async function loop(){
+        if(!currentStream){ poseLoopRunning = false; return; }
+        await pose.send({image: videoEl});
+        requestAnimationFrame(loop);
+      })();
+    }
+  } catch(err){
+    // If back camera fails, try front
+    if(facingMode === 'environment'){
+      startCamera('user');
+    } else {
+      document.getElementById('camera-error').classList.remove('hidden');
+      document.getElementById('camera-section').classList.add('hidden');
+    }
+  }
+}
+
+async function flipCamera(){
+  const next = currentFacingMode === 'environment' ? 'user' : 'environment';
+  await startCamera(next);
+}
+
+function onResults(results){
+  if(!results.poseLandmarks)return;
+  landmarks=results.poseLandmarks;
+  drawSkeleton(results);
+  processFrame();
+}
+
+// ─── DRAWING ───
+const CONNECTIONS=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
+const KEY_POINTS=[11,12,23,24,25,26];
+
+function drawSkeleton(results){
+  canvasEl.width=canvasEl.clientWidth;
+  canvasEl.height=canvasEl.clientHeight;
+  ctx.clearRect(0,0,canvasEl.width,canvasEl.height);
+  const lms=results.poseLandmarks;
+  const w=canvasEl.width,h=canvasEl.height;
+  // connections
+  ctx.strokeStyle='#00D4FF';ctx.lineWidth=2;
+  for(const[a,b]of CONNECTIONS){
+    if(lms[a].visibility>0.3&&lms[b].visibility>0.3){
+      ctx.beginPath();ctx.moveTo(lms[a].x*w,lms[a].y*h);ctx.lineTo(lms[b].x*w,lms[b].y*h);ctx.stroke();
+    }
+  }
+  // landmarks
+  for(let i=0;i<lms.length;i++){
+    if(lms[i].visibility>0.3){
+      const isKey=KEY_POINTS.includes(i);
+      ctx.fillStyle=isKey?'#C9A84C':'#fff';
+      ctx.beginPath();ctx.arc(lms[i].x*w,lms[i].y*h,isKey?5:3,0,Math.PI*2);ctx.fill();
+    }
+  }
+}
+
+// ─── FRAME PROCESSING ───
+function processFrame(){
+  if(!landmarks)return;
+  if(currentStage===0)processCalibration();
+  else if(currentStage===1&&capturing)processPostural();
+  else if(currentStage===2&&capturing)processROM();
+  else if(currentStage===3&&capturing)processBalance();
+}
+
+function processCalibration(){
+  const hasNose=vis(landmarks,0);
+  const hasAnkles=vis(landmarks,27)&&vis(landmarks,28);
+  const hasShoulders=vis(landmarks,11)&&vis(landmarks,12);
+  bodyDetected=hasNose&&hasAnkles&&hasShoulders;
+  const st=document.getElementById('inst-status');
+  const btn=document.getElementById('inst-btn');
+  if(bodyDetected){
+    st.innerHTML='<div class="status-badge status-ok">✓ Body Detected</div>';
+    btn.disabled=false;
+  } else {
+    st.innerHTML='<div class="status-badge status-warn">Step back — full body needed</div>';
+    btn.disabled=true;
+  }
+}
+
+function processPostural(){
+  if(!vis(landmarks,11)||!vis(landmarks,12)||!vis(landmarks,23)||!vis(landmarks,24))return;
+  const sL=lm(11),sR=lm(12),hL=lm(23),hR=lm(24);
+  const shoulderAsym=Math.abs(sL.y-sR.y)*1000;
+  const hipAsym=Math.abs(hL.y-hR.y)*1000;
+  const sMid=mid(sL,sR),hMid=mid(hL,hR);
+  const nose=lm(0);
+  const headTilt=vis(landmarks,0)?Math.atan2(nose.x-sMid.x,sMid.y-nose.y)*(180/Math.PI):0;
+  const spinalLean=Math.atan2(sMid.x-hMid.x,hMid.y-sMid.y)*(180/Math.PI);
+  let kneeL=0,kneeR=0;
+  if(vis(landmarks,25)&&vis(landmarks,27))kneeL=Math.abs(180-angle3(hL,lm(25),lm(27)));
+  if(vis(landmarks,26)&&vis(landmarks,28))kneeR=Math.abs(180-angle3(hR,lm(26),lm(28)));
+  frameBuffer.push({shoulderAsym,hipAsym,headTilt,spinalLean,kneeL,kneeR});
+  // update live
+  const el=document.getElementById('live-metrics');
+  el.innerHTML=`
+    <div class="metric-card"><div class="label">Shoulder Δ</div><div class="value">${shoulderAsym.toFixed(1)}</div></div>
+    <div class="metric-card"><div class="label">Hip Δ</div><div class="value">${hipAsym.toFixed(1)}</div></div>
+    <div class="metric-card"><div class="label">Head Tilt</div><div class="value">${headTilt.toFixed(1)}°</div></div>
+    <div class="metric-card"><div class="label">Spinal Lean</div><div class="value">${spinalLean.toFixed(1)}°</div></div>
+    <div class="metric-card"><div class="label">Knee L Dev</div><div class="value">${kneeL.toFixed(1)}°</div></div>
+    <div class="metric-card"><div class="label">Knee R Dev</div><div class="value">${kneeR.toFixed(1)}°</div></div>
+  `;
+}
+
+function processROM(){
+  if(!landmarks)return;
+  let angle=0;
+  switch(romSubTest){
+    case 0: // flex L
+      if(vis(landmarks,23)&&vis(landmarks,11)&&vis(landmarks,13))
+        angle=angle3(lm(23),lm(11),lm(13));
+      break;
+    case 1: // flex R
+      if(vis(landmarks,24)&&vis(landmarks,12)&&vis(landmarks,14))
+        angle=angle3(lm(24),lm(12),lm(14));
+      break;
+    case 2: // abd L
+      if(vis(landmarks,23)&&vis(landmarks,11)&&vis(landmarks,13))
+        angle=angle3(lm(23),lm(11),lm(13));
+      break;
+    case 3: // abd R
+      if(vis(landmarks,24)&&vis(landmarks,12)&&vis(landmarks,14))
+        angle=angle3(lm(24),lm(12),lm(14));
+      break;
+    case 4: // cerv L
+      if(vis(landmarks,0)&&vis(landmarks,7)){
+        const nose=lm(0),sMid=mid(lm(11),lm(12));
+        angle=Math.abs(Math.atan2(nose.x-sMid.x,sMid.y-nose.y)*(180/Math.PI));
+      }
+      break;
+    case 5: // cerv R
+      if(vis(landmarks,0)&&vis(landmarks,8)){
+        const nose=lm(0),sMid=mid(lm(11),lm(12));
+        angle=Math.abs(Math.atan2(nose.x-sMid.x,sMid.y-nose.y)*(180/Math.PI));
+      }
+      break;
+    case 6: // hip shift L
+      if(vis(landmarks,23)&&vis(landmarks,24)&&vis(landmarks,27)&&vis(landmarks,28)){
+        const hMid=mid(lm(23),lm(24)),aMid=mid(lm(27),lm(28));
+        angle=Math.abs(hMid.x-aMid.x)*1000;
+      }
+      break;
+    case 7: // hip shift R
+      if(vis(landmarks,23)&&vis(landmarks,24)&&vis(landmarks,27)&&vis(landmarks,28)){
+        const hMid=mid(lm(23),lm(24)),aMid=mid(lm(27),lm(28));
+        angle=Math.abs(hMid.x-aMid.x)*1000;
+      }
+      break;
+  }
+  if(angle>peakAngle)peakAngle=angle;
+  const el=document.getElementById('live-metrics');
+  el.innerHTML=`<div class="metric-card"><div class="label">Current</div><div class="value">${angle.toFixed(1)}°</div></div>
+    <div class="metric-card"><div class="label">Peak</div><div class="value">${peakAngle.toFixed(1)}°</div></div>`;
+}
+
+function processBalance(){
+  if(!vis(landmarks,23)||!vis(landmarks,24))return;
+  const hMid=mid(lm(23),lm(24));
+  swayBuffer.push({x:hMid.x,y:hMid.y});
+  // check rescues for single leg
+  if(romSubTest===1&&vis(landmarks,28)){
+    if(baselineAnkleY===0)baselineAnkleY=lm(28).y;
+    else if(lm(28).y>baselineAnkleY+0.03)rescueCount++;
+  }
+  if(romSubTest===2&&vis(landmarks,27)){
+    if(baselineAnkleY===0)baselineAnkleY=lm(27).y;
+    else if(lm(27).y>baselineAnkleY+0.03)rescueCount++;
+  }
+}
+
+// ─── STAGE FLOW ───
+function setStage(s){
+  currentStage=s;
+  for(let i=0;i<5;i++){
+    const el=document.getElementById('ps'+i);
+    el.classList.remove('done','active');
+    if(i<s)el.classList.add('done');
+    else if(i===s)el.classList.add('active');
+  }
+}
+
+function showInstruction(title,text,btnText,btnEnabled){
+  const el=document.getElementById('instruction-el');
+  el.classList.remove('hidden');
+  document.getElementById('inst-title').textContent=title;
+  document.getElementById('inst-text').textContent=text;
+  document.getElementById('inst-btn').textContent=btnText||'Continue';
+  document.getElementById('inst-btn').disabled=!btnEnabled;
+  document.getElementById('inst-status').innerHTML='';
+}
+
+function hideInstruction(){document.getElementById('instruction-el').classList.add('hidden')}
+
+let instructionCallback=null;
+function onInstructionBtn(){
+  hideInstruction();
+  if(instructionCallback)instructionCallback();
+}
+
+function showCountdown(seconds,cb){
+  const el=document.getElementById('countdown-el');
+  el.classList.remove('hidden');
+  let t=seconds;
+  el.textContent=t;
+  const iv=setInterval(()=>{
+    t--;
+    if(t<=0){clearInterval(iv);el.classList.add('hidden');cb();}
+    else el.textContent=t;
+  },1000);
+}
+
+function startTimer(seconds,onTick,onDone){
+  const bar=document.getElementById('timer-bar');
+  const fill=document.getElementById('timer-fill');
+  bar.classList.remove('hidden');
+  let elapsed=0;
+  timerInterval=setInterval(()=>{
+    elapsed++;
+    fill.style.width=(elapsed/seconds*100)+'%';
+    if(onTick)onTick(elapsed);
+    if(elapsed>=seconds){
+      clearInterval(timerInterval);
+      bar.classList.add('hidden');
+      onDone();
+    }
+  },1000);
+}
+
+// ─── STAGE 0: CALIBRATION ───
+function startCalibration(){
+  setStage(0);
+  showInstruction('Calibration','Stand back so your full body is visible. Feet hip-width apart. Arms at sides.','Begin Assessment',false);
+  instructionCallback=()=>{
+    // capture baseline
+    if(landmarks){
+      const sM=mid(lm(11),lm(12)),hM=mid(lm(23),lm(24)),aM=mid(lm(27),lm(28));
+      baseline={shoulderY:sM.y,hipY:hM.y,ankleY:aM.y};
+    }
+    startPosturalScan();
+  };
+}
+
+// ─── STAGE 1: POSTURAL SCAN ───
+function startPosturalScan(){
+  setStage(1);
+  frameBuffer=[];
+  document.getElementById('live-metrics').classList.remove('hidden');
+  showInstruction('Postural Scan','Stand naturally. Relax. Don\'t adjust your posture. 10-second scan will begin.','Start Scan',true);
+  instructionCallback=()=>{
+    capturing=true;
+    showCountdown(3,()=>{
+      startTimer(10,null,()=>{
+        capturing=false;
+        // average results
+        if(frameBuffer.length>0){
+          const avg=k=>frameBuffer.reduce((a,b)=>a+b[k],0)/frameBuffer.length;
+          posturalResults={
+            shoulderAsym:avg('shoulderAsym'),
+            hipAsym:avg('hipAsym'),
+            headTilt:avg('headTilt'),
+            spinalLean:avg('spinalLean'),
+            kneeL:avg('kneeL'),
+            kneeR:avg('kneeR')
+          };
+        }
+        document.getElementById('live-metrics').classList.add('hidden');
+        startROM();
+      });
+    });
+  };
+}
+
+// ─── STAGE 2: ROM ───
+const ROM_TESTS=[
+  {name:'flexL',title:'Shoulder Flexion — LEFT',text:'Raise your LEFT arm straight forward as high as you can. Hold at the top.'},
+  {name:'flexR',title:'Shoulder Flexion — RIGHT',text:'Raise your RIGHT arm straight forward as high as you can. Hold at the top.'},
+  {name:'abdL',title:'Shoulder Abduction — LEFT',text:'Raise your LEFT arm out to the side as high as you can. Hold.'},
+  {name:'abdR',title:'Shoulder Abduction — RIGHT',text:'Raise your RIGHT arm out to the side as high as you can. Hold.'},
+  {name:'cervL',title:'Cervical Flexion — LEFT',text:'Tilt your head slowly toward your LEFT shoulder. Hold at maximum.'},
+  {name:'cervR',title:'Cervical Flexion — RIGHT',text:'Tilt your head slowly toward your RIGHT shoulder. Hold at maximum.'},
+  {name:'hipShiftL',title:'Hip Lateral Shift — LEFT',text:'Shift your weight/hips as far LEFT as you can. Hold.'},
+  {name:'hipShiftR',title:'Hip Lateral Shift — RIGHT',text:'Shift your weight/hips as far RIGHT as you can. Hold.'},
+];
+
+function startROM(){
+  setStage(2);
+  romSubTest=0;
+  document.getElementById('live-metrics').classList.remove('hidden');
+  runNextROM();
+}
+
+function runNextROM(){
+  if(romSubTest>=ROM_TESTS.length){
+    document.getElementById('live-metrics').classList.add('hidden');
+    startBalance();
+    return;
+  }
+  const t=ROM_TESTS[romSubTest];
+  peakAngle=0;
+  showInstruction(t.title,t.text,'Ready',true);
+  instructionCallback=()=>{
+    capturing=true;
+    showCountdown(3,()=>{
+      startTimer(5,null,()=>{
+        capturing=false;
+        romResults[t.name]=peakAngle;
+        romSubTest++;
+        runNextROM();
+      });
+    });
+  };
+}
+
+// ─── STAGE 3: BALANCE ───
+const BAL_TESTS=[
+  {key:'bi',title:'Bilateral Stance',text:'Stand with feet hip-width apart. Close your eyes if safe. Be as still as possible.',dur:30},
+  {key:'left',title:'Single-Leg — LEFT',text:'Lift your RIGHT foot. Balance on your LEFT foot. Hold as still as possible.',dur:10},
+  {key:'right',title:'Single-Leg — RIGHT',text:'Balance on your RIGHT foot. Hold as still as possible.',dur:10},
+];
+let balTest=0;
+
+function startBalance(){
+  setStage(3);
+  balTest=0;
+  runNextBalance();
+}
+
+function runNextBalance(){
+  if(balTest>=BAL_TESTS.length){
+    showReport();
+    return;
+  }
+  const t=BAL_TESTS[balTest];
+  swayBuffer=[];rescueCount=0;baselineAnkleY=0;
+  romSubTest=balTest; // reuse for rescue detection
+  showInstruction(t.title,t.text,'Ready',true);
+  instructionCallback=()=>{
+    capturing=true;
+    showCountdown(3,()=>{
+      startTimer(t.dur,null,()=>{
+        capturing=false;
+        // calc sway
+        const xs=swayBuffer.map(p=>p.x),ys=swayBuffer.map(p=>p.y);
+        const sx=stdDev(xs)*1800,sy=stdDev(ys)*1800;
+        const meanX=xs.reduce((a,b)=>a+b,0)/xs.length;
+        let excursions=0;
+        xs.forEach(x=>{if(Math.abs(x-meanX)>0.02)excursions++});
+        if(balTest===0)balanceResults.biSway={x:sx,y:sy,excursions};
+        else if(balTest===1)balanceResults.leftSway={amp:Math.sqrt(sx**2+sy**2),rescues:rescueCount};
+        else balanceResults.rightSway={amp:Math.sqrt(sx**2+sy**2),rescues:rescueCount};
+        balTest++;
+        runNextBalance();
+      });
+    });
+  };
+}
+
+// ─── REPORT ───
+async function showReport(){
+  setStage(4);
+  document.getElementById('camera-section').classList.add('hidden');
+  const rep=document.getElementById('report-section');
+  rep.classList.remove('hidden');
+
+  const p=posturalResults;
+  const r=romResults;
+  const b=balanceResults;
+
+  // Composite scores
+  const shoulderAsymPct=clamp(p.shoulderAsym/2,0,100);
+  const hipAsymPct=clamp(p.hipAsym/2,0,100);
+  const flexAsym=asymmetryPct(r.flexL,r.flexR);
+  const abdAsym=asymmetryPct(r.abdL,r.abdR);
+  const cervAsym=asymmetryPct(r.cervL,r.cervR);
+  const hipShiftAsym=asymmetryPct(r.hipShiftL,r.hipShiftR);
+
+  const symmetryScore=clamp(100-((shoulderAsymPct+hipAsymPct+Math.abs(p.headTilt)+Math.abs(p.spinalLean)+flexAsym+abdAsym+cervAsym+hipShiftAsym)/8),0,100);
+  const mobilityScore=clamp((r.flexL+r.flexR+r.abdL+r.abdR)/7.2 - (flexAsym+abdAsym)/10,0,100);
+  const biSwayAmp=Math.sqrt(b.biSway.x**2+b.biSway.y**2);
+  const balAsym=asymmetryPct(b.leftSway.amp||1,b.rightSway.amp||1);
+  const stabilityScore=clamp(100-biSwayAmp*2-(b.leftSway.rescues+b.rightSway.rescues)*5-balAsym/2,0,100);
+  const readinessIndex=Math.round((symmetryScore*0.3+mobilityScore*0.35+stabilityScore*0.35));
+
+  const dateStr=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+  function gaugeArc(score,color){
+    const pct=score/100;
+    const r=45,cx=60,cy=55;
+    const startAngle=Math.PI,endAngle=Math.PI+Math.PI*pct;
+    const x1=cx+r*Math.cos(startAngle),y1=cy+r*Math.sin(startAngle);
+    const x2=cx+r*Math.cos(endAngle),y2=cy+r*Math.sin(endAngle);
+    const large=pct>0.5?1:0;
+    return `<svg viewBox="0 0 120 70">
+      <path d="M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="#222" stroke-width="8" stroke-linecap="round"/>
+      <path d="M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}" fill="none" stroke="${color}" stroke-width="8" stroke-linecap="round"/>
+      <text x="${cx}" y="${cy-5}" text-anchor="middle" fill="${color}" font-size="18" font-weight="700" font-family="Space Grotesk">${Math.round(score)}</text>
+    </svg>`;
+  }
+
+  function metricBar(name,value,max){
+    const pct=clamp(value/max*100,0,100);
+    const c=statusColor(value);
+    return `<div class="metric-row"><span class="name">${name}</span><div class="bar-wrap"><div class="bar bar-${c}" style="width:${pct}%"></div></div><span class="val color-${c}">${value.toFixed(1)}</span></div>`;
+  }
+
+  rep.innerHTML=`
+    <div class="report-header">
+      <h1>BIOMECHANICAL PROFILE</h1>
+      <p>${dateStr} — OAHM Assessment Engine</p>
+      <p style="color:var(--gold);margin-top:4px;font-size:0.8rem">Prepared by OAHM Movement Intelligence System</p>
+    </div>
+
+    <div class="section">
+      <h3>A — Postural Symmetry</h3>
+      ${metricBar('Shoulder Asymmetry',shoulderAsymPct,50)}
+      ${metricBar('Hip Asymmetry',hipAsymPct,50)}
+      ${metricBar('Head Tilt',Math.abs(p.headTilt),30)}
+      ${metricBar('Spinal Lean',Math.abs(p.spinalLean),30)}
+      ${metricBar('Knee L Deviation',p.kneeL,20)}
+      ${metricBar('Knee R Deviation',p.kneeR,20)}
+    </div>
+
+    <div class="section">
+      <h3>B — Range of Motion</h3>
+      <table class="rom-table">
+        <tr><th>Test</th><th>Left</th><th>Right</th><th>Asymmetry</th><th>Status</th></tr>
+        <tr><td>Shoulder Flexion</td><td>${r.flexL.toFixed(1)}°</td><td>${r.flexR.toFixed(1)}°</td><td>${flexAsym.toFixed(1)}%</td><td class="color-${statusColor(flexAsym)}">${flexAsym<5?'✓ Good':flexAsym<15?'⚠ Monitor':'⚠ Address'}</td></tr>
+        <tr><td>Shoulder Abduction</td><td>${r.abdL.toFixed(1)}°</td><td>${r.abdR.toFixed(1)}°</td><td>${abdAsym.toFixed(1)}%</td><td class="color-${statusColor(abdAsym)}">${abdAsym<5?'✓ Good':abdAsym<15?'⚠ Monitor':'⚠ Address'}</td></tr>
+        <tr><td>Cervical Flexion</td><td>${r.cervL.toFixed(1)}°</td><td>${r.cervR.toFixed(1)}°</td><td>${cervAsym.toFixed(1)}%</td><td class="color-${statusColor(cervAsym)}">${cervAsym<5?'✓ Good':cervAsym<15?'⚠ Monitor':'⚠ Address'}</td></tr>
+        <tr><td>Hip Lateral Shift</td><td>${r.hipShiftL.toFixed(1)}</td><td>${r.hipShiftR.toFixed(1)}</td><td>${hipShiftAsym.toFixed(1)}%</td><td class="color-${statusColor(hipShiftAsym)}">${hipShiftAsym<5?'✓ Good':hipShiftAsym<15?'⚠ Monitor':'⚠ Address'}</td></tr>
+      </table>
+    </div>
+
+    <div class="section">
+      <h3>C — Perturbation Profile</h3>
+      ${metricBar('Bilateral Sway',biSwayAmp,50)}
+      ${metricBar('Left Single-Leg Sway',b.leftSway.amp,50)}
+      ${metricBar('Right Single-Leg Sway',b.rightSway.amp,50)}
+      ${metricBar('Balance Asymmetry',balAsym,50)}
+      <div class="metric-row"><span class="name">Left Rescues</span><div class="bar-wrap"></div><span class="val">${b.leftSway.rescues}</span></div>
+      <div class="metric-row"><span class="name">Right Rescues</span><div class="bar-wrap"></div><span class="val">${b.rightSway.rescues}</span></div>
+    </div>
+
+    <div class="section">
+      <h3>D — Composite Scores</h3>
+      <div class="gauges">
+        <div class="gauge">${gaugeArc(symmetryScore,'#00D4FF')}<div class="gauge-label">Symmetry</div></div>
+        <div class="gauge">${gaugeArc(mobilityScore,'#C9A84C')}<div class="gauge-label">Mobility</div></div>
+        <div class="gauge">${gaugeArc(stabilityScore,'#44FF88')}<div class="gauge-label">Stability</div></div>
+        <div class="gauge">${gaugeArc(readinessIndex,'#FFD644')}<div class="gauge-label">OAHM Readiness</div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>E — Yoby's Read</h3>
+      <div class="narrative" id="yoby-narrative"><p>Generating clinical assessment...</p></div>
+    </div>
+
+    <div class="section">
+      <h3>F — Next Steps</h3>
+      <div class="recommendations" id="recommendations"><p style="color:var(--muted)">Generating recommendations...</p></div>
+    </div>
+
+    <button class="btn btn-gold share-btn" onclick="shareResults()">📋 Copy Results to Share with Yoby</button>
+  `;
+
+  // Gemini call
+  const allMetrics={postural:posturalResults,rom:romResults,balance:balanceResults,composites:{symmetryScore:Math.round(symmetryScore),mobilityScore:Math.round(mobilityScore),stabilityScore:Math.round(stabilityScore),readinessIndex}};
+
+  try{
+    const resp=await fetch('https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({system:"You are Yoby Étienne, MS, MATcs, Exercise Scientist and founder of OAHM. Interpret biomechanical assessment data clinically and warmly. Be specific, not generic. Use the actual numbers. Return exactly 3 paragraphs for the assessment, then a separator '---', then 3 recommendations formatted as 'TITLE: explanation paragraph' separated by newlines.",user:"Generate a clinical assessment and 3 personalized recommendations for a client with these results: "+JSON.stringify(allMetrics)})
+    });
+    const data=await resp.json();
+    const text=data.text||data.response||data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    const parts=text.split('---');
+    const narrative=parts[0]||text;
+    document.getElementById('yoby-narrative').innerHTML=narrative.split('\n').filter(l=>l.trim()).map(p=>`<p>${p}</p>`).join('');
+    if(parts[1]){
+      const recs=parts[1].trim().split('\n').filter(l=>l.trim());
+      let html='';
+      for(const rec of recs){
+        const ci=rec.indexOf(':');
+        if(ci>0)html+=`<div class="rec-card"><h4>${rec.slice(0,ci).trim()}</h4><p>${rec.slice(ci+1).trim()}</p></div>`;
+        else html+=`<div class="rec-card"><p>${rec}</p></div>`;
+      }
+      if(html)document.getElementById('recommendations').innerHTML=html;
+    }
+  }catch(e){
+    document.getElementById('yoby-narrative').innerHTML='<p>Assessment narrative unavailable — please share your results with Yoby directly for interpretation.</p>';
+    // template recommendations
+    const lowest=[{s:symmetryScore,n:'Symmetry'},{s:mobilityScore,n:'Mobility'},{s:stabilityScore,n:'Stability'}].sort((a,b)=>a.s-b.s);
+    const templates={
+      Symmetry:'<div class="rec-card"><h4>Address Postural Imbalances</h4><p>Your symmetry score indicates some asymmetry patterns. Focus on unilateral corrective exercises — single-arm carries, single-leg deadlifts, and targeted stretching on the tighter side. We want to bring both sides into better alignment.</p></div>',
+      Mobility:'<div class="rec-card"><h4>Expand Your Range of Motion</h4><p>Your mobility metrics show room for improvement. Incorporate daily mobility flows focusing on shoulder CARs (controlled articular rotations), thoracic spine rotation, and hip circles. Consistency matters more than intensity here.</p></div>',
+      Stability:'<div class="rec-card"><h4>Build Your Balance Foundation</h4><p>Your stability scores suggest your proprioceptive system could use more challenge. Start with eyes-closed bilateral stance practice, progress to single-leg holds, then add perturbation training with gentle nudges or unstable surfaces.</p></div>'
+    };
+    document.getElementById('recommendations').innerHTML=lowest.map(l=>templates[l.n]).join('');
+  }
+
+  // share function
+  window.shareResults=function(){
+    const txt=`OAHM BIOMECHANICAL PROFILE — ${dateStr}
+
+POSTURAL SYMMETRY:
+• Shoulder Asymmetry: ${shoulderAsymPct.toFixed(1)}
+• Hip Asymmetry: ${hipAsymPct.toFixed(1)}
+• Head Tilt: ${p.headTilt.toFixed(1)}°
+• Spinal Lean: ${p.spinalLean.toFixed(1)}°
+
+RANGE OF MOTION:
+• Shoulder Flexion: L ${r.flexL.toFixed(1)}° / R ${r.flexR.toFixed(1)}° (${flexAsym.toFixed(1)}% asym)
+• Shoulder Abduction: L ${r.abdL.toFixed(1)}° / R ${r.abdR.toFixed(1)}° (${abdAsym.toFixed(1)}% asym)
+• Cervical Flexion: L ${r.cervL.toFixed(1)}° / R ${r.cervR.toFixed(1)}° (${cervAsym.toFixed(1)}% asym)
+• Hip Shift: L ${r.hipShiftL.toFixed(1)} / R ${r.hipShiftR.toFixed(1)} (${hipShiftAsym.toFixed(1)}% asym)
+
+BALANCE:
+• Bilateral Sway: ${biSwayAmp.toFixed(1)}mm
+• Left Single-Leg: ${b.leftSway.amp.toFixed(1)}mm (${b.leftSway.rescues} rescues)
+• Right Single-Leg: ${b.rightSway.amp.toFixed(1)}mm (${b.rightSway.rescues} rescues)
+
+COMPOSITE SCORES:
+• Symmetry: ${Math.round(symmetryScore)}/100
+• Mobility: ${Math.round(mobilityScore)}/100
+• Stability: ${Math.round(stabilityScore)}/100
+• OAHM Readiness Index: ${readinessIndex}/100
+
+— Generated by OAHM Assessment Engine (oahm.io)`;
+    navigator.clipboard.writeText(txt).then(()=>{
+      const btn=document.querySelector('.share-btn');
+      btn.textContent='✓ Copied!';
+      setTimeout(()=>btn.textContent='📋 Copy Results to Share with Yoby',2000);
+    });
+  };
+}
+
+// ─── INIT ───
+startCamera();
+setTimeout(startCalibration,1500);
+</script>
+</body>
+</html>

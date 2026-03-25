@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fashion Forge — Intelligence Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ink:#08080f;--card:#0f0f1e;--card2:#161626;--border:rgba(255,255,255,0.07);
+  --brass:#c9a84c;--brass2:#e8c97a;--fire:#e94560;--teal:#16a596;
+  --violet:#7c3aed;--sky:#2980b9;--pine:#27ae60;
+  --white:#f0eeff;--muted:#6a6a8e;--cloud:#b0b0c8;
+  --serif:'Instrument Serif',Georgia,serif;
+  --sans:'DM Sans',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--cloud);font-family:var(--sans);overflow-x:hidden}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");opacity:.5}
+
+nav{position:sticky;top:0;z-index:100;background:rgba(8,8,15,0.95);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(201,168,76,0.15);padding:0 2rem;height:60px;
+  display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--serif);font-size:1.2rem;color:var(--white);display:flex;align-items:center;gap:.6rem}
+.logo-mark{width:30px;height:30px;background:linear-gradient(135deg,var(--brass),var(--brass2));
+  border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.9rem}
+.logo em{color:var(--brass);font-style:italic}
+.nav-right{display:flex;align-items:center;gap:12px;font-size:.72rem}
+.live-dot{width:6px;height:6px;background:var(--teal);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.hero{padding:3rem 2rem 2rem;text-align:center;max-width:900px;margin:0 auto}
+.eyebrow{display:inline-flex;align-items:center;gap:.5rem;padding:.3rem .9rem;
+  border:1px solid rgba(201,168,76,0.3);border-radius:100px;font-size:.68rem;font-weight:500;
+  color:var(--brass);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1.2rem}
+.hero h1{font-family:var(--serif);font-size:clamp(2rem,5vw,3.5rem);color:var(--white);line-height:1.1;margin-bottom:.75rem}
+.hero h1 em{font-style:italic;color:var(--brass)}
+.hero-sub{color:var(--muted);font-size:.9rem;max-width:600px;margin:0 auto}
+
+.dash{max-width:1400px;margin:0 auto;padding:0 1.5rem 3rem;display:flex;flex-direction:column;gap:20px}
+
+/* CRISIS ROW */
+.stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+@media(max-width:900px){.stat-row{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.stat-row{grid-template-columns:1fr 1fr}}
+.crisis-stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;position:relative;overflow:hidden}
+.crisis-stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.cs-red::before{background:var(--fire)}
+.cs-gold::before{background:var(--brass)}
+.cs-teal::before{background:var(--teal)}
+.crisis-num{font-family:var(--mono);font-size:1.6rem;font-weight:700;margin-bottom:4px}
+.cs-red .crisis-num{color:var(--fire)}
+.cs-gold .crisis-num{color:var(--brass)}
+.cs-teal .crisis-num{color:var(--teal)}
+.crisis-label{font-size:.68rem;color:var(--muted);line-height:1.4}
+
+/* GRID LAYOUTS */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.grid-12{display:grid;grid-template-columns:1fr 2fr;gap:20px}
+.grid-21{display:grid;grid-template-columns:2fr 1fr;gap:20px}
+@media(max-width:900px){.grid-2,.grid-3,.grid-12,.grid-21{grid-template-columns:1fr}}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:.82rem;font-weight:600;color:var(--white);display:flex;align-items:center;gap:.5rem}
+.card-sub{font-size:.68rem;color:var(--muted)}
+.card-body{padding:20px}
+
+/* SECTION LABEL */
+.section-label{font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--brass);display:flex;align-items:center;gap:.4rem;margin-bottom:16px}
+.section-label::before{content:'';width:14px;height:1px;background:var(--brass)}
+
+/* AUREA RADAR */
+.radar-wrap{display:flex;flex-direction:column;align-items:center;gap:16px}
+.radar-legend{display:flex;gap:16px;font-size:.7rem}
+.legend-item{display:flex;align-items:center;gap:.4rem}
+.legend-dot{width:8px;height:8px;border-radius:50%}
+
+/* FUND BARS */
+.fund-list{display:flex;flex-direction:column;gap:10px}
+.fund-row{display:flex;flex-direction:column;gap:4px}
+.fund-top{display:flex;justify-content:space-between;align-items:center;font-size:.75rem}
+.fund-name{color:var(--white);font-weight:500}
+.fund-scores{display:flex;gap:8px}
+.fund-v1{color:var(--muted);font-family:var(--mono)}
+.fund-v2{color:var(--brass);font-family:var(--mono);font-weight:600}
+.fund-bar-bg{height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden}
+.fund-bar-fill{height:100%;border-radius:3px;transition:width 1.2s ease}
+.fund-delta{font-size:.6rem;border-radius:3px;padding:1px 4px;font-family:var(--mono)}
+.delta-pos{background:rgba(39,174,96,0.15);color:#4ade80}
+.delta-neg{background:rgba(233,69,96,0.12);color:var(--fire)}
+.delta-flat{background:rgba(255,255,255,0.06);color:var(--muted)}
+
+/* SAVESUCCESS */
+.ss-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.ss-item{border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.ss-top{display:flex;justify-content:space-between;margin-bottom:6px}
+.ss-pillar{font-size:.72rem;font-weight:600;color:var(--white)}
+.ss-score{font-size:.72rem;font-family:var(--mono);color:var(--brass)}
+.ss-bar-bg{height:3px;background:rgba(255,255,255,0.06);border-radius:2px}
+.ss-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--brass),var(--brass2))}
+.ss-evidence{font-size:.63rem;color:var(--muted);margin-top:5px;line-height:1.4}
+
+/* FINANCIAL */
+.fin-chart{display:flex;align-items:flex-end;gap:20px;padding:16px 0;height:200px;border-bottom:1px solid var(--border)}
+.fin-group{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.fin-bars{display:flex;align-items:flex-end;gap:3px;height:160px}
+.fin-bar{border-radius:4px 4px 0 0;width:22px;transition:height 1.4s ease;min-height:2px;position:relative}
+.fin-bar:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:#1a1a2e;border:1px solid var(--border);padding:4px 8px;border-radius:5px;font-size:.65rem;white-space:nowrap;color:var(--white);pointer-events:none;z-index:10}
+.bar-rev{background:linear-gradient(180deg,var(--brass),#8a6a1e)}
+.bar-gp{background:linear-gradient(180deg,var(--teal),#0e6b60)}
+.bar-ni{background:linear-gradient(180deg,var(--pine),#1a5c2a)}
+.fin-year{font-size:.7rem;color:var(--muted);font-weight:600}
+.fin-legend{display:flex;gap:12px;padding:10px 0;font-size:.68rem}
+.fin-leg-item{display:flex;align-items:center;gap:.3rem}
+.fin-leg-dot{width:8px;height:8px;border-radius:2px}
+
+/* SERVICE LINES */
+.svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.svc-card{border:1px solid var(--border);border-radius:9px;padding:12px;background:rgba(255,255,255,0.02);position:relative;overflow:hidden}
+.svc-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px}
+.svc-domain-1::before{background:var(--brass)}
+.svc-domain-2::before{background:var(--teal)}
+.svc-domain-3::before{background:var(--fire)}
+.svc-domain-4::before{background:var(--violet)}
+.svc-domain-5::before{background:var(--sky)}
+.svc-num{font-size:.62rem;color:var(--muted);font-family:var(--mono);margin-bottom:4px}
+.svc-name{font-size:.8rem;font-weight:600;color:var(--white);margin-bottom:6px}
+.svc-rev{font-size:.68rem;color:var(--muted);margin-bottom:6px}
+.svc-ai-bar{height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-bottom:4px}
+.svc-ai-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--fire),#ff6b8a)}
+.svc-ai-label{font-size:.62rem;color:var(--muted);font-family:var(--mono)}
+
+/* ROADMAP */
+.roadmap{display:flex;flex-direction:column;gap:0}
+.wave{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);position:relative}
+.wave:last-child{border-bottom:none}
+.wave-num{width:36px;height:36px;border-radius:50%;border:2px solid var(--brass);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.8rem;color:var(--brass);flex-shrink:0;margin-top:2px}
+.wave-content{flex:1}
+.wave-title{font-size:.82rem;font-weight:600;color:var(--white);margin-bottom:3px}
+.wave-time{font-size:.68rem;color:var(--brass);font-family:var(--mono);margin-bottom:5px}
+.wave-items{font-size:.72rem;color:var(--muted);line-height:1.6}
+
+/* CLAWD PLAN */
+.clawd-plan{display:flex;flex-direction:column;gap:12px}
+.plan-step{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;gap:14px}
+.plan-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.plan-icon.brass{background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.2)}
+.plan-icon.fire{background:rgba(233,69,96,0.12);border:1px solid rgba(233,69,96,0.2)}
+.plan-icon.teal{background:rgba(22,165,150,0.12);border:1px solid rgba(22,165,150,0.2)}
+.plan-icon.violet{background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.2)}
+.plan-body{flex:1}
+.plan-title{font-size:.8rem;font-weight:600;color:var(--white);margin-bottom:4px}
+.plan-desc{font-size:.73rem;color:var(--muted);line-height:1.6}
+.plan-tag{display:inline-block;font-size:.62rem;font-family:var(--mono);padding:.15rem .45rem;border-radius:3px;margin-top:5px}
+.tag-wave{background:rgba(201,168,76,0.1);color:var(--brass);border:1px solid rgba(201,168,76,0.2)}
+.tag-api{background:rgba(22,165,150,0.1);color:var(--teal);border:1px solid rgba(22,165,150,0.2)}
+.tag-ai{background:rgba(233,69,96,0.1);color:var(--fire);border:1px solid rgba(233,69,96,0.2)}
+
+/* FLOW DIAGRAM */
+.flow{display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:12px 0}
+.flow-node{padding:.35rem .75rem;border-radius:6px;font-size:.72rem;font-weight:500}
+.fn-user{background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.25);color:var(--brass)}
+.fn-whatsapp{background:rgba(39,174,96,0.12);border:1px solid rgba(39,174,96,0.25);color:#4ade80}
+.fn-ai{background:rgba(233,69,96,0.12);border:1px solid rgba(233,69,96,0.25);color:var(--fire)}
+.fn-forge{background:rgba(22,165,150,0.12);border:1px solid rgba(22,165,150,0.25);color:var(--teal)}
+.fn-human{background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);color:#a78bfa}
+.flow-arrow{color:var(--muted);font-size:.8rem}
+
+/* COMPOSITE */
+.composite-row{display:flex;gap:16px;margin-top:12px}
+.composite-card{flex:1;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center}
+.composite-num{font-family:var(--mono);font-size:1.4rem;font-weight:700;color:var(--brass)}
+.composite-label{font-size:.65rem;color:var(--muted);margin-top:3px}
+.composite-change{font-size:.65rem;color:#4ade80;margin-top:2px}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">
+    <div class="logo-mark">⚒</div>
+    <span>Fashion <em>Forge</em> Dashboard</span>
+  </div>
+  <div class="nav-right">
+    <div class="live-dot"></div>
+    <span style="color:var(--teal)">AUREA Intelligence Active</span>
+    <a href="fashion-forge.html" style="color:var(--brass);text-decoration:none;padding:.3rem .7rem;border:1px solid rgba(201,168,76,0.3);border-radius:5px">⚒ Open Forge →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="eyebrow"><span class="live-dot"></span> Vanderbilt × 2JS Group × Inkwell</div>
+  <h1>Fashion Forge<br><em>Market Intelligence</em></h1>
+  <p class="hero-sub">Where Artiquity meets Enginuity — AI-augmented pattern-making infrastructure for a $395B industry with 2,670 practitioners remaining</p>
+</div>
+
+<div class="dash">
+
+  <!-- CRISIS STATS -->
+  <div class="stat-row">
+    <div class="crisis-stat cs-red">
+      <div class="crisis-num">2,670</div>
+      <div class="crisis-label">US Pattern Makers Remaining<br>↓ 85% since 1979</div>
+    </div>
+    <div class="crisis-stat cs-red">
+      <div class="crisis-num">60%</div>
+      <div class="crisis-label">Pattern Makers Over Age 40<br>Avg age 44 yrs</div>
+    </div>
+    <div class="crisis-stat cs-gold">
+      <div class="crisis-num">$395B</div>
+      <div class="crisis-label">US Apparel Market<br>98% imported</div>
+    </div>
+    <div class="crisis-stat cs-gold">
+      <div class="crisis-num">40.4%</div>
+      <div class="crisis-label">AI Fashion CAGR<br>$1.26B → $1.77B in 2025</div>
+    </div>
+    <div class="crisis-stat cs-teal">
+      <div class="crisis-num">$8-12B</div>
+      <div class="crisis-label">US Product Dev Services TAM<br>No platform owns full stack</div>
+    </div>
+  </div>
+
+  <!-- AUREA + SAVESUCCESS -->
+  <div class="grid-2">
+
+    <!-- AUREA FUNDAMENTALS -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">◈ AUREA Trinity Fundamentals</div>
+          <div class="card-sub">V1 Staffing Model vs V2 AI-Empowered · LA Emerging Designers beachhead</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="fund-list" id="fundList"></div>
+        <div class="composite-row" id="compositeRow"></div>
+      </div>
+    </div>
+
+    <!-- SAVESUCCESS -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">★ SAVESUCCESS Validation</div>
+          <div class="card-sub">AI-Empowered Fashion Forge V2 · All pillars ≥ 0.50 ✓</div>
+        </div>
+        <div style="font-family:var(--mono);font-size:1.1rem;color:var(--brass)">0.84</div>
+      </div>
+      <div class="card-body">
+        <div class="ss-grid" id="ssGrid"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FINANCIAL MODEL -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">$ Three-Year Financial Model</div>
+      <div class="card-sub">AI leverage effect: same team headcount, 3–4x output by Year 3</div>
+    </div>
+    <div class="card-body">
+      <div class="fin-chart" id="finChart"></div>
+      <div class="fin-legend">
+        <div class="fin-leg-item"><div class="fin-leg-dot" style="background:var(--brass)"></div><span>Revenue</span></div>
+        <div class="fin-leg-item"><div class="fin-leg-dot" style="background:var(--teal)"></div><span>Gross Profit</span></div>
+        <div class="fin-leg-item"><div class="fin-leg-dot" style="background:var(--pine)"></div><span>Net Income</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px">
+        <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-family:var(--mono);font-size:1.1rem;color:var(--brass)">$25K–$40K</div>
+          <div style="font-size:.65rem;color:var(--muted);margin-top:3px">V1 Seed Capital<br>(Staffing Model)</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-family:var(--mono);font-size:1.1rem;color:var(--brass)">$300K–$460K</div>
+          <div style="font-size:.65rem;color:var(--muted);margin-top:3px">V2 Seed Capital<br>(AI Platform)</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-family:var(--mono);font-size:1.1rem;color:var(--teal)">21.6×</div>
+          <div style="font-size:.65rem;color:var(--muted);margin-top:3px">LTV:COCA Ratio<br>(Beachhead)</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-family:var(--mono);font-size:1.1rem;color:var(--pine)">55%→65%</div>
+          <div style="font-size:.65rem;color:var(--muted);margin-top:3px">Gross Margin<br>Year 1 → Year 3</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 17 SERVICE LINES -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">17 Service Lines — AI Automation Coverage</div>
+      <div class="card-sub">Bar shows % automatable with current AI · Human validation required for remainder</div>
+    </div>
+    <div class="card-body">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;font-size:.68rem">
+        <span style="display:flex;align-items:center;gap:.3rem"><span style="width:10px;height:10px;background:var(--brass);border-radius:2px"></span>Creative Intel</span>
+        <span style="display:flex;align-items:center;gap:.3rem"><span style="width:10px;height:10px;background:var(--teal);border-radius:2px"></span>Development Intel</span>
+        <span style="display:flex;align-items:center;gap:.3rem"><span style="width:10px;height:10px;background:var(--fire);border-radius:2px"></span>Pattern Intel</span>
+        <span style="display:flex;align-items:center;gap:.3rem"><span style="width:10px;height:10px;background:var(--violet);border-radius:2px"></span>Production Intel</span>
+        <span style="display:flex;align-items:center;gap:.3rem"><span style="width:10px;height:10px;background:var(--sky);border-radius:2px"></span>Sourcing &amp; Fit</span>
+      </div>
+      <div class="svc-grid" id="svcGrid"></div>
+    </div>
+  </div>
+
+  <!-- ROADMAP + CLAWD BOT PLAN -->
+  <div class="grid-21">
+
+    <!-- 5-WAVE ROADMAP -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🌊 5-Wave Phased Rollout — 18 Months</div>
+        <div class="card-sub">$300K–$460K capital deployed across 5 waves</div>
+      </div>
+      <div class="card-body">
+        <div class="roadmap" id="roadmap"></div>
+      </div>
+    </div>
+
+    <!-- CLAWD BOT CTA -->
+    <div class="card" style="background:linear-gradient(135deg,rgba(201,168,76,0.06),rgba(8,8,15,1))">
+      <div class="card-header">
+        <div class="card-title">💬 Clawd Trade Integration</div>
+        <div class="card-sub">FashionBot as the WhatsApp product interface</div>
+      </div>
+      <div class="card-body">
+        <div style="font-size:.78rem;color:var(--cloud);line-height:1.65;margin-bottom:14px">
+          Fashion Forge's 17 service lines delivered through a single WhatsApp number. 
+          Designers describe what they need in plain language or voice notes. 
+          The bot routes to AI agents, pattern makers, or sourcing — and returns deliverables.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+          <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:7px;padding:10px 12px;font-size:.73rem">
+            <div style="color:var(--muted);margin-bottom:3px;font-size:.63rem">Designer sends:</div>
+            <div style="color:var(--white)">"Need a tech pack for a double-breasted wool blazer, XS–XL, for Nordstrom"</div>
+          </div>
+          <div style="text-align:center;color:var(--muted);font-size:.68rem">↓ FashionBot routes to Forge API</div>
+          <div style="background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:7px;padding:10px 12px;font-size:.73rem">
+            <div style="color:var(--brass);margin-bottom:3px;font-size:.63rem">FashionBot returns:</div>
+            <div style="color:var(--cloud)">Tech pack generated. 14 measurements, full BOM, stitching specs. Assigned to Maya (Pattern Maker, LA). Est. validation 48h. Download: [link]</div>
+          </div>
+        </div>
+        <a href="fashion-forge-clawd-plan.html" style="display:block;text-align:center;padding:.65rem;background:linear-gradient(135deg,var(--brass),var(--brass2));color:#000;font-weight:700;font-size:.82rem;border-radius:8px;text-decoration:none;transition:all .3s">View Build Plan →</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ARTIQUITY PRINCIPLE -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">◈ Artiquity Principle — Human Validation Chain</div>
+      <div class="card-sub">Every output carries the name of the expert who validated it</div>
+    </div>
+    <div class="card-body">
+      <div class="flow" id="artiquityFlow"></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px">
+        <div style="text-align:center;padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:1.4rem;margin-bottom:6px">⚡</div>
+          <div style="font-size:.72rem;color:var(--white);font-weight:600;margin-bottom:3px">AI Generation</div>
+          <div style="font-size:.65rem;color:var(--muted)">60–80% of workflow automated in seconds</div>
+        </div>
+        <div style="text-align:center;padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:1.4rem;margin-bottom:6px">✂️</div>
+          <div style="font-size:.72rem;color:var(--white);font-weight:600;margin-bottom:3px">Pattern Maker</div>
+          <div style="font-size:.65rem;color:var(--muted)">Master validates fit, ease, drape — tacit knowledge closure</div>
+        </div>
+        <div style="text-align:center;padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:1.4rem;margin-bottom:6px">📐</div>
+          <div style="font-size:.72rem;color:var(--white);font-weight:600;margin-bottom:3px">Technical Designer</div>
+          <div style="font-size:.65rem;color:var(--muted)">Construction accuracy, factory compatibility verified</div>
+        </div>
+        <div style="text-align:center;padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:1.4rem;margin-bottom:6px">👗</div>
+          <div style="font-size:.72rem;color:var(--white);font-weight:600;margin-bottom:3px">Fit Validation</div>
+          <div style="font-size:.65rem;color:var(--muted)">Live fitting confirms body interaction, movement, drape</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+
+const AUREA = [
+  {name:'Synchronicity', v1:.92, v2:.95, desc:'AI fashion 40.4% CAGR + reshoring crisis + policy tailwinds'},
+  {name:'Felicity',      v1:.68, v2:.78, desc:'AI eliminates tedious tasks, preserves creative joy'},
+  {name:'Authenticity',  v1:.88, v2:.85, desc:'AI-as-augmentation positioning; Artiquity Principle mitigates risk'},
+  {name:'Propensity',    v1:.82, v2:.88, desc:'Full-suite reduces friction vs. stitching 4–6 vendors'},
+  {name:'Fragility',     v1:.61, v2:.55, desc:'Multi-service switching costs reduce churn risk'},
+  {name:'Serendipity',   v1:.71, v2:.76, desc:'AI visual outputs shareable; drives organic discovery'},
+  {name:'Familiarity',   v1:.76, v2:.72, desc:'17 service lines requires stronger onboarding'},
+  {name:'Nostalgia',     v1:.85, v2:.80, desc:'Position AI as apprentice, craft master as primary'},
+];
+
+const COMPOSITES = [
+  {label:'Overall Resonance',    v1:.80, v2:.82, arrow:'↑'},
+  {label:'Engagement Prediction',v1:.67, v2:.75, arrow:'↑'},
+  {label:'Monetization Potential',v1:.75, v2:.78, arrow:'↑'},
+];
+
+const SS = [
+  {pillar:'Serendipity', score:.76, evidence:'AI visual outputs viral; concentrated LA referral network'},
+  {pillar:'Artiquity',   score:.85, evidence:'Human validation layer; apprenticeship; Bill of Rights'},
+  {pillar:'Vitality',    score:.95, evidence:'AI fashion 40.4% CAGR; reshoring urgency accelerating'},
+  {pillar:'Enginuity',   score:.88, evidence:'17 AI agents; Trinity Graph; brand-specific model training'},
+  {pillar:'Synchronicity',score:.93,evidence:'AI maturity + reshoring policy + workforce crisis convergence'},
+  {pillar:'Ubiquity',    score:.72, evidence:'Digital-first scale; SaaS licensing; physical services LA-constrained'},
+  {pillar:'Clarity',     score:.75, evidence:'17 lines → 5 domains; land-and-expand motion; "Start with tech pack"'},
+  {pillar:'Certainty',   score:.78, evidence:'BLS + VC benchmarks + AI capability data; pre-launch validation plan'},
+  {pillar:'Ethics',      score:.88, evidence:'Bill of Rights; AI augmentation not replacement; knowledge preservation'},
+  {pillar:'Sagacity',    score:.85, evidence:'Honest about automation limits (25% draping); deep market understanding'},
+];
+
+const FIN = [
+  {year:'Year 1', rev:700, gp:385, ni:70, label:'$700K'},
+  {year:'Year 2', rev:2300, gp:1380, ni:600, label:'$2.3M'},
+  {year:'Year 3', rev:4400, gp:2860, ni:1600, label:'$4.4M'},
+];
+const FIN_MAX = 4400;
+
+const SVCS = [
+  {n:1,name:'Collection Concept',domain:1,ai:70,rev:'$2.5K–$8K'},
+  {n:2,name:'Designing',domain:1,ai:65,rev:'$3K–$12K'},
+  {n:3,name:'Artistic Renderings',domain:1,ai:80,rev:'$1.5K–$5K'},
+  {n:4,name:'Technical Sketching',domain:1,ai:75,rev:'$2K–$6K'},
+  {n:5,name:'Design Development',domain:2,ai:60,rev:'$3K–$15K'},
+  {n:6,name:'Tech Packs',domain:2,ai:85,rev:'$500–$2.5K/style'},
+  {n:7,name:'Trademark Renderings',domain:2,ai:70,rev:'$1K–$4K'},
+  {n:8,name:'1st Pattern',domain:3,ai:55,rev:'$300–$1.2K/style'},
+  {n:9,name:'Production Pattern',domain:3,ai:60,rev:'$400–$1.5K/style'},
+  {n:10,name:'Draping',domain:3,ai:25,rev:'$500–$2K/style'},
+  {n:11,name:'Sample Sewing',domain:4,ai:30,rev:'$200–$800/sample'},
+  {n:12,name:'Duplicates',domain:4,ai:40,rev:'$150–$500/dup'},
+  {n:13,name:'Production Sampling',domain:4,ai:45,rev:'$500–$2K/style'},
+  {n:14,name:'Cutting Services',domain:4,ai:75,rev:'$0.50–$2/unit'},
+  {n:15,name:'Sourcing',domain:5,ai:70,rev:'8–15% commission'},
+  {n:16,name:'Fittings',domain:5,ai:35,rev:'$200–$500/session'},
+  {n:17,name:'Fit Model Referrals',domain:5,ai:60,rev:'$100–$300/booking'},
+];
+
+const WAVES = [
+  {n:1,title:'Core Intelligence',time:'Months 1–4',items:'Tech Packs (85% AI) · Technical Sketching · 1st Pattern · Renderings · Concept. Highest automation = fastest path to revenue.',capital:'AI agent dev + 2 expert hires'},
+  {n:2,title:'Development Stack',time:'Months 4–8',items:'Design Development · Designing · Production Pattern · Trademark Renderings. Builds on Wave 1 data — tech packs feed patterns feed production specs.',capital:'Studio build-out + additional hire'},
+  {n:3,title:'Production Bridge',time:'Months 8–12',items:'Sample Sewing (partner network) · Draping · Sourcing. Requires physical infrastructure and supplier relationships.',capital:'Partner dev + sourcing database'},
+  {n:4,title:'Full Suite',time:'Months 12–16',items:'Duplicates · Production Sampling · Cutting · Fittings · Fit Model Referrals. All 17 service lines operational. Apprenticeship launch.',capital:'Operational scaling'},
+  {n:5,title:'Platform Layer',time:'Months 16–18+',items:'SaaS licensing of AI agents to other studios. $99–$499/mo self-serve. Enterprise $2K–$5K/mo. Knowledge commerce launch.',capital:'Platform productization + GTM'},
+];
+
+const FLOW = [
+  {label:'Designer',cls:'fn-user'},
+  {label:'→',cls:'flow-arrow'},
+  {label:'WhatsApp',cls:'fn-whatsapp'},
+  {label:'→',cls:'flow-arrow'},
+  {label:'FashionBot',cls:'fn-ai'},
+  {label:'→',cls:'flow-arrow'},
+  {label:'Forge API',cls:'fn-forge'},
+  {label:'→',cls:'flow-arrow'},
+  {label:'AI Agents',cls:'fn-ai'},
+  {label:'+',cls:'flow-arrow'},
+  {label:'Master Pattern Maker',cls:'fn-human'},
+  {label:'→',cls:'flow-arrow'},
+  {label:'Deliverable → WhatsApp',cls:'fn-whatsapp'},
+];
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+
+function renderAUREA() {
+  const el = document.getElementById('fundList');
+  el.innerHTML = AUREA.map(f => {
+    const delta = (f.v2 - f.v1);
+    const deltaStr = delta > 0.005 ? `+${(delta*100).toFixed(0)}` : delta < -0.005 ? `${(delta*100).toFixed(0)}` : '=';
+    const deltaCls = delta > 0.005 ? 'delta-pos' : delta < -0.005 ? 'delta-neg' : 'delta-flat';
+    const barColor = delta > 0.005 ? 'var(--pine)' : delta < -0.005 ? 'var(--fire)' : 'var(--brass)';
+    return `<div class="fund-row">
+      <div class="fund-top">
+        <span class="fund-name">${f.name}</span>
+        <div class="fund-scores">
+          <span class="fund-v1">V1 ${f.v1.toFixed(2)}</span>
+          <span class="fund-v2">V2 ${f.v2.toFixed(2)}</span>
+          <span class="fund-delta ${deltaCls}">${deltaStr}</span>
+        </div>
+      </div>
+      <div class="fund-bar-bg">
+        <div class="fund-bar-fill" style="width:${f.v2*100}%;background:${barColor}" data-w="${f.v2*100}"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const cr = document.getElementById('compositeRow');
+  cr.innerHTML = COMPOSITES.map(c => `
+    <div class="composite-card">
+      <div class="composite-num">${c.v2.toFixed(2)}</div>
+      <div class="composite-label">${c.label}</div>
+      <div class="composite-change">${c.arrow} from ${c.v1.toFixed(2)}</div>
+    </div>`).join('');
+}
+
+function renderSS() {
+  document.getElementById('ssGrid').innerHTML = SS.map(s => {
+    const color = s.score >= .85 ? 'var(--pine)' : s.score >= .75 ? 'var(--brass)' : s.score >= .65 ? 'var(--teal)' : 'var(--fire)';
+    return `<div class="ss-item">
+      <div class="ss-top">
+        <div class="ss-pillar">${s.pillar}</div>
+        <div class="ss-score" style="color:${color}">${s.score.toFixed(2)}</div>
+      </div>
+      <div class="ss-bar-bg"><div class="ss-bar-fill" style="width:${s.score*100}%;background:${color}"></div></div>
+      <div class="ss-evidence">${s.evidence}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderFin() {
+  const maxH = 160;
+  document.getElementById('finChart').innerHTML = FIN.map(f => {
+    const rH = Math.round((f.rev / FIN_MAX) * maxH);
+    const gH = Math.round((f.gp / FIN_MAX) * maxH);
+    const nH = Math.round((f.ni / FIN_MAX) * maxH);
+    return `<div class="fin-group">
+      <div class="fin-bars">
+        <div class="fin-bar bar-rev" style="height:${rH}px" data-tip="Revenue $${(f.rev/1000).toFixed(1)}M"></div>
+        <div class="fin-bar bar-gp" style="height:${gH}px" data-tip="Gross Profit $${(f.gp/1000).toFixed(1)}M"></div>
+        <div class="fin-bar bar-ni" style="height:${nH}px" data-tip="Net Income $${(f.ni/1000).toFixed(1)}M"></div>
+      </div>
+      <div class="fin-year">${f.year}</div>
+      <div style="font-size:.65rem;color:var(--brass);font-family:var(--mono)">${f.label}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderSvcs() {
+  document.getElementById('svcGrid').innerHTML = SVCS.map(s =>
+    `<div class="svc-card svc-domain-${s.domain}">
+      <div class="svc-num">${String(s.n).padStart(2,'0')}</div>
+      <div class="svc-name">${s.name}</div>
+      <div class="svc-rev">${s.rev}</div>
+      <div class="svc-ai-bar"><div class="svc-ai-fill" style="width:${s.ai}%"></div></div>
+      <div class="svc-ai-label">AI: ${s.ai}% · Human: ${100-s.ai}%</div>
+    </div>`
+  ).join('');
+}
+
+function renderRoadmap() {
+  document.getElementById('roadmap').innerHTML = WAVES.map(w =>
+    `<div class="wave">
+      <div class="wave-num">${w.n}</div>
+      <div class="wave-content">
+        <div class="wave-title">${w.title}</div>
+        <div class="wave-time">${w.time}</div>
+        <div class="wave-items">${w.items}</div>
+        <div style="font-size:.65rem;color:var(--brass);margin-top:5px">Capital focus: ${w.capital}</div>
+      </div>
+    </div>`
+  ).join('');
+}
+
+function renderFlow() {
+  document.getElementById('artiquityFlow').innerHTML = FLOW.map(f =>
+    f.cls === 'flow-arrow'
+      ? `<span class="flow-arrow">${f.label}</span>`
+      : `<span class="flow-node ${f.cls}">${f.label}</span>`
+  ).join('');
+}
+
+function init() {
+  renderAUREA();
+  renderSS();
+  renderFin();
+  renderSvcs();
+  renderRoadmap();
+  renderFlow();
+  // Animate bars after paint
+  setTimeout(() => {
+    document.querySelectorAll('[data-w]').forEach(el => {
+      el.style.width = el.dataset.w + '%';
+    });
+  }, 100);
+}
+
+window.addEventListener('load', init);
+</script>
+</body>
+</html>

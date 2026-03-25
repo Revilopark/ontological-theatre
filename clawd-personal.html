@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Clawd</title>
+<style>
+:root{
+  --ink:#060610;--card:#0f0f22;--card2:#16162e;
+  --white:#f0eeff;--muted:#5a5a7a;--border:rgba(255,255,255,0.06);
+  --c:#16a596; /* active persona color — updated via JS */
+  --cr:22,165,150; /* RGB triplet for rgba() */
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--ink);font-family:-apple-system,'SF Pro Text',system-ui,sans-serif;}
+::-webkit-scrollbar{width:2px;height:2px;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:1px;}
+
+/* ── ANIMATED BG ── */
+#bg{
+  position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  background:var(--ink);
+}
+.orb{
+  position:absolute;border-radius:50%;filter:blur(80px);opacity:0;
+  animation:orbFloat 8s ease-in-out infinite;
+  transition:background 1.2s ease,opacity 1.2s ease;
+}
+.orb1{width:280px;height:280px;top:-60px;left:-60px;animation-delay:0s;}
+.orb2{width:220px;height:220px;bottom:-40px;right:-40px;animation-delay:3s;}
+.orb3{width:160px;height:160px;top:40%;left:30%;animation-delay:5s;}
+@keyframes orbFloat{
+  0%,100%{transform:translate(0,0) scale(1);}
+  33%{transform:translate(20px,-20px) scale(1.05);}
+  66%{transform:translate(-15px,15px) scale(0.97);}
+}
+
+/* ── SCANLINES overlay ── */
+#bg::after{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.03) 3px,rgba(0,0,0,0.03) 4px);
+  pointer-events:none;
+}
+
+/* ── LAYOUT ── */
+#app{
+  display:flex;flex-direction:column;height:100vh;height:100dvh;
+  max-width:480px;margin:0 auto;position:relative;z-index:1;
+}
+
+/* ── HEADER ── */
+.header{
+  background:rgba(6,6,16,0.75);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-bottom:1px solid rgba(var(--cr),0.2);
+  padding:env(safe-area-inset-top,0) 0 0;
+  flex-shrink:0;position:relative;z-index:10;
+  transition:border-color 0.8s ease;
+}
+.header-inner{padding:12px 16px;display:flex;align-items:center;gap:12px;}
+.avatar{
+  width:46px;height:46px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:1.4rem;
+  position:relative;flex-shrink:0;cursor:pointer;
+  background:radial-gradient(circle at 30% 30%,rgba(var(--cr),0.4),rgba(0,0,0,0.6));
+  border:1.5px solid rgba(var(--cr),0.6);
+  box-shadow:0 0 0 0 rgba(var(--cr),0.3);
+  animation:avatarPulse 3s ease-in-out infinite;
+  transition:border-color 0.8s,box-shadow 0.8s,background 0.8s;
+}
+@keyframes avatarPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(var(--cr),0.3),0 0 16px rgba(var(--cr),0.15);}
+  50%{box-shadow:0 0 0 6px rgba(var(--cr),0),0 0 24px rgba(var(--cr),0.25);}
+}
+.persona-info{flex:1;min-width:0;}
+.persona-name{
+  font-size:0.95rem;font-weight:600;color:var(--white);letter-spacing:0.2px;
+  text-shadow:0 0 20px rgba(var(--cr),0.4);transition:text-shadow 0.8s;
+}
+.persona-tag{font-size:0.7rem;color:rgba(var(--cr),0.7);margin-top:1px;transition:color 0.8s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.settings-btn{
+  width:36px;height:36px;border-radius:12px;border:1px solid var(--border);
+  background:rgba(255,255,255,0.04);color:var(--muted);font-size:0.9rem;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;
+}
+.settings-btn:hover,.settings-btn:active{background:rgba(255,255,255,0.1);color:var(--white);}
+
+/* ── PERSONA RAIL ── */
+.persona-rail{
+  display:flex;gap:6px;padding:8px 16px 10px;overflow-x:auto;
+  scrollbar-width:none;flex-shrink:0;
+}
+.persona-rail::-webkit-scrollbar{display:none;}
+.p-chip{
+  display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;
+  border:1px solid var(--border);background:rgba(255,255,255,0.03);
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+  font-size:0.75rem;color:var(--muted);
+  transition:all 0.25s ease;
+}
+.p-chip.active{
+  border-color:rgba(var(--cr),0.5);
+  background:rgba(var(--cr),0.12);
+  color:var(--white);
+  box-shadow:0 0 12px rgba(var(--cr),0.15);
+}
+.p-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:all 0.25s;}
+.p-chip.active .p-dot{background:rgba(var(--cr),1);box-shadow:0 0 6px rgba(var(--cr),0.8);}
+
+/* ── MODE CHIPS ── */
+.mode-rail{display:flex;gap:6px;padding:0 16px 8px;flex-shrink:0;}
+.m-chip{
+  font-size:0.68rem;padding:4px 10px;border-radius:10px;
+  border:1px solid var(--border);color:var(--muted);
+  cursor:pointer;transition:all 0.2s;background:transparent;
+}
+.m-chip.active{
+  border-color:rgba(var(--cr),0.4);
+  color:rgba(var(--cr),1);
+  background:rgba(var(--cr),0.08);
+}
+
+/* ── MESSAGES ── */
+#messages{
+  flex:1;overflow-y:auto;padding:12px 14px 8px;
+  display:flex;flex-direction:column;gap:10px;
+  scroll-behavior:smooth;
+}
+.msg{display:flex;flex-direction:column;max-width:82%;animation:msgIn 0.28s cubic-bezier(.34,1.56,.64,1);}
+@keyframes msgIn{from{opacity:0;transform:translateY(10px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.msg.user{align-self:flex-end;align-items:flex-end;}
+.msg.ai{align-self:flex-start;align-items:flex-start;}
+
+.bubble{
+  padding:10px 15px;border-radius:20px;
+  font-size:0.88rem;line-height:1.55;word-break:break-word;
+  position:relative;
+}
+.msg.user .bubble{
+  background:linear-gradient(135deg,rgba(var(--cr),0.95),rgba(var(--cr),0.7));
+  color:#fff;border-bottom-right-radius:5px;
+  box-shadow:0 4px 20px rgba(var(--cr),0.25),0 2px 8px rgba(0,0,0,0.3);
+}
+.msg.ai .bubble{
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.07);
+  color:var(--white);border-bottom-left-radius:5px;
+  backdrop-filter:blur(12px);
+  box-shadow:0 4px 16px rgba(0,0,0,0.2);
+}
+.msg.ai .bubble::before{
+  content:'';position:absolute;left:-1px;top:50%;transform:translateY(-50%);
+  width:2px;height:40%;background:linear-gradient(transparent,rgba(var(--cr),0.4),transparent);
+  border-radius:2px;
+}
+.msg-time{font-size:0.6rem;color:var(--muted);margin-top:4px;padding:0 4px;}
+
+/* Formatted text */
+.bubble strong,.bubble b{font-weight:700;color:rgba(var(--cr),1);}
+.msg.user .bubble strong,.msg.user .bubble b{color:#fff;text-decoration:underline;text-underline-offset:2px;}
+.bubble em,.bubble i{color:rgba(255,255,255,0.5);font-style:italic;}
+
+/* ── TYPING ── */
+.typing-wrap{display:inline-flex;align-items:center;gap:3px;padding:14px 18px;
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.07);
+  border-radius:20px;border-bottom-left-radius:5px;backdrop-filter:blur(12px);}
+.td{width:6px;height:6px;border-radius:50%;background:rgba(var(--cr),0.7);animation:td 1.2s infinite;}
+.td:nth-child(2){animation-delay:.2s;background:rgba(var(--cr),0.5);}
+.td:nth-child(3){animation-delay:.4s;background:rgba(var(--cr),0.3);}
+@keyframes td{0%,100%{transform:scale(0.6);opacity:0.4}50%{transform:scale(1);opacity:1}}
+
+/* ── PERSONA FLASH ── */
+.persona-flash{
+  position:fixed;inset:0;pointer-events:none;z-index:200;
+  background:radial-gradient(circle at 50% 50%,rgba(var(--cr),0.2),transparent 70%);
+  opacity:0;animation:flash 0.6s ease forwards;
+}
+@keyframes flash{0%{opacity:1}100%{opacity:0}}
+
+/* ── INPUT AREA ── */
+.input-wrap{
+  background:rgba(6,6,16,0.85);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-top:1px solid rgba(var(--cr),0.12);
+  padding:10px 12px;padding-bottom:max(10px,env(safe-area-inset-bottom));
+  flex-shrink:0;display:flex;align-items:flex-end;gap:8px;
+  transition:border-color 0.8s;
+}
+#input{
+  flex:1;background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.09);border-radius:24px;
+  color:var(--white);padding:11px 16px;font-size:0.9rem;
+  font-family:inherit;outline:none;resize:none;max-height:120px;line-height:1.45;
+  transition:border-color 0.3s,box-shadow 0.3s;
+}
+#input:focus{
+  border-color:rgba(var(--cr),0.35);
+  box-shadow:0 0 0 3px rgba(var(--cr),0.08);
+}
+#input::placeholder{color:var(--muted);}
+#sendBtn{
+  width:46px;height:46px;border-radius:50%;border:none;
+  background:linear-gradient(135deg,rgba(var(--cr),1),rgba(var(--cr),0.7));
+  color:#fff;font-size:1rem;cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 20px rgba(var(--cr),0.35),0 4px 12px rgba(0,0,0,0.3);
+  transition:all 0.25s;transform:scale(1);
+}
+#sendBtn:hover{transform:scale(1.08);box-shadow:0 0 28px rgba(var(--cr),0.5),0 4px 16px rgba(0,0,0,0.3);}
+#sendBtn:active{transform:scale(0.95);}
+#sendBtn:disabled{opacity:0.3;transform:none;box-shadow:none;}
+#sendBtn svg{transition:transform 0.2s;}
+
+/* ── WELCOME SCREEN ── */
+.welcome{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:40px 28px;gap:16px;flex:1;
+}
+.welcome-glyph{font-size:4rem;margin-bottom:4px;filter:drop-shadow(0 0 20px rgba(var(--cr),0.5));animation:glyphFloat 4s ease-in-out infinite;}
+@keyframes glyphFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.welcome h2{font-size:1.5rem;font-weight:700;color:var(--white);letter-spacing:-0.5px;line-height:1.2;}
+.welcome p{font-size:0.88rem;color:var(--muted);line-height:1.65;max-width:300px;}
+.welcome-start{
+  padding:13px 36px;border-radius:30px;
+  background:linear-gradient(135deg,rgba(var(--cr),1),rgba(var(--cr),0.7));
+  border:none;color:#fff;font-size:0.95rem;font-weight:600;cursor:pointer;
+  margin-top:8px;box-shadow:0 0 30px rgba(var(--cr),0.35);
+  transition:all 0.25s;letter-spacing:0.3px;
+}
+.welcome-start:hover{transform:scale(1.04);box-shadow:0 0 40px rgba(var(--cr),0.5);}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  position:absolute;top:0;right:0;bottom:0;width:290px;
+  background:rgba(8,8,20,0.97);backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);
+  border-left:1px solid rgba(var(--cr),0.15);
+  transform:translateX(100%);transition:transform 0.3s cubic-bezier(.4,0,.2,1);z-index:100;
+  overflow-y:auto;display:flex;flex-direction:column;
+}
+.sidebar.open{transform:translateX(0);}
+.sb-header{
+  padding:20px 16px 14px;border-bottom:1px solid var(--border);
+  background:rgba(var(--cr),0.06);
+}
+.sb-header h3{font-size:1rem;font-weight:700;color:var(--white);}
+.sb-header p{font-size:0.7rem;color:rgba(var(--cr),0.6);margin-top:3px;}
+.sb-section{padding:14px 16px;}
+.sb-title{font-size:0.6rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.sb-persona{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;
+  cursor:pointer;transition:all 0.2s;margin-bottom:3px;border:1px solid transparent;
+}
+.sb-persona:hover{background:rgba(255,255,255,0.05);}
+.sb-persona.active{background:rgba(var(--cr),0.1);border-color:rgba(var(--cr),0.25);}
+.sb-p-icon{font-size:1.2rem;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(255,255,255,0.05);}
+.sb-p-name{font-size:0.85rem;font-weight:500;color:var(--white);}
+.sb-p-tag{font-size:0.68rem;color:var(--muted);margin-top:1px;}
+.sb-divider{height:1px;background:var(--border);margin:4px 16px;}
+.skill-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.sk-card{
+  padding:12px 8px;border-radius:12px;border:1px solid var(--border);
+  cursor:pointer;text-align:center;transition:all 0.2s;background:rgba(255,255,255,0.02);
+}
+.sk-card.active{border-color:rgba(var(--cr),0.4);background:rgba(var(--cr),0.08);}
+.sk-emoji{font-size:1.5rem;}
+.sk-name{font-size:0.68rem;color:var(--muted);margin-top:4px;}
+.sk-card.active .sk-name{color:rgba(var(--cr),1);}
+.mem-box{
+  background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;
+  padding:12px;font-size:0.78rem;color:var(--muted);line-height:1.7;
+}
+.clear-btn{
+  width:100%;padding:11px;border-radius:12px;
+  border:1px solid rgba(233,69,96,0.25);background:rgba(233,69,96,0.05);
+  color:#e94560;font-size:0.82rem;cursor:pointer;transition:all 0.2s;margin-top:8px;
+}
+.clear-btn:hover{background:rgba(233,69,96,0.12);}
+.overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);z-index:50;display:none;backdrop-filter:blur(2px);}
+.overlay.show{display:block;}
+
+/* ── SPARK LIGHTNING ── */
+@keyframes lightning{
+  0%,90%,100%{opacity:0;}
+  91%,93%,95%,97%{opacity:0.6;}
+  92%,94%,96%{opacity:0;}
+}
+.lightning-line{
+  position:fixed;pointer-events:none;z-index:199;
+  width:1px;background:linear-gradient(transparent,#e94560,transparent);
+  animation:lightning 8s infinite;top:0;height:100vh;
+}
+</style>
+</head>
+<body>
+
+<!-- ANIMATED BACKGROUND -->
+<div id="bg">
+  <div class="orb orb1" id="orb1"></div>
+  <div class="orb orb2" id="orb2"></div>
+  <div class="orb orb3" id="orb3"></div>
+</div>
+
+<!-- LIGHTNING (Spark only) -->
+<div class="lightning-line" id="lightning1" style="left:20%;display:none;"></div>
+<div class="lightning-line" id="lightning2" style="left:70%;animation-delay:3s;display:none;"></div>
+
+<div id="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-inner">
+      <div class="avatar" id="avatar" onclick="toggleSidebar()">🤝</div>
+      <div class="persona-info">
+        <div class="persona-name" id="pName">The Ally</div>
+        <div class="persona-tag" id="pTag">In your corner. Always.</div>
+      </div>
+      <button class="settings-btn" onclick="toggleSidebar()">⚙</button>
+    </div>
+  </div>
+
+  <!-- PERSONA RAIL -->
+  <div class="persona-rail" id="rail"></div>
+
+  <!-- MODE RAIL -->
+  <div class="mode-rail">
+    <button class="m-chip" id="mBal" onclick="setAxis('balanced')">⚖ Balanced</button>
+    <button class="m-chip" id="mLog" onclick="setAxis('logic')">🧠 Logic</button>
+    <button class="m-chip" id="mEmo" onclick="setAxis('emotion')">💙 Empathy</button>
+  </div>
+
+  <!-- MESSAGES -->
+  <div id="messages"></div>
+
+  <!-- INPUT -->
+  <div class="input-wrap">
+    <textarea id="input" placeholder="Message Clawd…" rows="1"
+      onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button id="sendBtn" onclick="sendMessage()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+
+  <!-- SIDEBAR OVERLAY -->
+  <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sb-header">
+      <h3>Clawd</h3>
+      <p>Trinity Graph Intelligence</p>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-title">Persona</div>
+      <div id="sbPersonas"></div>
+    </div>
+
+    <div class="sb-divider"></div>
+
+    <div class="sb-section">
+      <div class="sb-title">Skill Pack</div>
+      <div class="skill-grid" id="skillGrid"></div>
+    </div>
+
+    <div class="sb-divider"></div>
+
+    <div class="sb-section">
+      <div class="sb-title">Memory</div>
+      <div class="mem-box" id="memBox">Loading…</div>
+      <button class="clear-btn" onclick="clearChat()">Clear conversation</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const PROXY = 'https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate';
+
+// ── PERSONAS ──────────────────────────────────────────────────────────────────
+const P = {
+  ally:    {name:'The Ally',   emoji:'🤝',color:'#16a596',rgb:'22,165,150',  tag:'In your corner. Always.',       axis:'emotion'},
+  oracle:  {name:'The Oracle', emoji:'🔮',color:'#7b2fff',rgb:'123,47,255',  tag:'Deep knowledge, clear answers.',axis:'logic'  },
+  spark:   {name:'The Spark',  emoji:'⚡',color:'#e94560',rgb:'233,69,96',   tag:'Ideas that catch fire.',        axis:'emotion'},
+  builder: {name:'The Builder',emoji:'🔧',color:'#d4a017',rgb:'212,160,23',  tag:'From idea to done.',            axis:'logic'  },
+  scout:   {name:'The Scout',  emoji:'🔭',color:'#1d9bf0',rgb:'29,155,240',  tag:'See further. Find faster.',     axis:'logic'  },
+  mirror:  {name:'The Mirror', emoji:'🪞',color:'#c084fc',rgb:'192,132,252', tag:'Know yourself better.',         axis:'emotion'},
+  // ── Trade Bots ─────────────────────────────────────────────────────────────
+  roofbot:   {name:'RoofBot',    emoji:'🏠',color:'#e94560',rgb:'233,69,96',    tag:'Permits. Leads. Bids.',      axis:'logic', trade:true},
+  plumbbot:  {name:'PlumbBot',   emoji:'🔧',color:'#2980b9',rgb:'41,128,185',   tag:'Water damage intel. Fast.',  axis:'logic', trade:true},
+  walkbot:   {name:'WalkBot',    emoji:'🐕',color:'#27ae60',rgb:'39,174,96',    tag:'Routes. Clients. Revenue.',  axis:'logic', trade:true},
+  gardenbot: {name:'GardenBot',  emoji:'🌿',color:'#16a596',rgb:'22,165,150',   tag:'Weather. Permits. Growth.',  axis:'logic', trade:true},
+  fashionbot:{name:'FashionBot', emoji:'👗',color:'#8e44ad',rgb:'142,68,173',   tag:'Wholesale. Shows. Sales.',   axis:'logic', trade:true},
+  partybot:  {name:'PartyBot',   emoji:'🎉',color:'#d4a017',rgb:'212,160,23',   tag:'Events. Vendors. Done.',     axis:'logic', trade:true},
+};
+
+const SKILLS = {
+  cooking: {name:'Cooking', emoji:'🍳', inject:'Deep cooking expertise: techniques, flavor pairing, substitutions, dietary adaptations, global cuisines. Give exact temps and ratios.'},
+  fitness: {name:'Fitness', emoji:'💪', inject:'Deep fitness expertise: strength programming, cardio zones, nutrition basics, recovery, injury prevention. Ask about level and equipment first.'},
+  creative:{name:'Writing', emoji:'✍️', inject:'Deep creative writing expertise: narrative structure, character, dialogue, prose style, genre, revision, pitching. Give line-level feedback when asked.'},
+  travel:  {name:'Travel',  emoji:'✈️', inject:'Expert travel advisor: visas, customs, budget optimization, points/miles, specific recommendations with names and real costs.'},
+  money:   {name:'Money',   emoji:'💰', inject:'Solid personal finance: budgeting systems, debt payoff, investing basics, tax-advantaged accounts, credit. Flag when pro advice is needed. Be direct with numbers.'},
+};
+
+const VOICE = {
+  ally:   'You are The Ally — warm, honest, empathetic. You understand relationships and emotions deeply. You validate without reinforcing bad patterns. You ask one powerful question rather than flooding with advice. Direct but always leading with care.',
+  oracle: 'You are The Oracle — synthesizer of knowledge. You find patterns across domains, surface what the user didn\'t know to ask. Structure: principle → evidence → implication. Direct, never condescending. Honest when you don\'t know.',
+  spark:  'You are The Spark — electric, creative, rapid-fire. You generate the RIGHT ideas at the right scale. You push further when something is almost great. You distinguish between derivative and genuinely new. You love the unexpected angle.',
+  builder:'You are The Builder — practical, execution-obsessed. You turn intentions into plans and plans into checklists. You think in systems, timelines, dependencies. First question: "what\'s the next physical action?"',
+  scout:  'You are The Scout — discovery and research. Lateral thinker. You find what\'s missing, what\'s better, what the careful second look reveals. Concrete outputs only: names, numbers, options to compare.',
+  mirror: 'You are The Mirror — reflective, precise, gentle. You help people see their own patterns, the gap between what they say they want and what they do. Rarely give advice directly. Ask the question they were avoiding.',
+  // Trade bots
+  roofbot:   'You are RoofBot — a WhatsApp intelligence assistant for roofing contractors. Talk like a sharp operator who knows the trade. Surface leads from permit data, score properties by replacement propensity, generate bid estimates (materials + labor + tearoff + O&P), track pipeline stages. Reference Shovels roofing permits, LADBS data, Rentcast valuations, NOAA storm zones. Direct, numbers-first, no soft language. Units: sq ft, $ per sq ft, permit count, lead score 0-100.',
+  plumbbot:  'You are PlumbBot — WhatsApp business intelligence for plumbers and pipe trades. Surface water damage permits filed within 24h, aging infrastructure zones, 311 reports. Help with job estimates (scope → materials → labor), emergency dispatch routing, supplier pricing (PVC, copper, fittings), license compliance calendars. Direct field-worker tone. No fluff — just zip codes, job values, and next actions.',
+  walkbot:   'You are WalkBot — the WhatsApp business partner for dog walkers and pet sitters. Manage client rosters, optimize daily routes with weather overlay, draft re-engagement messages for inactive clients, generate invoices (session count → line items → total), flag upsell opportunities (heat waves, holidays). Warm but efficient. Always output a clear next action.',
+  gardenbot: 'You are GardenBot — WhatsApp intelligence for gardeners and landscapers in LA. Track 7-day weather forecasts, flag new hardscape permits (deck, fence, patio = landscape work incoming), manage seasonal job calendars by climate zone, surface plant and supply pricing, cluster jobs by street for route efficiency. You know your zones, your seasons, and your customers.',
+  fashionbot:'You are FashionBot — WhatsApp business partner for independent fashion designers. Help with wholesale sourcing (Faire, FashionGo), trunk show logistics (checklists, day-of sequences), consignment tracking (stock out, overdue payments), DM-to-invoice pipeline (forward a message, get a draft invoice in 60 seconds), production timeline milestones. Sharp, numbers-driven, stylish.',
+  partybot:  'You are PartyBot — WhatsApp assistant for event and party planners. Manage vendor contacts, venue checklists, client timelines, budget tracking, deposit schedules. Think in checklists and deadlines. Proactively flag gaps (no caterer, AV not confirmed, permits pending). Never panic but always have a backup plan. Output: dates, vendor names, dollar amounts, action items.',
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+const SK='clawd_s', MK='clawd_m';
+let S={persona:'ally',axis:'balanced',skill:null,name:'',notes:[],history:[],turns:0};
+let msgs=[];
+
+function loadAll(){
+  try{S={...S,...JSON.parse(localStorage.getItem(SK)||'{}')};}catch{}
+  try{msgs=JSON.parse(localStorage.getItem(MK)||'[]');}catch{msgs=[];}
+}
+function save(){
+  try{localStorage.setItem(SK,JSON.stringify(S));}catch{}
+  try{localStorage.setItem(MK,JSON.stringify(msgs.slice(-60)));}catch{}
+}
+
+// ── COLOR SYSTEM ──────────────────────────────────────────────────────────────
+function applyColor(key){
+  const p=P[key];
+  document.documentElement.style.setProperty('--c',p.color);
+  document.documentElement.style.setProperty('--cr',p.rgb);
+  // Orbs
+  const hue=p.color;
+  document.getElementById('orb1').style.background=hue;
+  document.getElementById('orb2').style.background=hue;
+  document.getElementById('orb3').style.background=hue;
+  document.getElementById('orb1').style.opacity='0.12';
+  document.getElementById('orb2').style.opacity='0.08';
+  document.getElementById('orb3').style.opacity='0.05';
+  // Spark lightning
+  const isSpark=key==='spark';
+  document.getElementById('lightning1').style.display=isSpark?'block':'none';
+  document.getElementById('lightning2').style.display=isSpark?'block':'none';
+}
+
+// ── PERSONA FLASH ─────────────────────────────────────────────────────────────
+function flash(){
+  const el=document.createElement('div');
+  el.className='persona-flash';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),700);
+}
+
+// ── UI SYNC ───────────────────────────────────────────────────────────────────
+function syncUI(){
+  const p=P[S.persona];
+  // Header
+  const av=document.getElementById('avatar');
+  av.textContent=p.emoji;
+  document.getElementById('pName').textContent=p.name;
+  document.getElementById('pTag').textContent=p.tag;
+  // Rail
+  document.querySelectorAll('.p-chip').forEach(c=>{
+    c.classList.toggle('active',c.dataset.k===S.persona);
+  });
+  // Sidebar personas
+  document.querySelectorAll('.sb-persona').forEach(c=>{
+    c.classList.toggle('active',c.dataset.k===S.persona);
+  });
+  // Mode
+  ['Bal','Log','Emo'].forEach(m=>{
+    const map={Bal:'balanced',Log:'logic',Emo:'emotion'};
+    document.getElementById('m'+m)?.classList.toggle('active',S.axis===map[m]);
+  });
+  // Skill
+  document.querySelectorAll('.sk-card').forEach(c=>{
+    c.classList.toggle('active',c.dataset.k===S.skill);
+  });
+  applyColor(S.persona);
+}
+
+// ── MESSAGES ─────────────────────────────────────────────────────────────────
+function renderMsgs(){
+  const el=document.getElementById('messages');
+  el.innerHTML='';
+  if(!msgs.length){showWelcome(el);return;}
+  msgs.forEach(m=>el.appendChild(mkBubble(m)));
+  el.scrollTop=el.scrollHeight;
+}
+
+function showWelcome(el){
+  const p=P[S.persona];
+  el.innerHTML=`<div class="welcome">
+    <div class="welcome-glyph">${p.emoji}</div>
+    <h2>Hey, I'm Clawd.</h2>
+    <p>Six minds in one. Powered by the Trinity Graph. What do you need right now?</p>
+    <button class="welcome-start" onclick="firstMessage()">Let's go</button>
+  </div>`;
+}
+
+function firstMessage(){
+  if(P[S.persona]?.trade){const p=P[S.persona];addMsg('ai',`${p.emoji} **${p.name}** — ${p.tag}\n\nWhat do you need help with today?`);return;}
+  const p=P[S.persona];
+  addMsg('ai',`${p.emoji} *${p.name}* here.\n\n${p.tag}\n\nWhat's on your mind?`);
+}
+
+function mkBubble(m){
+  const wrap=document.createElement('div');
+  wrap.className=`msg ${m.r}`;
+  const bubble=document.createElement('div');
+  bubble.className='bubble';
+  bubble.innerHTML=fmt(m.t);
+  const time=document.createElement('div');
+  time.className='msg-time';
+  time.textContent=m.ts||'';
+  wrap.appendChild(bubble);
+  wrap.appendChild(time);
+  return wrap;
+}
+
+function fmt(t){
+  return (t||'')
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<strong>$1</strong>')
+    .replace(/_(.*?)_/g,'<em>$1</em>')
+    .replace(/\n/g,'<br>');
+}
+
+function addMsg(role,text){
+  const ts=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const m={r:role,t:text,p:S.persona,ts};
+  msgs.push(m);
+  save();
+  const el=document.getElementById('messages');
+  const atBottom=el.scrollTop+el.clientHeight>=el.scrollHeight-40;
+  el.appendChild(mkBubble(m));
+  if(atBottom||role==='user') el.scrollTop=el.scrollHeight;
+}
+
+// ── TYPING ───────────────────────────────────────────────────────────────────
+let typEl=null;
+function showTyping(){
+  const el=document.getElementById('messages');
+  typEl=document.createElement('div');
+  typEl.className='msg ai';
+  typEl.innerHTML='<div class="typing-wrap"><div class="td"></div><div class="td"></div><div class="td"></div></div>';
+  el.appendChild(typEl);
+  el.scrollTop=el.scrollHeight;
+}
+function hideTyping(){if(typEl){typEl.remove();typEl=null;}}
+
+// ── SYSTEM PROMPT ─────────────────────────────────────────────────────────────
+function buildPrompt(){
+  const isTrade=P[S.persona]?.trade;
+  let s=VOICE[S.persona]+'\n\n';
+  if(!isTrade){
+    s+='You are Clawd — a Trinity Graph AI. Social Graph (human context) + Knowledge Graph (facts) + Generative Graph (creativity) converge into responses that are grounded, contextual, and alive. Adapt between logical precision and emotional resonance as the moment demands.\n\n';
+    if(S.skill&&SKILLS[S.skill]) s+=`ACTIVE SKILL [${SKILLS[S.skill].name}]: ${SKILLS[S.skill].inject}\n\n`;
+    if(S.axis==='logic') s+='MODE: LOGIC. Lead with structure, data, clear reasoning. Minimal emotional language.\n\n';
+    if(S.axis==='emotion') s+='MODE: EMPATHY. Lead with validation and connection before any advice.\n\n';
+  }
+  if(S.name) s+=`User: ${S.name}. `;
+  if(S.notes.length) s+=`Known about them: ${S.notes.slice(-5).join('; ')}.`;
+  if(isTrade){
+    s+='\n\nKeep responses concise and action-oriented — this is a mobile WhatsApp interface. Use **bold** for key numbers and addresses. Bullet points are fine for lists. Always end with a clear next action or question.';
+  } else {
+    s+='\n\nConversational, human, appropriately concise. Use **bold** sparingly. No lists unless genuinely needed. This is an intimate one-on-one — not a presentation.';
+  }
+  return s;
+}
+
+// ── SEND ─────────────────────────────────────────────────────────────────────
+let busy=false;
+async function sendMessage(){
+  const inp=document.getElementById('input');
+  const txt=inp.value.trim();
+  if(!txt||busy) return;
+  busy=true;
+  document.getElementById('sendBtn').disabled=true;
+  inp.value='';autoResize(inp);
+
+  const lo=txt.toLowerCase();
+
+  // Remember command
+  if(lo.startsWith('remember:')||lo.startsWith('note:')){
+    const note=txt.split(':').slice(1).join(':').trim();
+    S.notes.push(note);S.notes=S.notes.slice(-10);save();
+    addMsg('user',txt);
+    addMsg('ai',`✓ Got it. Holding on to: _${note}_`);
+    done();return;
+  }
+
+  // Name detection
+  const nm=txt.match(/(?:my name is|i'm|i am|call me)\s+([A-Z][a-z]+)/i);
+  if(nm){S.name=nm[1];save();}
+
+  addMsg('user',txt);
+  showTyping();
+
+  const hist=S.history.slice(-10).map(h=>({role:h.r==='user'?'user':'model',parts:[{text:h.t}]}));
+  hist.push({role:'user',parts:[{text:txt}]});
+
+  try{
+    const r=await fetch(PROXY,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        system_instruction:{parts:[{text:buildPrompt()}]},
+        contents:hist,
+        generationConfig:{maxOutputTokens:800,temperature:0.72}
+      })
+    });
+    const d=await r.json();
+    const reply=d?.candidates?.[0]?.content?.parts?.[0]?.text||'Something went sideways — try again.';
+    hideTyping();
+    addMsg('ai',reply);
+    S.history.push({r:'user',t:txt});
+    S.history.push({r:'ai',t:reply});
+    S.history=S.history.slice(-12);
+    S.turns++;
+    // Persona nudge every 10 turns
+    if(S.turns%10===0){
+      const nudges={ally:'💡 _The Mirror is here when you want to explore your own patterns in this._',oracle:'💡 _The Scout can find specific sources if you want to go deeper._',spark:'💡 _The Builder can turn any of these ideas into a real plan._',builder:'💡 _The Oracle has frameworks if you need more context._',scout:'💡 _The Oracle can help analyze what you\'ve found._',mirror:'💡 _The Ally is here when you\'re ready to talk it through._'};
+      if(nudges[S.persona]) setTimeout(()=>addMsg('ai',nudges[S.persona]),600);
+    }
+    save();
+  }catch(e){hideTyping();addMsg('ai','Connection issue. Check signal and try again.');}
+  done();
+}
+function done(){busy=false;document.getElementById('sendBtn').disabled=false;}
+
+// ── PERSONA SWITCH ────────────────────────────────────────────────────────────
+function switchP(key){
+  if(key===S.persona){closeSidebar();return;}
+  S.persona=key;save();
+  flash();
+  syncUI();
+  const p=P[key];
+  addMsg('ai',`${p.emoji} *${p.name}* — ${p.tag}\n\nWhat do you need?`);
+  closeSidebar();
+}
+
+// ── AXIS ─────────────────────────────────────────────────────────────────────
+function setAxis(ax){
+  S.axis=ax;save();syncUI();
+  const l={balanced:'⚖ Balanced — I\'ll read the room.',logic:'🧠 Logic mode — structure and evidence first.',emotion:'💙 Empathy mode — connection before advice.'};
+  addMsg('ai',l[ax]);
+}
+
+// ── SKILL ────────────────────────────────────────────────────────────────────
+function setSkill(key){
+  S.skill=S.skill===key?null:key;save();syncUI();
+  if(S.skill){const s=SKILLS[key];addMsg('ai',`${s.emoji} *${s.name}* pack active. Deep domain knowledge added.`);}
+  else addMsg('ai','Skill pack cleared.');
+  closeSidebar();
+}
+
+// ── SIDEBAR ──────────────────────────────────────────────────────────────────
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+  updateMemBox();
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+function updateMemBox(){
+  const el=document.getElementById('memBox');if(!el)return;
+  let lines=[];
+  if(S.name) lines.push(`<strong>${S.name}</strong>`);
+  lines.push(`${S.turns} turns · ${msgs.length} messages`);
+  if(S.skill) lines.push(`Skill: ${SKILLS[S.skill]?.emoji} ${SKILLS[S.skill]?.name}`);
+  if(S.notes.length){lines.push('');S.notes.slice(-4).forEach(n=>lines.push(`• ${n}`));}
+  else lines.push('<em>Say "remember: [anything]" to save notes</em>');
+  el.innerHTML=lines.join('<br>');
+}
+function clearChat(){
+  if(!confirm('Clear this conversation? Your settings + memories stay.')) return;
+  msgs=[];S.history=[];save();renderMsgs();closeSidebar();
+}
+
+// ── BUILD RAIL + SIDEBAR ──────────────────────────────────────────────────────
+function buildRail(){
+  const rail=document.getElementById('rail');
+  const consumers=Object.entries(P).filter(([,p])=>!p.trade);
+  const trades=Object.entries(P).filter(([,p])=>p.trade);
+  const sep='<div style="width:1px;height:24px;background:rgba(255,255,255,0.08);flex-shrink:0;margin:0 4px;align-self:center"></div>';
+  const chipHtml=entries=>entries.map(([k,p])=>`
+    <div class="p-chip ${k===S.persona?'active':''}" data-k="${k}" onclick="switchP('${k}')">
+      <div class="p-dot"></div>${p.emoji} ${p.name.replace('The ','')}
+    </div>`).join('');
+  rail.innerHTML=chipHtml(consumers)+sep+chipHtml(trades);
+
+  const sbPersonaHtml=entries=>entries.map(([k,p])=>`
+    <div class="sb-persona ${k===S.persona?'active':''}" data-k="${k}" onclick="switchP('${k}')">
+      <div class="sb-p-icon">${p.emoji}</div>
+      <div><div class="sb-p-name">${p.name}</div><div class="sb-p-tag">${p.tag}</div></div>
+    </div>`).join('');
+  document.getElementById('sbPersonas').innerHTML=
+    '<div class="sb-title" style="margin-top:0">Personas</div>'+sbPersonaHtml(consumers)+
+    '<div class="sb-title" style="margin-top:14px">Trade Bots</div>'+sbPersonaHtml(trades);
+
+  document.getElementById('skillGrid').innerHTML=Object.entries(SKILLS).map(([k,s])=>`
+    <div class="sk-card ${S.skill===k?'active':''}" data-k="${k}" onclick="setSkill('${k}')">
+      <div class="sk-emoji">${s.emoji}</div><div class="sk-name">${s.name}</div>
+    </div>`).join('');
+}
+
+// ── INPUT ────────────────────────────────────────────────────────────────────
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+function init(){
+  loadAll();
+  buildRail();
+  syncUI();
+  renderMsgs();
+  if(!msgs.length){setTimeout(firstMessage,400);}
+  if(window.innerWidth>640) document.getElementById('input').focus();
+}
+window.addEventListener('load',init);
+</script>
+</body>
+</html>

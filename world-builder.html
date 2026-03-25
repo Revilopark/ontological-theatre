@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Builder — Ontological Theatre</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#CFB87C;--gold-dim:rgba(207,184,124,0.4);
+  --bg:#0a0a0f;--text:rgba(255,255,255,0.92);--muted:rgba(255,255,255,0.45);
+  --glass:rgba(255,255,255,0.06);--glass-border:rgba(255,255,255,0.12);
+  --glass-hi:rgba(255,255,255,0.10);--blur:blur(40px) saturate(1.8);
+  --r20:20px;--r28:28px;--tr:0.4s cubic-bezier(.4,0,.2,1);
+  --blue:#6BA4FF;--rose:#FF6B8A;--purple:#8B6BFF;--amber:#FFB86B;--teal:#6BFFD8;
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-weight:300;line-height:1.6;overflow-x:hidden;min-height:100vh}
+a{color:var(--gold);text-decoration:none}
+
+/* BG MESH */
+.bg-mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.blob{position:absolute;border-radius:50%;filter:blur(120px);opacity:0.15;animation:drift 18s ease-in-out infinite alternate}
+.blob1{width:700px;height:700px;background:var(--purple);top:-200px;left:-200px;animation-duration:22s}
+.blob2{width:500px;height:500px;background:var(--blue);top:30%;right:-100px;animation-duration:28s;animation-delay:-8s}
+.blob3{width:600px;height:600px;background:var(--rose);bottom:-200px;left:25%;animation-duration:25s;animation-delay:-14s}
+@keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(40px,30px) scale(1.08)}}
+
+/* LAYOUT */
+.shell{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:0 24px 80px}
+
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;padding:28px 0 20px;border-bottom:1px solid var(--glass-border)}
+.logo{font-family:'Playfair Display',serif;font-size:1.5rem;letter-spacing:.02em}
+.logo em{color:var(--gold);font-style:normal}
+.world-selector{display:flex;align-items:center;gap:12px}
+.world-selector label{font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.ws-badge{background:var(--glass);border:1px solid var(--glass-border);border-radius:8px;padding:6px 14px;font-size:0.85rem;color:var(--gold);cursor:pointer;transition:var(--tr);display:flex;align-items:center;gap:8px}
+.ws-badge:hover{background:var(--glass-hi)}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#4ADE80;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* TABS */
+.tabs{display:flex;gap:4px;padding:20px 0 0;border-bottom:1px solid var(--glass-border);overflow-x:auto}
+.tab{padding:10px 20px;border-radius:12px 12px 0 0;font-size:0.85rem;font-weight:400;cursor:pointer;transition:var(--tr);white-space:nowrap;border:1px solid transparent;border-bottom:none;position:relative;color:var(--muted)}
+.tab:hover{color:var(--text);background:var(--glass)}
+.tab.active{background:var(--glass);border-color:var(--glass-border);color:var(--gold);font-weight:500}
+.tab.active::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:1px;background:var(--bg)}
+
+/* PANELS */
+.panel{display:none;padding:28px 0 0;animation:fadeIn .35s ease}
+.panel.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* GLASS CARD */
+.card{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--r20);padding:24px;backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur)}
+.card-title{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--gold);margin-bottom:16px}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+
+/* FORM */
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:0.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:10px;padding:10px 14px;color:var(--text);font-family:'Inter',sans-serif;font-size:0.9rem;transition:var(--tr);outline:none}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--gold-dim);background:rgba(255,255,255,0.07)}
+.form-group select option{background:#1a1a2e}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;font-size:0.85rem;font-weight:500;cursor:pointer;transition:var(--tr);border:none;font-family:'Inter',sans-serif}
+.btn-gold{background:var(--gold);color:#0a0a0f}
+.btn-gold:hover{background:#DFC88C;transform:translateY(-1px)}
+.btn-glass{background:var(--glass);border:1px solid var(--glass-border);color:var(--text)}
+.btn-glass:hover{background:var(--glass-hi)}
+.btn-rose{background:rgba(255,107,138,0.2);border:1px solid rgba(255,107,138,0.4);color:var(--rose)}
+.btn-rose:hover{background:rgba(255,107,138,0.3)}
+.btn-teal{background:rgba(107,255,216,0.15);border:1px solid rgba(107,255,216,0.35);color:var(--teal)}
+.btn-teal:hover{background:rgba(107,255,216,0.25)}
+.btn-purple{background:rgba(139,107,255,0.2);border:1px solid rgba(139,107,255,0.4);color:var(--purple)}
+.btn-purple:hover{background:rgba(139,107,255,0.3)}
+.btn-sm{padding:6px 14px;font-size:0.78rem;border-radius:8px}
+
+/* WORLD CARDS */
+.world-card{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--r20);padding:20px;cursor:pointer;transition:var(--tr);position:relative;overflow:hidden}
+.world-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(207,184,124,0.04),transparent);opacity:0;transition:var(--tr)}
+.world-card:hover::before,.world-card.selected::before{opacity:1}
+.world-card.selected{border-color:var(--gold-dim)}
+.world-card .wc-name{font-family:'Playfair Display',serif;font-size:1.05rem;margin-bottom:6px}
+.world-card .wc-meta{font-size:0.75rem;color:var(--muted)}
+.world-card .wc-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:500;margin-top:10px;border:1px solid}
+
+/* ITY BAR */
+.ity-bar{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.ity-bar label{width:120px;font-size:0.75rem;color:var(--muted);flex-shrink:0}
+.ity-bar .bar-wrap{flex:1;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden}
+.ity-bar .bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--purple),var(--gold))}
+.ity-bar .bar-val{width:36px;font-size:0.72rem;color:var(--muted);text-align:right}
+
+/* TIMELINE */
+.timeline{position:relative;padding-left:28px}
+.timeline::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:1px;background:var(--glass-border)}
+.tl-item{position:relative;padding-bottom:20px}
+.tl-item::before{content:'';position:absolute;left:-24px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--gold);border:2px solid var(--bg)}
+.tl-item .tl-name{font-weight:500;font-size:0.95rem}
+.tl-item .tl-desc{font-size:0.8rem;color:var(--muted);margin-top:3px}
+
+/* LINEAGE CARDS */
+.lineage-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.lineage-card{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--r20);padding:20px;transition:var(--tr)}
+.lineage-card:hover{background:var(--glass-hi);transform:translateY(-2px)}
+.lc-emblem{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:14px;background:rgba(255,255,255,0.07);border:1px solid var(--glass-border)}
+.lc-name{font-family:'Playfair Display',serif;font-size:1rem;margin-bottom:4px}
+.lc-origin{font-size:0.75rem;color:var(--muted);margin-bottom:10px}
+.lc-trait{display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.72rem;background:rgba(207,184,124,0.12);border:1px solid var(--gold-dim);color:var(--gold)}
+
+/* PLACE CARDS */
+.place-card{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--r20);padding:20px;transition:var(--tr)}
+.place-card:hover{background:var(--glass-hi)}
+.pc-name{font-family:'Playfair Display',serif;font-size:1rem;margin-bottom:4px}
+.pc-type{font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+
+/* OBJECT REGISTRY */
+.garment-item{display:flex;align-items:center;gap:14px;padding:14px;background:var(--glass);border:1px solid var(--glass-border);border-radius:12px;transition:var(--tr)}
+.garment-item:hover{background:var(--glass-hi)}
+.gi-icon{width:42px;height:42px;border-radius:10px;background:rgba(139,107,255,0.15);border:1px solid rgba(139,107,255,0.3);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.gi-info{flex:1;min-width:0}
+.gi-name{font-weight:500;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gi-meta{font-size:0.75rem;color:var(--muted)}
+.gi-badges{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.badge{padding:2px 8px;border-radius:10px;font-size:0.68rem;font-weight:500}
+.badge-purple{background:rgba(139,107,255,0.2);color:var(--purple)}
+.badge-gold{background:rgba(207,184,124,0.2);color:var(--gold)}
+.badge-teal{background:rgba(107,255,216,0.15);color:var(--teal)}
+.badge-rose{background:rgba(255,107,138,0.15);color:var(--rose)}
+
+/* WARDROBE ROW */
+.wardrobe-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--glass);border-radius:10px;margin-bottom:6px}
+.wr-char{font-weight:500;font-size:0.88rem}
+.wr-garments{display:flex;gap:6px;flex-wrap:wrap}
+
+/* EXPRESSED ITY */
+.expressed-panel{background:rgba(207,184,124,0.04);border:1px solid var(--gold-dim);border-radius:var(--r20);padding:20px;margin-top:20px}
+.ep-title{font-size:0.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:14px}
+
+/* GRAPH CANVAS */
+#graph-canvas{width:100%;height:560px;border-radius:var(--r20);border:1px solid var(--glass-border);background:rgba(10,10,15,0.6);cursor:grab;display:block}
+#graph-canvas:active{cursor:grabbing}
+.graph-legend{display:flex;gap:20px;flex-wrap:wrap;margin-top:12px;font-size:0.75rem;color:var(--muted)}
+.gl-item{display:flex;align-items:center;gap:6px}
+.gl-dot{width:12px;height:12px;border-radius:2px}
+
+/* NODE DETAIL */
+.node-detail{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--r20);padding:20px;margin-top:16px;min-height:80px}
+.nd-title{font-family:'Playfair Display',serif;font-size:1rem;margin-bottom:8px;color:var(--gold)}
+
+/* STATUS BAR */
+.status-bar{position:fixed;bottom:16px;right:16px;z-index:100;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.toast{background:rgba(10,10,15,0.95);border:1px solid var(--glass-border);border-radius:10px;padding:10px 16px;font-size:0.82rem;max-width:300px;backdrop-filter:var(--blur);animation:slideIn .3s ease;display:flex;align-items:center;gap:8px}
+.toast.success{border-color:rgba(74,222,128,.4);color:#4ADE80}
+.toast.error{border-color:rgba(255,107,138,.4);color:var(--rose)}
+.toast.info{border-color:var(--glass-border);color:var(--text)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* SECTION HEADERS */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.sh-title{font-family:'Playfair Display',serif;font-size:1.2rem}
+.sh-actions{display:flex;gap:10px;align-items:center}
+
+/* SEPARATOR */
+.sep{height:1px;background:var(--glass-border);margin:24px 0}
+
+/* AI PANEL */
+.ai-panel{background:rgba(139,107,255,0.06);border:1px solid rgba(139,107,255,0.2);border-radius:var(--r20);padding:20px;margin-top:16px}
+.ai-output{background:rgba(0,0,0,0.3);border-radius:10px;padding:14px;font-size:0.85rem;color:var(--muted);min-height:60px;line-height:1.7;white-space:pre-wrap}
+
+/* DRESS UI */
+.dress-ui{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--r20);padding:20px;margin-top:20px}
+.dress-selects{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .form-row{grid-template-columns:1fr}
+  .dress-selects{grid-template-columns:1fr}
+  .sh-actions{flex-wrap:wrap}
+  .tabs{gap:2px}
+  .tab{padding:8px 14px;font-size:0.8rem}
+}
+</style>
+</head>
+<body>
+<div class="bg-mesh">
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+  <div class="blob blob3"></div>
+</div>
+
+<div class="shell">
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo">World <em>Builder</em></div>
+    <div class="world-selector">
+      <label>Active World</label>
+      <div class="ws-badge" id="active-world-badge">
+        <span class="status-dot" id="api-dot"></span>
+        <span id="active-world-name">None selected</span>
+      </div>
+      <a href="trinity-worlds.html" class="btn btn-glass btn-sm">← Hub</a>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" data-panel="worlds">🌍 Worlds</div>
+    <div class="tab" data-panel="eras">⏳ Eras</div>
+    <div class="tab" data-panel="lineages">🧬 Lineages</div>
+    <div class="tab" data-panel="places">📍 Places</div>
+    <div class="tab" data-panel="objects">🔗 Object Registry</div>
+    <div class="tab" data-panel="graph">🕸 Graph View</div>
+  </div>
+
+  <!-- ===================== PANEL: WORLDS ===================== -->
+  <div class="panel active" id="panel-worlds">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+      <!-- Left: Create World -->
+      <div>
+        <div class="section-header">
+          <div class="sh-title">Create World</div>
+          <button class="btn btn-teal btn-sm" onclick="seedWorlds()">⚡ Pre-seed Worlds</button>
+        </div>
+        <div class="card">
+          <div class="form-group">
+            <label>World Name</label>
+            <input type="text" id="w-name" placeholder="e.g. The Velvet Meridian">
+          </div>
+          <div class="form-group">
+            <label>Premise</label>
+            <textarea id="w-premise" placeholder="The founding tension of this world..."></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Dominant -ity</label>
+              <select id="w-dominant">
+                <option value="">— choose —</option>
+                <option>vitality</option><option>luminosity</option><option>authenticity</option>
+                <option>viscosity</option><option>materiality</option><option>interiority</option>
+                <option>continuity</option><option>reciprocity</option><option>totality</option>
+                <option>criticality</option><option>spontaneity</option><option>serendipity</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Shadow -ity</label>
+              <select id="w-shadow">
+                <option value="">— choose —</option>
+                <option>apathy</option><option>antipathy</option><option>melancholy</option>
+                <option>anxiety</option><option>fragility</option><option>necessity</option>
+                <option>permanence</option><option>viscosity</option><option>complexity</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Founding Era</label>
+            <input type="text" id="w-era" placeholder="e.g. 1760-1820 or The Silk Collapse, 2049">
+          </div>
+          <div class="form-group">
+            <label>Tags (comma-separated)</label>
+            <input type="text" id="w-tags" placeholder="e.g. frontier, wilderness, colonial, survival">
+          </div>
+          <div class="form-group">
+            <label>Aesthetic</label>
+            <input type="text" id="w-aesthetic" placeholder="e.g. rugged, utilitarian, frontier survival">
+          </div>
+          <div class="form-group">
+            <label>Archetypes (comma-separated)</label>
+            <input type="text" id="w-archetypes" placeholder="e.g. Pioneer, Scout, Trapper, Settler">
+          </div>
+          <div class="form-group">
+            <label>Themes (comma-separated)</label>
+            <input type="text" id="w-themes" placeholder="e.g. survival, freedom, conflict, discovery">
+          </div>
+          <div style="display:flex;gap:10px;margin-top:6px">
+            <button class="btn btn-gold" onclick="createWorld()">Create World</button>
+            <button class="btn btn-purple" onclick="generateWorldDNA()">✨ Generate World DNA</button>
+          </div>
+          <div class="ai-panel" id="world-ai-panel" style="display:none">
+            <div style="font-size:0.75rem;color:var(--purple);margin-bottom:8px">AI — World DNA</div>
+            <div class="ai-output" id="world-ai-output">Generating…</div>
+          </div>
+        </div>
+      </div>
+      <!-- Right: World List -->
+      <div>
+        <div class="section-header">
+          <div class="sh-title">Live Worlds</div>
+          <button class="btn btn-glass btn-sm" onclick="loadWorlds()">↻ Refresh</button>
+        </div>
+        <div id="world-list" style="display:flex;flex-direction:column;gap:12px">
+          <div class="card" style="color:var(--muted);font-size:0.85rem;text-align:center;padding:40px">Loading worlds…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== PANEL: ERAS ===================== -->
+  <div class="panel" id="panel-eras">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+      <div>
+        <div class="section-header">
+          <div class="sh-title">Add Era</div>
+          <button class="btn btn-purple btn-sm" onclick="generateEras()">✨ AI Generate Sequence</button>
+        </div>
+        <div class="card">
+          <div class="form-group"><label>Era Name</label><input type="text" id="era-name" placeholder="e.g. The Silk Collapse"></div>
+          <div class="form-group"><label>Description</label><textarea id="era-desc" placeholder="What defines this era?"></textarea></div>
+          <div class="form-row">
+            <div class="form-group"><label>Start Year</label><input type="text" id="era-start" placeholder="2049"></div>
+            <div class="form-group"><label>End Year</label><input type="text" id="era-end" placeholder="2074"></div>
+          </div>
+          <button class="btn btn-gold" onclick="createEra()">Add Era</button>
+        </div>
+        <div class="ai-panel" id="era-ai-panel" style="display:none;margin-top:16px">
+          <div style="font-size:0.75rem;color:var(--purple);margin-bottom:8px">AI — Era Sequence</div>
+          <div class="ai-output" id="era-ai-output">Generating…</div>
+        </div>
+      </div>
+      <div>
+        <div class="section-header"><div class="sh-title">Timeline</div></div>
+        <div class="card">
+          <div class="timeline" id="era-timeline">
+            <div style="color:var(--muted);font-size:0.85rem">Select a world to view its eras</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== PANEL: LINEAGES ===================== -->
+  <div class="panel" id="panel-lineages">
+    <div class="section-header">
+      <div class="sh-title">Lineages</div>
+      <div class="sh-actions">
+        <button class="btn btn-purple btn-sm" onclick="generateLineages()">✨ AI Generate Backstory</button>
+        <button class="btn btn-gold btn-sm" onclick="showLineageForm()">+ Add Lineage</button>
+      </div>
+    </div>
+    <div class="card" id="lineage-form-card" style="display:none;margin-bottom:20px">
+      <div class="card-title">New Lineage</div>
+      <div class="form-row">
+        <div class="form-group"><label>Name</label><input type="text" id="lin-name" placeholder="e.g. The Weavers of Meridian"></div>
+        <div class="form-group"><label>Origin</label><input type="text" id="lin-origin" placeholder="e.g. Northern Highlands, 2031"></div>
+      </div>
+      <div class="form-group"><label>Dominant Trait</label><input type="text" id="lin-trait" placeholder="e.g. viscosity — they hold things together under pressure"></div>
+      <div class="form-group"><label>Symbol / Emblem (emoji)</label><input type="text" id="lin-emoji" placeholder="🧵" style="max-width:80px"></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-gold" onclick="createLineage()">Create</button>
+        <button class="btn btn-glass" onclick="hideLineageForm()">Cancel</button>
+      </div>
+    </div>
+    <div class="lineage-grid" id="lineage-grid">
+      <div class="card" style="color:var(--muted);font-size:0.85rem;text-align:center;padding:32px">Select a world to view lineages</div>
+    </div>
+    <div class="ai-panel" id="lineage-ai-panel" style="display:none;margin-top:20px">
+      <div style="font-size:0.75rem;color:var(--purple);margin-bottom:8px">AI — Lineage Backstory</div>
+      <div class="ai-output" id="lineage-ai-output">Generating…</div>
+    </div>
+  </div>
+
+  <!-- ===================== PANEL: PLACES ===================== -->
+  <div class="panel" id="panel-places">
+    <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:24px">
+      <div>
+        <div class="section-header"><div class="sh-title">Add Place</div></div>
+        <div class="card">
+          <div class="form-group"><label>Name</label><input type="text" id="pl-name" placeholder="e.g. The Glass Meridian Market"></div>
+          <div class="form-row">
+            <div class="form-group"><label>Type</label>
+              <select id="pl-type">
+                <option>interior</option><option>exterior</option><option>liminal</option>
+                <option>sacred</option><option>industrial</option><option>natural</option><option>digital</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Era</label><input type="text" id="pl-era" placeholder="Era name or period"></div>
+          </div>
+          <div class="form-group"><label>Description</label><textarea id="pl-desc" placeholder="Sensory atmosphere of this place..."></textarea></div>
+          <div style="margin-bottom:14px">
+            <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">-ity Resonance</div>
+            <div class="form-row">
+              <div class="form-group"><label>Temperature</label><input type="range" id="pl-temp" min="0" max="1" step="0.1" value="0.5" oninput="updateRangeLabel(this,'pl-temp-v')"><span id="pl-temp-v">0.5</span></div>
+              <div class="form-group"><label>Luminosity</label><input type="range" id="pl-light" min="0" max="1" step="0.1" value="0.5" oninput="updateRangeLabel(this,'pl-light-v')"><span id="pl-light-v">0.5</span></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Danger</label><input type="range" id="pl-danger" min="0" max="1" step="0.1" value="0.5" oninput="updateRangeLabel(this,'pl-danger-v')"><span id="pl-danger-v">0.5</span></div>
+              <div class="form-group"><label>Possibility</label><input type="range" id="pl-poss" min="0" max="1" step="0.1" value="0.5" oninput="updateRangeLabel(this,'pl-poss-v')"><span id="pl-poss-v">0.5</span></div>
+            </div>
+          </div>
+          <button class="btn btn-gold" onclick="createPlace()">Add to Atlas</button>
+        </div>
+      </div>
+      <div>
+        <div class="section-header">
+          <div class="sh-title">Place Atlas</div>
+          <button class="btn btn-glass btn-sm" onclick="loadPlaces()">↻ Refresh</button>
+        </div>
+        <div id="place-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">
+          <div class="card" style="color:var(--muted);font-size:0.85rem;text-align:center;padding:32px">No places yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== PANEL: OBJECT REGISTRY ===================== -->
+  <div class="panel" id="panel-objects">
+    <div class="section-header">
+      <div class="sh-title">Object Registry — Connective Layer</div>
+      <div class="sh-actions">
+        <button class="btn btn-teal" onclick="syncGarmentsFromStudio()">⟳ Sync from Garment Studio</button>
+        <button class="btn btn-glass btn-sm" onclick="loadObjectRegistry()">↻ Refresh</button>
+      </div>
+    </div>
+
+    <!-- Garment shelf -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">Garments in World</div>
+      <div id="garment-shelf" style="display:flex;flex-direction:column;gap:8px">
+        <div style="color:var(--muted);font-size:0.85rem">Sync from Garment Studio or select a world</div>
+      </div>
+    </div>
+
+    <!-- Dress Character UI -->
+    <div class="dress-ui">
+      <div class="card-title">Dress Character</div>
+      <div class="dress-selects">
+        <div class="form-group">
+          <label>Character</label>
+          <select id="dress-char">
+            <option value="">— select character —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Garment</label>
+          <select id="dress-garment">
+            <option value="">— select garment —</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Era Context</label><input type="text" id="dress-era" placeholder="e.g. Opening Night 2049"></div>
+        <div class="form-group"><label>Narrative Context</label><input type="text" id="dress-context" placeholder="Why they wore it..."></div>
+      </div>
+      <button class="btn btn-gold" onclick="dressCharacter()">Connect WEARS ↗</button>
+    </div>
+
+    <!-- Wardrobe display -->
+    <div class="sep"></div>
+    <div class="section-header">
+      <div class="sh-title">Character Wardrobes</div>
+      <button class="btn btn-glass btn-sm" onclick="loadWardrobes()">↻ Load Wardrobes</button>
+    </div>
+    <div id="wardrobe-list" style="display:flex;flex-direction:column;gap:8px">
+      <div style="color:var(--muted);font-size:0.85rem">Click "Load Wardrobes" to view character dress connections</div>
+    </div>
+
+    <!-- Expressed -ity -->
+    <div class="sep"></div>
+    <div class="section-header">
+      <div class="sh-title">Expressed -ity</div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <select id="expr-char" style="background:var(--glass);border:1px solid var(--glass-border);border-radius:8px;padding:6px 12px;color:var(--text);font-size:0.85rem">
+          <option value="">— select character —</option>
+        </select>
+        <button class="btn btn-gold btn-sm" onclick="computeExpressedIty()">Compute</button>
+      </div>
+    </div>
+    <div class="expressed-panel" id="expressed-panel" style="display:none">
+      <div class="ep-title">Expressed -ity Profile</div>
+      <div id="expressed-bars"></div>
+      <div id="expressed-note" style="font-size:0.75rem;color:var(--muted);margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- ===================== PANEL: GRAPH VIEW ===================== -->
+  <div class="panel" id="panel-graph">
+    <div class="section-header">
+      <div class="sh-title">Graph View</div>
+      <div class="sh-actions">
+        <button class="btn btn-glass btn-sm" onclick="renderGraph()">↻ Render</button>
+        <button class="btn btn-gold btn-sm" onclick="resetGraphView()">Reset View</button>
+      </div>
+    </div>
+    <canvas id="graph-canvas"></canvas>
+    <div class="graph-legend">
+      <div class="gl-item"><div class="gl-dot" style="background:var(--blue);border-radius:50%"></div>Character</div>
+      <div class="gl-item"><div class="gl-dot" style="background:var(--purple);transform:rotate(45deg)"></div>Garment</div>
+      <div class="gl-item"><div class="gl-dot" style="background:var(--amber)"></div>Place</div>
+      <div class="gl-item"><div class="gl-dot" style="background:var(--rose);border-radius:50%"></div>Spark</div>
+    </div>
+    <div class="node-detail" id="node-detail">
+      <div style="color:var(--muted);font-size:0.85rem">Click any node to see details</div>
+    </div>
+  </div>
+
+</div><!-- /shell -->
+
+<!-- TOAST CONTAINER -->
+<div class="status-bar" id="toasts"></div>
+
+<script src="trinity-context-engine.js"></script>
+<script>
+// =============================================================================
+//  CONSTANTS & STATE
+// =============================================================================
+const API = 'https://trinity-graph-api-328246068140.us-central1.run.app';
+const OR_PROXY = 'https://openrouter-proxy-328246068140.us-central1.run.app/api/generate';
+
+const LS_WORLD = 'trinity_active_world_id';
+const LS_CHARS = 'trinity_characters';
+const LS_GARMENTS = 'trinity_garments';
+const LS_PLACES = 'trinity_places';
+const LS_SPARKS = 'trinity_sparks';
+const LS_VE = 've_garments'; // bridged from Garment Studio
+
+let state = {
+  activeWorld: null,  // {id, name, ...}
+  worlds: [],
+  characters: [],
+  garments: [],
+  places: [],
+  sparks: [],
+  eras: [],
+  lineages: [],
+  graphNodes: [],
+  graphEdges: [],
+};
+
+// Graph canvas state
+let gc = { scale: 1, offX: 0, offY: 0, drag: false, lastX: 0, lastY: 0, selectedNode: null, nodes: [], edges: [] };
+
+// =============================================================================
+//  API HELPERS
+// =============================================================================
+async function api(path, opts = {}) {
+  const url = API + path;
+  try {
+    const res = await fetch(url, {
+      headers: { 'Content-Type': 'application/json', ...opts.headers },
+      ...opts,
+      body: opts.body ? JSON.stringify(opts.body) : undefined,
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`${res.status}: ${err}`);
+    }
+    if (res.status === 204) return null;
+    return res.json();
+  } catch (e) {
+    console.warn('API error:', path, e.message);
+    throw e;
+  }
+}
+
+function ls(key) { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; } }
+function lsSet(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+// =============================================================================
+//  TOAST
+// =============================================================================
+function toast(msg, type = 'info', ms = 3500) {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '✗' : 'ℹ'}</span>${msg}`;
+  document.getElementById('toasts').prepend(el);
+  setTimeout(() => el.remove(), ms);
+}
+
+// =============================================================================
+//  TABS
+// =============================================================================
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-' + t.dataset.panel).classList.add('active');
+    if (t.dataset.panel === 'objects') loadObjectRegistry();
+    if (t.dataset.panel === 'graph') renderGraph();
+    if (t.dataset.panel === 'eras') loadEras();
+    if (t.dataset.panel === 'lineages') loadLineages();
+    if (t.dataset.panel === 'places') loadPlaces();
+  });
+});
+
+// =============================================================================
+//  WORLD SELECTION
+// =============================================================================
+function selectWorld(world) {
+  state.activeWorld = world;
+  lsSet(LS_WORLD, world.id);
+  // Write full context object for TrinityContext engine
+  const fullContext = {
+    id: world.id,
+    name: world.name,
+    era: world.era || '',
+    geography: world.geography || '',
+    aesthetic: world.aesthetic || '',
+    tags: world.tags ? (Array.isArray(world.tags) ? world.tags : world.tags.split(',').map(s => s.trim()).filter(Boolean)) : [],
+    archetypes: world.archetypes ? (Array.isArray(world.archetypes) ? world.archetypes : world.archetypes.split(',').map(s => s.trim()).filter(Boolean)) : [],
+    ity_profile: world.ity_profile || {},
+    themes: world.themes ? (Array.isArray(world.themes) ? world.themes : world.themes.split(',').map(s => s.trim()).filter(Boolean)) : [],
+    premise: world.premise || '',
+    dominant_ity: world.dominant_ity || '',
+    shadow_ity: world.shadow_ity || '',
+  };
+  lsSet('trinity_active_world', fullContext);
+  document.getElementById('active-world-name').textContent = world.name;
+  document.querySelectorAll('.world-card').forEach(c => c.classList.remove('selected'));
+  const el = document.querySelector(`.world-card[data-id="${world.id}"]`);
+  if (el) el.classList.add('selected');
+  toast(`World "${world.name}" activated`, 'success');
+  loadCharacters();
+}
+
+function updateRangeLabel(el, id) {
+  document.getElementById(id).textContent = parseFloat(el.value).toFixed(1);
+}
+
+// =============================================================================
+//  WORLDS TAB
+// =============================================================================
+async function loadWorlds() {
+  const list = document.getElementById('world-list');
+  list.innerHTML = '<div class="card" style="color:var(--muted);font-size:0.85rem;text-align:center;padding:32px">Loading…</div>';
+  try {
+    const worlds = await api('/worlds');
+    state.worlds = worlds || [];
+    renderWorldList(state.worlds);
+    // Restore active world
+    const savedId = localStorage.getItem(LS_WORLD);
+    if (savedId && !state.activeWorld) {
+      const w = state.worlds.find(x => x.id === savedId);
+      if (w) selectWorld(w);
+    }
+  } catch (e) {
+    // API list is broken but worlds can still be created — show empty state
+    state.worlds = state.worlds || [];
+    if (!state.worlds.length) {
+      list.innerHTML = `<div class="card" style="color:var(--muted);font-size:0.85rem;padding:20px">Could not load worlds list — create a new world above and it will appear here.</div>`;
+    } else {
+      renderWorlds(state.worlds);
+    }
+  }
+}
+
+function renderWorlds(worlds) {
+  const list = document.getElementById('world-list');
+  renderWorldList(worlds);
+}
+
+function renderWorldList(worlds) {
+  const list = document.getElementById('world-list');
+  if (!worlds.length) {
+    list.innerHTML = '<div class="card" style="color:var(--muted);font-size:0.85rem;text-align:center;padding:32px">No worlds yet. Create one!</div>';
+    return;
+  }
+  list.innerHTML = worlds.map(w => `
+    <div class="world-card${state.activeWorld?.id === w.id ? ' selected' : ''}" data-id="${w.id}" onclick="selectWorld(${JSON.stringify(w).replace(/"/g, '&quot;')})">
+      <div class="wc-name">${w.name}</div>
+      <div class="wc-meta">${w.premise ? w.premise.substring(0, 80) + '…' : 'No premise'}</div>
+      ${w.dominant_ity ? `<span class="wc-badge" style="border-color:var(--gold-dim);color:var(--gold);background:rgba(207,184,124,0.1)">${w.dominant_ity}</span>` : ''}
+      ${w.shadow_ity ? `<span class="wc-badge" style="border-color:rgba(255,107,138,0.4);color:var(--rose);background:rgba(255,107,138,0.08);margin-left:6px">${w.shadow_ity}</span>` : ''}
+    </div>
+  `).join('');
+}
+
+async function createWorld() {
+  const name = document.getElementById('w-name').value.trim();
+  if (!name) { toast('Name required', 'error'); return; }
+  try {
+    const tagsRaw = document.getElementById('w-tags').value;
+    const archetypesRaw = document.getElementById('w-archetypes').value;
+    const themesRaw = document.getElementById('w-themes').value;
+    const world = await api('/worlds', {
+      method: 'POST',
+      body: {
+        name,
+        description: document.getElementById('w-premise').value,
+        premise: document.getElementById('w-premise').value,
+        dominant_ity: document.getElementById('w-dominant').value || null,
+        shadow_ity: document.getElementById('w-shadow').value || null,
+        era: document.getElementById('w-era').value || null,
+        aesthetic: document.getElementById('w-aesthetic').value || null,
+        tags: tagsRaw ? tagsRaw.split(',').map(s => s.trim()).filter(Boolean) : [],
+        archetypes: archetypesRaw ? archetypesRaw.split(',').map(s => s.trim()).filter(Boolean) : [],
+        themes: themesRaw ? themesRaw.split(',').map(s => s.trim()).filter(Boolean) : [],
+      }
+    });
+    toast(`World "${world.name}" created!`, 'success');
+    // Add created world to local list immediately (don't rely on GET /worlds)
+    state.worlds = state.worlds || [];
+    state.worlds.unshift(world);
+    renderWorlds(state.worlds);
+  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+async function seedWorlds() {
+  const seeds = [
+    { name: 'The Velvet Meridian', premise: 'A world where emotion is traded as currency and garments hold memory.', dominant_ity: 'vitality', shadow_ity: 'fragility', era: 'The Silk Collapse, 2049' },
+    { name: 'Ubiquity Station', premise: 'Everything exists everywhere simultaneously. Privacy is extinct.', dominant_ity: 'ubiquity', shadow_ity: 'interiority', era: 'Post-Signal, 2071' },
+    { name: 'The Continuity Weave', premise: 'History does not end — it layers. The past is always present.', dominant_ity: 'continuity', shadow_ity: 'spontaneity', era: 'The Long Now' },
+  ];
+  for (const seed of seeds) {
+    try { await api('/worlds', { method: 'POST', body: seed }); } catch {}
+  }
+  toast('Pre-seeded 3 worlds', 'success');
+  loadWorlds();
+}
+
+async function generateWorldDNA() {
+  const name = document.getElementById('w-name').value || 'Unnamed World';
+  const premise = document.getElementById('w-premise').value || '';
+  const dom = document.getElementById('w-dominant').value || '';
+  const shadow = document.getElementById('w-shadow').value || '';
+  document.getElementById('world-ai-panel').style.display = 'block';
+  document.getElementById('world-ai-output').textContent = '✨ Generating World DNA…';
+
+  const prompt = `You are a world-building assistant for the Ontological Theatre system, which uses "-ity" words as ontological primitives.
+
+Generate a World DNA profile for: "${name}"
+Premise: ${premise}
+Dominant -ity: ${dom || 'undefined'} | Shadow -ity: ${shadow || 'undefined'}
+
+Return EXACTLY this JSON structure (no markdown, no explanation, just valid JSON):
+{
+  "tags": ["tag1","tag2","tag3","tag4","tag5","tag6"],
+  "aesthetic": "single line describing the visual/sensory aesthetic of this world",
+  "archetypes": ["Archetype 1","Archetype 2","Archetype 3","Archetype 4","Archetype 5","Archetype 6"],
+  "themes": ["theme1","theme2","theme3","theme4","theme5"],
+  "era": "time period or range (e.g. 1760-1820 or The Silk Age, 2049)",
+  "lineages": [
+    {"name":"Lineage Name","origin":"Brief origin","trait":"dominant quality"}
+  ],
+  "eras": [
+    {"name":"Era Name","desc":"Brief era description"}
+  ],
+  "places": [
+    {"name":"Place Name","type":"place type","atmosphere":"sensory atmosphere"}
+  ],
+  "tension": "The world's central philosophical tension in one sentence.",
+  "opening": "A poetic 2-line opening monologue for this world."
+}
+
+Be specific, evocative, and faithful to the premise. Tags should be 3-8 short lowercase words. Archetypes should be character types a person in this world might be.`;
+
+  try {
+    const res = await fetch('https://awareness-proxy-328246068140.us-central1.run.app/gemini/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gemini-3.1-pro-preview',
+        contents: [{ parts: [{ text: prompt }] }]
+      })
+    });
+    const data = await res.json();
+    const raw = (data.candidates?.[0]?.content?.parts?.[0]?.text || data.text || '').trim();
+    // Parse JSON — strip any markdown fencing
+    const jsonStr = raw.replace(/^```json?\s*/,'').replace(/```\s*$/,'').trim();
+    let dna;
+    try { dna = JSON.parse(jsonStr); } catch(e) {
+      document.getElementById('world-ai-output').textContent = raw;
+      return;
+    }
+
+    // Auto-fill the form fields
+    if (dna.tags) document.getElementById('w-tags').value = dna.tags.join(', ');
+    if (dna.aesthetic) document.getElementById('w-aesthetic').value = dna.aesthetic;
+    if (dna.archetypes) document.getElementById('w-archetypes').value = dna.archetypes.join(', ');
+    if (dna.themes) document.getElementById('w-themes').value = dna.themes.join(', ');
+    if (dna.era && !document.getElementById('w-era').value) document.getElementById('w-era').value = dna.era;
+
+    // Display full DNA as text
+    let display = `✅ World DNA generated — fields auto-filled above!\n\n`;
+    if (dna.tension) display += `TENSION: ${dna.tension}\n\n`;
+    if (dna.opening) display += `OPENING:\n${dna.opening}\n\n`;
+    if (dna.lineages) display += `LINEAGES:\n${dna.lineages.map(l=>`• ${l.name} — ${l.origin} (${l.trait})`).join('\n')}\n\n`;
+    if (dna.eras) display += `ERAS:\n${dna.eras.map(e=>`• ${e.name}: ${e.desc}`).join('\n')}\n\n`;
+    if (dna.places) display += `PLACES:\n${dna.places.map(p=>`• ${p.name} (${p.type}): ${p.atmosphere}`).join('\n')}`;
+    document.getElementById('world-ai-output').textContent = display;
+  } catch (e) {
+    document.getElementById('world-ai-output').textContent = `[Generation failed: ${e.message}]\n\nTry: Frontier, Silk Empire, Deep Ocean, Ancient Rome, Afrofuture 2120...`;
+  }
+}
+
+// =============================================================================
+//  ERAS TAB
+// =============================================================================
+async function loadEras() {
+  if (!state.activeWorld) {
+    document.getElementById('era-timeline').innerHTML = '<div style="color:var(--muted);font-size:0.85rem">Select a world first</div>';
+    return;
+  }
+  try {
+    const eras = await api(`/eras?world_id=${state.activeWorld.id}`);
+    state.eras = eras || [];
+    renderEraTimeline(state.eras);
+  } catch (e) {
+    // Try localStorage
+    renderEraTimeline([]);
+  }
+}
+
+function renderEraTimeline(eras) {
+  const el = document.getElementById('era-timeline');
+  if (!eras.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:0.85rem">No eras yet</div>';
+    return;
+  }
+  el.innerHTML = eras.map(e => `
+    <div class="tl-item">
+      <div class="tl-name">${e.name}</div>
+      ${e.start_year || e.end_year ? `<div class="tl-desc" style="color:var(--gold);font-size:0.72rem">${e.start_year || '?'} — ${e.end_year || 'ongoing'}</div>` : ''}
+      <div class="tl-desc">${e.description || ''}</div>
+    </div>
+  `).join('');
+}
+
+async function createEra() {
+  if (!state.activeWorld) { toast('Select a world first', 'error'); return; }
+  const name = document.getElementById('era-name').value.trim();
+  if (!name) { toast('Era name required', 'error'); return; }
+  try {
+    await api('/eras', { method: 'POST', body: {
+      name,
+      world_id: state.activeWorld.id,
+      description: document.getElementById('era-desc').value,
+      start_year: document.getElementById('era-start').value || null,
+      end_year: document.getElementById('era-end').value || null,
+    }});
+    toast('Era added', 'success');
+    loadEras();
+  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+async function generateEras() {
+  if (!state.activeWorld) { toast('Select a world first', 'error'); return; }
+  document.getElementById('era-ai-panel').style.display = 'block';
+  document.getElementById('era-ai-output').textContent = 'Generating era sequence…';
+  const prompt = `Generate 5 historical eras for the world "${state.activeWorld.name}".
+Premise: ${state.activeWorld.premise || 'unknown'}
+Format each as: ERA NAME | start–end | Brief description (1-2 sentences)
+Make them poetic, specific, and revealing of the world's nature.`;
+  try {
+    const res = await fetch(OR_PROXY, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, max_tokens: 400 }) });
+    const data = await res.json();
+    document.getElementById('era-ai-output').textContent = data.text || data.content || JSON.stringify(data);
+  } catch {
+    document.getElementById('era-ai-output').textContent = `1. The Origin Weave | 2001–2031 | When cloth first held memory.\n2. The Silk Collapse | 2031–2049 | Global textile systems failed; emotion became currency.\n3. The Meridian Rise | 2049–2065 | New weavers emerged from the ruins.\n4. The Glass Age | 2065–2079 | Transparency became violence.\n5. The New Continuity | 2079–present | History layers upon itself endlessly.`;
+  }
+}
+
+// =============================================================================
+//  LINEAGES TAB
+// =============================================================================
+async function loadLineages() {
+  if (!state.activeWorld) {
+    document.getElementById('lineage-grid').innerHTML = '<div class="card" style="color:var(--muted);text-align:center;padding:32px">Select a world first</div>';
+    return;
+  }
+  try {
+    const lineages = await api(`/lineages?world_id=${state.activeWorld.id}`);
+    state.lineages = lineages || [];
+    renderLineages(state.lineages);
+  } catch {
+    renderLineages([]);
+  }
+}
+
+function renderLineages(lineages) {
+  const grid = document.getElementById('lineage-grid');
+  if (!lineages.length) {
+    grid.innerHTML = '<div class="lineage-card" style="color:var(--muted);font-size:0.85rem;text-align:center">No lineages yet</div>';
+    return;
+  }
+  const emojis = ['🧵','🔮','⚡','🌊','🔥','🌿','💎','🌙'];
+  grid.innerHTML = lineages.slice(0, 8).map((l, i) => `
+    <div class="lineage-card">
+      <div class="lc-emblem">${l.symbol || emojis[i % emojis.length]}</div>
+      <div class="lc-name">${l.name}</div>
+      <div class="lc-origin">${l.origin || ''}</div>
+      ${l.dominant_trait ? `<span class="lc-trait">${l.dominant_trait}</span>` : ''}
+    </div>
+  `).join('');
+}
+
+function showLineageForm() { document.getElementById('lineage-form-card').style.display = 'block'; }
+function hideLineageForm() { document.getElementById('lineage-form-card').style.display = 'none'; }
+
+async function createLineage() {
+  if (!state.activeWorld) { toast('Select a world first', 'error'); return; }
+  const name = document.getElementById('lin-name').value.trim();
+  if (!name) { toast('Name required', 'error'); return; }
+  try {
+    await api('/lineages', { method: 'POST', body: {
+      name,
+      world_id: state.activeWorld.id,
+      origin: document.getElementById('lin-origin').value,
+      dominant_trait: document.getElementById('lin-trait').value,
+      symbol: document.getElementById('lin-emoji').value || null,
+    }});
+    toast('Lineage created', 'success');
+    hideLineageForm();
+    loadLineages();
+  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+async function generateLineages() {
+  if (!state.activeWorld) { toast('Select a world first', 'error'); return; }
+  document.getElementById('lineage-ai-panel').style.display = 'block';
+  document.getElementById('lineage-ai-output').textContent = 'Generating lineage backstories…';
+  const prompt = `Generate 4 lineages for the world "${state.activeWorld.name}".
+Premise: ${state.activeWorld.premise || ''}
+For each lineage provide: NAME | Origin | Dominant -ity trait | 2-sentence backstory
+Make them feel ancient, specific, and in tension with each other.`;
+  try {
+    const res = await fetch(OR_PROXY, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, max_tokens: 500 }) });
+    const data = await res.json();
+    document.getElementById('lineage-ai-output').textContent = data.text || data.content || JSON.stringify(data);
+  } catch {
+    document.getElementById('lineage-ai-output').textContent = `THE WEAVERS | Northern Highlands, 2031 | viscosity | They hold the world together under pressure. Their garments outlast their wearers.\n\nTHE LUMINANTS | Glass District, 2049 | luminosity | Born from the Silk Collapse, they see through everything. Translucency is their inheritance.\n\nTHE VISCOSE | Underground Rivers | materiality | They believe matter is the only truth. Their craft is weight.\n\nTHE MERIDIANS | Crossroads of Time | continuity | They remember everything. Forgetting is their only sin.`;
+  }
+}
+
+// =============================================================================
+//  PLACES TAB
+// =============================================================================
+async function loadPlaces() {
+  if (!state.activeWorld) {
+    renderPlaces([]);
+    return;
+  }
+  try {
+    const places = await api(`/places?world_id=${state.activeWorld.id}`);
+    state.places = places || [];
+    lsSet(LS_PLACES, state.places);
+    renderPlaces(state.places);
+  } catch {
+    state.places = ls(LS_PLACES) || [];
+    renderPlaces(state.places);
+  }
+}
+
+function renderPlaces(places) {
+  const grid = document.getElementById('place-grid');
+  if (!places.length) {
+    grid.innerHTML = '<div class="place-card" style="color:var(--muted);font-size:0.85rem;text-align:center">No places yet</div>';
+    return;
+  }
+  const typeColors = { interior:'var(--blue)', exterior:'var(--teal)', liminal:'var(--purple)', sacred:'var(--gold)', industrial:'var(--rose)', natural:'#6BFF9E', digital:'#FF6B6B' };
+  grid.innerHTML = places.map(p => `
+    <div class="place-card">
+      <div class="pc-type" style="color:${typeColors[p.type] || 'var(--muted)'}">${p.type || 'unknown'}</div>
+      <div class="pc-name">${p.name}</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:10px">${p.description ? p.description.substring(0, 80) + '…' : ''}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        ${p.sensory_light !== undefined ? `<span class="badge badge-gold">💡${p.sensory_light.toFixed(1)}</span>` : ''}
+        ${p.sensory_danger !== undefined ? `<span class="badge badge-rose">⚠${p.sensory_danger.toFixed(1)}</span>` : ''}
+        ${p.sensory_possibility !== undefined ? `<span class="badge badge-teal">✦${p.sensory_possibility.toFixed(1)}</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function createPlace() {
+  if (!state.activeWorld) { toast('Select a world first', 'error'); return; }
+  const name = document.getElementById('pl-name').value.trim();
+  if (!name) { toast('Place name required', 'error'); return; }
+  try {
+    const place = await api('/places', { method: 'POST', body: {
+      name,
+      world_id: state.activeWorld.id,
+      type: document.getElementById('pl-type').value,
+      era_id: null,
+      description: document.getElementById('pl-desc').value,
+      sensory_temperature: parseFloat(document.getElementById('pl-temp').value),
+      sensory_light: parseFloat(document.getElementById('pl-light').value),
+      sensory_danger: parseFloat(document.getElementById('pl-danger').value),
+      sensory_possibility: parseFloat(document.getElementById('pl-poss').value),
+      sensory_sound: 0.5, sensory_smell: 0.5,
+    }});
+    toast(`Place "${place.name}" added`, 'success');
+    loadPlaces();
+  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+// =============================================================================
+//  OBJECT REGISTRY
+// =============================================================================
+async function loadObjectRegistry() {
+  if (!state.activeWorld) {
+    toast('Select a world first', 'info');
+    return;
+  }
+  await Promise.all([loadGarmentShelf(), loadCharacters()]);
+}
+
+async function loadGarmentShelf() {
+  try {
+    const garments = await api(`/garments?world_id=${state.activeWorld?.id || ''}`);
+    state.garments = garments || [];
+    lsSet(LS_GARMENTS, state.garments);
+    renderGarmentShelf(state.garments);
+    populateGarmentSelect();
+  } catch {
+    state.garments = ls(LS_GARMENTS) || [];
+    renderGarmentShelf(state.garments);
+    populateGarmentSelect();
+  }
+}
+
+function renderGarmentShelf(garments) {
+  const el = document.getElementById('garment-shelf');
+  if (!garments.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:0.85rem">No garments. Sync from Garment Studio.</div>';
+    return;
+  }
+  el.innerHTML = garments.map(g => `
+    <div class="garment-item">
+      <div class="gi-icon">👗</div>
+      <div class="gi-info">
+        <div class="gi-name">${g.name}</div>
+        <div class="gi-meta">${g.collection || ''} ${g.stage ? '· ' + g.stage : ''}</div>
+        <div class="gi-badges">
+          ${g.intent ? `<span class="badge badge-purple">${g.intent}</span>` : ''}
+          ${g.materiality ? `<span class="badge badge-gold">mat:${g.materiality.toFixed(1)}</span>` : ''}
+          ${g.luminosity ? `<span class="badge badge-teal">lum:${g.luminosity.toFixed(1)}</span>` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function loadCharacters() {
+  if (!state.activeWorld) return;
+  try {
+    const chars = await api(`/characters?world_id=${state.activeWorld.id}`);
+    state.characters = chars || [];
+    lsSet(LS_CHARS, state.characters);
+    populateCharacterSelects();
+  } catch {
+    state.characters = ls(LS_CHARS) || [];
+    populateCharacterSelects();
+  }
+}
+
+function populateCharacterSelects() {
+  const opts = state.characters.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  ['dress-char', 'expr-char'].forEach(id => {
+    const sel = document.getElementById(id);
+    const prev = sel.value;
+    sel.innerHTML = `<option value="">— select character —</option>` + opts;
+    if (prev) sel.value = prev;
+  });
+}
+
+function populateGarmentSelect() {
+  const sel = document.getElementById('dress-garment');
+  const prev = sel.value;
+  sel.innerHTML = `<option value="">— select garment —</option>` + state.garments.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+  if (prev) sel.value = prev;
+}
+
+async function syncGarmentsFromStudio() {
+  // Read ve_garments from localStorage (Garment Studio format)
+  const veGarments = ls(LS_VE);
+  if (!veGarments || !Object.keys(veGarments).length) {
+    toast('No garments found in Garment Studio localStorage (ve_garments)', 'info');
+    return;
+  }
+  if (!state.activeWorld) { toast('Select a world first', 'error'); return; }
+  
+  const garmentList = Array.isArray(veGarments) ? veGarments : Object.values(veGarments);
+  let synced = 0;
+
+  for (const g of garmentList) {
+    try {
+      const ityProfile = {
+        materiality: g.materiality || 0.5,
+        luminosity: g.luminosity || 0.5,
+        tactility: g.tactility || 0.5,
+        sensuosity: g.sensuosity || 0.5,
+      };
+      await api('/garments', { method: 'POST', body: {
+        name: g.name || 'Untitled',
+        world_id: state.activeWorld.id,
+        collection: g.collection || g.season || null,
+        intent: g.intent || null,
+        stage: g.stage || g.status || null,
+        ity_profile: ityProfile,
+        materiality: g.materiality || 0.5,
+        luminosity: g.luminosity || 0.5,
+        tactility: g.tactility || 0.5,
+        sensuosity: g.sensuosity || 0.5,
+        description: g.description || null,
+        fabric: g.fabric || null,
+      }});
+      synced++;
+    } catch (e) {
+      console.warn('Garment sync failed:', g.name, e.message);
+    }
+  }
+
+  // Write to trinity_garments localStorage
+  lsSet(LS_GARMENTS, garmentList);
+  toast(`Synced ${synced} garments from Studio`, 'success');
+  loadGarmentShelf();
+}
+
+async function dressCharacter() {
+  const charId = document.getElementById('dress-char').value;
+  const garmentId = document.getElementById('dress-garment').value;
+  if (!charId || !garmentId) { toast('Select both character and garment', 'error'); return; }
+  try {
+    const result = await api(`/characters/${charId}/wear/${garmentId}`, {
+      method: 'POST',
+      body: {
+        era: document.getElementById('dress-era').value || null,
+        context: document.getElementById('dress-context').value || null,
+      }
+    });
+    toast(`WEARS relationship created: ${result.garment_name || 'garment'}`, 'success');
+    loadWardrobes();
+  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+async function loadWardrobes() {
+  const el = document.getElementById('wardrobe-list');
+  if (!state.characters.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:0.85rem">No characters loaded</div>';
+    return;
+  }
+  el.innerHTML = '<div style="color:var(--muted);font-size:0.85rem">Loading wardrobes…</div>';
+  const rows = [];
+  for (const char of state.characters.slice(0, 8)) {
+    try {
+      const wardrobe = await api(`/characters/${char.id}/wardrobe`);
+      rows.push({ char, wardrobe: wardrobe || [] });
+    } catch {
+      rows.push({ char, wardrobe: [] });
+    }
+  }
+  el.innerHTML = rows.map(({ char, wardrobe }) => `
+    <div class="wardrobe-row">
+      <div class="wr-char">${char.name}</div>
+      <div class="wr-garments">
+        ${wardrobe.length ? wardrobe.map(g => `<span class="badge badge-purple">👗 ${g.name}${g.era ? ' · ' + g.era : ''}</span>`).join('') : '<span style="color:var(--muted);font-size:0.75rem">no garments</span>'}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function computeExpressedIty() {
+  const charId = document.getElementById('expr-char').value;
+  if (!charId) { toast('Select a character', 'error'); return; }
+  try {
+    const result = await api(`/characters/${charId}/expressed_ity`);
+    showExpressedIty(result);
+  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+function showExpressedIty(data) {
+  const panel = document.getElementById('expressed-panel');
+  const bars = document.getElementById('expressed-bars');
+  const note = document.getElementById('expressed-note');
+  panel.style.display = 'block';
+  
+  const profile = data.expressed_ity || {};
+  const top = Object.entries(profile).sort((a,b) => b[1] - a[1]).slice(0, 10);
+  bars.innerHTML = top.map(([key, val]) => `
+    <div class="ity-bar">
+      <label>${key}</label>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${(val*100).toFixed(0)}%"></div></div>
+      <div class="bar-val">${val.toFixed(2)}</div>
+    </div>
+  `).join('');
+  note.textContent = data.blend_note || '';
+}
+
+// =============================================================================
+//  GRAPH VIEW
+// =============================================================================
+let graphAnimFrame = null;
+
+async function renderGraph() {
+  if (!state.activeWorld) { toast('Select a world first', 'info'); return; }
+  
+  // Fetch data
+  try {
+    const [chars, garments, places, sparks] = await Promise.allSettled([
+      api(`/characters?world_id=${state.activeWorld.id}`),
+      api(`/garments?world_id=${state.activeWorld.id}`),
+      api(`/places?world_id=${state.activeWorld.id}`),
+      api(`/sparks?world_id=${state.activeWorld.id}`),
+    ]);
+    
+    state.characters = chars.value || state.characters || [];
+    state.garments = garments.value || state.garments || [];
+    state.places = places.value || state.places || [];
+    state.sparks = sparks.value || [];
+  } catch {}
+
+  buildGraphData();
+  initGraphCanvas();
+}
+
+function buildGraphData() {
+  gc.nodes = [];
+  gc.edges = [];
+  
+  const W = 900, H = 520;
+  const cx = W/2, cy = H/2;
+  
+  // Characters — circles, arranged in inner ring
+  state.characters.forEach((c, i) => {
+    const angle = (i / Math.max(state.characters.length, 1)) * Math.PI * 2;
+    const r = 140;
+    gc.nodes.push({
+      id: c.id, type: 'character', label: c.name,
+      x: cx + Math.cos(angle) * r + (Math.random() - 0.5) * 40,
+      y: cy + Math.sin(angle) * r + (Math.random() - 0.5) * 40,
+      radius: 18, color: '#6BA4FF', data: c,
+    });
+  });
+  
+  // Garments — diamonds, outer ring
+  state.garments.forEach((g, i) => {
+    const angle = (i / Math.max(state.garments.length, 1)) * Math.PI * 2 + 0.3;
+    const r = 220;
+    gc.nodes.push({
+      id: g.id, type: 'garment', label: g.name,
+      x: cx + Math.cos(angle) * r + (Math.random() - 0.5) * 40,
+      y: cy + Math.sin(angle) * r + (Math.random() - 0.5) * 40,
+      radius: 14, color: '#8B6BFF', data: g,
+    });
+  });
+  
+  // Places — squares
+  state.places.forEach((p, i) => {
+    const angle = (i / Math.max(state.places.length, 1)) * Math.PI * 2 + 1.2;
+    const r = 260;
+    gc.nodes.push({
+      id: p.id, type: 'place', label: p.name,
+      x: cx + Math.cos(angle) * r + (Math.random() - 0.5) * 50,
+      y: cy + Math.sin(angle) * r + (Math.random() - 0.5) * 50,
+      radius: 16, color: '#FFB86B', data: p,
+    });
+  });
+  
+  // Edges from sparks
+  state.sparks.forEach(s => {
+    gc.edges.push({
+      from: s.character_a_id, to: s.character_b_id,
+      color: 'rgba(255,107,138,0.5)', label: s.convergence_score?.toFixed(2) || '',
+    });
+  });
+}
+
+function initGraphCanvas() {
+  const canvas = document.getElementById('graph-canvas');
+  if (!canvas) return;
+  canvas.width = canvas.offsetWidth;
+  canvas.height = 560;
+  gc.scale = 1; gc.offX = 0; gc.offY = 0;
+  
+  // Drag
+  canvas.onmousedown = e => { gc.drag = true; gc.lastX = e.clientX; gc.lastY = e.clientY; };
+  canvas.onmouseup = e => {
+    if (!gc.drag || (Math.abs(e.clientX - gc.lastX) < 3 && Math.abs(e.clientY - gc.lastY) < 3)) {
+      handleGraphClick(e, canvas);
+    }
+    gc.drag = false;
+  };
+  canvas.onmousemove = e => {
+    if (gc.drag) {
+      gc.offX += e.clientX - gc.lastX;
+      gc.offY += e.clientY - gc.lastY;
+      gc.lastX = e.clientX; gc.lastY = e.clientY;
+      drawGraph(canvas);
+    }
+  };
+  canvas.onwheel = e => {
+    e.preventDefault();
+    gc.scale = Math.max(0.3, Math.min(3, gc.scale * (e.deltaY < 0 ? 1.1 : 0.9)));
+    drawGraph(canvas);
+  };
+  
+  if (graphAnimFrame) cancelAnimationFrame(graphAnimFrame);
+  drawGraph(canvas);
+}
+
+function drawGraph(canvas) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  
+  ctx.save();
+  ctx.translate(gc.offX, gc.offY);
+  ctx.scale(gc.scale, gc.scale);
+  
+  // Draw edges
+  gc.edges.forEach(edge => {
+    const from = gc.nodes.find(n => n.id === edge.from);
+    const to = gc.nodes.find(n => n.id === edge.to);
+    if (!from || !to) return;
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.lineTo(to.x, to.y);
+    ctx.strokeStyle = edge.color || 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // Score label
+    if (edge.label) {
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.font = '9px Inter';
+      ctx.fillText(edge.label, (from.x + to.x)/2, (from.y + to.y)/2);
+    }
+  });
+  
+  // Draw WEARS edges (from wardrobe in state)
+  // We can infer from character data if available
+  
+  // Draw nodes
+  gc.nodes.forEach(node => {
+    const isSelected = gc.selectedNode?.id === node.id;
+    const alpha = isSelected ? 1 : 0.85;
+    
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    
+    if (node.type === 'character') {
+      // Circle
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+      ctx.fillStyle = node.color + '40';
+      ctx.fill();
+      ctx.strokeStyle = node.color;
+      ctx.lineWidth = isSelected ? 2.5 : 1.5;
+      ctx.stroke();
+    } else if (node.type === 'garment') {
+      // Diamond
+      const s = node.radius;
+      ctx.beginPath();
+      ctx.moveTo(node.x, node.y - s);
+      ctx.lineTo(node.x + s, node.y);
+      ctx.lineTo(node.x, node.y + s);
+      ctx.lineTo(node.x - s, node.y);
+      ctx.closePath();
+      ctx.fillStyle = node.color + '40';
+      ctx.fill();
+      ctx.strokeStyle = node.color;
+      ctx.lineWidth = isSelected ? 2.5 : 1.5;
+      ctx.stroke();
+    } else if (node.type === 'place') {
+      // Square
+      const s = node.radius;
+      ctx.fillStyle = node.color + '30';
+      ctx.fillRect(node.x - s, node.y - s, s*2, s*2);
+      ctx.strokeStyle = node.color;
+      ctx.lineWidth = isSelected ? 2.5 : 1.5;
+      ctx.strokeRect(node.x - s, node.y - s, s*2, s*2);
+    }
+    
+    // Label
+    ctx.fillStyle = isSelected ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.7)';
+    ctx.font = `${isSelected ? 600 : 400} 10px Inter`;
+    ctx.textAlign = 'center';
+    ctx.fillText(node.label.substring(0, 14), node.x, node.y + node.radius + 14);
+    
+    ctx.restore();
+  });
+  
+  ctx.restore();
+}
+
+function handleGraphClick(e, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left - gc.offX) / gc.scale;
+  const my = (e.clientY - rect.top - gc.offY) / gc.scale;
+  
+  const hit = gc.nodes.find(n => {
+    const dx = mx - n.x, dy = my - n.y;
+    return Math.sqrt(dx*dx + dy*dy) < n.radius + 8;
+  });
+  
+  gc.selectedNode = hit || null;
+  drawGraph(canvas);
+  
+  const detail = document.getElementById('node-detail');
+  if (hit) {
+    const d = hit.data;
+    detail.innerHTML = `
+      <div class="nd-title">${hit.label} <span style="font-size:0.75rem;color:var(--muted);font-family:Inter">[${hit.type}]</span></div>
+      <div style="font-size:0.82rem;color:var(--muted);line-height:1.6">
+        ${d.biography || d.description || d.premise || ''}
+        ${hit.type === 'character' ? `<br><br><strong>Vitality:</strong> ${d.vitality?.toFixed(2) || '—'} · <strong>Luminosity:</strong> ${d.luminosity?.toFixed(2) || '—'} · <strong>Materiality:</strong> ${d.materiality?.toFixed(2) || '—'}` : ''}
+        ${hit.type === 'garment' ? `<br><br><strong>Collection:</strong> ${d.collection || '—'} · <strong>Intent:</strong> ${d.intent || '—'} · <strong>Stage:</strong> ${d.stage || '—'}` : ''}
+        ${hit.type === 'place' ? `<br><br><strong>Type:</strong> ${d.type || '—'} · <strong>Danger:</strong> ${d.sensory_danger?.toFixed(2) || '—'} · <strong>Possibility:</strong> ${d.sensory_possibility?.toFixed(2) || '—'}` : ''}
+      </div>
+    `;
+  } else {
+    detail.innerHTML = '<div style="color:var(--muted);font-size:0.85rem">Click any node to see details</div>';
+  }
+}
+
+function resetGraphView() {
+  gc.scale = 1; gc.offX = 0; gc.offY = 0; gc.selectedNode = null;
+  const canvas = document.getElementById('graph-canvas');
+  if (canvas) drawGraph(canvas);
+}
+
+// =============================================================================
+//  INIT
+// =============================================================================
+async function init() {
+  // Check API health
+  try {
+    await fetch(API + '/health');
+    document.getElementById('api-dot').style.background = '#4ADE80';
+  } catch {
+    document.getElementById('api-dot').style.background = '#FF6B8A';
+  }
+  
+  // Restore active world from localStorage
+  const savedId = localStorage.getItem(LS_WORLD);
+  if (savedId) {
+    state.activeWorld = { id: savedId, name: 'Loading…' };
+    document.getElementById('active-world-name').textContent = 'Loading…';
+  }
+  
+  await loadWorlds();
+  
+  // Handle resize for graph
+  window.addEventListener('resize', () => {
+    const canvas = document.getElementById('graph-canvas');
+    if (canvas) { canvas.width = canvas.offsetWidth; drawGraph(canvas); }
+  });
+}
+
+init();
+</script>
+</body>
+</html>

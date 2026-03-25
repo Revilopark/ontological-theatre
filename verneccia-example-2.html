@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Pattern Folio — Verneccia Étienne</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --ink: #1a1a1a;
+    --paper: #f7f5f0;
+    --warm: #f0ebe0;
+    --cream: #fdfcf8;
+    --gold: #B8933A;
+    --silver: #A0A0A8;
+    --border: #e0dbd0;
+    --muted: #999990;
+    --rule: rgba(0,0,0,0.06);
+  }
+
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--paper); color:var(--ink); font-family:'Inter',sans-serif; min-height:100vh; }
+
+  /* ── Shell ── */
+  .shell { display:grid; grid-template-columns:56px 1fr 380px; min-height:100vh; }
+
+  /* ── Icon rail ── */
+  .rail {
+    background:white; border-right:1px solid var(--border);
+    display:flex; flex-direction:column; align-items:center;
+    padding:16px 0; gap:4px; position:sticky; top:0; height:100vh;
+  }
+  .rail-logo { font-family:'Playfair Display',serif; font-size:0.9rem; color:var(--gold); margin-bottom:20px; writing-mode:vertical-lr; transform:rotate(180deg); letter-spacing:0.12em; }
+  .rail-icon { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.15s; font-size:1rem; color:var(--muted); }
+  .rail-icon:hover { background:var(--warm); color:var(--ink); }
+  .rail-icon.active { background:var(--gold); color:white; }
+  .rail-sep { width:24px; height:1px; background:var(--border); margin:8px 0; }
+
+  /* ── Main canvas ── */
+  .canvas { background:var(--paper); padding:32px 28px; overflow-y:auto; }
+
+  /* ── Garment selector ── */
+  .garment-selector { display:flex; gap:10px; overflow-x:auto; margin-bottom:28px; padding-bottom:4px; }
+  .garment-tab { padding:8px 16px; border-radius:20px; font-size:0.78rem; font-weight:500; cursor:pointer; white-space:nowrap; border:1px solid var(--border); background:white; color:var(--muted); transition:all 0.15s; }
+  .garment-tab.active { background:var(--ink); color:white; border-color:var(--ink); }
+
+  /* ── Page header ── */
+  .page-header { margin-bottom:28px; }
+  .page-eyebrow { font-size:0.72rem; color:var(--gold); font-weight:600; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; }
+  .page-title { font-family:'Playfair Display',serif; font-size:2.2rem; line-height:1.1; margin-bottom:6px; }
+  .page-subtitle { font-size:0.85rem; color:var(--muted); }
+
+  /* ── Stage ribbon ── */
+  .stage-ribbon { display:flex; gap:0; margin-bottom:32px; border:1px solid var(--border); border-radius:10px; overflow:hidden; background:white; }
+  .stage-cell { flex:1; padding:10px 8px; text-align:center; cursor:pointer; transition:all 0.15s; border-right:1px solid var(--border); }
+  .stage-cell:last-child { border-right:none; }
+  .stage-cell:hover { background:var(--warm); }
+  .stage-cell.active { background:var(--ink); }
+  .stage-cell.done { background:rgba(184,147,58,0.08); }
+  .stage-name { font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); }
+  .stage-cell.active .stage-name { color:white; }
+  .stage-cell.done .stage-name { color:var(--gold); }
+  .stage-icon { font-size:0.95rem; margin-bottom:2px; }
+
+  /* ── Content grid ── */
+  .content-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:1100px) { .content-grid { grid-template-columns:1fr; } .shell { grid-template-columns:56px 1fr; } .spec-panel { display:none; } }
+
+  /* ── Cards ── */
+  .folio-card { background:white; border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .folio-card-head { padding:14px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .folio-card-title { font-size:0.72rem; font-weight:600; text-transform:uppercase; letter-spacing:0.07em; color:var(--muted); }
+  .folio-card-body { padding:16px; }
+
+  /* ── Construction sequence ── */
+  .seq-list { list-style:none; counter-reset:seq; }
+  .seq-item { counter-increment:seq; display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-bottom:1px solid var(--rule); }
+  .seq-item:last-child { border-bottom:none; }
+  .seq-num { width:22px; height:22px; border-radius:50%; background:var(--warm); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:0.65rem; font-weight:700; color:var(--muted); flex-shrink:0; margin-top:1px; }
+  .seq-item.done .seq-num { background:var(--gold); border-color:var(--gold); color:white; }
+  .seq-item.active .seq-num { background:var(--ink); border-color:var(--ink); color:white; }
+  .seq-text { font-size:0.82rem; line-height:1.5; flex:1; }
+  .seq-item.done .seq-text { color:var(--muted); text-decoration:line-through; text-decoration-color:var(--border); }
+  .seq-check { width:16px; height:16px; border-radius:4px; border:1px solid var(--border); cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:3px; transition:all 0.15s; }
+  .seq-check:hover { border-color:var(--gold); background:rgba(184,147,58,0.05); }
+  .seq-item.done .seq-check { background:var(--gold); border-color:var(--gold); color:white; }
+
+  /* ── Notions table ── */
+  .notions-table { width:100%; font-size:0.8rem; }
+  .notions-table tr { border-bottom:1px solid var(--rule); }
+  .notions-table td { padding:7px 4px; vertical-align:top; }
+  .notions-table td:first-child { color:var(--muted); font-size:0.73rem; text-transform:uppercase; letter-spacing:0.04em; width:90px; }
+  .notions-table td:last-child { text-align:right; font-size:0.72rem; color:var(--muted); }
+  .notion-status { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:6px; }
+  .got { background:#5ab88a; }
+  .need { background:#e8a040; }
+  .ordered { background:#7ab8e8; }
+
+  /* ── Measurements ── */
+  .meas-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px 16px; }
+  .meas-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--rule); }
+  .meas-label { font-size:0.75rem; color:var(--muted); }
+  .meas-val { font-size:0.82rem; font-weight:600; font-variant-numeric:tabular-nums; }
+
+  /* ── Photo strip ── */
+  .photo-strip { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; }
+  .photo-thumb { width:80px; height:80px; border-radius:8px; background:var(--warm); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0; cursor:pointer; transition:all 0.15s; }
+  .photo-thumb:hover { border-color:var(--gold); }
+  .photo-add { border:1.5px dashed var(--border); color:var(--muted); font-size:1.1rem; }
+  .photo-add:hover { border-color:var(--gold); color:var(--gold); background:rgba(184,147,58,0.03); }
+
+  /* ── Notes ── */
+  .notes-field { width:100%; background:var(--warm); border:none; border-radius:8px; padding:10px 12px; font-size:0.82rem; font-family:'Inter',sans-serif; resize:vertical; min-height:100px; color:var(--ink); outline:none; line-height:1.6; }
+  .notes-field::placeholder { color:var(--muted); font-style:italic; }
+
+  /* ── Spec panel ── */
+  .spec-panel { background:white; border-left:1px solid var(--border); padding:28px 20px; overflow-y:auto; position:sticky; top:0; height:100vh; }
+
+  .spec-render { width:100%; aspect-ratio:2/3; background:linear-gradient(160deg,#f0e8d8 0%,#e8e0d0 60%,#d8d0c0 100%); border-radius:12px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; margin-bottom:16px; overflow:hidden; position:relative; }
+  .spec-render img { width:100%; height:100%; object-fit:cover; border-radius:12px; }
+  .spec-render-placeholder { text-align:center; color:var(--muted); }
+  .spec-render-placeholder div { font-size:2rem; margin-bottom:8px; }
+  .spec-render-placeholder p { font-size:0.75rem; }
+
+  .spec-section { margin-bottom:18px; }
+  .spec-label { font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:8px; }
+
+  /* ── Fabric swatch large ── */
+  .fabric-swatch-lg { height:48px; border-radius:8px; border:1px solid var(--border); margin-bottom:8px; display:flex; align-items:center; justify-content:flex-end; padding:0 12px; }
+  .swatch-name { font-size:0.72rem; font-weight:600; padding:3px 8px; background:rgba(255,255,255,0.7); border-radius:6px; }
+
+  /* ── Timeline ── */
+  .timeline-item { display:flex; gap:10px; margin-bottom:10px; }
+  .tl-dot { width:8px; height:8px; border-radius:50%; background:var(--gold); flex-shrink:0; margin-top:4px; }
+  .tl-text { font-size:0.78rem; line-height:1.5; color:rgba(26,26,26,0.7); }
+  .tl-date { font-size:0.67rem; color:var(--muted); }
+
+  /* ── Btn ── */
+  .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:8px; font-size:0.78rem; font-weight:600; cursor:pointer; border:none; font-family:inherit; transition:all 0.2s; }
+  .btn-gold { background:var(--gold); color:white; }
+  .btn-ghost { background:transparent; border:1px solid var(--border); color:var(--muted); }
+  .btn-ghost:hover { border-color:var(--gold); color:var(--gold); }
+
+  /* ── Toast ── */
+  #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(60px); transition:transform 0.3s; background:var(--ink); color:white; padding:10px 18px; border-radius:10px; font-size:0.82rem; z-index:999; pointer-events:none; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ── Icon Rail ── -->
+  <div class="rail">
+    <div class="rail-logo">VÉ</div>
+    <div class="rail-icon active" title="Pattern Folio">📋</div>
+    <div class="rail-icon" title="Gallery" onclick="toast('Gallery')">🖼</div>
+    <div class="rail-icon" title="Fabric Library" onclick="toast('Fabric Library')">🧵</div>
+    <div class="rail-icon" title="Sourcing" onclick="toast('Sourcing Directory')">🗺</div>
+    <div class="rail-sep"></div>
+    <div class="rail-icon" title="Client Files" onclick="toast('Client Files')">👤</div>
+    <div class="rail-icon" title="Croquis" onclick="toast('Sketch Pad')">✏️</div>
+    <div class="rail-sep"></div>
+    <div class="rail-icon" title="Settings" style="margin-top:auto" onclick="toast('Settings')">⚙️</div>
+  </div>
+
+  <!-- ── Main Canvas ── -->
+  <div class="canvas">
+
+    <!-- Garment tabs -->
+    <div class="garment-selector">
+      <div class="garment-tab" onclick="setTab(this)">Frida</div>
+      <div class="garment-tab" onclick="setTab(this)">Xanadu</div>
+      <div class="garment-tab active" onclick="setTab(this)">Power Gown I</div>
+      <div class="garment-tab" onclick="setTab(this)">Japanese Transformational</div>
+      <div class="garment-tab" onclick="setTab(this)">AnDreeAna</div>
+      <div class="garment-tab" style="border-style:dashed;color:var(--gold);border-color:var(--gold)" onclick="toast('New garment…')">＋ New</div>
+    </div>
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div class="page-eyebrow">New Work 2026 · Gown</div>
+      <div class="page-title">Power Gown I</div>
+      <div class="page-subtitle">Stretch Merino Summer Wool — warm greige · Column silhouette</div>
+    </div>
+
+    <!-- Stage ribbon -->
+    <div class="stage-ribbon">
+      <div class="stage-cell done" onclick="setStage(this)"><div class="stage-icon">✦</div><div class="stage-name">Dream</div></div>
+      <div class="stage-cell active" onclick="setStage(this)"><div class="stage-icon">✏️</div><div class="stage-name">Concept</div></div>
+      <div class="stage-cell" onclick="setStage(this)"><div class="stage-icon">⊞</div><div class="stage-name">Pattern</div></div>
+      <div class="stage-cell" onclick="setStage(this)"><div class="stage-icon">⊡</div><div class="stage-name">Muslin</div></div>
+      <div class="stage-cell" onclick="setStage(this)"><div class="stage-icon">◈</div><div class="stage-name">Sample</div></div>
+      <div class="stage-cell" onclick="setStage(this)"><div class="stage-icon">✓</div><div class="stage-name">Complete</div></div>
+    </div>
+
+    <!-- Content grid -->
+    <div class="content-grid">
+
+      <!-- Construction Sequence -->
+      <div class="folio-card">
+        <div class="folio-card-head">
+          <span class="folio-card-title">Construction Sequence</span>
+          <button class="btn btn-ghost" style="padding:4px 10px;font-size:0.72rem" onclick="toast('Add step')">＋ Step</button>
+        </div>
+        <div class="folio-card-body">
+          <ol class="seq-list">
+            <li class="seq-item done">
+              <div class="seq-num">✓</div>
+              <div class="seq-text">Draft bodice block from base sloper. Add 1.5" geometric shoulder extension.</div>
+              <div class="seq-check" onclick="toggleSeq(this)">✓</div>
+            </li>
+            <li class="seq-item done">
+              <div class="seq-num">✓</div>
+              <div class="seq-text">Draft skirt panel — fitted through hip, front slit to knee. Mark notches.</div>
+              <div class="seq-check" onclick="toggleSeq(this)">✓</div>
+            </li>
+            <li class="seq-item active">
+              <div class="seq-num">3</div>
+              <div class="seq-text">Sleeve block — fitted, long, no ease at cap. Grade for movement at elbow.</div>
+              <div class="seq-check" onclick="toggleSeq(this)"></div>
+            </li>
+            <li class="seq-item">
+              <div class="seq-num">4</div>
+              <div class="seq-text">Cut muslin. Mark all construction lines in thread trace.</div>
+              <div class="seq-check" onclick="toggleSeq(this)"></div>
+            </li>
+            <li class="seq-item">
+              <div class="seq-num">5</div>
+              <div class="seq-text">Assemble bodice — shoulder pads basted in. Fit on dress form before seaming.</div>
+              <div class="seq-check" onclick="toggleSeq(this)"></div>
+            </li>
+            <li class="seq-item">
+              <div class="seq-num">6</div>
+              <div class="seq-text">Attach skirt at waist seam. Press seam allowances toward bodice.</div>
+              <div class="seq-check" onclick="toggleSeq(this)"></div>
+            </li>
+            <li class="seq-item">
+              <div class="seq-num">7</div>
+              <div class="seq-text">Set sleeves. Ease at cap is zero — precision set only.</div>
+              <div class="seq-check" onclick="toggleSeq(this)"></div>
+            </li>
+            <li class="seq-item">
+              <div class="seq-num">8</div>
+              <div class="seq-text">Invisible zipper at CB. Hand-stitch lining to zipper tape.</div>
+              <div class="seq-check" onclick="toggleSeq(this)"></div>
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Notions & Materials -->
+      <div class="folio-card">
+        <div class="folio-card-head">
+          <span class="folio-card-title">Materials & Notions</span>
+          <button class="btn btn-ghost" style="padding:4px 10px;font-size:0.72rem" onclick="toast('Add notion')">＋</button>
+        </div>
+        <div class="folio-card-body">
+          <table class="notions-table">
+            <tr>
+              <td>Shell</td>
+              <td><span class="notion-status got"></span>Stretch Merino Summer Weight — warm greige</td>
+              <td>3.5 yds</td>
+            </tr>
+            <tr>
+              <td>Lining</td>
+              <td><span class="notion-status need"></span>Silk charmeuse — ivory</td>
+              <td>2.5 yds</td>
+            </tr>
+            <tr>
+              <td>Interfacing</td>
+              <td><span class="notion-status got"></span>Weft-insert fusible — medium weight</td>
+              <td>1 yd</td>
+            </tr>
+            <tr>
+              <td>Shoulder</td>
+              <td><span class="notion-status need"></span>Geometric foam — custom cut 4" × 6"</td>
+              <td>2 pieces</td>
+            </tr>
+            <tr>
+              <td>Zipper</td>
+              <td><span class="notion-status got"></span>YKK invisible — 22" warm greige</td>
+              <td>1</td>
+            </tr>
+            <tr>
+              <td>Thread</td>
+              <td><span class="notion-status got"></span>Gütermann — warm ecru + greige</td>
+              <td>2 spools</td>
+            </tr>
+            <tr>
+              <td>Stays</td>
+              <td><span class="notion-status ordered"></span>Spiral bone — 12" for waist stay</td>
+              <td>4</td>
+            </tr>
+          </table>
+          <div style="margin-top:12px;display:flex;gap:8px;font-size:0.72rem;flex-wrap:wrap">
+            <span><span class="notion-status got" style="display:inline-block"></span>In hand</span>
+            <span><span class="notion-status need" style="display:inline-block"></span>Need to source</span>
+            <span><span class="notion-status ordered" style="display:inline-block"></span>Ordered</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Measurements -->
+      <div class="folio-card">
+        <div class="folio-card-head">
+          <span class="folio-card-title">Measurements</span>
+          <span style="font-size:0.72rem;color:var(--muted)">Size 8 Base · Last updated Feb 14</span>
+        </div>
+        <div class="folio-card-body">
+          <div class="meas-grid">
+            <div class="meas-row"><span class="meas-label">Bust</span><span class="meas-val">35½"</span></div>
+            <div class="meas-row"><span class="meas-label">Waist</span><span class="meas-val">28"</span></div>
+            <div class="meas-row"><span class="meas-label">Hip</span><span class="meas-val">37½"</span></div>
+            <div class="meas-row"><span class="meas-label">Shoulder</span><span class="meas-val">15"</span></div>
+            <div class="meas-row"><span class="meas-label">Back Neck</span><span class="meas-val">16⅝"</span></div>
+            <div class="meas-row"><span class="meas-label">Sleeve</span><span class="meas-val">24½"</span></div>
+            <div class="meas-row"><span class="meas-label">Front Len</span><span class="meas-val">58"</span></div>
+            <div class="meas-row"><span class="meas-label">Back Len</span><span class="meas-val">59¼"</span></div>
+          </div>
+          <div style="margin-top:12px;padding:10px;background:rgba(184,147,58,0.06);border-radius:8px;border:1px solid rgba(184,147,58,0.2)">
+            <div style="font-size:0.7rem;font-weight:600;color:var(--gold);margin-bottom:4px">⚠ Note</div>
+            <div style="font-size:0.78rem;color:var(--muted)">Shoulder pad adds 1.5" to shoulder width. Pattern shoulder seam set at 13.5" — pads extend to 15".</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes from the Table -->
+      <div class="folio-card">
+        <div class="folio-card-head">
+          <span class="folio-card-title">Notes from the Table</span>
+          <span style="font-size:0.7rem;color:var(--muted)">Auto-saved</span>
+        </div>
+        <div class="folio-card-body">
+          <textarea class="notes-field" placeholder="Raw thoughts, problems, breakthroughs — the working mind of the garment…">Merino has slightly more stretch on the bias than expected — will need to stabilize the waist seam with twill tape before attaching skirt.
+
+Shoulder pad geometry: the flat geometric shape is key. Don't let the foam get rounded in the ironing. Press cold.
+
+Power gown III should use the same pattern — just swap the Merino for crepe and let the wing shoulder do more architectural work.</textarea>
+          <div style="margin-top:12px">
+            <div style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:8px">Reference Images</div>
+            <div class="photo-strip">
+              <div class="photo-thumb">🖼</div>
+              <div class="photo-thumb">📐</div>
+              <div class="photo-thumb">🧵</div>
+              <div class="photo-thumb photo-add" onclick="toast('Add reference image')">＋</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom action row -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding:16px 0;border-top:1px solid var(--border)">
+      <div style="font-size:0.78rem;color:var(--muted)">2 of 8 steps complete · Muslin stage next</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="toast('Duplicated to Power Gown II')">Duplicate Garment</button>
+        <button class="btn btn-gold" onclick="toast('Advanced to Pattern stage')">Advance to Pattern →</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Spec Panel ── -->
+  <div class="spec-panel">
+
+    <!-- Render preview -->
+    <div class="spec-render">
+      <img src="https://v3b.fal.media/files/b/0a8f0b20/OE09f7VwnPpeUnZmG0XAe_b11f609880a3484386b6eae7215cdbbc.jpg" alt="Power Gown I render" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="spec-render-placeholder" style="display:none">
+        <div>👗</div>
+        <p style="font-size:0.75rem">No render yet</p>
+      </div>
+    </div>
+
+    <!-- Fabric swatches -->
+    <div class="spec-section">
+      <div class="spec-label">Fabric</div>
+      <div class="fabric-swatch-lg" style="background:linear-gradient(135deg,#c5b89a,#d5c8aa)">
+        <span class="swatch-name">Merino — Warm Greige</span>
+      </div>
+      <div class="fabric-swatch-lg" style="background:linear-gradient(135deg,#e8e0d0,#f0eae0)">
+        <span class="swatch-name">Charmeuse Lining</span>
+      </div>
+    </div>
+
+    <!-- Garment timeline -->
+    <div class="spec-section">
+      <div class="spec-label">History</div>
+      <div class="timeline-item">
+        <div class="tl-dot"></div>
+        <div>
+          <div class="tl-text">Geometric shoulder idea sketched — inspired by Balenciaga SS68</div>
+          <div class="tl-date">Feb 14, 2026</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot"></div>
+        <div>
+          <div class="tl-text">Merino Summer Weight pulled from ISW Beverly Hills</div>
+          <div class="tl-date">Feb 16, 2026</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot"></div>
+        <div>
+          <div class="tl-text">Render generated — column silhouette confirmed</div>
+          <div class="tl-date">Feb 19, 2026</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--silver)"></div>
+        <div>
+          <div class="tl-text" style="color:var(--muted);font-style:italic">Sloper draft — in progress</div>
+          <div class="tl-date">Next</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="spec-section">
+      <div class="spec-label">Quick Actions</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="toast('Opening croquis sketch…')">✏️ Open Croquis</button>
+        <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="toast('Generating new render…')">✦ Generate Render</button>
+        <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="toast('Opening sourcing…')">🗺 Source Materials</button>
+        <button class="btn btn-gold" style="width:100%;justify-content:center" onclick="toast('Shared with client')">↗ Share with Client</button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+function setTab(el) {
+  document.querySelectorAll('.garment-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function setStage(el) {
+  const all = document.querySelectorAll('.stage-cell');
+  const idx = [...all].indexOf(el);
+  all.forEach((s,i) => {
+    s.classList.remove('active','done');
+    if (i < idx) s.classList.add('done');
+    if (i === idx) s.classList.add('active');
+  });
+}
+
+function toggleSeq(el) {
+  const item = el.closest('.seq-item');
+  item.classList.toggle('done');
+  el.textContent = item.classList.contains('done') ? '✓' : '';
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.style.transform = 'translateX(-50%) translateY(60px)'; }, 2000);
+}
+</script>
+</body>
+</html>

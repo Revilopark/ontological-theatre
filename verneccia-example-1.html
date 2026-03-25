@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Living Board — Verneccia Étienne Atelier</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --ink: #1a1a1a;
+    --paper: #f7f5f0;
+    --warm: #f0ebe0;
+    --gold: #B8933A;
+    --gold-light: #e8d5a3;
+    --silver: #A0A0A8;
+    --silver-light: #dddde4;
+    --border: #e0dbd0;
+    --muted: #888880;
+    --stage-dream: #c9b8e8;
+    --stage-concept: #b8d4e8;
+    --stage-pattern: #b8e8c9;
+    --stage-muslin: #e8dab8;
+    --stage-sample: #e8c9b8;
+    --stage-complete: #b8e8d4;
+    --col-w: 220px;
+  }
+
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--paper); color:var(--ink); font-family:'Inter',sans-serif; min-height:100vh; overflow-x:hidden; }
+
+  /* ── Top Bar ── */
+  .topbar {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 28px; background:white; border-bottom:1px solid var(--border);
+    position:sticky; top:0; z-index:100;
+  }
+  .brand { font-family:'Playfair Display',serif; font-size:1.1rem; letter-spacing:0.04em; }
+  .brand span { color:var(--gold); }
+  .topbar-meta { display:flex; align-items:center; gap:16px; font-size:0.78rem; color:var(--muted); }
+  .season-badge { background:var(--gold); color:white; padding:3px 10px; border-radius:20px; font-size:0.72rem; font-weight:600; letter-spacing:0.05em; }
+
+  /* ── Collection filter ── */
+  .filter-bar {
+    display:flex; align-items:center; gap:8px; padding:10px 28px;
+    background:white; border-bottom:1px solid var(--border); overflow-x:auto;
+  }
+  .filter-pill {
+    padding:5px 14px; border-radius:20px; font-size:0.75rem; font-weight:500;
+    border:1px solid var(--border); cursor:pointer; white-space:nowrap;
+    transition:all 0.15s; background:transparent; color:var(--muted);
+  }
+  .filter-pill.active { background:var(--ink); color:white; border-color:var(--ink); }
+  .filter-label { font-size:0.72rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; white-space:nowrap; margin-right:4px; }
+
+  /* ── Board ── */
+  .board-wrap { padding:24px 28px; overflow-x:auto; min-height:calc(100vh - 110px); }
+  .board { display:flex; gap:16px; align-items:flex-start; min-width:max-content; }
+
+  /* ── Stage columns ── */
+  .col { width:var(--col-w); flex-shrink:0; }
+  .col-head {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:12px; padding:0 4px;
+  }
+  .col-title {
+    font-size:0.72rem; font-weight:600; text-transform:uppercase;
+    letter-spacing:0.08em; color:var(--muted);
+  }
+  .col-count {
+    font-size:0.72rem; background:var(--warm); color:var(--muted);
+    padding:2px 7px; border-radius:10px; font-weight:600;
+  }
+  .col-body { display:flex; flex-direction:column; gap:10px; }
+
+  /* ── Garment cards ── */
+  .card {
+    background:white; border:1px solid var(--border); border-radius:12px;
+    padding:14px; cursor:pointer; transition:all 0.2s; position:relative;
+    overflow:hidden;
+  }
+  .card:hover { box-shadow:0 4px 20px rgba(0,0,0,0.08); transform:translateY(-2px); }
+  .card-accent { position:absolute; top:0; left:0; right:0; height:3px; }
+  .card-name { font-family:'Playfair Display',serif; font-size:0.95rem; font-weight:700; margin-bottom:3px; margin-top:4px; }
+  .card-collection { font-size:0.72rem; color:var(--muted); margin-bottom:8px; }
+
+  /* ── Swatch ── */
+  .swatch-row { display:flex; gap:4px; margin-bottom:10px; }
+  .swatch { width:18px; height:18px; border-radius:50%; border:1px solid rgba(0,0,0,0.08); flex-shrink:0; }
+
+  /* ── Card meta ── */
+  .card-meta { display:flex; align-items:center; justify-content:space-between; }
+  .card-type { font-size:0.7rem; color:var(--muted); }
+  .card-tag {
+    font-size:0.67rem; padding:2px 7px; border-radius:10px; font-weight:600;
+    letter-spacing:0.03em;
+  }
+
+  /* ── Convertible badge ── */
+  .convertible-dot {
+    width:7px; height:7px; border-radius:50%; background:var(--gold);
+    display:inline-block; margin-right:4px;
+  }
+
+  /* ── Add card ── */
+  .card-add {
+    background:transparent; border:1.5px dashed var(--border); border-radius:12px;
+    padding:14px; cursor:pointer; transition:all 0.2s; text-align:center;
+    color:var(--muted); font-size:0.8rem;
+  }
+  .card-add:hover { border-color:var(--gold); color:var(--gold); background:rgba(184,147,58,0.03); }
+
+  /* ── Right panel (detail drawer) ── */
+  .detail-drawer {
+    position:fixed; right:0; top:0; bottom:0; width:360px;
+    background:white; border-left:1px solid var(--border);
+    transform:translateX(100%); transition:transform 0.3s ease;
+    z-index:200; overflow-y:auto; padding:28px 24px;
+  }
+  .detail-drawer.open { transform:translateX(0); }
+  .drawer-close { position:absolute; top:16px; right:16px; background:var(--warm); border:none; border-radius:50%; width:30px; height:30px; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; }
+  .drawer-title { font-family:'Playfair Display',serif; font-size:1.5rem; margin-bottom:4px; margin-top:8px; }
+  .drawer-collection { font-size:0.78rem; color:var(--muted); margin-bottom:20px; }
+
+  /* ── Progress track ── */
+  .progress-track { display:flex; align-items:center; gap:0; margin:20px 0; }
+  .progress-step { flex:1; text-align:center; position:relative; }
+  .progress-step::before { content:''; position:absolute; top:10px; left:-50%; right:50%; height:2px; background:var(--border); z-index:0; }
+  .progress-step:first-child::before { display:none; }
+  .progress-dot { width:20px; height:20px; border-radius:50%; border:2px solid var(--border); background:white; display:flex; align-items:center; justify-content:center; margin:0 auto 4px; position:relative; z-index:1; font-size:0.55rem; }
+  .progress-dot.done { background:var(--gold); border-color:var(--gold); color:white; }
+  .progress-dot.current { background:white; border-color:var(--gold); box-shadow:0 0 0 3px rgba(184,147,58,0.15); }
+  .progress-label { font-size:0.55rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em; }
+
+  /* ── Construction thread ── */
+  .thread-title { font-size:0.72rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin-bottom:10px; }
+  .thread-item { display:flex; gap:10px; margin-bottom:12px; }
+  .thread-line { display:flex; flex-direction:column; align-items:center; }
+  .thread-dot { width:8px; height:8px; border-radius:50%; background:var(--gold); flex-shrink:0; margin-top:3px; }
+  .thread-connector { flex:1; width:1px; background:var(--border); margin-top:2px; }
+  .thread-text { font-size:0.8rem; line-height:1.5; color:rgba(26,26,26,0.7); padding-bottom:12px; border-bottom:1px solid var(--border); flex:1; }
+  .thread-time { font-size:0.68rem; color:var(--muted); margin-top:2px; }
+
+  /* ── Notes field ── */
+  .notes-field { width:100%; background:var(--warm); border:none; border-radius:8px; padding:10px 12px; font-size:0.82rem; font-family:'Inter',sans-serif; resize:vertical; min-height:80px; color:var(--ink); outline:none; }
+
+  /* ── Btn ── */
+  .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; font-size:0.8rem; font-weight:600; cursor:pointer; border:none; font-family:inherit; transition:all 0.2s; }
+  .btn-gold { background:var(--gold); color:white; }
+  .btn-gold:hover { background:#9a7a2e; }
+  .btn-outline { background:transparent; border:1px solid var(--border); color:var(--ink); }
+  .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+  .btn-row { display:flex; gap:8px; margin-top:20px; }
+
+  /* ── Stage color system ── */
+  .stage-dream .card-accent { background:var(--stage-dream); }
+  .stage-concept .card-accent { background:var(--stage-concept); }
+  .stage-pattern .card-accent { background:var(--stage-pattern); }
+  .stage-muslin .card-accent { background:var(--stage-muslin); }
+  .stage-sample .card-accent { background:var(--stage-sample); }
+  .stage-complete .card-accent { background:var(--stage-complete); }
+
+  .overlay { position:fixed; inset:0; background:rgba(0,0,0,0.15); z-index:190; opacity:0; pointer-events:none; transition:opacity 0.3s; }
+  .overlay.show { opacity:1; pointer-events:all; }
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="brand">Verneccia<span>.</span>Étienne <span style="font-family:Inter;font-size:0.75rem;color:var(--muted);font-weight:400;margin-left:8px">Atelier OS</span></div>
+  <div class="topbar-meta">
+    <span>13 garments</span>
+    <span class="season-badge">SS 2026</span>
+    <span style="width:28px;height:28px;border-radius:50%;background:var(--gold);display:inline-flex;align-items:center;justify-content:center;color:white;font-size:0.75rem;font-weight:700">VÉ</span>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+  <span class="filter-label">Collection</span>
+  <button class="filter-pill active" onclick="setFilter(this,'all')">All</button>
+  <button class="filter-pill" onclick="setFilter(this,'beaded')">Beaded</button>
+  <button class="filter-pill" onclick="setFilter(this,'taffeta')">Taffeta</button>
+  <button class="filter-pill" onclick="setFilter(this,'origami')">Origami</button>
+  <button class="filter-pill" onclick="setFilter(this,'new-2026')">New Work 2026</button>
+  <button class="filter-pill" onclick="setFilter(this,'commissions')">Commissions</button>
+</div>
+
+<!-- Board -->
+<div class="board-wrap">
+  <div class="board" id="board">
+
+    <!-- Dream -->
+    <div class="col">
+      <div class="col-head">
+        <span class="col-title" style="color:#9b7abf">✦ Dream</span>
+        <span class="col-count">3</span>
+      </div>
+      <div class="col-body">
+        <div class="card stage-dream" onclick="openDrawer('power-gown-1')">
+          <div class="card-accent"></div>
+          <div class="card-name">Power Gown I</div>
+          <div class="card-collection">New Work 2026</div>
+          <div class="swatch-row">
+            <div class="swatch" style="background:#c5b89a" title="Warm Greige Merino"></div>
+            <div class="swatch" style="background:#e8e0d0" title="Natural lining"></div>
+          </div>
+          <div class="card-meta">
+            <span class="card-type">Gown</span>
+            <span class="card-tag" style="background:#f0eafa;color:#9b7abf">Concept Ready</span>
+          </div>
+        </div>
+        <div class="card stage-dream" onclick="openDrawer('power-gown-2')">
+          <div class="card-accent"></div>
+          <div class="card-name">Power Gown II</div>
+          <div class="card-collection">New Work 2026</div>
+          <div class="swatch-row">
+            <div class="swatch" style="background:#4a4a4a" title="Deep charcoal Merino"></div>
+            <div class="swatch" style="background:#2a2a2a" title="Black lining"></div>
+          </div>
+          <div class="card-meta">
+            <span class="card-type">Gown</span>
+            <span class="card-tag" style="background:#f0eafa;color:#9b7abf">Dreaming</span>
+          </div>
+        </div>
+        <div class="card-add" onclick="toast('Add new garment…')">＋ Begin a Garment</div>
+      </div>
+    </div>
+
+    <!-- Concept -->
+    <div class="col">
+      <div class="col-head">
+        <span class="col-title" style="color:#5a90b8">✏ Concept</span>
+        <span class="col-count">2</span>
+      </div>
+      <div class="col-body">
+        <div class="card stage-concept" onclick="openDrawer('japanese')">
+          <div class="card-accent"></div>
+          <div class="card-name">Japanese Transformational</div>
+          <div class="card-collection">Origami Collection</div>
+          <div class="swatch-row">
+            <div class="swatch" style="background:#c8c0a0" title="Silk dupioni ivory"></div>
+            <div class="swatch" style="background:#8a8060" title="Aged gold lining"></div>
+          </div>
+          <div class="card-meta">
+            <span class="card-type"><span class="convertible-dot"></span>Coat · Convertible</span>
+            <span class="card-tag" style="background:#e8f0f8;color:#5a90b8">Sketching</span>
+          </div>
+        </div>
+        <div class="card stage-concept" onclick="openDrawer('luna')">
+          <div class="card-accent"></div>
+          <div class="card-name">Luna</div>
+          <div class="card-collection">Taffeta Collection</div>
+          <div class="swatch-row">
+            <div class="swatch" style="background:#d8d8e8" title="Silver taffeta"></div>
+          </div>
+          <div class="card-meta">
+            <span class="card-type"><span class="convertible-dot"></span>Gown · Convertible</span>
+            <span class="card-tag" style="background:#e8f0f8;color:#5a90b8">Reference Hunt</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pattern -->
+    <div class="col">
+      <div class="col-head">
+        <span class="col-title" style="color:#3a9060">⊞ Pattern</span>
+        <span class="col-count">2</span>
+      </div>
+      <div class="col-body">
+        <div class="card stage-pattern" onclick="openDrawer('andreeana')">
+          <div class="card-accent"></div>
+          <div class="card-name">AnDreeAna</div>
+          <div class="card-collection">Beaded Collection</div>
+          <div class="swatch-row">
+            <div class="swatch" style="background:#e8e0c8" title="Duchess satin"></div>
+            <div class="swatch" style="background:#d4c88a" title="Crystal beads"></div>
+          </div>
+          <div class="card-meta">
+            <span class="card-type"><span class="convertible-dot"></span>Gown · Convertible</span>
+            <span class="card-tag" style="background:#e8f8f0;color:#3a9060">Blocking</span>
+          </div>
+        </div>
+        <div class="card stage-pattern" onclick="openDrawer('organza')">
+          <div class="card-accent"></div>
+          <div class="card-name">Organza Trench</div>
+          <div class="card-collection">Organza Collection</div>
+          <div class="swatch-row">
+            <div class="swatch" style="background:#f5f2ea" title="Silk organza ivory"></div>
+          </div>
+          <div class="card-meta">
+            <span class="card-type">Coat</span>
+            <span class="card-tag" style="background:#e8f8f0;color:#3a9060">Grade & Trace</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Muslin -->
+    <div class="col">
+      <div class="col-head">
+        <span class="col-title" style="color:#9a7a3a">⊡ Muslin</span>
+        <span class="col-count">2</span>
+      </div>
+      <div class="col-body">
+        <div class="card stage-muslin" onclick="openDrawer('xanadu')">
+          <div class="card-accent"></div>
+          <div class="card-name">Xanadu</div>
+          <div class="card-collection">Beaded Collection</div>
+          <div class="swatch-row">
+            <div class="swatch" style="background:#d8d0c0" title="Duchess satin"></div>
+            <div class="swatch" style="background:#c0c8c8" title="Silver seed beads"></div>
+          </div>
+          <div class="card-meta">
+            <span class="card-type"><span class="convertible-dot"></span>Dress · Convertible</span>
+            <span class="card-tag" style="background:#faf0e0;color:#9a7a3a">First Fit</span>
+          </div>
+        </div>
+        <div class="card stage-muslin">
+          <div class="card-accent"></div>
+          <div class="card-name">Merino Sheath</div>
+          <div class="card-collection">Custom Commissions</div>
+          <div class="swatch-row">
+            <div class="swatch" style="background:#2a2a2a" title="Black Merino"></div>
+          </div>
+          <div class="card-meta">
+            <span class="card-type">Dress · Custom</span>
+            <span class="card-tag" style="background:#faf0e0;color:#9a7a3a">Fitting Booked</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sample -->
+    <div class="col">
+      <div class="col-head">
+        <span class="col-title" style="color:#b86040">◈ Sample</span>
+        <span class="col-count">1</span>
+      </div>
+      <div class="col-body">
+        <div class="card stage-sample" onclick="openDrawer('elle')">
+          <div class="card-accent"></div>
+          <div class="card-name">Elle</div>
+          <div class="card-collection">Beaded Collection</div>
+          <div class="swatch-row">
+            <div class="swatch" style="background:#b8b8a8" title="Metallic bead fabric"></div>
+            <div class="swatch" style="background:#c8c0a8" title="Satin lining"></div>
+          </div>
+          <div class="card-meta">
+            <span class="card-type"><span class="convertible-dot"></span>Coat · Convertible</span>
+            <span class="card-tag" style="background:#faeee8;color:#b86040">Press Check</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Complete -->
+    <div class="col">
+      <div class="col-head">
+        <span class="col-title" style="color:#2a8060">✓ Complete</span>
+        <span class="col-count">3</span>
+      </div>
+      <div class="col-body">
+        <div class="card stage-complete" style="opacity:0.8">
+          <div class="card-accent"></div>
+          <div class="card-name">Frida</div>
+          <div class="card-collection">Named Pieces</div>
+          <div class="swatch-row">
+            <div class="swatch" style="background:#c8a040"></div>
+            <div class="swatch" style="background:#e8d080"></div>
+          </div>
+          <div class="card-meta">
+            <span class="card-type">Beaded Gown</span>
+            <span class="card-tag" style="background:#e0f5ee;color:#2a8060">Archived</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Detail Drawer -->
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+<div class="detail-drawer" id="drawer">
+  <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  <div id="drawer-content"></div>
+</div>
+
+<!-- Toast -->
+<div id="toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);transition:transform 0.3s;background:var(--ink);color:white;padding:10px 18px;border-radius:10px;font-size:0.82rem;z-index:999;pointer-events:none"></div>
+
+<script>
+const garments = {
+  'power-gown-1': {
+    name: 'Power Gown I', collection: 'New Work 2026', type: 'Gown',
+    stage: 'Dream', convertible: false,
+    fabric: 'Stretch Merino Summer Wool — warm greige',
+    notes: 'Geometric shoulder pads. Long fitted sleeves, no puff. Column silhouette with front slit. The power is in the restraint.',
+    swatches: ['#c5b89a','#e8e0d0'],
+    thread: [
+      { text: 'First sketch — geometric shoulder idea from Japanese kimono sleeve', time: 'Feb 14' },
+      { text: 'Fabric pulled at ISW: Stretch Merino Summer Weight in warm greige. Perfect hand.', time: 'Feb 16' },
+      { text: 'Power Gown II and III conceived as sister pieces — same pattern, different weight + mood.', time: 'Feb 18' },
+    ],
+    stages: ['Dream','Concept','Pattern','Muslin','Sample','Complete'],
+    currentStage: 0,
+  },
+  'japanese': {
+    name: 'Japanese Transformational', collection: 'Origami Collection', type: 'Coat',
+    stage: 'Concept', convertible: true,
+    fabric: 'Structured silk dupioni — ivory/aged gold',
+    notes: 'Origami fold logic. Converts between cocoon cape, structured jacket, and wrapped coat. The geometry is the garment.',
+    swatches: ['#c8c0a0','#8a8060'],
+    thread: [
+      { text: 'Inspired by Issey Miyake Pleats Please archive — but structured, not pleated.', time: 'Jan 28' },
+      { text: 'Fold diagram drafted. Three transformation states confirmed.', time: 'Feb 2' },
+      { text: 'Silk dupioni sourced at ISW. Two colorways pulled.', time: 'Feb 10' },
+    ],
+    stages: ['Dream','Concept','Pattern','Muslin','Sample','Complete'],
+    currentStage: 1,
+  },
+  'xanadu': {
+    name: 'Xanadu', collection: 'Beaded Collection', type: 'Cocktail Dress',
+    stage: 'Muslin', convertible: true,
+    fabric: 'Silver seed beads on duchess satin',
+    notes: 'Halter neck. Gold zipper spine. Convertible: removes skirt overlay to become cocktail. First fit scheduled with client.',
+    swatches: ['#d8d0c0','#c0c8c8'],
+    thread: [
+      { text: 'Commission from Marlena J. — event in April.', time: 'Jan 15' },
+      { text: 'Beading layout finalized — diagonal cascade, not horizontal rows.', time: 'Jan 22' },
+      { text: 'Muslin completed. Shoulder seam needs 3/8" take-in.', time: 'Feb 8' },
+      { text: 'Fitting booked Feb 23. Client bringing reference shoe.', time: 'Feb 17' },
+    ],
+    stages: ['Dream','Concept','Pattern','Muslin','Sample','Complete'],
+    currentStage: 3,
+  },
+};
+
+function openDrawer(id) {
+  const g = garments[id];
+  if (!g) { toast('Detail coming soon'); return; }
+  const stageIdx = g.currentStage;
+  const stageNames = ['Dream','Concept','Pattern','Muslin','Sample','Complete'];
+
+  const progressHtml = stageNames.map((s,i) => `
+    <div class="progress-step">
+      <div class="progress-dot ${i < stageIdx ? 'done' : i === stageIdx ? 'current' : ''}">
+        ${i < stageIdx ? '✓' : ''}
+      </div>
+      <div class="progress-label">${s}</div>
+    </div>
+  `).join('');
+
+  const threadHtml = g.thread.map((t,i) => `
+    <div class="thread-item">
+      <div class="thread-line">
+        <div class="thread-dot"></div>
+        ${i < g.thread.length-1 ? '<div class="thread-connector"></div>' : ''}
+      </div>
+      <div class="thread-text">
+        ${t.text}
+        <div class="thread-time">${t.time}</div>
+      </div>
+    </div>
+  `).join('');
+
+  const swatchHtml = g.swatches.map(s => `<div class="swatch" style="background:${s};width:24px;height:24px;border-radius:50%;border:1px solid rgba(0,0,0,0.1)"></div>`).join('');
+
+  document.getElementById('drawer-content').innerHTML = `
+    <div style="font-size:0.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.08em">${g.collection}</div>
+    <div class="drawer-title">${g.name}</div>
+    <div class="drawer-collection">${g.type}${g.convertible ? ' · <span style="color:var(--gold)">Convertible</span>' : ''}</div>
+
+    <div class="progress-track">${progressHtml}</div>
+
+    <div style="margin:16px 0;padding:14px;background:var(--warm);border-radius:10px">
+      <div class="thread-title" style="margin-bottom:8px">Fabric</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:flex;gap:4px">${swatchHtml}</div>
+        <span style="font-size:0.82rem;color:var(--ink)">${g.fabric}</span>
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <div class="thread-title">Construction Notes</div>
+      <textarea class="notes-field" placeholder="Add a note from the table…">${g.notes}</textarea>
+    </div>
+
+    <div>
+      <div class="thread-title">Construction Thread</div>
+      ${threadHtml}
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-gold" onclick="toast('Stage advanced')">Advance Stage →</button>
+      <button class="btn btn-outline" onclick="toast('Opening in full studio…')">Open Studio</button>
+    </div>
+  `;
+
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+}
+
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+function setFilter(el, filter) {
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.style.transform = 'translateX(-50%) translateY(60px)'; }, 2000);
+}
+</script>
+</body>
+</html>

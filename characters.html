@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IAM Spirit Animals — Vanderbilt AI Practicum</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#060E1A;--mid:#0A1628;--lift:#0D2137;--cyan:#00E5FF;--teal:#00BCD4;--gold:#C9A84C;--text:#B0C4D8;--bright:#E8F4F8;--dim:#7A9BB5;--glass:rgba(14,42,69,0.55);--border:rgba(0,188,212,0.22);--social:#ff6b6b;--knowledge:#4dabf7;--generative:#51cf66}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(0,229,255,0.05) 0%,transparent 60%)}
+.header{text-align:center;padding:48px 20px 16px}
+.header h1{font-size:36px;font-weight:700;background:linear-gradient(135deg,var(--cyan),var(--teal),#4DD0E1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.header p{color:var(--dim);font-size:15px;max-width:600px;margin:0 auto}
+.filters{display:flex;justify-content:center;gap:10px;padding:16px 20px 32px;flex-wrap:wrap}
+.fbtn{padding:8px 20px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--dim);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
+.fbtn.active,.fbtn:hover{background:rgba(0,229,255,.12);border-color:rgba(0,229,255,.5);color:var(--cyan)}
+.fbtn[data-f="social"].active{color:var(--social);border-color:var(--social);background:rgba(255,107,107,.1)}
+.fbtn[data-f="knowledge"].active{color:var(--knowledge);border-color:var(--knowledge);background:rgba(77,171,247,.1)}
+.fbtn[data-f="generative"].active{color:var(--generative);border-color:var(--generative);background:rgba(81,207,102,.1)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px;padding:0 24px 60px;max-width:1400px;margin:0 auto}
+.card{background:var(--glass);backdrop-filter:blur(24px);border:1px solid var(--border);border-radius:16px;padding:24px;cursor:pointer;transition:all .3s;position:relative;overflow:hidden}
+.card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);pointer-events:none}
+.card:hover{transform:translateY(-4px);border-color:rgba(0,229,255,0.5);box-shadow:0 8px 32px rgba(0,229,255,0.12)}
+.card .emoji{font-size:48px;margin-bottom:12px;display:block}
+.card .char-name{font-size:18px;font-weight:700;color:var(--bright);margin-bottom:2px}
+.card .student{font-size:13px;color:var(--dim);margin-bottom:4px}
+.card .animal{font-size:12px;color:var(--teal);font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.card .motto{font-size:13px;color:var(--text);font-style:italic;margin-bottom:14px;line-height:1.4}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.pill{padding:4px 10px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(0,229,255,0.1);color:var(--cyan);border:1px solid rgba(0,229,255,0.2)}
+.card .doctrine{display:none;font-size:13px;line-height:1.5;color:var(--text);margin-bottom:14px;padding-top:14px;border-top:1px solid var(--border)}
+.card.expanded .doctrine{display:block}
+.enter-link{display:inline-block;padding:8px 18px;border-radius:10px;background:linear-gradient(135deg,var(--cyan),#0088cc);color:#fff;font-size:13px;font-weight:600;text-decoration:none;transition:all .2s}
+.enter-link:hover{box-shadow:0 4px 16px rgba(0,229,255,0.3);transform:translateY(-1px)}
+.layer-tag{position:absolute;top:12px;right:12px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.5px}
+.layer-tag.social{background:rgba(255,107,107,.15);color:var(--social)}
+.layer-tag.knowledge{background:rgba(77,171,247,.15);color:var(--knowledge)}
+.layer-tag.generative{background:rgba(81,207,102,.15);color:var(--generative)}
+.back-link{display:inline-block;margin:20px 24px;color:var(--dim);text-decoration:none;font-size:13px;font-weight:500}
+.back-link:hover{color:var(--cyan)}
+</style>
+</head>
+<body>
+<a class="back-link" href="iam-classroom.html">← Back to Classroom</a>
+<div class="header">
+  <h1>🐾 IAM Spirit Animals</h1>
+  <p>40 students. 40 spirit animals. Each one a cognitive fingerprint for how you think, build, and lead.</p>
+</div>
+<div class="filters">
+  <button class="fbtn active" data-f="all" onclick="filter('all')">All 40</button>
+  <button class="fbtn" data-f="social" onclick="filter('social')">🔴 Social-Dominant</button>
+  <button class="fbtn" data-f="knowledge" onclick="filter('knowledge')">🔵 Knowledge-Dominant</button>
+  <button class="fbtn" data-f="generative" onclick="filter('generative')">🟢 Generative-Dominant</button>
+</div>
+<div class="grid" id="grid"></div>
+<script>
+const C=[
+{u:'ava',n:'The Clever Navigator',a:'Fox',e:'🦊',m:'The fox doesn\'t chase the rabbit straight. It circles.',i:['Ingenuity','Agility','Serendipity'],d:'Pack hunter who maps social terrain with adaptive intelligence and pattern recognition. Sees the angle others missed.',l:'social'},
+{u:'ben',n:'The Grounded Force',a:'Bear',e:'🐻',m:'Steady is the fastest.',i:['Tenacity','Certainty','Vitality'],d:'Earns trust through reliability, not charisma. Deep domain expertise with iron conviction. Transforms slow insights into powerful moves.',l:'knowledge'},
+{u:'cara',n:'The Transformer',a:'Butterfly',e:'🦋',m:'Every form I leave behind funded the next one.',i:['Adaptability','Creativity','Possibility'],d:'Metamorphosis inspires others. Carries knowledge through radical transformation. Creates beauty at every stage.',l:'generative'},
+{u:'dev',n:'The Problem Architect',a:'Crow',e:'🐦‍⬛',m:'Crows are the only birds that play.',i:['Ingenuity','Complexity','Lucidity'],d:'Crow intelligence is social — solved problems are shared. Tool use, 3rd-order reasoning. Builds systems that solve themselves.',l:'generative'},
+{u:'elena',n:'The Elegant Strategist',a:'Swan',e:'🦢',m:'Power disguised as grace.',i:['Felicity','Clarity','Ubiquity'],d:'Commands presence without demanding it. Navigates with geometric precision. Makes the impossible look inevitable.',l:'social'},
+{u:'finn',n:'The Pod Commander',a:'Orca',e:'🐋',m:'Apex intelligence. Never hunts alone.',i:['Connectivity','Synchronicity','Totality'],d:'Orcas have dialects per pod — community is identity. Multi-domain mastery. Coordinates complex team strategies that seem telepathic.',l:'social'},
+{u:'grace',n:'The Precision Artist',a:'Crane',e:'🦩',m:'Stand on one leg long enough and you stop thinking about balance.',i:['Serenity','Clarity','Felicity'],d:'Cranes mate for life — deep long-term relationships. Precision navigation across continents. Turns stillness into strategic advantage.',l:'knowledge'},
+{u:'hugo',n:'The Silent Disruptor',a:'Jaguar',e:'🐆',m:'The jaguar doesn\'t announce itself.',i:['Velocity','Tenacity','Novelty'],d:'Apex predator who reshapes ecosystems. Masters camouflage and terrain. Strikes from an angle no competitor anticipated.',l:'generative'},
+{u:'iris',n:'The Rapid Prototyper',a:'Hummingbird',e:'🌺',m:'600 wingbeats per minute. Never fails slowly.',i:['Agility','Vitality','Serendipity'],d:'Pollinates across entire ecosystems — connects what can\'t self-connect. Maximum output, minimum input. Iterates faster than critics respond.',l:'generative'},
+{u:'jake',n:'The Unlikely Climber',a:'Mountain Goat',e:'🏔',m:'The terrain everyone avoids is where the view is best.',i:['Tenacity','Adaptability','Certainty'],d:'Climbs in small trusted groups. Masters terrain others call impossible. Turns obstacles into exclusive competitive advantages.',l:'knowledge'},
+{u:'kira',n:'The Distributed Genius',a:'Octopus',e:'🐙',m:'9 brains. All running in parallel.',i:['Complexity','Adaptability','Ingenuity'],d:'2/3 of intelligence is in the arms — distributed, autonomous. Can open jars, mimic species, escape anywhere. Reinvents completely every situation.',l:'generative'},
+{u:'liam',n:'The Pride Builder',a:'Lion',e:'🦁',m:'Leadership isn\'t presence. It\'s making everyone feel invincible.',i:['Vitality','Connectivity','Ubiquity'],d:'The pride is the competitive advantage. Conserves energy for the moment that matters. Builds structures that run without him.',l:'social'},
+{u:'maya',n:'The Deep Pattern Reader',a:'Owl',e:'🦉',m:'The owl sees what daylight hides.',i:['Clarity','Sagacity','Lucidity'],d:'Solitary but precisely placed — every relationship strategic. 270° vision sees the full context. Synthesizes what others only see in fragments.',l:'knowledge'},
+{u:'noah',n:'The Upstream Swimmer',a:'Salmon',e:'🐟',m:'Every force is against it. It goes anyway.',i:['Tenacity','Reciprocity','Vitality'],d:'Returns to community to give back what it gained. Navigates by magnetic field AND smell. Transforms adversity into the most nutrient-rich outcome.',l:'knowledge'},
+{u:'olive',n:'The Long Memory',a:'Elephant',e:'🐘',m:'Never forgets a customer. Never forgets a mistake.',i:['Sagacity','Continuity','Reciprocity'],d:'Matriarchal network — wisdom flows from experience. Maps water sources across decades. Turns memory into multigenerational competitive moats.',l:'social'},
+{u:'paul',n:'The Systems Architect',a:'Ant',e:'🐜',m:'No ant is a genius. The colony always is.',i:['Connectivity','Complexity','Certainty'],d:'Emergent intelligence — the system is smarter than any individual. Builds cities, farms fungus, wages war — all without a manual.',l:'knowledge'},
+{u:'quinn',n:'The Adaptive Strategist',a:'Chameleon',e:'🦎',m:'I don\'t lose myself. I expand myself.',i:['Adaptability','Felicity','Novelty'],d:'Color changes are social signals — communication is dynamic. 360° independent eye movement — total situational awareness.',l:'generative'},
+{u:'ravi',n:'The Vision Holder',a:'Eagle',e:'🦅',m:'Commits to the dive before seeing the full picture.',i:['Clarity','Certainty','Velocity'],d:'Solo apex predator who inspires from altitude. 4-5x human visual acuity. Sees the target before the market does, commits before proof.',l:'knowledge'},
+{u:'sara',n:'The Empathy Engine',a:'Dolphin',e:'🐬',m:'Solve the feeling first. The problem second.',i:['Connectivity','Serendipity','Vitality'],d:'The most emotionally intelligent creature in the ocean. Echolocation maps the invisible. Creates joyful solutions to serious problems.',l:'social'},
+{u:'troy',n:'The Unstoppable Force',a:'Rhino',e:'🦏',m:'Near-sighted but never lost. The direction is clear.',i:['Tenacity','Certainty','Vitality'],d:'Territorial but fiercely protective of allies. Knows terrain better than anyone. Charges through obstacles others call immovable.',l:'generative'},
+{u:'uma',n:'The Magnetic Signal',a:'Peacock',e:'🦚',m:'Audacity isn\'t vanity. It\'s a frequency.',i:['Ubiquity','Felicity','Serendipity'],d:'The display IS the pitch. Knows exactly which angle catches the light. Turns aesthetic into competitive advantage.',l:'social'},
+{u:'vince',n:'The Pack Architect',a:'Wolf',e:'🐺',m:'The lone wolf doesn\'t win. The wolf who builds the pack does.',i:['Connectivity','Synchronicity','Vitality'],d:'Pack hierarchy is dynamic — leadership rotates. Territory mapping and long-range strategy. Coordination that looks like instinct.',l:'social'},
+{u:'wren',n:'The Underestimated Voice',a:'Wren',e:'🐦',m:'The smallest bird has the biggest song.',i:['Lucidity','Serendipity','Agility'],d:'Territorial songs carry 2x louder than birds 10x bigger. Nests in impossible places. Creates outsized impact from minimal resources.',l:'generative'},
+{u:'xena',n:'The Invisible Innovator',a:'Snow Leopard',e:'🐈‍⬛',m:'By the time they see you, you\'re already somewhere else.',i:['Novelty','Velocity','Adaptability'],d:'Solitary but commands vast territory. Masters high-altitude impossible terrain. Moves faster than perception.',l:'generative'},
+{u:'yusuf',n:'The Compounding Strategist',a:'Tortoise',e:'🐢',m:'Consistent is unstoppable.',i:['Tenacity','Certainty','Continuity'],d:'Outlives competitors — long-term relationships over transactional. 200 years of slow, non-negotiable progress. Compounds until the gap is insurmountable.',l:'knowledge'},
+{u:'zara',n:'The Charged Disruptor',a:'Electric Eel',e:'⚡',m:'Doesn\'t advertise the voltage. Until it matters.',i:['Novelty','Velocity','Lucidity'],d:'Electrifies entire ecosystems — changes behavior around them. Generates its own energy. The right jolt at the exact right moment.',l:'generative'},
+{u:'amir',n:'The Precision Striker',a:'Peregrine Falcon',e:'🏹',m:'Doesn\'t chase. Calculates. Then commits.',i:['Clarity','Velocity','Certainty'],d:'Mates for life — precision partnership. Fastest creature alive when committed — 240mph. Eliminates options until only the right one remains.',l:'knowledge'},
+{u:'blake',n:'The Terrain Owner',a:'Grizzly',e:'🐻‍❄️',m:'Doesn\'t ask permission for its territory.',i:['Tenacity','Vitality','Certainty'],d:'Solitary but universally respected. Knows every food source, migration, and seasonal shift. Claims territory others don\'t know exists.',l:'generative'},
+{u:'cleo',n:'The Ancient Patience',a:'Crocodile',e:'🐊',m:'300 million years. Zero unnecessary changes.',i:['Certainty','Tenacity','Sagacity'],d:'Coordinates complex basking hierarchies. Ancient intelligence survived every extinction event. Waits for the perfect moment. Always.',l:'knowledge'},
+{u:'diego',n:'The Thermal Rider',a:'Condor',e:'🦅',m:'Doesn\'t flap. Finds the thermal and rises.',i:['Clarity','Serendipity','Agility'],d:'Condors share thermals — rising lifts the whole circle. 10-foot wingspan across continents. Converts environmental forces into free elevation.',l:'social'},
+{u:'elise',n:'The Long Migration',a:'Monarch Butterfly',e:'🦋',m:'3,000 miles on instinct and community memory.',i:['Continuity','Connectivity','Adaptability'],d:'No single butterfly completes the whole journey. Navigates by sun compass + magnetic field + community. Value across generations.',l:'social'},
+{u:'felix',n:'The Lucky Physicist',a:'Cat',e:'🐱',m:'Always lands on its feet. Not luck — physics.',i:['Agility','Serendipity','Felicity'],d:'Domesticated genius — chose humans as allies strategically. Righting reflex reorients in free fall. Makes impossible recoveries look casual.',l:'generative'},
+{u:'gaia',n:'The Network Root',a:'Redwood',e:'🌲',m:'The visible part is 10%. The network underneath is everything.',i:['Connectivity','Totality','Continuity'],d:'Redwood forest is a single connected organism underground. 2,000-year institutional memory. Creates ecosystems that outlast every individual.',l:'social'},
+{u:'hana',n:'The Bioluminescent Signal',a:'Firefly',e:'✨',m:'In the darkest market, be the frequency that matters.',i:['Lucidity','Serendipity','Novelty'],d:'Fireflies synchronize — thousands flashing in perfect unison. Bioluminescence is 100% efficient. Creates light in darkness.',l:'generative'},
+{u:'ines',n:'The Ancient Messenger',a:'Ibis',e:'🌿',m:'Carried knowledge across civilizations. Still does.',i:['Sagacity','Clarity','Reciprocity'],d:'Sacred to Thoth — god of knowledge. Navigated the Nile for 60 million years without a map. Turns ancient wisdom into present-day navigation.',l:'knowledge'},
+{u:'nezzy',n:'The Drift Intelligence',a:'Jellyfish',e:'🪼',m:'Moves without a brain. Survives without a spine. Creates without effort.',i:['Adaptability','Fluidity','Serendipity'],d:'Blooms — when conditions align, appears everywhere. 95% water — minimum viable architecture, maximum efficiency. Turns currents into strategy.',l:'generative'},
+{u:'six2tha9',n:'The Rebirth Engine',a:'Phoenix',e:'🔥',m:'Every ash is a launch pad.',i:['Novelty','Vitality','Continuity'],d:'The phoenix myth is universal — every culture built it independently. The fire is information. Reinvention IS the product.',l:'generative'},
+{u:'saiki',n:'The Spectrum Seer',a:'Mantis Shrimp',e:'🦐',m:'You see 3 color channels. I see 16.',i:['Clarity','Lucidity','Complexity'],d:'Communicates in UV light — signals invisible to competitors. Fastest punch in nature — 50mph. Sees opportunities in spectra others cannot perceive.',l:'knowledge'},
+{u:'spily',n:'The Spiral Architect',a:'Nautilus',e:'🐚',m:'Building on itself since 500 million years ago. Still perfect.',i:['Continuity','Complexity','Felicity'],d:'The shell is both home and signal. Golden ratio embedded in biology. Each chamber enables the next — compounding architecture.',l:'knowledge'},
+{u:'waddles',n:'The Waddler',a:'Mallard Duck',e:'🦆',m:'I may waddle. But I never wobble.',i:['Adaptability','Fluidity','Velocity','Serenity','Tenacity','Ingenuity'],d:'Surface calm, underwater fury. Migration intelligence: 3,000 miles by magnetic field + star patterns + flock memory. The wild card. The late migration.',l:'social'}
+];
+
+function filter(f){
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.toggle('active',b.dataset.f===f));
+  document.querySelectorAll('.card').forEach(c=>{
+    c.style.display=(f==='all'||c.dataset.layer===f)?'':'none';
+  });
+}
+
+function render(){
+  const g=document.getElementById('grid');
+  g.innerHTML=C.map(c=>`
+    <div class="card" data-layer="${c.l}" onclick="this.classList.toggle('expanded')">
+      <span class="layer-tag ${c.l}">${c.l}</span>
+      <span class="emoji">${c.e}</span>
+      <div class="char-name">${c.n}</div>
+      <div class="student">${c.u}</div>
+      <div class="animal">${c.a}</div>
+      <div class="motto">"${c.m}"</div>
+      <div class="pills">${c.i.map(w=>`<span class="pill">${w}</span>`).join('')}</div>
+      <div class="doctrine">${c.d}</div>
+      <a class="enter-link" href="iam-classroom.html" onclick="event.stopPropagation()">Enter as ${c.u} →</a>
+    </div>
+  `).join('');
+}
+render();
+</script>
+</body>
+</html>
