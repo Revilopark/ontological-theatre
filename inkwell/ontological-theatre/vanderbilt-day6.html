@@ -1,0 +1,2129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 6: AI Reliability Audit · Vanderbilt Owen MBA · Spring 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN SYSTEM — Apple Glass Morphism Light
+   ============================================================ */
+:root {
+  --bg: #f0f2f5;
+  --bg2: #e8ecf1;
+  --glass: rgba(255,255,255,0.72);
+  --glass-hover: rgba(255,255,255,0.88);
+  --glass-border: rgba(255,255,255,0.6);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  --glass-shadow-lg: 0 20px 60px rgba(0,0,0,0.12);
+  --blur: blur(20px);
+  --blur-sm: blur(12px);
+  --blue: #007AFF;
+  --blue-light: #5AC8FA;
+  --blue-deep: #0055D4;
+  --purple: #AF52DE;
+  --purple-light: #DA9FFC;
+  --green: #34C759;
+  --green-light: #85E89D;
+  --orange: #FF9500;
+  --orange-light: #FFCC80;
+  --pink: #FF2D55;
+  --red: #FF3B30;
+  --gold: #cfb87c;
+  --gold-light: #e8d5a3;
+  --teal: #32ADE6;
+  --text: #1d1d1f;
+  --text-muted: #6e6e73;
+  --text-light: #86868b;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  user-select: none;
+}
+
+/* ============================================================
+   GRADIENT MESH BACKGROUND
+   ============================================================ */
+.bg-mesh {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(90, 200, 250, 0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 80% 20%, rgba(175, 82, 222, 0.12) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 50% 90%, rgba(0, 122, 255, 0.14) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 60% at 90% 80%, rgba(52, 199, 89, 0.10) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 70% at 10% 80%, rgba(207, 184, 124, 0.10) 0%, transparent 50%),
+    linear-gradient(135deg, #e8f0fe 0%, #f0f4ff 30%, #faf0ff 60%, #f0f8f0 100%);
+  z-index: 0;
+}
+
+/* Animated mesh orbs */
+.mesh-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.4;
+  z-index: 0;
+  animation: orbFloat 20s ease-in-out infinite;
+}
+.mesh-orb-1 {
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(90,200,250,0.3) 0%, transparent 70%);
+  top: -100px; left: -100px;
+  animation-delay: 0s;
+}
+.mesh-orb-2 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(175,82,222,0.2) 0%, transparent 70%);
+  top: 50%; right: -80px;
+  animation-delay: -7s;
+}
+.mesh-orb-3 {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(0,122,255,0.2) 0%, transparent 70%);
+  bottom: -60px; left: 30%;
+  animation-delay: -14s;
+}
+
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -20px) scale(1.05); }
+  66% { transform: translate(-20px, 30px) scale(0.95); }
+}
+
+/* ============================================================
+   PROGRESS BAR
+   ============================================================ */
+.progress-bar-container {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: rgba(0,0,0,0.06);
+  z-index: 1000;
+}
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--purple), var(--blue-light));
+  background-size: 200% 100%;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: progressShimmer 3s linear infinite;
+}
+@keyframes progressShimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* ============================================================
+   SLIDE SYSTEM
+   ============================================================ */
+.slides-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 60px 160px;
+  opacity: 0;
+  pointer-events: none;
+  overflow-y: auto;
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(20px) scale(0.98);
+}
+
+.slide.active {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateY(0) scale(1);
+}
+
+.slide.exit-left {
+  opacity: 0;
+  transform: translateX(-40px) scale(0.96);
+}
+
+.slide.exit-right {
+  opacity: 0;
+  transform: translateX(40px) scale(0.96);
+}
+
+/* ============================================================
+   GLASS COMPONENTS
+   ============================================================ */
+.glass {
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius);
+}
+
+.glass-card {
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: var(--transition);
+}
+
+.glass-card:hover {
+  background: var(--glass-hover);
+  box-shadow: var(--glass-shadow-lg);
+  transform: translateY(-2px);
+}
+
+.glass-panel {
+  background: rgba(255,255,255,0.60);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,0.70);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.10);
+  border-radius: var(--radius-xl);
+  padding: 48px;
+}
+
+/* ============================================================
+   BOTTOM NAVIGATION
+   ============================================================ */
+.bottom-nav {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(255,255,255,0.80);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.60);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+  border-radius: 50px;
+  padding: 10px 20px;
+  z-index: 999;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition);
+  font-family: 'Inter', sans-serif;
+}
+
+.nav-btn:hover {
+  background: rgba(0,122,255,0.08);
+  color: var(--blue);
+}
+
+.nav-btn svg {
+  width: 16px; height: 16px;
+}
+
+.dot-nav {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.dot.active {
+  width: 20px;
+  border-radius: 3px;
+  background: var(--blue);
+}
+
+.dot:hover:not(.active) {
+  background: rgba(0,122,255,0.4);
+  transform: scale(1.2);
+}
+
+.slide-counter {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-light);
+  letter-spacing: 0.5px;
+  min-width: 44px;
+  text-align: center;
+}
+
+/* ============================================================
+   SPEAKER NOTES
+   ============================================================ */
+.notes-panel {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  width: 760px;
+  max-width: 90vw;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.70);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  z-index: 998;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.notes-panel.visible {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateX(-50%) translateY(0);
+}
+
+.notes-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--blue);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.notes-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+.display-xl {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(48px, 6vw, 80px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  color: var(--text);
+}
+
+.display-lg {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(36px, 4.5vw, 58px);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+
+.display-md {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(28px, 3vw, 42px);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.headline {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(20px, 2.5vw, 30px);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text);
+}
+
+.body-lg {
+  font-size: clamp(16px, 1.6vw, 20px);
+  font-weight: 400;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.body-md {
+  font-size: clamp(14px, 1.4vw, 17px);
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.body-sm {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--text-light);
+}
+
+.gradient-text-blue {
+  background: linear-gradient(135deg, var(--blue), var(--blue-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-purple {
+  background: linear-gradient(135deg, var(--purple), var(--blue));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-gold {
+  background: linear-gradient(135deg, var(--gold), #a08040);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-red {
+  background: linear-gradient(135deg, var(--red), #d60027);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ============================================================
+   EPISODE CARDS
+   ============================================================ */
+.episode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.episode-badge.blue {
+  background: rgba(0,122,255,0.12);
+  color: var(--blue);
+  border: 1px solid rgba(0,122,255,0.2);
+}
+.episode-badge.green {
+  background: rgba(52,199,89,0.12);
+  color: #1a7a34;
+  border: 1px solid rgba(52,199,89,0.2);
+}
+.episode-badge.orange {
+  background: rgba(255,149,0,0.12);
+  color: #c67000;
+  border: 1px solid rgba(255,149,0,0.2);
+}
+.episode-badge.purple {
+  background: rgba(175,82,222,0.12);
+  color: var(--purple);
+  border: 1px solid rgba(175,82,222,0.2);
+}
+.episode-badge.red {
+  background: rgba(255,59,48,0.12);
+  color: #c0001a;
+  border: 1px solid rgba(255,59,48,0.2);
+}
+
+.episode-number {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: white;
+}
+.ep-blue { background: var(--blue); }
+.ep-green { background: var(--green); }
+.ep-orange { background: var(--orange); }
+.ep-purple { background: var(--purple); }
+.ep-red { background: var(--red); }
+
+/* ============================================================
+   SLIDE LAYOUT HELPERS
+   ============================================================ */
+.slide-content {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.center-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  width: 100%;
+}
+
+.three-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  width: 100%;
+}
+
+.grid-2x3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  width: 100%;
+}
+
+.four-col {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  width: 100%;
+}
+
+.five-col {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  width: 100%;
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(255,59,48,0.3); }
+  50% { box-shadow: 0 0 40px rgba(255,59,48,0.6); }
+}
+
+@keyframes warning-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(255,149,0,0.3); }
+  50% { box-shadow: 0 0 40px rgba(255,149,0,0.6); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-float { animation: float 4s ease-in-out infinite; }
+.animate-float-delay { animation: float 4s ease-in-out infinite 2s; }
+
+/* Staggered card entrance */
+.slide.active .stagger-1 { animation: fadeUp 0.6s cubic-bezier(0.4,0,0.2,1) 0.1s both; }
+.slide.active .stagger-2 { animation: fadeUp 0.6s cubic-bezier(0.4,0,0.2,1) 0.2s both; }
+.slide.active .stagger-3 { animation: fadeUp 0.6s cubic-bezier(0.4,0,0.2,1) 0.3s both; }
+.slide.active .stagger-4 { animation: fadeUp 0.6s cubic-bezier(0.4,0,0.2,1) 0.4s both; }
+.slide.active .stagger-5 { animation: fadeUp 0.6s cubic-bezier(0.4,0,0.2,1) 0.5s both; }
+.slide.active .stagger-6 { animation: fadeUp 0.6s cubic-bezier(0.4,0,0.2,1) 0.6s both; }
+.slide.active .stagger-7 { animation: fadeUp 0.6s cubic-bezier(0.4,0,0.2,1) 0.7s both; }
+.slide.active .stagger-8 { animation: fadeUp 0.6s cubic-bezier(0.4,0,0.2,1) 0.8s both; }
+
+/* ============================================================
+   SPECIFIC SLIDE COMPONENTS
+   ============================================================ */
+
+/* Title logo area */
+.vanderbilt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px;
+  background: linear-gradient(135deg, rgba(207,184,124,0.15), rgba(207,184,124,0.05));
+  border: 1px solid rgba(207,184,124,0.4);
+  border-radius: 100px;
+  margin-bottom: 32px;
+}
+
+.vanderbilt-star {
+  font-size: 18px;
+}
+
+/* Graph insight card */
+.insight-card {
+  padding: 28px 32px;
+  border-radius: var(--radius-lg);
+  border-left: 4px solid var(--blue);
+  background: rgba(0,122,255,0.05);
+  border-top: 1px solid rgba(255,255,255,0.60);
+  border-right: 1px solid rgba(255,255,255,0.60);
+  border-bottom: 1px solid rgba(255,255,255,0.60);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.insight-card.green { border-left-color: var(--green); background: rgba(52,199,89,0.05); }
+.insight-card.orange { border-left-color: var(--orange); background: rgba(255,149,0,0.05); }
+.insight-card.purple { border-left-color: var(--purple); background: rgba(175,82,222,0.05); }
+.insight-card.gold { border-left-color: var(--gold); background: rgba(207,184,124,0.06); }
+.insight-card.red { border-left-color: var(--red); background: rgba(255,59,48,0.05); }
+
+/* Quote block */
+.blockquote {
+  padding: 20px 24px;
+  border-left: 3px solid var(--blue);
+  background: rgba(0,122,255,0.04);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: clamp(14px, 1.5vw, 17px);
+  line-height: 1.65;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Star/metric badge */
+.metric-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.metric-badge.blue { background: rgba(0,122,255,0.10); color: var(--blue); }
+.metric-badge.green { background: rgba(52,199,89,0.10); color: #1a7a34; }
+.metric-badge.orange { background: rgba(255,149,0,0.10); color: #c67000; }
+.metric-badge.purple { background: rgba(175,82,222,0.10); color: var(--purple); }
+.metric-badge.gold { background: rgba(207,184,124,0.15); color: #7a5c00; }
+.metric-badge.red { background: rgba(255,59,48,0.10); color: #c0001a; }
+
+/* Decorative line */
+.divider {
+  width: 48px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--blue), transparent);
+  border-radius: 2px;
+  margin: 16px 0;
+}
+
+.divider.center { margin: 16px auto; }
+
+/* ============================================================
+   AI RELIABILITY SPECIFIC COMPONENTS
+   ============================================================ */
+
+/* Error showcase */
+.error-showcase {
+  padding: 20px 24px;
+  border-radius: var(--radius);
+  background: rgba(255,59,48,0.06);
+  border: 1px solid rgba(255,59,48,0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.error-showcase::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,59,48,0.1), transparent);
+  animation: shimmer 3s infinite;
+}
+
+/* Risk levels */
+.risk-low {
+  background: rgba(52,199,89,0.08);
+  border: 1px solid rgba(52,199,89,0.2);
+  color: #1a7a34;
+}
+
+.risk-medium {
+  background: rgba(255,149,0,0.08);
+  border: 1px solid rgba(255,149,0,0.2);
+  color: #c67000;
+}
+
+.risk-high {
+  background: rgba(255,59,48,0.08);
+  border: 1px solid rgba(255,59,48,0.2);
+  color: #c0001a;
+}
+
+/* Verification checklist */
+.verification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.50);
+  border: 1px solid rgba(255,255,255,0.50);
+  transition: var(--transition);
+}
+
+.verification-item:hover {
+  background: rgba(255,255,255,0.80);
+  transform: translateX(4px);
+}
+
+.check-mark {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* Failure modes grid */
+.failure-mode {
+  padding: 20px 24px;
+  border-radius: var(--radius);
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  transition: var(--transition);
+}
+
+.failure-mode:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glass-shadow-lg);
+}
+
+.failure-mode.critical {
+  border-left: 4px solid var(--red);
+  background: rgba(255,59,48,0.04);
+}
+
+.failure-mode.warning {
+  border-left: 4px solid var(--orange);
+  background: rgba(255,149,0,0.04);
+}
+
+.failure-mode.caution {
+  border-left: 4px solid var(--blue);
+  background: rgba(0,122,255,0.04);
+}
+
+/* Healthcare/financial case study cards */
+.case-study-card {
+  padding: 28px 32px;
+  border-radius: var(--radius-lg);
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.case-study-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--blue), var(--purple), var(--blue-light));
+}
+
+/* Framework steps */
+.framework-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px 24px;
+  border-radius: var(--radius);
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  transition: var(--transition);
+}
+
+.framework-step:hover {
+  background: var(--glass-hover);
+  transform: translateY(-2px);
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: white;
+  flex-shrink: 0;
+}
+
+/* Warning icon */
+.warning-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--orange), #ff6b00);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: white;
+  animation: warning-pulse 3s ease-in-out infinite;
+  box-shadow: 0 8px 24px rgba(255,149,0,0.3);
+}
+
+/* Confidence levels */
+.confidence-high { background: rgba(52,199,89,0.1); color: #1a7a34; border: 1px solid rgba(52,199,89,0.3); }
+.confidence-medium { background: rgba(255,149,0,0.1); color: #c67000; border: 1px solid rgba(255,149,0,0.3); }
+.confidence-low { background: rgba(255,59,48,0.1); color: #c0001a; border: 1px solid rgba(255,59,48,0.3); }
+
+/* ============================================================
+   SLIDE 1 — TITLE
+   ============================================================ */
+#slide-1 .title-card {
+  max-width: 760px;
+  text-align: center;
+  padding: 64px 72px;
+}
+
+#slide-1 .title-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 18px;
+  background: rgba(255,59,48,0.08);
+  border: 1px solid rgba(255,59,48,0.20);
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--red);
+  letter-spacing: 0.5px;
+  margin-bottom: 40px;
+}
+
+#slide-1 .main-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(44px, 5.5vw, 72px);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -1.5px;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+#slide-1 .subtitle-line {
+  font-size: clamp(14px, 1.5vw, 17px);
+  color: var(--text-light);
+  font-weight: 400;
+  line-height: 1.6;
+  margin-top: 20px;
+  margin-bottom: 36px;
+}
+
+#slide-1 .author-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+
+#slide-1 .author-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--red), var(--orange));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px) {
+  .slide { padding: 60px 30px 160px; }
+  .two-col, .three-col, .grid-2x3, .four-col, .five-col { grid-template-columns: 1fr; }
+  .glass-panel { padding: 32px 24px; }
+  #slide-1 .title-card { padding: 40px 32px; }
+}
+
+@media (max-width: 600px) {
+  .slide { padding: 40px 20px 150px; }
+  .bottom-nav { width: 90vw; }
+}
+
+/* ============================================================
+   KEY HINT
+   ============================================================ */
+.key-hint {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 6px 14px;
+  background: rgba(255,255,255,0.70);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.60);
+  border-radius: 100px;
+  font-size: 11px;
+  color: var(--text-light);
+  z-index: 999;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+kbd {
+  background: rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.10);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg-mesh"></div>
+<div class="mesh-orb mesh-orb-1"></div>
+<div class="mesh-orb mesh-orb-2"></div>
+<div class="mesh-orb mesh-orb-3"></div>
+
+<!-- Progress Bar -->
+<div class="progress-bar-container">
+  <div class="progress-bar" id="progressBar"></div>
+</div>
+
+<!-- Key Hint -->
+<div class="key-hint">
+  <kbd>←</kbd><kbd>→</kbd> navigate &nbsp; <kbd>N</kbd> notes
+</div>
+
+<!-- Slides Container -->
+<div class="slides-container" id="slidesContainer">
+
+  <!-- =====================================================
+       SLIDE 1 — TITLE
+       ===================================================== -->
+  <div class="slide" id="slide-1" data-notes="Welcome to Session 6. We're in Week 3, the WHAT Layer. Students just submitted their AI Reliability Analysis papers yesterday. Today we move from research to audit — how do you systematically evaluate when AI gets it wrong and what to do about it. This isn't theoretical — it's operational intelligence for business leaders.">
+    <div class="center-content">
+      <div class="glass-panel title-card animate-float stagger-1">
+        <div class="vanderbilt-badge">
+          <span class="vanderbilt-star">⭐</span>
+          <span class="label gradient-text-gold">Vanderbilt Owen MBA · Spring 2026</span>
+        </div>
+        <div class="title-tag">
+          <span style="font-size: 14px;">⚠️</span>
+          Session 6 · March 25 · WHAT Layer
+        </div>
+        <div class="main-title">
+          AI <span class="gradient-text-red">Reliability</span><br>Audit
+        </div>
+        <div style="height: 3px; background: linear-gradient(90deg, var(--red), var(--orange), var(--red)); border-radius: 2px; margin: 24px auto; width: 120px;"></div>
+        <div class="subtitle-line">
+          Where AI gets it wrong · Why grounded AI matters<br>
+          <span style="color: var(--red); font-weight: 500;">Domain risk assessment</span>
+        </div>
+        <div class="author-line">
+          <div class="author-avatar">OP</div>
+          <div style="text-align: left;">
+            <div style="font-weight: 600; font-size: 15px; color: var(--text);">Oliver Park</div>
+            <div style="font-size: 13px; color: var(--text-light);">Inkwell Labs</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;" class="stagger-2">
+        <span class="metric-badge red">⚠️ Trust Issues</span>
+        <span class="metric-badge orange">🔍 Verification</span>
+        <span class="metric-badge blue">📊 Risk Assessment</span>
+        <span class="metric-badge purple">🛡️ Grounding</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 2 — SESSION 5 RECAP
+       ===================================================== -->
+  <div class="slide" id="slide-2" data-notes="Session 5 bridge. We spent last week learning how to USE the intelligence layer — the 7 Rights Framework, NotebookLM research, VanderBot interactions. That was about extraction and synthesis. Today is about validation and trust. When AI gives you an answer, how do you know if it's right? How do you build systems that catch errors before they become decisions?">
+    <div class="slide-content">
+      <div class="stagger-1" style="margin-bottom: 6px;">
+        <span class="label" style="color: var(--blue);">Session 5 Recap</span>
+      </div>
+      <h2 class="display-md stagger-2" style="margin-bottom: 16px;">Last week we learned how to <span style="color: var(--blue);">USE</span> the graph for intelligence.</h2>
+      <div class="divider stagger-2"></div>
+
+      <div class="two-col" style="align-items: center; gap: 36px; margin-top: 20px;">
+        <div class="stagger-3">
+          <div class="blockquote" style="margin-bottom: 20px;">
+            "The 7 Rights Framework. NotebookLM for research synthesis. VanderBot for exploration. We built the <em>intelligence layer</em> of your knowledge graph."
+          </div>
+          
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="glass-card" style="padding: 16px 20px;">
+              <div style="font-weight: 700; font-size: 14px; color: var(--blue); margin-bottom: 4px;">✓ Deep Research Skills</div>
+              <div style="font-size: 13px; color: var(--text-muted);">You know how to extract signal from noise, synthesize across sources, build comprehensive research maps.</div>
+            </div>
+            <div class="glass-card" style="padding: 16px 20px;">
+              <div style="font-weight: 700; font-size: 14px; color: var(--green); margin-bottom: 4px;">✓ AI-Assisted Intelligence</div>
+              <div style="font-size: 13px; color: var(--text-muted);">NotebookLM and VanderBot are now part of your research toolkit. You can navigate complex knowledge graphs efficiently.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stagger-3">
+          <div class="glass-panel" style="padding: 32px 28px; text-align: center; background: rgba(255,59,48,0.05); border-color: rgba(255,59,48,0.20);">
+            <div class="warning-icon animate-float"></div>
+            <div style="font-size: clamp(18px, 2.2vw, 28px); font-family: 'Playfair Display', serif; font-weight: 600; color: var(--text); margin: 20px 0 12px;">But...</div>
+            <div style="font-size: clamp(15px, 1.6vw, 19px); color: var(--text-muted); line-height: 1.6;">
+              Now: how do we <span style="font-weight: 700; color: var(--red);">TRUST</span> what AI tells us?
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 3 — THE TRUST PROBLEM
+       ===================================================== -->
+  <div class="slide" id="slide-3" data-notes="This is the paradox of AI reliability. AI systems are incredibly powerful — they can process more information than any human, identify patterns we'd never see, generate insights at superhuman speed. But they're also predictably unreliable in specific ways. The danger isn't that they're wrong — it's that they're wrong with confidence. When you're making business decisions based on AI outputs, you need to know where and how it breaks.">
+    <div class="center-content" style="max-width: 800px; margin: 0 auto;">
+      <div class="stagger-1" style="margin-bottom: 24px;">
+        <span class="episode-badge red">🎯 The Core Problem</span>
+      </div>
+      <div class="glass-panel stagger-2 animate-float" style="text-align: center; padding: 64px 72px; background: rgba(255,59,48,0.04); border-color: rgba(255,59,48,0.15);">
+        <div style="font-family: 'Playfair Display', serif; font-size: clamp(32px, 4.5vw, 56px); font-weight: 700; line-height: 1.3; letter-spacing: -1px; padding-bottom: 8px; color: var(--text); margin-bottom: 24px;">
+          AI systems are <span style="color: var(--red);">powerful</span><br>but <span style="color: var(--orange);">unreliable</span><br>in specific, <span class="gradient-text-blue">predictable</span> ways.
+        </div>
+        <div style="height: 2px; background: linear-gradient(90deg, transparent, var(--red), transparent); margin: 0 auto 32px; width: 200px;"></div>
+        <div style="font-size: clamp(16px, 1.8vw, 21px); color: var(--text-muted); line-height: 1.65; font-weight: 400;">
+          The danger isn't that they're wrong.<br>
+          <span style="color: var(--red); font-weight: 600;">The danger is that they're wrong with confidence.</span>
+        </div>
+      </div>
+      <div class="glass-card stagger-3" style="margin-top: 20px; padding: 16px 24px; text-align: center; max-width: 680px;">
+        <div style="font-size: 13px; color: var(--text-muted);">
+          When you're making business decisions based on AI outputs, you need to know <span style="font-weight: 700; color: var(--text);">where it breaks</span> and <span style="font-weight: 700; color: var(--text);">how to catch it</span>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 4 — AI FAILURE TAXONOMY
+       ===================================================== -->
+  <div class="slide" id="slide-4" data-notes="Let's categorize the ways AI fails. This isn't random — these are systematic failure modes with predictable triggers. Hallucination is confident fabrication. Stale data means training cutoffs create knowledge gaps. Bias amplification multiplies existing dataset prejudices. Context window limitations mean it loses track of long conversations. Sycophancy means it tells you what you want to hear instead of what's true. Citation fabrication is when it makes up sources that sound real but don't exist.">
+    <div class="slide-content" style="padding-top: 0;">
+      <div class="stagger-1" style="margin-bottom: 6px;">
+        <span class="label" style="color: var(--red);">Failure Modes</span>
+      </div>
+      <h2 class="display-md stagger-2" style="margin-bottom: 8px;">AI Failure<br>Taxonomy</h2>
+      <div class="divider stagger-2" style="background: linear-gradient(90deg, var(--red), transparent);"></div>
+
+      <div class="blockquote stagger-3" style="margin: 12px 0 20px; max-width: 760px; border-left-color: var(--orange);">
+        "These aren't random errors. They're systematic failure modes with predictable triggers."
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;" class="stagger-4">
+        <div class="failure-mode critical">
+          <div style="font-size: 20px; margin-bottom: 8px;">🤥</div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--red); margin-bottom: 6px;">Hallucination</div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">Confident fabrication. AI invents facts, citations, statistics that sound plausible but are completely false.</div>
+        </div>
+
+        <div class="failure-mode warning">
+          <div style="font-size: 20px; margin-bottom: 8px;">📅</div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--orange); margin-bottom: 6px;">Stale Data</div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">Training cutoffs create knowledge gaps. AI doesn't know what happened after its training date.</div>
+        </div>
+
+        <div class="failure-mode warning">
+          <div style="font-size: 20px; margin-bottom: 8px;">⚖️</div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--orange); margin-bottom: 6px;">Bias Amplification</div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">Multiplies existing dataset prejudices. Social biases become algorithmic discrimination.</div>
+        </div>
+
+        <div class="failure-mode caution">
+          <div style="font-size: 20px; margin-bottom: 8px;">🧠</div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--blue); margin-bottom: 6px;">Context Window Limits</div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">Limited memory span. AI loses track of earlier parts of long conversations or documents.</div>
+        </div>
+
+        <div class="failure-mode warning">
+          <div style="font-size: 20px; margin-bottom: 8px;">😊</div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--orange); margin-bottom: 6px;">Sycophancy</div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">Tells you what you want to hear instead of what's true. Optimizes for user satisfaction over accuracy.</div>
+        </div>
+
+        <div class="failure-mode critical">
+          <div style="font-size: 20px; margin-bottom: 8px;">📚</div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--red); margin-bottom: 6px;">Citation Fabrication</div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">Invents sources that sound real but don't exist. Creates fake journal articles, fake URLs, fake quotes.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 5 — HALLUCINATION DEEP DIVE
+       ===================================================== -->
+  <div class="slide" id="slide-5" data-notes="Hallucination is the #1 reliability issue because it's so insidious. AI doesn't 'know' it's making things up — it's just predicting the next token that's most likely based on patterns. Truth and plausibility often align, but when they don't, AI chooses plausibility. Real examples: lawyers cited fake cases generated by ChatGPT in actual court filings. Medical AI systems invented drug interactions that could kill patients. Financial AI fabricated market data that led to bad investment decisions.">
+    <div class="slide-content">
+      <div class="two-col" style="align-items: flex-start; gap: 36px;">
+        <div>
+          <span class="label stagger-1" style="color: var(--red);">The #1 Reliability Issue</span>
+          <h2 class="display-md stagger-2" style="margin: 8px 0 16px;">Hallucination<br>Deep Dive</h2>
+          <div class="divider stagger-2" style="background: linear-gradient(90deg, var(--red), transparent);"></div>
+
+          <div class="blockquote stagger-3" style="border-left-color: var(--red); margin-bottom: 16px;">
+            "AI doesn't 'know' it's making things up. It's predicting the next token that's most statistically likely. Truth and plausibility often align, but when they don't, AI chooses plausibility."
+          </div>
+
+          <div class="insight-card red stagger-4">
+            <div style="font-size: 12px; font-weight: 700; color: var(--red); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;">Why It Happens</div>
+            <div style="font-size: 14px; color: var(--text-muted); line-height: 1.65;">
+              <strong style="color: var(--text);">Next-token prediction ≠ Truth</strong><br>
+              AI optimizes for statistical plausibility, not factual accuracy. When faced with uncertainty, it fills gaps with the most likely-sounding response.
+            </div>
+          </div>
+        </div>
+
+        <div class="stagger-3">
+          <div class="error-showcase" style="margin-bottom: 16px;">
+            <div style="font-weight: 700; font-size: 13px; color: var(--red); margin-bottom: 8px;">🏛️ REAL EXAMPLE: Legal Disaster</div>
+            <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6; position: relative; z-index: 1;">
+              Lawyers used ChatGPT for case research. AI generated convincing-sounding legal citations: <em>"Martinez v. Delta Airlines, 2019"</em>, <em>"Johnson v. American Express, 2021"</em>. The attorneys filed these in federal court. <strong style="color: var(--red);">None of the cases existed.</strong>
+            </div>
+          </div>
+
+          <div class="error-showcase" style="margin-bottom: 16px;">
+            <div style="font-weight: 700; font-size: 13px; color: var(--red); margin-bottom: 8px;">💊 REAL EXAMPLE: Medical AI</div>
+            <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6; position: relative; z-index: 1;">
+              AI diagnostic system generated drug interaction warnings for medications that don't actually interact. Doctors nearly changed prescriptions based on fabricated contraindications. <strong style="color: var(--red);">Reliability isn't academic in healthcare.</strong>
+            </div>
+          </div>
+
+          <div class="glass-card" style="padding: 16px 20px; text-align: center;">
+            <div style="font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px;">The Pattern</div>
+            <div style="font-size: 11px; color: var(--text-muted);">
+              Confident tone + plausible details + no verification = <span style="color: var(--red); font-weight: 600;">catastrophic error</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 6 — THE GROUNDING PROBLEM
+       ===================================================== -->
+  <div class="slide" id="slide-6" data-notes="This is why grounded AI matters. Ungrounded AI generates from training data — it's basically a very sophisticated pattern-matching system trained on the internet. Grounded AI is connected to verified, real-time sources. This is exactly why we taught Knowledge Graphs and NotebookLM in earlier sessions — they're grounding mechanisms. They anchor AI responses to actual data sources you can verify.">
+    <div class="center-content" style="max-width: 820px; margin: 0 auto;">
+      <span class="episode-badge blue stagger-1">🔗 Core Concept</span>
+
+      <div class="glass-panel stagger-2 animate-float" style="margin: 20px 0; padding: 48px 56px; text-align: center;">
+        <div style="font-family: 'Playfair Display', serif; font-size: clamp(24px, 3vw, 38px); font-weight: 700; line-height: 1.3; color: var(--text); margin-bottom: 24px;">
+          Why <span style="background: linear-gradient(135deg, var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">"Grounded AI"</span> Matters
+        </div>
+        <div style="height: 1px; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.08), transparent); margin: 24px auto; width: 300px;"></div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%;" class="stagger-3">
+        <div class="glass-panel" style="padding: 32px 28px; background: rgba(255,59,48,0.05); border-color: rgba(255,59,48,0.15);">
+          <div style="text-align: center; margin-bottom: 16px;">
+            <div style="font-size: 32px; margin-bottom: 8px;">🌫️</div>
+            <div style="font-size: 18px; font-weight: 700; color: var(--red); margin-bottom: 8px;">Ungrounded</div>
+          </div>
+          <div style="font-size: 14px; color: var(--text-muted); line-height: 1.65; text-align: center;">
+            Generates from training data.<br>
+            <strong style="color: var(--text);">Pattern matching</strong> on internet text.<br>
+            No connection to verified sources.<br>
+            <em style="color: var(--red);">High hallucination risk.</em>
+          </div>
+        </div>
+
+        <div class="glass-panel" style="padding: 32px 28px; background: rgba(52,199,89,0.05); border-color: rgba(52,199,89,0.15);">
+          <div style="text-align: center; margin-bottom: 16px;">
+            <div style="font-size: 32px; margin-bottom: 8px;">⚓</div>
+            <div style="font-size: 18px; font-weight: 700; color: var(--green); margin-bottom: 8px;">Grounded</div>
+          </div>
+          <div style="font-size: 14px; color: var(--text-muted); line-height: 1.65; text-align: center;">
+            Connected to verified sources.<br>
+            <strong style="color: var(--text);">Real-time data</strong> retrieval.<br>
+            Responses anchored to facts.<br>
+            <em style="color: var(--green);">Auditable and traceable.</em>
+          </div>
+        </div>
+      </div>
+
+      <div class="insight-card blue stagger-4" style="margin-top: 20px;">
+        <div style="font-size: 13px; font-weight: 700; color: var(--blue); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;">Why We Taught Knowledge Graphs & NotebookLM</div>
+        <div style="font-size: 14px; color: var(--text-muted); line-height: 1.65;">
+          They're <strong style="color: var(--text);">grounding mechanisms</strong>. Knowledge graphs structure verified relationships. NotebookLM grounds responses in your specific sources. Both anchor AI to reality.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 7 — GROUNDING MECHANISMS
+       ===================================================== -->
+  <div class="slide" id="slide-7" data-notes="Four approaches to grounding AI. RAG (Retrieval Augmented Generation) fetches real documents before generating responses — it's like giving AI a search engine to check facts. Knowledge Graphs structure verified relationships between concepts. Tool Use lets AI call verified APIs for real-time data. Citation Requirements force AI to show its sources. Each approach has different strengths — RAG for current info, Knowledge Graphs for complex relationships, Tool Use for dynamic data, Citations for transparency.">
+    <div class="slide-content" style="padding-top: 0;">
+      <div class="stagger-1" style="margin-bottom: 6px;">
+        <span class="label" style="color: var(--blue);">Grounding Approaches</span>
+      </div>
+      <h2 class="display-md stagger-2" style="margin-bottom: 8px;">Four Ways to<br>Anchor AI to Reality</h2>
+      <div class="divider stagger-2"></div>
+
+      <div class="four-col" style="margin-top: 16px;" class="stagger-3">
+        <div class="glass-panel" style="padding: 28px 24px; background: rgba(0,122,255,0.05); border-color: rgba(0,122,255,0.18);">
+          <div style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, var(--blue), var(--teal)); display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 16px;">🔍</div>
+          <div style="font-weight: 800; font-size: 16px; color: var(--text); margin-bottom: 8px;">RAG</div>
+          <div style="font-size: 11px; font-weight: 600; color: var(--blue); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 10px;">Retrieval Augmented Generation</div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.65;">
+            Fetch real documents before generating. AI searches your knowledge base, finds relevant sources, then grounds its response in actual text.
+          </div>
+          <div style="margin-top: 12px; padding: 8px 12px; background: rgba(0,122,255,0.08); border-radius: 8px;">
+            <div style="font-size: 11px; color: var(--blue);">Example: Search company docs → Generate grounded answer</div>
+          </div>
+        </div>
+
+        <div class="glass-panel" style="padding: 28px 24px; background: rgba(207,184,124,0.06); border-color: rgba(207,184,124,0.25);">
+          <div style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, var(--gold), #a08040); display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 16px;">🕸️</div>
+          <div style="font-weight: 800; font-size: 16px; color: var(--text); margin-bottom: 8px;">Knowledge Graphs</div>
+          <div style="font-size: 11px; font-weight: 600; color: #7a5c00; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 10px;">Structured Verified Relationships</div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.65;">
+            Nodes and edges you can trust. Pre-verified relationships between concepts, entities, and facts. AI traverses the graph for answers.
+          </div>
+          <div style="margin-top: 12px; padding: 8px 12px; background: rgba(207,184,124,0.10); border-radius: 8px;">
+            <div style="font-size: 11px; color: #7a5c00;">Example: Company org chart → Verified reporting structure</div>
+          </div>
+        </div>
+
+        <div class="glass-panel" style="padding: 28px 24px; background: rgba(52,199,89,0.05); border-color: rgba(52,199,89,0.18);">
+          <div style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, var(--green), #0a7a2a); display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 16px;">🛠️</div>
+          <div style="font-weight: 800; font-size: 16px; color: var(--text); margin-bottom: 8px;">Tool Use</div>
+          <div style="font-size: 11px; font-weight: 600; color: var(--green); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 10px;">Function Calling</div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.65;">
+            AI calls verified APIs for real-time data. Weather, stock prices, database queries, calendar info — live connections to truth.
+          </div>
+          <div style="margin-top: 12px; padding: 8px 12px; background: rgba(52,199,89,0.08); border-radius: 8px;">
+            <div style="font-size: 11px; color: var(--green);">Example: Call stock API → Get real price data</div>
+          </div>
+        </div>
+
+        <div class="glass-panel" style="padding: 28px 24px; background: rgba(175,82,222,0.05); border-color: rgba(175,82,222,0.18);">
+          <div style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, var(--purple), var(--blue)); display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 16px;">📄</div>
+          <div style="font-weight: 800; font-size: 16px; color: var(--text); margin-bottom: 8px;">Citations</div>
+          <div style="font-size: 11px; font-weight: 600; color: var(--purple); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 10px;">Show Your Sources</div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.65;">
+            Force AI to cite specific sources for claims. Every statement must trace back to a verifiable document or data point.
+          </div>
+          <div style="margin-top: 12px; padding: 8px 12px; background: rgba(175,82,222,0.08); border-radius: 8px;">
+            <div style="font-size: 11px; color: var(--purple);">Example: [Source: Q3 earnings report, page 7]</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 8 — DOMAIN RISK ASSESSMENT
+       ===================================================== -->
+  <div class="slide" id="slide-8" data-notes="Not all AI errors are equal. This is the risk assessment framework. Low risk: creative writing, brainstorming, summarization — if it's wrong, no big deal. Medium risk: market research, competitive analysis, trend identification — wrong, but not catastrophic. High risk: legal citations, medical advice, financial reporting, compliance — wrong can mean lawsuits, deaths, or bankruptcy. The formula is simple: Risk = Probability of Error × Cost of Error. Focus your verification energy on the high-risk quadrant.">
+    <div class="slide-content">
+      <div class="stagger-1" style="margin-bottom: 6px;">
+        <span class="label" style="color: var(--orange);">Risk Framework</span>
+      </div>
+      <h2 class="display-md stagger-2" style="margin-bottom: 8px;">Not All AI Errors<br>Are <span style="color: var(--red);">Equal</span></h2>
+      <div class="divider stagger-2" style="background: linear-gradient(90deg, var(--orange), transparent);"></div>
+
+      <div class="blockquote stagger-3" style="margin: 12px 0 20px; max-width: 600px; border-left-color: var(--orange);">
+        "Risk = (Probability of Error) × (Cost of Error)"
+      </div>
+
+      <div class="three-col" style="gap: 18px; margin-top: 16px;" class="stagger-4">
+        <div class="glass-panel risk-low" style="padding: 28px 24px;">
+          <div style="text-align: center; margin-bottom: 16px;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin: 0 auto 12px;">✓</div>
+            <div style="font-weight: 700; font-size: 16px; color: var(--text);">LOW RISK</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+            <div style="font-size: 12px; padding: 6px 10px; border-radius: 16px; background: rgba(52,199,89,0.15); color: #1a7a34; text-align: center;">Creative Writing</div>
+            <div style="font-size: 12px; padding: 6px 10px; border-radius: 16px; background: rgba(52,199,89,0.15); color: #1a7a34; text-align: center;">Brainstorming</div>
+            <div style="font-size: 12px; padding: 6px 10px; border-radius: 16px; background: rgba(52,199,89,0.15); color: #1a7a34; text-align: center;">Summarization</div>
+          </div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6; text-align: center;">
+            <strong style="color: #1a7a34;">If it's wrong:</strong><br>No big deal. Easy to catch and fix.
+          </div>
+        </div>
+
+        <div class="glass-panel risk-medium" style="padding: 28px 24px;">
+          <div style="text-align: center; margin-bottom: 16px;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--orange); display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin: 0 auto 12px;">⚠️</div>
+            <div style="font-weight: 700; font-size: 16px; color: var(--text);">MEDIUM RISK</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+            <div style="font-size: 12px; padding: 6px 10px; border-radius: 16px; background: rgba(255,149,0,0.15); color: #c67000; text-align: center;">Market Research</div>
+            <div style="font-size: 12px; padding: 6px 10px; border-radius: 16px; background: rgba(255,149,0,0.15); color: #c67000; text-align: center;">Competitive Analysis</div>
+            <div style="font-size: 12px; padding: 6px 10px; border-radius: 16px; background: rgba(255,149,0,0.15); color: #c67000; text-align: center;">Trend Identification</div>
+          </div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6; text-align: center;">
+            <strong style="color: #c67000;">If it's wrong:</strong><br>Misleading but not catastrophic. Bad strategy decisions.
+          </div>
+        </div>
+
+        <div class="glass-panel risk-high" style="padding: 28px 24px;">
+          <div style="text-align: center; margin-bottom: 16px;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--red); display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin: 0 auto 12px; animation: pulse-glow 3s ease-in-out infinite;">🚨</div>
+            <div style="font-weight: 700; font-size: 16px; color: var(--text);">HIGH RISK</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+            <div style="font-size: 12px; padding: 6px 10px; border-radius: 16px; background: rgba(255,59,48,0.15); color: #c0001a; text-align: center;">Legal Citations</div>
+            <div style="font-size: 12px; padding: 6px 10px; border-radius: 16px; background: rgba(255,59,48,0.15); color: #c0001a; text-align: center;">Medical Advice</div>
+            <div style="font-size: 12px; padding: 6px 10px; border-radius: 16px; background: rgba(255,59,48,0.15); color: #c0001a; text-align: center;">Financial Reporting</div>
+            <div style="font-size: 12px; padding: 6px 10px; border-radius: 16px; background: rgba(255,59,48,0.15); color: #c0001a; text-align: center;">Compliance</div>
+          </div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6; text-align: center;">
+            <strong style="color: #c0001a;">If it's wrong:</strong><br>Lawsuits. Deaths. Bankruptcy. Career-ending.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 9 — THE RELIABILITY AUDIT FRAMEWORK
+       ===================================================== -->
+  <div class="slide" id="slide-9" data-notes="Here's the systematic approach MBA students can use. Five-step framework. First, define the task and its risk level using our taxonomy. Second, identify the most likely failure modes for that specific task. Third, design verification checkpoints — where will you catch errors before they become decisions? Fourth, build human-in-the-loop workflows — when does a human need to review, approve, or override? Fifth, document confidence levels in all outputs — tag everything with how much you trust it.">
+    <div class="slide-content">
+      <div class="stagger-1" style="margin-bottom: 8px;">
+        <span class="label" style="color: var(--blue);">Your Systematic Approach</span>
+      </div>
+      <h2 class="display-md stagger-2" style="margin-bottom: 12px;">The Reliability Audit<br>Framework</h2>
+      <div class="divider stagger-2"></div>
+
+      <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 20px;" class="stagger-3">
+        <div class="framework-step">
+          <div class="step-number">1</div>
+          <div>
+            <div style="font-weight: 700; font-size: 15px; color: var(--text); margin-bottom: 6px;">Define Task & Risk Level</div>
+            <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">What exactly is the AI doing? Is this low, medium, or high risk? Use the domain taxonomy to classify. Legal advice = high risk. Content brainstorming = low risk.</div>
+          </div>
+        </div>
+
+        <div class="framework-step">
+          <div class="step-number">2</div>
+          <div>
+            <div style="font-weight: 700; font-size: 15px; color: var(--text); margin-bottom: 6px;">Identify Likely Failure Modes</div>
+            <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">For this specific task, which failure modes are most probable? Research tasks → stale data, citation fabrication. Medical advice → hallucination, bias amplification.</div>
+          </div>
+        </div>
+
+        <div class="framework-step">
+          <div class="step-number">3</div>
+          <div>
+            <div style="font-weight: 700; font-size: 15px; color: var(--text); margin-bottom: 6px;">Design Verification Checkpoints</div>
+            <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">Where will you catch errors before they become decisions? Spot-checks, cross-referencing, multi-model consensus, source verification. Build the tripwires.</div>
+          </div>
+        </div>
+
+        <div class="framework-step">
+          <div class="step-number">4</div>
+          <div>
+            <div style="font-weight: 700; font-size: 15px; color: var(--text); margin-bottom: 6px;">Build Human-in-the-Loop Workflows</div>
+            <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">When does a human need to review, approve, or override? High-risk tasks always get human review. Medium-risk gets sampling. Low-risk might be fully automated.</div>
+          </div>
+        </div>
+
+        <div class="framework-step">
+          <div class="step-number">5</div>
+          <div>
+            <div style="font-weight: 700; font-size: 15px; color: var(--text); margin-bottom: 6px;">Document Confidence Levels</div>
+            <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">Tag every output with how much you trust it. "High confidence: verified from 3 sources." "Low confidence: needs fact-checking." "Medium confidence: cross-reference recommended."</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 10 — VERIFICATION TECHNIQUES
+       ===================================================== -->
+  <div class="slide" id="slide-10" data-notes="Practical verification techniques you can implement immediately. Cross-reference with primary sources — if AI claims something, go check the original. Multi-model consensus — ask ChatGPT, Claude, and Gemini the same question, compare answers. Adversarial prompting — ask AI 'what might be wrong with this analysis?' Domain expert spot-checks — have humans with expertise review AI outputs in their field. Automated fact-checking pipelines — build systems that flag suspicious claims for human review.">
+    <div class="slide-content" style="padding-top: 0;">
+      <div class="stagger-1" style="margin-bottom: 6px;">
+        <span class="label" style="color: var(--green);">Practical Tools</span>
+      </div>
+      <h2 class="display-md stagger-2" style="margin-bottom: 8px;">Verification<br>Techniques</h2>
+      <div class="divider stagger-2" style="background: linear-gradient(90deg, var(--green), transparent);"></div>
+
+      <div class="five-col" style="gap: 16px; margin-top: 16px;" class="stagger-3">
+        <div class="verification-item" style="flex-direction: column; padding: 24px 20px;">
+          <div class="check-mark" style="margin-bottom: 12px;">1</div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 8px; text-align: center;">Cross-Reference</div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.6; text-align: center;">
+            If AI claims something, go check the original source. Don't trust secondary citations — trace back to primary documents.
+          </div>
+        </div>
+
+        <div class="verification-item" style="flex-direction: column; padding: 24px 20px;">
+          <div class="check-mark" style="margin-bottom: 12px; background: var(--blue);">2</div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 8px; text-align: center;">Multi-Model Consensus</div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.6; text-align: center;">
+            Ask ChatGPT, Claude, and Gemini the same question. If they disagree, dig deeper. If they agree, higher confidence.
+          </div>
+        </div>
+
+        <div class="verification-item" style="flex-direction: column; padding: 24px 20px;">
+          <div class="check-mark" style="margin-bottom: 12px; background: var(--orange);">3</div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 8px; text-align: center;">Adversarial Prompting</div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.6; text-align: center;">
+            Ask AI: "What might be wrong with this analysis?" "What am I missing?" "What are the counterarguments?" Make it attack its own work.
+          </div>
+        </div>
+
+        <div class="verification-item" style="flex-direction: column; padding: 24px 20px;">
+          <div class="check-mark" style="margin-bottom: 12px; background: var(--purple);">4</div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 8px; text-align: center;">Expert Spot-Checks</div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.6; text-align: center;">
+            Have humans with domain expertise review AI outputs. 10% sample of legal AI by lawyers. 5% of medical AI by doctors.
+          </div>
+        </div>
+
+        <div class="verification-item" style="flex-direction: column; padding: 24px 20px;">
+          <div class="check-mark" style="margin-bottom: 12px; background: var(--red);">5</div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 8px; text-align: center;">Automated Pipelines</div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.6; text-align: center;">
+            Build systems that flag suspicious claims for human review. Pattern detection on unusual stats, unverified URLs, contradictory statements.
+          </div>
+        </div>
+      </div>
+
+      <div class="insight-card green stagger-4" style="margin-top: 20px;">
+        <div style="font-size: 13px; font-weight: 700; color: var(--green); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;">Verification Stack</div>
+        <div style="font-size: 14px; color: var(--text-muted); line-height: 1.65;">
+          <strong style="color: var(--text);">Layer 1:</strong> Automated checks catch obvious errors<br>
+          <strong style="color: var(--text);">Layer 2:</strong> Cross-model consensus identifies disagreement<br>
+          <strong style="color: var(--text);">Layer 3:</strong> Human experts review high-risk or flagged outputs<br>
+          <strong style="color: var(--text);">Layer 4:</strong> Source verification for critical claims
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 11 — CASE STUDY: HEALTHCARE AI
+       ===================================================== -->
+  <div class="slide" id="slide-11" data-notes="Nashville context is important here. Nashville has 900+ healthcare companies and a $68B healthcare industry. When AI systems make medical recommendations, reliability isn't academic — it's life or death. Real examples: AI diagnostic systems that missed cancer because of training data bias. AI drug interaction warnings that were completely fabricated. Organizations now build multi-layer verification systems: AI suggests, human reviews, system double-checks against known contraindications, expert panel reviews edge cases.">
+    <div class="slide-content">
+      <div class="stagger-1" style="margin-bottom: 6px;">
+        <span class="label" style="color: var(--red);">Nashville Context</span>
+      </div>
+      <h2 class="display-md stagger-2" style="margin-bottom: 8px;">Case Study:<br><span style="color: var(--red);">Healthcare AI</span></h2>
+      <div class="divider stagger-2" style="background: linear-gradient(90deg, var(--red), transparent);"></div>
+
+      <div class="two-col" style="align-items: flex-start; gap: 32px; margin-top: 16px;">
+        <div class="stagger-3">
+          <div class="glass-card" style="padding: 20px 24px; background: rgba(255,59,48,0.04); border-left: 4px solid var(--red); margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+              <div style="font-size: 24px;">🏥</div>
+              <div>
+                <div style="font-weight: 700; font-size: 15px; color: var(--text);">Nashville Healthcare</div>
+                <div style="font-size: 12px; color: var(--red);">900+ companies, $68B industry</div>
+              </div>
+            </div>
+            <div style="font-size: 13px; color: var(--text-muted); line-height: 1.65;">
+              When AI systems make medical recommendations, reliability isn't academic — <strong style="color: var(--red);">it's life or death</strong>. Every error has human consequences.
+            </div>
+          </div>
+
+          <div class="blockquote stagger-4" style="border-left-color: var(--red); margin-bottom: 16px;">
+            "The cost of AI error in healthcare isn't measured in dollars. It's measured in lives."
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="glass-card" style="padding: 16px 20px;">
+              <div style="font-weight: 700; font-size: 13px; color: var(--orange); margin-bottom: 4px;">⚠️ Diagnostic Bias</div>
+              <div style="font-size: 12px; color: var(--text-muted); line-height: 1.6;">AI diagnostic systems missed cancer in African American patients because training data was predominantly white patients. Bias killed people.</div>
+            </div>
+            <div class="glass-card" style="padding: 16px 20px;">
+              <div style="font-weight: 700; font-size: 13px; color: var(--red); margin-bottom: 4px;">💊 Drug Interaction Hallucinations</div>
+              <div style="font-size: 12px; color: var(--text-muted); line-height: 1.6;">AI generated fake contraindications for safe drug combinations. Doctors nearly changed lifesaving prescriptions based on fabricated warnings.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stagger-3">
+          <div class="case-study-card">
+            <div style="font-size: 13px; font-weight: 700; color: var(--blue); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 16px;">How Organizations Audit Healthcare AI</div>
+            
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <div style="width: 20px; height: 20px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 700; flex-shrink: 0;">1</div>
+                <div>
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text); margin-bottom: 2px;">AI Suggests</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">System generates diagnostic suggestions or treatment recommendations</div>
+                </div>
+              </div>
+              
+              <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <div style="width: 20px; height: 20px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 700; flex-shrink: 0;">2</div>
+                <div>
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text); margin-bottom: 2px;">Human Reviews</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">Licensed medical professional evaluates AI recommendations against clinical knowledge</div>
+                </div>
+              </div>
+              
+              <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <div style="width: 20px; height: 20px; border-radius: 50%; background: var(--orange); display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 700; flex-shrink: 0;">3</div>
+                <div>
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text); margin-bottom: 2px;">System Double-Checks</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">Automated verification against known contraindications, drug databases, clinical guidelines</div>
+                </div>
+              </div>
+              
+              <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <div style="width: 20px; height: 20px; border-radius: 50%; background: var(--purple); display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 700; flex-shrink: 0;">4</div>
+                <div>
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text); margin-bottom: 2px;">Expert Panel</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">Edge cases get reviewed by specialist committees before implementation</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 12 — CASE STUDY: FINANCIAL AI
+       ===================================================== -->
+  <div class="slide" id="slide-12" data-notes="Financial AI case study. When AI generates financial projections or market analyses, a hallucinated number can cost millions. I've seen AI fabricate earnings numbers that looked plausible but were completely wrong. AI generate market trend analyses based on patterns that didn't actually exist. Firms now build 'trust but verify' workflows — AI generates, humans spot-check, systems cross-reference with verified financial databases, expert analysts review anything that could move markets.">
+    <div class="slide-content">
+      <div class="stagger-1" style="margin-bottom: 6px;">
+        <span class="label" style="color: var(--gold);">High-Stakes Domain</span>
+      </div>
+      <h2 class="display-md stagger-2" style="margin-bottom: 8px;">Case Study:<br><span style="color: var(--gold);">Financial AI</span></h2>
+      <div class="divider stagger-2" style="background: linear-gradient(90deg, var(--gold), transparent);"></div>
+
+      <div class="two-col" style="align-items: flex-start; gap: 32px; margin-top: 16px;">
+        <div class="stagger-3">
+          <div class="blockquote stagger-3" style="border-left-color: var(--gold); margin-bottom: 16px;">
+            "When AI generates financial projections or market analyses, a hallucinated number can cost millions. One wrong decimal point, one fabricated trend, one fake correlation — and your entire investment thesis collapses."
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="glass-card" style="padding: 16px 20px; background: rgba(207,184,124,0.06); border-left: 3px solid var(--gold);">
+              <div style="font-weight: 700; font-size: 13px; color: #7a5c00; margin-bottom: 4px;">📈 Fabricated Earnings Data</div>
+              <div style="font-size: 12px; color: var(--text-muted); line-height: 1.6;">AI generated plausible-looking quarterly earnings numbers for companies. The figures were internally consistent, perfectly formatted, completely fake. Investment decisions were nearly made on hallucinated data.</div>
+            </div>
+
+            <div class="glass-card" style="padding: 16px 20px; background: rgba(255,149,0,0.06); border-left: 3px solid var(--orange);">
+              <div style="font-weight: 700; font-size: 13px; color: #c67000; margin-bottom: 4px;">📊 Phantom Market Trends</div>
+              <div style="font-size: 12px; color: var(--text-muted); line-height: 1.6;">AI identified "emerging market patterns" that didn't exist. Generated convincing trend analyses based on correlations it invented. Sounded sophisticated, was completely wrong.</div>
+            </div>
+
+            <div class="glass-card" style="padding: 16px 20px; background: rgba(255,59,48,0.06); border-left: 3px solid var(--red);">
+              <div style="font-weight: 700; font-size: 13px; color: #c0001a; margin-bottom: 4px;">💰 The Million Dollar Risk</div>
+              <div style="font-size: 12px; color: var(--text-muted); line-height: 1.6;">Financial decisions based on AI analysis move millions. One fabricated data point can trigger massive trades. Reliability isn't theoretical — it's fiduciary responsibility.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stagger-3">
+          <div class="case-study-card">
+            <div style="font-size: 13px; font-weight: 700; color: var(--gold); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 16px;">"Trust But Verify" Workflows</div>
+            
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <div style="width: 24px; height: 24px; border-radius: 6px; background: var(--blue); display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 700; flex-shrink: 0;">AI</div>
+                <div>
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text); margin-bottom: 2px;">AI Generates Analysis</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">Market projections, trend analyses, competitive insights, financial modeling</div>
+                </div>
+              </div>
+              
+              <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <div style="width: 24px; height: 24px; border-radius: 6px; background: var(--orange); display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 700; flex-shrink: 0;">👥</div>
+                <div>
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text); margin-bottom: 2px;">Human Spot-Checks</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">Analysts review key numbers, challenge assumptions, flag anything suspicious</div>
+                </div>
+              </div>
+              
+              <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <div style="width: 24px; height: 24px; border-radius: 6px; background: var(--green); display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 700; flex-shrink: 0;">🔗</div>
+                <div>
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text); margin-bottom: 2px;">Source Cross-Reference</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">Verify against Bloomberg, Reuters, SEC filings, official financial databases</div>
+                </div>
+              </div>
+              
+              <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <div style="width: 24px; height: 24px; border-radius: 6px; background: var(--purple); display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 700; flex-shrink: 0;">⭐</div>
+                <div>
+                  <div style="font-weight: 600; font-size: 13px; color: var(--text); margin-bottom: 2px;">Expert Review</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">Senior analysts review anything that could move markets or inform major decisions</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card" style="padding: 16px 20px; margin-top: 16px; text-align: center;">
+            <div style="font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px;">The Rule</div>
+            <div style="font-size: 11px; color: var(--text-muted);">
+              No financial decision based solely on AI output.<br>
+              <span style="color: var(--gold); font-weight: 600;">Every number gets a human signature.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 13 — BUILDING YOUR RELIABILITY PLAYBOOK
+       ===================================================== -->
+  <div class="slide" id="slide-13" data-notes="Now let's make this practical for your team projects. Four questions every team should answer about their product or service. What AI tasks does your product rely on? Map them out — content generation, data analysis, user recommendations, fraud detection, whatever. What's the domain risk level for each task? Use our framework. What verification is built into your workflow? Do you have humans in the loop? Source checking? Multi-model consensus? What happens when AI gets it wrong? Do you have fail-safes? Error handling? Recovery procedures?">
+    <div class="center-content" style="max-width: 860px; margin: 0 auto;">
+      <span class="episode-badge blue stagger-1">🛠️ For Your Team Projects</span>
+
+      <div class="glass-panel stagger-2" style="margin: 16px 0; padding: 40px 48px; text-align: center;">
+        <div style="font-family: 'Playfair Display', serif; font-size: clamp(24px, 3.2vw, 38px); font-weight: 700; line-height: 1.3; color: var(--text); margin-bottom: 20px;">
+          Building Your <span class="gradient-text-blue">Reliability Playbook</span>
+        </div>
+        <div style="font-size: clamp(15px, 1.6vw, 18px); color: var(--text-muted); line-height: 1.65; margin-bottom: 24px;">
+          Four questions every team should answer about their product or service.
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%;" class="stagger-3">
+        <div class="glass-panel" style="padding: 32px 28px; background: rgba(0,122,255,0.05); border-color: rgba(0,122,255,0.15);">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: var(--blue); display: flex; align-items: center; justify-content: center; font-size: 18px; color: white;">🎯</div>
+            <div style="font-weight: 700; font-size: 16px; color: var(--text);">What AI tasks does your product rely on?</div>
+          </div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.65;">
+            Map them out: content generation, data analysis, user recommendations, fraud detection, customer service, personalization. Be comprehensive — AI is probably doing more than you think.
+          </div>
+        </div>
+
+        <div class="glass-panel" style="padding: 32px 28px; background: rgba(255,149,0,0.05); border-color: rgba(255,149,0,0.15);">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: var(--orange); display: flex; align-items: center; justify-content: center; font-size: 18px; color: white;">⚖️</div>
+            <div style="font-weight: 700; font-size: 16px; color: var(--text);">What's the domain risk level?</div>
+          </div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.65;">
+            Use our framework: Low risk = creative/exploratory. Medium risk = strategic/analytical. High risk = compliance/safety/financial. Each task gets its own risk assessment.
+          </div>
+        </div>
+
+        <div class="glass-panel" style="padding: 32px 28px; background: rgba(52,199,89,0.05); border-color: rgba(52,199,89,0.15);">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 18px; color: white;">🔍</div>
+            <div style="font-weight: 700; font-size: 16px; color: var(--text);">What verification is built in?</div>
+          </div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.65;">
+            Do you have humans in the loop? Source checking? Multi-model consensus? Automated flags? Cross-reference systems? Or are you just trusting AI blindly?
+          </div>
+        </div>
+
+        <div class="glass-panel" style="padding: 32px 28px; background: rgba(255,59,48,0.05); border-color: rgba(255,59,48,0.15);">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: var(--red); display: flex; align-items: center; justify-content: center; font-size: 18px; color: white;">🚨</div>
+            <div style="font-weight: 700; font-size: 16px; color: var(--text);">What happens when AI gets it wrong?</div>
+          </div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.65;">
+            Do you have fail-safes? Error handling? Recovery procedures? Customer communication plans? Legal liability coverage? Plan for failure — it's inevitable.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 14 — VANDERBOT RELIABILITY EXERCISE
+       ===================================================== -->
+  <div class="slide" id="slide-14" data-notes="Now let's make this practical. VanderBot reliability exercise. Use VanderBot to research a topic — anything complex enough to have multiple perspectives. Could be a business case, market analysis, competitive landscape, policy question. Then systematically audit its output using our framework. Check sources, look for bias, verify claims, identify confidence levels. This is hands-on reliability training.">
+    <div class="center-content" style="max-width: 820px; margin: 0 auto;">
+      <div class="glass-panel stagger-1" style="padding: 48px 56px; background: rgba(0,122,255,0.05); border-color: rgba(0,122,255,0.15);">
+        <div style="display: flex; justify-content: center; margin-bottom: 24px;">
+          <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 8px 24px rgba(0,122,255,0.3); animation: float 4s ease-in-out infinite;">🤖</div>
+        </div>
+        
+        <div style="font-family: 'Playfair Display', serif; font-size: clamp(26px, 3.2vw, 42px); font-weight: 700; line-height: 1.3; color: var(--text); margin-bottom: 16px; text-align: center;">
+          VanderBot <span class="gradient-text-blue">Reliability</span> Exercise
+        </div>
+        
+        <div style="font-size: clamp(15px, 1.6vw, 18px); color: var(--text-muted); line-height: 1.7; margin-bottom: 32px; text-align: center;">
+          Use VanderBot to research a topic, then systematically audit its output using the framework.
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div style="padding: 24px; background: rgba(255,255,255,0.60); border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.70);">
+            <div style="font-weight: 700; font-size: 14px; color: var(--blue); margin-bottom: 12px;">🎯 THE TASK</div>
+            <div style="font-size: 13px; color: var(--text-muted); line-height: 1.65;">
+              Research a complex topic: market analysis, competitive landscape, policy question, business case. Something with multiple perspectives and verifiable claims.
+            </div>
+          </div>
+
+          <div style="padding: 24px; background: rgba(255,255,255,0.60); border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.70);">
+            <div style="font-weight: 700; font-size: 14px; color: var(--green); margin-bottom: 12px;">🔍 THE AUDIT</div>
+            <div style="font-size: 13px; color: var(--text-muted); line-height: 1.65;">
+              Check sources, verify claims, look for bias, identify confidence levels, spot potential hallucinations, assess risk level.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card stagger-2" style="padding: 20px 28px; margin-top: 20px; text-align: center; background: rgba(52,199,89,0.06); border: 1px solid rgba(52,199,89,0.2);">
+        <div style="font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px;">📱 Text your VanderBot</div>
+        <div style="font-size: 16px; font-weight: 700; color: var(--blue); margin-bottom: 4px;">+1 (310) 770-9035</div>
+        <div style="font-size: 12px; color: var(--text-muted);">Available 24/7 on WhatsApp · <a href="https://vanderbot.com" style="color: var(--blue); text-decoration: none;">vanderbot.com</a></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 15 — NOTEBOOKLM AS VERIFICATION TOOL
+       ===================================================== -->
+  <div class="slide" id="slide-15" data-notes="NotebookLM as a verification tool. Here's the workflow: AI generates research or analysis. You upload that AI-generated content into NotebookLM alongside primary sources — original documents, official reports, verified data. Then ask NotebookLM to verify specific claims, identify contradictions, flag unsupported assertions. NotebookLM becomes your fact-checking layer because it's grounded in your sources.">
+    <div class="slide-content">
+      <div class="two-col" style="align-items: flex-start; gap: 36px;">
+        <div>
+          <span class="label stagger-1" style="color: var(--purple);">Grounded Verification</span>
+          <h2 class="display-md stagger-2" style="margin: 8px 0 12px;">NotebookLM as<br>Verification Tool</h2>
+          <div class="divider stagger-2" style="background: linear-gradient(90deg, var(--purple), transparent);"></div>
+
+          <div class="blockquote stagger-3" style="border-left-color: var(--purple); margin-bottom: 16px;">
+            "Upload AI-generated research into NotebookLM alongside primary sources. Ask it to verify claims. NotebookLM becomes your fact-checking layer because it's grounded in your sources."
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px;" class="stagger-4">
+            <div class="framework-step" style="padding: 16px 20px;">
+              <div style="width: 24px; height: 24px; border-radius: 6px; background: var(--blue); display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 700; flex-shrink: 0;">1</div>
+              <div>
+                <div style="font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 4px;">AI Generates Content</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Research report, market analysis, competitive assessment — whatever you need verified.</div>
+              </div>
+            </div>
+
+            <div class="framework-step" style="padding: 16px 20px;">
+              <div style="width: 24px; height: 24px; border-radius: 6px; background: var(--green); display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 700; flex-shrink: 0;">2</div>
+              <div>
+                <div style="font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 4px;">Upload to NotebookLM</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Add AI output + primary sources: official reports, academic papers, verified datasets.</div>
+              </div>
+            </div>
+
+            <div class="framework-step" style="padding: 16px 20px;">
+              <div style="width: 24px; height: 24px; border-radius: 6px; background: var(--purple); display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 700; flex-shrink: 0;">3</div>
+              <div>
+                <div style="font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 4px;">Query for Verification</div>
+                <div style="font-size: 12px; color: var(--text-muted);">"Verify these claims against the source documents." "Identify contradictions." "Flag unsupported assertions."</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stagger-3">
+          <div class="glass-panel" style="padding: 32px 28px; background: rgba(175,82,222,0.05); border-color: rgba(175,82,222,0.15);">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+              <div style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, var(--purple), var(--blue)); display: flex; align-items: center; justify-content: center; font-size: 22px;">📓</div>
+              <div>
+                <div style="font-weight: 700; font-size: 16px; color: var(--text);">Why NotebookLM Works</div>
+                <div style="font-size: 12px; color: var(--purple);">for verification</div>
+              </div>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div style="padding: 12px 16px; background: rgba(255,255,255,0.50); border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.60);">
+                <div style="font-weight: 600; font-size: 13px; color: var(--text); margin-bottom: 3px;">🔗 Source-Grounded</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Responses anchored to your uploaded documents, not internet training data</div>
+              </div>
+              
+              <div style="padding: 12px 16px; background: rgba(255,255,255,0.50); border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.60);">
+                <div style="font-weight: 600; font-size: 13px; color: var(--text); margin-bottom: 3px;">📊 Citation-Heavy</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Shows you exactly where each claim comes from</div>
+              </div>
+              
+              <div style="padding: 12px 16px; background: rgba(255,255,255,0.50); border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.60);">
+                <div style="font-weight: 600; font-size: 13px; color: var(--text); margin-bottom: 3px;">🎯 Contradiction Detection</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Identifies conflicts between AI claims and source documents</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card" style="padding: 20px 24px; margin-top: 16px; text-align: center;">
+            <div style="font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px;">Try NotebookLM</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Google's grounded AI research tool</div>
+            <div style="font-size: 14px;"><a href="https://notebooklm.google.com" style="color: var(--purple); text-decoration: none; font-weight: 600;">notebooklm.google.com</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 16 — KEY TAKEAWAYS
+       ===================================================== -->
+  <div class="slide" id="slide-16" data-notes="Six key takeaways from today's session. These are the frameworks and principles you need to remember. AI reliability isn't binary — it's about systematic risk management. Grounding mechanisms are your best defense. Domain risk assessment guides where to focus verification energy. Human-in-the-loop workflows are essential for high-stakes decisions. Verification techniques should be layered, not single-point. And confidence levels should be explicit in every output.">
+    <div class="center-content" style="max-width: 860px; margin: 0 auto;">
+      <span class="episode-badge red stagger-1">💡 Session Summary</span>
+
+      <div class="glass-panel stagger-2" style="margin: 16px 0; padding: 40px 48px; text-align: center;">
+        <div style="font-family: 'Playfair Display', serif; font-size: clamp(28px, 3.5vw, 44px); font-weight: 700; line-height: 1.2; color: var(--text); margin-bottom: 24px;">
+          Key <span class="gradient-text-red">Takeaways</span>
+        </div>
+        <div style="font-size: clamp(15px, 1.6vw, 18px); color: var(--text-muted); line-height: 1.65; margin-bottom: 16px;">
+          Six principles for AI reliability in business
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%;" class="stagger-3">
+        <div class="insight-card red" style="padding: 20px 24px;">
+          <div style="font-weight: 700; font-size: 14px; color: var(--red); margin-bottom: 8px;">🎯 1. Reliability is Risk Management</div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">AI reliability isn't binary (works/doesn't work). It's systematic risk assessment: probability × cost of error. Focus verification energy where stakes are highest.</div>
+        </div>
+
+        <div class="insight-card blue" style="padding: 20px 24px;">
+          <div style="font-weight: 700; font-size: 14px; color: var(--blue); margin-bottom: 8px;">⚓ 2. Grounding is Your Best Defense</div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">RAG, Knowledge Graphs, Tool Use, Citations — anything that anchors AI to verifiable sources. Ungrounded AI is just sophisticated pattern matching on internet text.</div>
+        </div>
+
+        <div class="insight-card orange" style="padding: 20px 24px;">
+          <div style="font-weight: 700; font-size: 14px; color: var(--orange); margin-bottom: 8px;">⚖️ 3. Domain Risk Guides Verification</div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">Creative tasks = light verification. Strategic tasks = moderate checks. Compliance/safety/financial = full audit. Match verification intensity to consequences.</div>
+        </div>
+
+        <div class="insight-card green" style="padding: 20px 24px;">
+          <div style="font-weight: 700; font-size: 14px; color: var(--green); margin-bottom: 8px;">👥 4. Humans in the Loop</div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">High-stakes decisions need human review. Not because humans are better at facts, but because humans are accountable for consequences. AI suggests, humans decide.</div>
+        </div>
+
+        <div class="insight-card purple" style="padding: 20px 24px;">
+          <div style="font-weight: 700; font-size: 14px; color: var(--purple); margin-bottom: 8px;">🔍 5. Layered Verification</div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">Cross-reference + multi-model consensus + adversarial prompting + expert spot-checks. No single verification method is sufficient. Build redundant error-catching systems.</div>
+        </div>
+
+        <div class="insight-card gold" style="padding: 20px 24px;">
+          <div style="font-weight: 700; font-size: 14px; color: #7a5c00; margin-bottom: 8px;">📊 6. Explicit Confidence Levels</div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">Tag every AI output with confidence: "High confidence: verified from 3 sources." "Medium: needs cross-check." "Low: expert review required." Make uncertainty visible.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 17 — ASSIGNMENT + LOOKING AHEAD
+       ===================================================== -->
+  <div class="slide" id="slide-17" data-notes="Assignment and looking ahead. Due before Session 7: Persona Architecture Document plus 2-minute demo video. This is where you synthesize everything we've learned into a coherent system design. Session 7 is our Midterm on March 30 — it's the culmination of the WHAT Layer. Extra credit opportunity for teams that build reliability auditing into their persona architecture. Show me how you'll catch AI errors before they become decisions.">
+    <div class="center-content" style="max-width: 840px; margin: 0 auto;">
+      <div class="glass-panel stagger-1" style="padding: 48px 56px; background: rgba(175,82,222,0.05); border-color: rgba(175,82,222,0.15);">
+        <div style="display: flex; justify-content: center; margin-bottom: 24px;">
+          <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--purple), var(--blue)); display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 8px 24px rgba(175,82,222,0.3); animation: float 4s ease-in-out infinite;">🎯</div>
+        </div>
+        
+        <div style="font-family: 'Playfair Display', serif; font-size: clamp(26px, 3.2vw, 42px); font-weight: 700; line-height: 1.3; color: var(--text); margin-bottom: 20px; text-align: center;">
+          Assignment + <span class="gradient-text-purple">Looking Ahead</span>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; margin-top: 24px;" class="stagger-2">
+        <div class="glass-panel" style="padding: 32px 28px; background: rgba(255,149,0,0.05); border-color: rgba(255,149,0,0.15);">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: var(--orange); display: flex; align-items: center; justify-content: center; font-size: 18px; color: white;">📋</div>
+            <div style="font-weight: 700; font-size: 16px; color: var(--text);">Due Before Session 7</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="padding: 12px 16px; background: rgba(255,149,0,0.08); border-radius: var(--radius-sm); border: 1px solid rgba(255,149,0,0.15);">
+              <div style="font-weight: 600; font-size: 13px; color: var(--text); margin-bottom: 3px;">📄 Persona Architecture Document</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Complete system design for your team's AI persona</div>
+            </div>
+            <div style="padding: 12px 16px; background: rgba(255,149,0,0.08); border-radius: var(--radius-sm); border: 1px solid rgba(255,149,0,0.15);">
+              <div style="font-weight: 600; font-size: 13px; color: var(--text); margin-bottom: 3px;">🎥 2-Minute Demo Video</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Show your persona in action, explain key design decisions</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-panel" style="padding: 32px 28px; background: rgba(52,199,89,0.05); border-color: rgba(52,199,89,0.15);">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 18px; color: white;">🏆</div>
+            <div style="font-weight: 700; font-size: 16px; color: var(--text);">Extra Credit Opportunity</div>
+          </div>
+          <div style="font-size: 13px; color: var(--text-muted); line-height: 1.65; margin-bottom: 12px;">
+            Build reliability auditing into your persona architecture. Show how you'll catch AI errors before they become decisions.
+          </div>
+          <div style="padding: 10px 14px; background: rgba(52,199,89,0.10); border-radius: var(--radius-sm);">
+            <div style="font-size: 11px; color: var(--green); font-weight: 600;">Verification workflows, confidence tagging, human-in-the-loop design</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="insight-card purple stagger-3" style="margin-top: 20px; text-align: center;">
+        <div style="font-size: 13px; font-weight: 700; color: var(--purple); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;">Session 7: March 30</div>
+        <div style="font-size: 16px; font-family: 'Playfair Display', serif; font-weight: 600; color: var(--text); margin-bottom: 8px;">
+          MIDTERM — WHAT Layer Culmination
+        </div>
+        <div style="font-size: 13px; color: var(--text-muted);">
+          Synthesis of everything we've learned: Knowledge Graphs, Intelligence Layer, Reliability Auditing
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /slides-container -->
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav" id="bottomNav">
+  <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="10 4 6 8 10 12"/>
+    </svg>
+    Prev
+  </button>
+
+  <div class="dot-nav" id="dotNav"></div>
+
+  <div class="slide-counter" id="slideCounter">1 / 17</div>
+
+  <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">
+    Next
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 4 10 8 6 12"/>
+    </svg>
+  </button>
+
+  <button class="nav-btn" onclick="toggleNotes()" id="notesBtn" style="border-left: 1px solid rgba(0,0,0,0.08); padding-left: 16px; margin-left: 4px;">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="2" width="12" height="12" rx="2"/>
+      <line x1="5" y1="6" x2="11" y2="6"/>
+      <line x1="5" y1="9" x2="9" y2="9"/>
+    </svg>
+    Notes
+  </button>
+</div>
+
+<!-- Speaker Notes Panel -->
+<div class="notes-panel" id="notesPanel">
+  <div class="notes-label">Speaker Notes</div>
+  <div class="notes-text" id="notesText"></div>
+</div>
+
+<script>
+// ============================================================
+// SLIDE NAVIGATION ENGINE
+// ============================================================
+const TOTAL_SLIDES = 17;
+let currentSlide = 1;
+let notesVisible = false;
+
+const slides = document.querySelectorAll('.slide');
+const progressBar = document.getElementById('progressBar');
+const slideCounter = document.getElementById('slideCounter');
+
+function buildDots() {
+  const dotNav = document.getElementById('dotNav');
+  for (let i = 1; i <= TOTAL_SLIDES; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i === 1 ? ' active' : '');
+    dot.onclick = () => goToSlide(i);
+    dotNav.appendChild(dot);
+  }
+}
+
+function goToSlide(n) {
+  if (n < 1 || n > TOTAL_SLIDES) return;
+  document.getElementById('slide-' + currentSlide).classList.remove('active');
+  document.getElementById('slide-' + n).classList.add('active');
+  currentSlide = n;
+  updateUI(n);
+}
+
+function changeSlide(dir) {
+  const next = currentSlide + dir;
+  if (next < 1 || next > TOTAL_SLIDES) return;
+  goToSlide(next);
+}
+
+function updateUI(next) {
+  const progress = (next / TOTAL_SLIDES) * 100;
+  progressBar.style.width = progress + '%';
+  slideCounter.textContent = next + ' / ' + TOTAL_SLIDES;
+
+  const dots = document.querySelectorAll('.dot');
+  dots.forEach((d, i) => d.classList.toggle('active', i === next - 1));
+
+  document.getElementById('prevBtn').style.opacity = next === 1 ? '0.4' : '1';
+  document.getElementById('nextBtn').style.opacity = next === TOTAL_SLIDES ? '0.4' : '1';
+
+  // Update notes
+  if (notesVisible) {
+    const slide = document.getElementById('slide-' + next);
+    const notes = slide ? slide.getAttribute('data-notes') : '';
+    document.getElementById('notesText').textContent = notes || 'No notes for this slide.';
+  }
+}
+
+function toggleNotes() {
+  notesVisible = !notesVisible;
+  const panel = document.getElementById('notesPanel');
+  panel.classList.toggle('visible', notesVisible);
+  if (notesVisible) {
+    const slide = document.getElementById('slide-' + currentSlide);
+    const notes = slide ? slide.getAttribute('data-notes') : '';
+    document.getElementById('notesText').textContent = notes || 'No notes for this slide.';
+  }
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  switch(e.key) {
+    case 'ArrowRight':
+    case 'ArrowDown':
+      e.preventDefault();
+      changeSlide(1);
+      break;
+    case 'ArrowLeft':
+    case 'ArrowUp':
+      e.preventDefault();
+      changeSlide(-1);
+      break;
+    case 'n':
+    case 'N':
+      toggleNotes();
+      break;
+    case 'Home':
+      goToSlide(1);
+      break;
+    case 'End':
+      goToSlide(TOTAL_SLIDES);
+      break;
+  }
+});
+
+// Touch/swipe support
+let touchStartX = 0;
+let touchStartY = 0;
+
+document.addEventListener('touchstart', (e) => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.addEventListener('touchend', (e) => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+    changeSlide(dx < 0 ? 1 : -1);
+  }
+}, { passive: true });
+
+// Initialize
+buildDots();
+document.getElementById('slide-1').classList.add('active');
+progressBar.style.width = (1 / TOTAL_SLIDES * 100) + '%';
+document.getElementById('prevBtn').style.opacity = '0.4';
+
+// Subtle glass card entrance animation on load
+window.addEventListener('load', () => {
+  document.querySelectorAll('.mesh-orb').forEach(orb => {
+    orb.style.opacity = '0';
+    orb.style.transition = 'opacity 1.5s ease';
+    setTimeout(() => { orb.style.opacity = '0.4'; }, 100);
+  });
+});
+</script>
+</body>
+</html>
