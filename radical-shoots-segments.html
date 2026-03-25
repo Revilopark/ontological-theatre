@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radical Shoots - Customer Segment Knowledge Graph</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- D3.js -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <style>
+        :root {
+            --green: #2d6a4f;
+            --gold: #d4a853; 
+            --amber: #c17817;
+            --taupe: #8d6e63;
+            --maple: #a0522d;
+            --bg: #faf8f5;
+            --white: #ffffff;
+            --dark: #2c3e50;
+            --light-green: #52b788;
+            --light-gold: #f4e4bc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            background: linear-gradient(135deg, var(--green), var(--light-green));
+            border-radius: 15px;
+            color: var(--white);
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .visualization-panel {
+            background: var(--white);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(45, 106, 79, 0.1);
+            overflow: hidden;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .metrics-box {
+            background: var(--white);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(45, 106, 79, 0.1);
+        }
+
+        .metrics-box h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            color: var(--green);
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--light-gold);
+            padding-bottom: 5px;
+        }
+
+        .metric-item {
+            margin-bottom: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--light-gold);
+        }
+
+        .metric-item:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            color: var(--taupe);
+            font-weight: 500;
+        }
+
+        .metric-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .legend {
+            background: var(--white);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(45, 106, 79, 0.1);
+        }
+
+        .legend h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            color: var(--green);
+            margin-bottom: 15px;
+        }
+
+        .legend-section {
+            margin-bottom: 15px;
+        }
+
+        .legend-section h4 {
+            font-size: 0.9rem;
+            color: var(--amber);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+            border-radius: 50%;
+        }
+
+        .legend-line {
+            width: 30px;
+            height: 3px;
+            margin-right: 8px;
+            border-radius: 2px;
+        }
+
+        #graph-container {
+            width: 100%;
+            height: 700px;
+            position: relative;
+        }
+
+        .node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .node:hover {
+            stroke-width: 3px;
+        }
+
+        .node.highlighted {
+            stroke-width: 4px;
+            filter: drop-shadow(0 0 8px rgba(212, 168, 83, 0.8));
+        }
+
+        .link {
+            fill: none;
+            stroke-opacity: 0.6;
+            transition: all 0.3s ease;
+        }
+
+        .link.highlighted {
+            stroke-opacity: 1;
+            stroke-width: 4px !important;
+        }
+
+        .node-label {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            text-anchor: middle;
+            pointer-events: none;
+            fill: var(--dark);
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(45, 106, 79, 0.95);
+            color: var(--white);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1000;
+            max-width: 250px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .controls {
+            background: var(--white);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(45, 106, 79, 0.1);
+            text-align: center;
+        }
+
+        .control-button {
+            background: var(--green);
+            color: var(--white);
+            border: none;
+            padding: 8px 16px;
+            margin: 0 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .control-button:hover {
+            background: var(--light-green);
+        }
+
+        .control-button.active {
+            background: var(--amber);
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                grid-row: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            #graph-container {
+                height: 500px;
+            }
+            
+            .metrics-box, .legend {
+                padding: 15px;
+            }
+        }
+
+        @media print {
+            body {
+                font-size: 12px;
+            }
+            
+            .controls {
+                display: none;
+            }
+            
+            #graph-container {
+                height: 600px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Radical Shoots</h1>
+            <div class="subtitle">Customer Segment Knowledge Graph • Nashville Regenerative Farm</div>
+        </header>
+
+        <div class="main-content">
+            <div class="visualization-panel">
+                <div class="controls">
+                    <button class="control-button active" data-filter="all">All Segments</button>
+                    <button class="control-button" data-filter="high-ltv">High LTV</button>
+                    <button class="control-button" data-filter="content-creators">Content Creators</button>
+                    <button class="control-button" data-filter="cross-sell">Cross-sell Paths</button>
+                </div>
+                <div id="graph-container"></div>
+            </div>
+
+            <div class="sidebar">
+                <div class="metrics-box">
+                    <h3>Key Metrics</h3>
+                    <div class="metric-item">
+                        <div class="metric-label">Total Addressable Segments</div>
+                        <div class="metric-value">8</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">Highest LTV Segment</div>
+                        <div class="metric-value">Chefs & Restaurants</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">Strongest Cross-sell</div>
+                        <div class="metric-value">Market → Home Cooks</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">Best UGC Segment</div>
+                        <div class="metric-value">Instagram Foodies</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">Total Products</div>
+                        <div class="metric-value">5</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">Acquisition Channels</div>
+                        <div class="metric-value">5</div>
+                    </div>
+                </div>
+
+                <div class="legend">
+                    <h3>Legend</h3>
+                    
+                    <div class="legend-section">
+                        <h4>Node Types</h4>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: var(--green);"></div>
+                            Customer Segments
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: var(--amber);"></div>
+                            Products
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: var(--taupe);"></div>
+                            Channels
+                        </div>
+                    </div>
+
+                    <div class="legend-section">
+                        <h4>Edge Types</h4>
+                        <div class="legend-item">
+                            <div class="legend-line" style="background: var(--green);"></div>
+                            Purchase Affinity
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-line" style="background: var(--gold);"></div>
+                            Cross-sell Potential
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-line" style="background: var(--amber);"></div>
+                            Content Generation
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-line" style="background: var(--maple);"></div>
+                            Acquisition
+                        </div>
+                    </div>
+
+                    <div class="legend-section">
+                        <h4>LTV Indicators</h4>
+                        <div class="legend-item">$ Seasonal/Low</div>
+                        <div class="legend-item">$$ Regular/Medium</div>
+                        <div class="legend-item">$$$ High Value</div>
+                    </div>
+
+                    <div class="legend-section">
+                        <h4>Interactions</h4>
+                        <div style="font-size: 0.75rem; color: var(--taupe);">
+                            • Hover nodes for details<br>
+                            • Click to highlight connections<br>
+                            • Use filters to explore segments
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Embed the knowledge graph data
+        const RadicalShootsKG = {
+            nodes: [
+                // Customer Segments
+                {id: "home-cooks", label: "Home Cooks", type: "segment", properties: {size: 1200, ltv: "$$", description: "Health-conscious Nashville families cooking at home", metrics: {avgOrderValue: 45, frequency: "monthly", retention: 0.65}, centrality: 0.75}},
+                {id: "chefs-restaurants", label: "Chefs & Restaurants", type: "segment", properties: {size: 150, ltv: "$$$", description: "Nashville fine dining and farm-to-table establishments", metrics: {avgOrderValue: 180, frequency: "weekly", retention: 0.85}, centrality: 0.90}},
+                {id: "farmers-market", label: "Farmers Market Shoppers", type: "segment", properties: {size: 800, ltv: "$$", description: "Weekly market regulars who value local sourcing", metrics: {avgOrderValue: 35, frequency: "weekly", retention: 0.70}, centrality: 0.80}},
+                {id: "health-wellness", label: "Health & Wellness", type: "segment", properties: {size: 950, ltv: "$$", description: "Juice bars, yoga studios, functional food enthusiasts", metrics: {avgOrderValue: 55, frequency: "bi-weekly", retention: 0.75}, centrality: 0.70}},
+                {id: "gift-givers", label: "Gift Givers", type: "segment", properties: {size: 600, ltv: "$", description: "Curated food boxes, holiday and hostess gifts", metrics: {avgOrderValue: 65, frequency: "seasonal", retention: 0.40}, centrality: 0.45}},
+                {id: "instagram-foodies", label: "Instagram Foodies", type: "segment", properties: {size: 400, ltv: "$$", description: "Content creators and food bloggers", metrics: {avgOrderValue: 40, frequency: "monthly", retention: 0.60}, centrality: 0.85}},
+                {id: "csa-subscribers", label: "CSA/Subscription", type: "segment", properties: {size: 300, ltv: "$$$", description: "Weekly box and pre-order regulars", metrics: {avgOrderValue: 75, frequency: "weekly", retention: 0.90}, centrality: 0.60}},
+                {id: "specialty-grocers", label: "Specialty Grocers", type: "segment", properties: {size: 25, ltv: "$$$", description: "Local shops, co-ops, Turnip Truck type stores", metrics: {avgOrderValue: 200, frequency: "bi-weekly", retention: 0.80}, centrality: 0.65}},
+
+                // Products
+                {id: "microgreens", label: "Microgreens", type: "product", properties: {size: 800, margin: "high", description: "Fresh microgreens for garnish and nutrition", shelfLife: "7 days"}},
+                {id: "artisan-cheese", label: "Artisan Cheese", type: "product", properties: {size: 600, margin: "medium", description: "Handcrafted local cheese varieties", shelfLife: "30 days"}},
+                {id: "raw-honey", label: "Raw Honey", type: "product", properties: {size: 700, margin: "high", description: "Unprocessed local wildflower honey", shelfLife: "indefinite"}},
+                {id: "maple-syrup", label: "Maple Syrup", type: "product", properties: {size: 500, margin: "medium", description: "Pure Tennessee maple syrup", shelfLife: "2 years"}},
+                {id: "gourmet-mushrooms", label: "Gourmet Mushrooms", type: "product", properties: {size: 600, margin: "high", description: "Specialty mushroom varieties", shelfLife: "10 days"}},
+
+                // Acquisition Channels
+                {id: "instagram", label: "Instagram", type: "channel", properties: {size: 300, cost: "low", reach: "high"}},
+                {id: "farmers-markets", label: "Farmers Markets", type: "channel", properties: {size: 400, cost: "medium", reach: "medium"}},
+                {id: "word-of-mouth", label: "Word of Mouth", type: "channel", properties: {size: 350, cost: "none", reach: "high"}},
+                {id: "chef-networks", label: "Chef Networks", type: "channel", properties: {size: 200, cost: "low", reach: "medium"}},
+                {id: "google-search", label: "Google Search", type: "channel", properties: {size: 250, cost: "medium", reach: "medium"}}
+            ],
+
+            edges: [
+                // Purchase Affinity - Segments to Products
+                {source: "home-cooks", target: "raw-honey", type: "purchase_affinity", weight: 9},
+                {source: "home-cooks", target: "maple-syrup", type: "purchase_affinity", weight: 8},
+                {source: "home-cooks", target: "artisan-cheese", type: "purchase_affinity", weight: 6},
+                {source: "home-cooks", target: "microgreens", type: "purchase_affinity", weight: 4},
+                {source: "home-cooks", target: "gourmet-mushrooms", type: "purchase_affinity", weight: 5},
+
+                {source: "chefs-restaurants", target: "microgreens", type: "purchase_affinity", weight: 10},
+                {source: "chefs-restaurants", target: "gourmet-mushrooms", type: "purchase_affinity", weight: 9},
+                {source: "chefs-restaurants", target: "artisan-cheese", type: "purchase_affinity", weight: 7},
+                {source: "chefs-restaurants", target: "raw-honey", type: "purchase_affinity", weight: 5},
+                {source: "chefs-restaurants", target: "maple-syrup", type: "purchase_affinity", weight: 4},
+
+                {source: "farmers-market", target: "raw-honey", type: "purchase_affinity", weight: 9},
+                {source: "farmers-market", target: "maple-syrup", type: "purchase_affinity", weight: 8},
+                {source: "farmers-market", target: "artisan-cheese", type: "purchase_affinity", weight: 7},
+                {source: "farmers-market", target: "microgreens", type: "purchase_affinity", weight: 6},
+                {source: "farmers-market", target: "gourmet-mushrooms", type: "purchase_affinity", weight: 6},
+
+                {source: "health-wellness", target: "microgreens", type: "purchase_affinity", weight: 10},
+                {source: "health-wellness", target: "raw-honey", type: "purchase_affinity", weight: 7},
+                {source: "health-wellness", target: "gourmet-mushrooms", type: "purchase_affinity", weight: 6},
+                {source: "health-wellness", target: "artisan-cheese", type: "purchase_affinity", weight: 3},
+                {source: "health-wellness", target: "maple-syrup", type: "purchase_affinity", weight: 4},
+
+                {source: "gift-givers", target: "raw-honey", type: "purchase_affinity", weight: 9},
+                {source: "gift-givers", target: "maple-syrup", type: "purchase_affinity", weight: 8},
+                {source: "gift-givers", target: "artisan-cheese", type: "purchase_affinity", weight: 8},
+                {source: "gift-givers", target: "microgreens", type: "purchase_affinity", weight: 2},
+                {source: "gift-givers", target: "gourmet-mushrooms", type: "purchase_affinity", weight: 4},
+
+                {source: "instagram-foodies", target: "microgreens", type: "purchase_affinity", weight: 9},
+                {source: "instagram-foodies", target: "gourmet-mushrooms", type: "purchase_affinity", weight: 8},
+                {source: "instagram-foodies", target: "artisan-cheese", type: "purchase_affinity", weight: 6},
+                {source: "instagram-foodies", target: "raw-honey", type: "purchase_affinity", weight: 5},
+                {source: "instagram-foodies", target: "maple-syrup", type: "purchase_affinity", weight: 4},
+
+                {source: "csa-subscribers", target: "microgreens", type: "purchase_affinity", weight: 8},
+                {source: "csa-subscribers", target: "artisan-cheese", type: "purchase_affinity", weight: 8},
+                {source: "csa-subscribers", target: "raw-honey", type: "purchase_affinity", weight: 7},
+                {source: "csa-subscribers", target: "gourmet-mushrooms", type: "purchase_affinity", weight: 7},
+                {source: "csa-subscribers", target: "maple-syrup", type: "purchase_affinity", weight: 6},
+
+                {source: "specialty-grocers", target: "microgreens", type: "purchase_affinity", weight: 8},
+                {source: "specialty-grocers", target: "artisan-cheese", type: "purchase_affinity", weight: 7},
+                {source: "specialty-grocers", target: "gourmet-mushrooms", type: "purchase_affinity", weight: 7},
+                {source: "specialty-grocers", target: "raw-honey", type: "purchase_affinity", weight: 6},
+                {source: "specialty-grocers", target: "maple-syrup", type: "purchase_affinity", weight: 6},
+
+                // Cross-sell Potential - Segment to Segment
+                {source: "farmers-market", target: "home-cooks", type: "cross_sell", weight: 8},
+                {source: "instagram-foodies", target: "health-wellness", type: "cross_sell", weight: 7},
+                {source: "home-cooks", target: "csa-subscribers", type: "cross_sell", weight: 6},
+                {source: "gift-givers", target: "farmers-market", type: "cross_sell", weight: 5},
+                {source: "health-wellness", target: "home-cooks", type: "cross_sell", weight: 7},
+                {source: "chefs-restaurants", target: "specialty-grocers", type: "cross_sell", weight: 9},
+
+                // Content Generation - Segments that create UGC
+                {source: "instagram-foodies", target: "instagram", type: "content_gen", weight: 10},
+                {source: "chefs-restaurants", target: "instagram", type: "content_gen", weight: 8},
+                {source: "home-cooks", target: "word-of-mouth", type: "content_gen", weight: 7},
+                {source: "farmers-market", target: "word-of-mouth", type: "content_gen", weight: 8},
+                {source: "health-wellness", target: "instagram", type: "content_gen", weight: 6},
+
+                // Acquisition Channels to Segments
+                {source: "instagram", target: "instagram-foodies", type: "acquisition", weight: 9},
+                {source: "instagram", target: "health-wellness", type: "acquisition", weight: 7},
+                {source: "instagram", target: "home-cooks", type: "acquisition", weight: 6},
+
+                {source: "farmers-markets", target: "farmers-market", type: "acquisition", weight: 10},
+                {source: "farmers-markets", target: "home-cooks", type: "acquisition", weight: 8},
+                {source: "farmers-markets", target: "gift-givers", type: "acquisition", weight: 7},
+
+                {source: "word-of-mouth", target: "home-cooks", type: "acquisition", weight: 8},
+                {source: "word-of-mouth", target: "farmers-market", type: "acquisition", weight: 7},
+                {source: "word-of-mouth", target: "health-wellness", type: "acquisition", weight: 6},
+
+                {source: "chef-networks", target: "chefs-restaurants", type: "acquisition", weight: 10},
+                {source: "chef-networks", target: "specialty-grocers", type: "acquisition", weight: 8},
+
+                {source: "google-search", target: "home-cooks", type: "acquisition", weight: 7},
+                {source: "google-search", target: "health-wellness", type: "acquisition", weight: 6},
+                {source: "google-search", target: "csa-subscribers", type: "acquisition", weight: 5}
+            ]
+        };
+
+        // D3.js Visualization
+        const container = d3.select('#graph-container');
+        const containerRect = container.node().getBoundingClientRect();
+        const width = containerRect.width;
+        const height = containerRect.height;
+
+        const svg = container.append('svg')
+            .attr('width', width)
+            .attr('height', height);
+
+        const g = svg.append('g');
+
+        const zoom = d3.zoom()
+            .scaleExtent([0.3, 3])
+            .on('zoom', (event) => {
+                g.attr('transform', event.transform);
+            });
+
+        svg.call(zoom);
+
+        // Color schemes
+        const colors = {
+            segment: getComputedStyle(document.documentElement).getPropertyValue('--green').trim(),
+            product: getComputedStyle(document.documentElement).getPropertyValue('--amber').trim(), 
+            channel: getComputedStyle(document.documentElement).getPropertyValue('--taupe').trim(),
+            purchase_affinity: getComputedStyle(document.documentElement).getPropertyValue('--green').trim(),
+            cross_sell: getComputedStyle(document.documentElement).getPropertyValue('--gold').trim(),
+            content_gen: getComputedStyle(document.documentElement).getPropertyValue('--amber').trim(),
+            acquisition: getComputedStyle(document.documentElement).getPropertyValue('--maple').trim()
+        };
+
+        // Scale functions
+        const radiusScale = d3.scaleSqrt()
+            .domain([0, d3.max(RadicalShootsKG.nodes, d => d.properties.size)])
+            .range([8, 35]);
+
+        let simulation, link, node, labels;
+        let selectedNode = null;
+
+        function initializeVisualization(filteredData = RadicalShootsKG) {
+            // Clear existing elements
+            g.selectAll('*').remove();
+
+            // Create force simulation
+            simulation = d3.forceSimulation(filteredData.nodes)
+                .force('link', d3.forceLink(filteredData.edges).id(d => d.id).distance(100).strength(0.3))
+                .force('charge', d3.forceManyBody().strength(-300))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(d => radiusScale(d.properties.size) + 5));
+
+            // Create links
+            link = g.append('g')
+                .attr('class', 'links')
+                .selectAll('line')
+                .data(filteredData.edges)
+                .join('line')
+                .attr('class', 'link')
+                .attr('stroke', d => colors[d.type])
+                .attr('stroke-width', d => d.weight * 0.8);
+
+            // Create nodes
+            node = g.append('g')
+                .attr('class', 'nodes')
+                .selectAll('circle')
+                .data(filteredData.nodes)
+                .join('circle')
+                .attr('class', 'node')
+                .attr('r', d => radiusScale(d.properties.size))
+                .attr('fill', d => colors[d.type])
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 2)
+                .on('mouseover', handleMouseOver)
+                .on('mouseout', handleMouseOut)
+                .on('click', handleClick)
+                .call(d3.drag()
+                    .on('start', dragstarted)
+                    .on('drag', dragged)
+                    .on('end', dragended));
+
+            // Create labels
+            labels = g.append('g')
+                .attr('class', 'labels')
+                .selectAll('text')
+                .data(filteredData.nodes)
+                .join('text')
+                .attr('class', 'node-label')
+                .text(d => d.label)
+                .attr('dy', d => radiusScale(d.properties.size) + 15);
+
+            // Update positions on simulation tick
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+
+                node
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+
+                labels
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y);
+            });
+        }
+
+        function handleMouseOver(event, d) {
+            const tooltip = d3.select('#tooltip');
+            let content = `<strong>${d.label}</strong><br/>Type: ${d.type}<br/>`;
+            
+            if (d.type === 'segment') {
+                content += `Size: ${d.properties.size} customers<br/>`;
+                content += `LTV: ${d.properties.ltv}<br/>`;
+                content += `AOV: $${d.properties.metrics.avgOrderValue}<br/>`;
+                content += `Frequency: ${d.properties.metrics.frequency}<br/>`;
+                content += `Retention: ${(d.properties.metrics.retention * 100).toFixed(0)}%`;
+            } else if (d.type === 'product') {
+                content += `Margin: ${d.properties.margin}<br/>`;
+                content += `Shelf Life: ${d.properties.shelfLife}`;
+            } else if (d.type === 'channel') {
+                content += `Cost: ${d.properties.cost}<br/>`;
+                content += `Reach: ${d.properties.reach}`;
+            }
+
+            tooltip
+                .style('opacity', 1)
+                .html(content)
+                .style('left', (event.pageX + 10) + 'px')
+                .style('top', (event.pageY - 10) + 'px');
+        }
+
+        function handleMouseOut(event, d) {
+            d3.select('#tooltip').style('opacity', 0);
+        }
+
+        function handleClick(event, d) {
+            if (selectedNode === d) {
+                // Deselect
+                selectedNode = null;
+                node.classed('highlighted', false);
+                link.classed('highlighted', false);
+            } else {
+                // Select new node
+                selectedNode = d;
+                
+                // Highlight connected elements
+                const connectedNodes = new Set();
+                const connectedLinks = new Set();
+                
+                RadicalShootsKG.edges.forEach(edge => {
+                    if (edge.source.id === d.id || edge.target.id === d.id) {
+                        connectedLinks.add(edge);
+                        connectedNodes.add(edge.source.id === d.id ? edge.target.id : edge.source.id);
+                    }
+                });
+                
+                node.classed('highlighted', n => n.id === d.id || connectedNodes.has(n.id));
+                link.classed('highlighted', l => connectedLinks.has(l));
+            }
+        }
+
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        // Filter functionality
+        function filterData(filterType) {
+            let filteredNodes = [...RadicalShootsKG.nodes];
+            let filteredEdges = [...RadicalShootsKG.edges];
+
+            switch (filterType) {
+                case 'high-ltv':
+                    filteredNodes = RadicalShootsKG.nodes.filter(n => 
+                        n.type !== 'segment' || n.properties.ltv === '$$$');
+                    break;
+                case 'content-creators':
+                    const contentNodeIds = new Set();
+                    RadicalShootsKG.edges.forEach(e => {
+                        if (e.type === 'content_gen') {
+                            contentNodeIds.add(e.source);
+                            contentNodeIds.add(e.target);
+                        }
+                    });
+                    filteredNodes = RadicalShootsKG.nodes.filter(n => 
+                        contentNodeIds.has(n.id));
+                    filteredEdges = RadicalShootsKG.edges.filter(e => 
+                        e.type === 'content_gen');
+                    break;
+                case 'cross-sell':
+                    const crossSellNodeIds = new Set();
+                    RadicalShootsKG.edges.forEach(e => {
+                        if (e.type === 'cross_sell') {
+                            crossSellNodeIds.add(e.source);
+                            crossSellNodeIds.add(e.target);
+                        }
+                    });
+                    filteredNodes = RadicalShootsKG.nodes.filter(n => 
+                        crossSellNodeIds.has(n.id));
+                    filteredEdges = RadicalShootsKG.edges.filter(e => 
+                        e.type === 'cross_sell');
+                    break;
+            }
+
+            // Ensure edges only connect existing nodes
+            const nodeIds = new Set(filteredNodes.map(n => n.id));
+            filteredEdges = filteredEdges.filter(e => 
+                nodeIds.has(e.source.id || e.source) && nodeIds.has(e.target.id || e.target));
+
+            initializeVisualization({ nodes: filteredNodes, edges: filteredEdges });
+        }
+
+        // Control button handlers
+        d3.selectAll('.control-button').on('click', function(event) {
+            d3.selectAll('.control-button').classed('active', false);
+            d3.select(this).classed('active', true);
+            
+            const filterType = d3.select(this).attr('data-filter');
+            if (filterType === 'all') {
+                initializeVisualization();
+            } else {
+                filterData(filterType);
+            }
+        });
+
+        // Initialize visualization
+        initializeVisualization();
+    </script>
+</body>
+</html>
