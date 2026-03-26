@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MaxBidding — Boston Medical Center HVAC Renovation</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --mb-dark: #7a1212;
+  --mb-darker: #5a0e0e;
+  --mb-red: #a01818;
+  --mb-orange: #ff8c00;
+  --mb-orange-light: #fff3e0;
+  --buckley-teal: #0ea5a0;
+  --buckley-teal-dark: #0b8a86;
+  --buckley-teal-light: #e0f7f6;
+  --buckley-teal-bg: #f0faf9;
+  --bg: #f4f5f7;
+  --card: #ffffff;
+  --text: #1a1a2e;
+  --text-secondary: #5a5a72;
+  --border: #e2e4e9;
+  --success: #16a34a;
+  --warning: #f59e0b;
+  --danger: #dc2626;
+  --sidebar-w: 260px;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: var(--sidebar-w);
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--mb-dark) 0%, var(--mb-darker) 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  overflow-y: auto;
+}
+
+.sidebar-logo {
+  padding: 24px 20px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar-logo h1 {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-logo h1 .logo-icon {
+  width: 32px; height: 32px;
+  background: var(--mb-orange);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.sidebar-logo .subtitle {
+  font-size: 11px;
+  opacity: 0.6;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.sidebar-nav {
+  padding: 16px 12px;
+  flex: 1;
+}
+
+.nav-section {
+  margin-bottom: 24px;
+}
+
+.nav-section-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  opacity: 0.45;
+  padding: 0 8px 8px;
+  font-weight: 600;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: rgba(255,255,255,0.7);
+}
+
+.nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.nav-item.active { background: rgba(255,140,0,0.2); color: var(--mb-orange); }
+
+.nav-item .nav-icon {
+  width: 20px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.nav-item .badge {
+  margin-left: auto;
+  background: var(--mb-orange);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+
+/* Buckley section in sidebar */
+.buckley-sidebar-section {
+  margin: 0 12px 20px;
+  background: rgba(14,165,160,0.15);
+  border: 1px solid rgba(14,165,160,0.25);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.buckley-sidebar-section .bss-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.buckley-sidebar-section .bss-dot {
+  width: 8px; height: 8px;
+  background: #34d399;
+  border-radius: 50%;
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.buckley-sidebar-section .bss-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #5eead4;
+}
+
+.buckley-sidebar-section .bss-apis {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.buckley-sidebar-section .bss-api {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.65);
+}
+
+.buckley-sidebar-section .bss-api .api-status {
+  width: 6px; height: 6px;
+  background: #34d399;
+  border-radius: 50%;
+}
+
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-user .avatar {
+  width: 34px; height: 34px;
+  background: var(--mb-orange);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.sidebar-user .user-info {
+  flex: 1;
+}
+
+.sidebar-user .user-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sidebar-user .user-role {
+  font-size: 10px;
+  opacity: 0.5;
+}
+
+/* ── Main Content ── */
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  min-height: 100vh;
+}
+
+.topbar {
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topbar-breadcrumb {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.topbar-breadcrumb span { color: var(--text); font-weight: 600; }
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.topbar-btn.secondary {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.topbar-btn.primary {
+  background: var(--mb-orange);
+  color: #fff;
+}
+
+.topbar-btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+.topbar-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--success);
+  font-weight: 500;
+}
+
+.topbar-status .dot {
+  width: 7px; height: 7px;
+  background: var(--success);
+  border-radius: 50%;
+}
+
+.content {
+  padding: 28px 32px 48px;
+  max-width: 1400px;
+}
+
+/* ── Cards ── */
+.card {
+  background: var(--card);
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.card-header {
+  padding: 20px 24px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.card-header .card-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.card-icon.orange { background: var(--mb-orange-light); }
+.card-icon.teal { background: var(--buckley-teal-light); }
+.card-icon.red { background: #fce4ec; }
+
+.card-header h2 {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.card-header .card-subtitle {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 1px;
+}
+
+.card-header .powered-by {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--buckley-teal);
+  background: var(--buckley-teal-light);
+  padding: 5px 12px;
+  border-radius: 20px;
+}
+
+.card-header .powered-by::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--buckley-teal);
+  border-radius: 50%;
+}
+
+.card-body { padding: 24px; }
+
+/* ── Panel 1: Project Overview ── */
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.project-stat {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.project-stat .stat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.project-stat .stat-value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.project-stat .stat-value.large {
+  font-size: 26px;
+  color: var(--mb-dark);
+}
+
+.project-stat .stat-detail {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.project-scope {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.scope-tag {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.scope-tag.highlight {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+/* ── Panel 2: Equipment Table ── */
+.equipment-table-wrap {
+  overflow-x: auto;
+  margin: 0 -24px;
+  padding: 0 24px;
+}
+
+.eq-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.eq-table thead th {
+  background: var(--bg);
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+
+.eq-table tbody td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.eq-table tbody tr:hover { background: #fafbfc; }
+
+.eq-table .product-name {
+  font-weight: 600;
+  color: var(--buckley-teal-dark);
+}
+
+.eq-table .manufacturer { color: var(--text-secondary); }
+
+.eq-table .cost { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.eq-table .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-badge.in-stock { background: #dcfce7; color: #166534; }
+.status-badge.lead-time { background: #fef3c7; color: #92400e; }
+.status-badge.fabrication { background: #e0e7ff; color: #3730a3; }
+
+.eq-total-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 0 0;
+  border-top: 2px solid var(--mb-dark);
+  margin-top: 4px;
+}
+
+.eq-total-row .total-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.eq-total-row .total-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--mb-dark);
+}
+
+.chart-section {
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.chart-container {
+  width: 220px;
+  height: 220px;
+  flex-shrink: 0;
+}
+
+.chart-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.legend-color {
+  width: 14px; height: 14px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.legend-value {
+  margin-left: auto;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.legend-pct {
+  font-size: 11px;
+  color: var(--text-secondary);
+  width: 36px;
+  text-align: right;
+}
+
+/* ── Panel 3: Compliance ── */
+.compliance-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.compliance-item {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border-radius: 10px;
+  border-left: 3px solid transparent;
+}
+
+.compliance-item.pass { border-left-color: var(--success); }
+.compliance-item.warn { border-left-color: var(--warning); }
+
+.compliance-item .ci-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.compliance-item .ci-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.compliance-item .ci-detail {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.compliance-financial {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.fin-card {
+  padding: 18px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.fin-card.rebate {
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  border: 1px solid #a7f3d0;
+}
+
+.fin-card.penalty {
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  border: 1px solid #fca5a5;
+}
+
+.fin-card .fin-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.fin-card.rebate .fin-label { color: #166534; }
+.fin-card.penalty .fin-label { color: #991b1b; }
+
+.fin-card .fin-value {
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.fin-card.rebate .fin-value { color: #16a34a; }
+.fin-card.penalty .fin-value { color: #dc2626; }
+
+.fin-card .fin-detail {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* ── Panel 4: Logistics ── */
+.logistics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.warehouse-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.warehouse-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: var(--bg);
+  border-radius: 10px;
+}
+
+.warehouse-item .wh-icon {
+  width: 40px; height: 40px;
+  background: var(--buckley-teal-light);
+  color: var(--buckley-teal);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.warehouse-item .wh-info { flex: 1; }
+
+.warehouse-item .wh-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.warehouse-item .wh-detail {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.warehouse-item .wh-pct {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--buckley-teal);
+}
+
+.lead-summary {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.lead-pill {
+  flex: 1;
+  text-align: center;
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.lead-pill.now { background: #dcfce7; }
+.lead-pill.weeks { background: #fef3c7; }
+.lead-pill.custom { background: #e0e7ff; }
+
+.lead-pill .lp-value {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.lead-pill.now .lp-value { color: #16a34a; }
+.lead-pill.weeks .lp-value { color: #d97706; }
+.lead-pill.custom .lp-value { color: #4f46e5; }
+
+.lead-pill .lp-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.timeline-chart-container {
+  height: 200px;
+  margin-top: 8px;
+}
+
+.delivery-note {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--buckley-teal-bg);
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(14,165,160,0.15);
+}
+
+.delivery-note strong { color: var(--buckley-teal-dark); }
+
+/* ── Panel 5: Bid Summary ── */
+.bid-summary-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 32px;
+}
+
+.bid-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.bid-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.bid-line:last-child { border-bottom: none; }
+
+.bid-line .bl-label {
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bid-line .bl-value {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.bid-line.total {
+  border-top: 3px solid var(--mb-dark);
+  border-bottom: none;
+  margin-top: 4px;
+  padding-top: 18px;
+}
+
+.bid-line.total .bl-label {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--mb-dark);
+}
+
+.bid-line.total .bl-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--mb-dark);
+}
+
+.bid-line.discount .bl-value { color: var(--success); }
+.bid-line.discount .bl-label { color: var(--success); }
+
+.bid-line .buckley-tag {
+  font-size: 10px;
+  background: var(--buckley-teal-light);
+  color: var(--buckley-teal-dark);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.bid-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bid-donut-container {
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bid-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.bid-btn {
+  padding: 14px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.bid-btn.primary {
+  background: linear-gradient(135deg, var(--mb-dark), var(--mb-red));
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(122,18,18,0.3);
+}
+
+.bid-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(122,18,18,0.4);
+}
+
+.bid-btn.secondary {
+  background: linear-gradient(135deg, var(--buckley-teal), var(--buckley-teal-dark));
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(14,165,160,0.3);
+}
+
+.bid-btn.secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(14,165,160,0.4);
+}
+
+.bid-btn .btn-sub {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+.confidence-meter {
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 18px;
+  text-align: center;
+}
+
+.confidence-meter .cm-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.confidence-meter .cm-value {
+  font-size: 42px;
+  font-weight: 800;
+  color: var(--success);
+}
+
+.confidence-meter .cm-bar {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.confidence-meter .cm-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--success), #22d3ee);
+  border-radius: 3px;
+  width: 94%;
+}
+
+.confidence-meter .cm-detail {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .compliance-grid, .logistics-grid, .bid-summary-grid { grid-template-columns: 1fr; }
+  .chart-section { flex-direction: column; align-items: flex-start; }
+}
+
+@media (max-width: 800px) {
+  .sidebar { display: none; }
+  .main { margin-left: 0; }
+  .content { padding: 20px 16px; }
+  .project-grid { grid-template-columns: 1fr 1fr; }
+  .compliance-financial { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h1><span class="logo-icon">M</span> MaxBidding</h1>
+    <div class="subtitle">Mechanical Estimating Platform</div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">Workspace</div>
+      <div class="nav-item"><span class="nav-icon">📊</span> Dashboard</div>
+      <div class="nav-item active"><span class="nav-icon">📋</span> Active Bids <span class="badge">3</span></div>
+      <div class="nav-item"><span class="nav-icon">📁</span> Projects</div>
+      <div class="nav-item"><span class="nav-icon">👥</span> Subcontractors</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">Estimating</div>
+      <div class="nav-item"><span class="nav-icon">🔧</span> Equipment Library</div>
+      <div class="nav-item"><span class="nav-icon">💰</span> Labor Rates</div>
+      <div class="nav-item"><span class="nav-icon">📐</span> Takeoff</div>
+      <div class="nav-item"><span class="nav-icon">📄</span> Templates</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">Reports</div>
+      <div class="nav-item"><span class="nav-icon">📈</span> Analytics</div>
+      <div class="nav-item"><span class="nav-icon">🏆</span> Win Rate</div>
+    </div>
+  </nav>
+
+  <div class="buckley-sidebar-section">
+    <div class="bss-header">
+      <span class="bss-dot"></span>
+      <span class="bss-title">Buckley Intelligence</span>
+    </div>
+    <div class="bss-apis">
+      <div class="bss-api"><span class="api-status"></span> SpecIQ — Equipment Catalog</div>
+      <div class="bss-api"><span class="api-status"></span> ComplianceIQ — Code Check</div>
+      <div class="bss-api"><span class="api-status"></span> StockIQ — Availability</div>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="avatar">NM</div>
+      <div class="user-info">
+        <div class="user-name">Northeast Mechanical</div>
+        <div class="user-role">Pro Plan · Buckley Verified</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── Main Content ── -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-breadcrumb">Active Bids / <span>Boston Medical Center — HVAC Renovation Phase 3</span></div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-status"><span class="dot"></span> Buckley Connected</div>
+      <button class="topbar-btn secondary">⟳ Refresh Prices</button>
+      <button class="topbar-btn primary">💾 Save Bid</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ═══ PANEL 1: PROJECT OVERVIEW ═══ -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-left">
+          <div class="card-icon orange">🏥</div>
+          <div>
+            <h2>Boston Medical Center — HVAC Renovation Phase 3</h2>
+            <div class="card-subtitle">Bid #MB-2026-0147 · Created Mar 10, 2026</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;">⏱ Due May 15, 2026</span>
+          <span style="background:#dbeafe;color:#1e40af;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;">In Progress</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="project-grid">
+          <div class="project-stat">
+            <div class="stat-label">HVAC Budget</div>
+            <div class="stat-value large">$18M</div>
+            <div class="stat-detail">Mechanical scope</div>
+          </div>
+          <div class="project-stat">
+            <div class="stat-label">General Contractor</div>
+            <div class="stat-value">Suffolk Construction</div>
+            <div class="stat-detail">Boston, MA</div>
+          </div>
+          <div class="project-stat">
+            <div class="stat-label">Location</div>
+            <div class="stat-value">Boston, MA</div>
+            <div class="stat-detail">BERDO jurisdiction</div>
+          </div>
+          <div class="project-stat">
+            <div class="stat-label">Bid Due</div>
+            <div class="stat-value">May 15, 2026</div>
+            <div class="stat-detail">50 days remaining</div>
+          </div>
+        </div>
+        <div class="project-scope">
+          <span class="scope-tag">3 Floors</span>
+          <span class="scope-tag highlight">12 Operating Rooms</span>
+          <span class="scope-tag">Lab Wing</span>
+          <span class="scope-tag">Patient Floors</span>
+          <span class="scope-tag">Kitchen</span>
+          <span class="scope-tag">Mechanical Room</span>
+          <span class="scope-tag highlight">BERDO Compliance Required</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PANEL 2: EQUIPMENT RECOMMENDATIONS ═══ -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-left">
+          <div class="card-icon teal">⚙️</div>
+          <div>
+            <h2>Equipment Recommendations</h2>
+            <div class="card-subtitle">12 line items from Buckley product catalog</div>
+          </div>
+        </div>
+        <div class="powered-by">Powered by SpecIQ</div>
+      </div>
+      <div class="card-body">
+        <div class="equipment-table-wrap">
+          <table class="eq-table">
+            <thead>
+              <tr>
+                <th>Area</th>
+                <th>Equipment</th>
+                <th>Buckley Product</th>
+                <th>Manufacturer</th>
+                <th style="text-align:center">Qty</th>
+                <th style="text-align:right">Unit Cost</th>
+                <th style="text-align:right">Total</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Operating Rooms</td>
+                <td>OR Ceiling System</td>
+                <td class="product-name">UltraSuite</td>
+                <td class="manufacturer">Price Industries</td>
+                <td style="text-align:center">12</td>
+                <td class="cost" style="text-align:right">$45,000</td>
+                <td class="cost" style="text-align:right">$540,000</td>
+                <td><span class="status-badge in-stock">✅ In Stock</span></td>
+              </tr>
+              <tr>
+                <td>Lab Wing</td>
+                <td>Lab Exhaust</td>
+                <td class="product-name">Vektor-CH</td>
+                <td class="manufacturer">Greenheck</td>
+                <td style="text-align:center">4</td>
+                <td class="cost" style="text-align:right">$68,000</td>
+                <td class="cost" style="text-align:right">$272,000</td>
+                <td><span class="status-badge in-stock">✅ In Stock</span></td>
+              </tr>
+              <tr>
+                <td>Patient Floors</td>
+                <td>VAV Boxes</td>
+                <td class="product-name">Series 500</td>
+                <td class="manufacturer">Price Industries</td>
+                <td style="text-align:center">120</td>
+                <td class="cost" style="text-align:right">$1,200</td>
+                <td class="cost" style="text-align:right">$144,000</td>
+                <td><span class="status-badge in-stock">✅ In Stock</span></td>
+              </tr>
+              <tr>
+                <td>All Floors</td>
+                <td>Ceiling Diffusers</td>
+                <td class="product-name">630 Series</td>
+                <td class="manufacturer">Price Industries</td>
+                <td style="text-align:center">200</td>
+                <td class="cost" style="text-align:right">$180</td>
+                <td class="cost" style="text-align:right">$36,000</td>
+                <td><span class="status-badge in-stock">✅ In Stock</span></td>
+              </tr>
+              <tr>
+                <td>All Floors</td>
+                <td>Fire/Smoke Dampers</td>
+                <td class="product-name">FSD-311</td>
+                <td class="manufacturer">Greenheck</td>
+                <td style="text-align:center">85</td>
+                <td class="cost" style="text-align:right">$450</td>
+                <td class="cost" style="text-align:right">$38,250</td>
+                <td><span class="status-badge in-stock">✅ In Stock</span></td>
+              </tr>
+              <tr>
+                <td>Mechanical Room</td>
+                <td>ERV Units</td>
+                <td class="product-name">RV Series</td>
+                <td class="manufacturer">Greenheck</td>
+                <td style="text-align:center">6</td>
+                <td class="cost" style="text-align:right">$28,000</td>
+                <td class="cost" style="text-align:right">$168,000</td>
+                <td><span class="status-badge lead-time">⚠️ 4-week lead</span></td>
+              </tr>
+              <tr>
+                <td>Patient Floors</td>
+                <td>VRF System</td>
+                <td class="product-name">Airstage V-Series</td>
+                <td class="manufacturer">Fujitsu</td>
+                <td style="text-align:center">8</td>
+                <td class="cost" style="text-align:right">$32,000</td>
+                <td class="cost" style="text-align:right">$256,000</td>
+                <td><span class="status-badge in-stock">✅ In Stock</span></td>
+              </tr>
+              <tr>
+                <td>Lab Wing</td>
+                <td>Venturi Valves</td>
+                <td class="product-name">Antec VVC</td>
+                <td class="manufacturer">Price/Antec</td>
+                <td style="text-align:center">40</td>
+                <td class="cost" style="text-align:right">$850</td>
+                <td class="cost" style="text-align:right">$34,000</td>
+                <td><span class="status-badge in-stock">✅ In Stock</span></td>
+              </tr>
+              <tr>
+                <td>All Areas</td>
+                <td>Room Pressure Monitors</td>
+                <td class="product-name">TSI 8630</td>
+                <td class="manufacturer">TSI</td>
+                <td style="text-align:center">24</td>
+                <td class="cost" style="text-align:right">$1,200</td>
+                <td class="cost" style="text-align:right">$28,800</td>
+                <td><span class="status-badge in-stock">✅ In Stock</span></td>
+              </tr>
+              <tr>
+                <td>Kitchen</td>
+                <td>Kitchen Hood</td>
+                <td class="product-name">Synergy</td>
+                <td class="manufacturer">Greenheck</td>
+                <td style="text-align:center">2</td>
+                <td class="cost" style="text-align:right">$15,000</td>
+                <td class="cost" style="text-align:right">$30,000</td>
+                <td><span class="status-badge in-stock">✅ In Stock</span></td>
+              </tr>
+              <tr>
+                <td>Roof</td>
+                <td>Roof Curbs</td>
+                <td class="product-name">Buck Custom</td>
+                <td class="manufacturer">Buckley Mfg</td>
+                <td style="text-align:center">20</td>
+                <td class="cost" style="text-align:right">$800</td>
+                <td class="cost" style="text-align:right">$16,000</td>
+                <td><span class="status-badge fabrication">🔧 Fabrication</span></td>
+              </tr>
+              <tr>
+                <td>Roof</td>
+                <td>VRF Platforms</td>
+                <td class="product-name">Buckstrut</td>
+                <td class="manufacturer">Buckley Mfg</td>
+                <td style="text-align:center">8</td>
+                <td class="cost" style="text-align:right">$450</td>
+                <td class="cost" style="text-align:right">$3,600</td>
+                <td><span class="status-badge in-stock">✅ In Stock</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="eq-total-row">
+          <span class="total-label">Equipment Total (Buckley Catalog)</span>
+          <span class="total-value">$1,566,650</span>
+        </div>
+
+        <div class="chart-section">
+          <div class="chart-container">
+            <canvas id="mfgChart"></canvas>
+          </div>
+          <div class="chart-legend" id="mfgLegend"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PANEL 3: COMPLIANCE CHECK ═══ -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-left">
+          <div class="card-icon teal">🛡️</div>
+          <div>
+            <h2>Compliance Verification</h2>
+            <div class="card-subtitle">Boston, MA jurisdiction — 6 checks completed</div>
+          </div>
+        </div>
+        <div class="powered-by">Powered by ComplianceIQ</div>
+      </div>
+      <div class="card-body">
+        <div class="compliance-grid">
+          <div class="compliance-item pass">
+            <div class="ci-icon">✅</div>
+            <div>
+              <div class="ci-title">BERDO — Boston Emissions Reduction</div>
+              <div class="ci-detail">Building >20,000 sqft in Boston — BERDO applies. Recommended equipment meets 2030 emissions targets. Current path avoids annual penalties.</div>
+            </div>
+          </div>
+          <div class="compliance-item pass">
+            <div class="ci-icon">✅</div>
+            <div>
+              <div class="ci-title">MA Stretch Energy Code</div>
+              <div class="ci-detail">All equipment selections comply with Massachusetts Stretch Energy Code requirements. VRF + ERV combination exceeds minimum efficiency standards.</div>
+            </div>
+          </div>
+          <div class="compliance-item pass">
+            <div class="ci-icon">✅</div>
+            <div>
+              <div class="ci-title">Mass Save Eligible</div>
+              <div class="ci-detail">All recommended equipment qualifies for Mass Save incentive programs. VRF and heat pump installations eligible for enhanced rebates.</div>
+            </div>
+          </div>
+          <div class="compliance-item pass">
+            <div class="ci-icon">✅</div>
+            <div>
+              <div class="ci-title">ASHRAE 90.1-2022 FEI Compliant</div>
+              <div class="ci-detail">All Greenheck fan products meet Fan Energy Index requirements. Vektor-CH, RV Series, FSD-311, and Synergy all verified compliant.</div>
+            </div>
+          </div>
+          <div class="compliance-item warn">
+            <div class="ci-icon">⚠️</div>
+            <div>
+              <div class="ci-title">AIM Act — Refrigerant Compliance</div>
+              <div class="ci-detail">Fujitsu Airstage V-Series uses R-32 refrigerant — <strong>compliant</strong> under AIM Act. Legacy R-410A units are NOT recommended. Verify all existing systems during retrofit.</div>
+            </div>
+          </div>
+          <div class="compliance-item pass">
+            <div class="ci-icon">✅</div>
+            <div>
+              <div class="ci-title">ASHRAE 241 — Indoor Air Quality</div>
+              <div class="ci-detail">Greenheck ERV units + GPS Air ionization recommended for pathogen mitigation. Meets equivalent clean air delivery rate for healthcare occupancy.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="compliance-financial">
+          <div class="fin-card rebate">
+            <div class="fin-label">Mass Save Rebate Estimate</div>
+            <div class="fin-value">$45K – $65K</div>
+            <div class="fin-detail">VRF + heat pump installations</div>
+          </div>
+          <div class="fin-card penalty">
+            <div class="fin-label">BERDO Penalty if Non-Compliant</div>
+            <div class="fin-value">$365K/yr</div>
+            <div class="fin-detail">Annual penalty avoidance</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PANEL 4: AVAILABILITY & LOGISTICS ═══ -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-left">
+          <div class="card-icon teal">🚚</div>
+          <div>
+            <h2>Availability & Logistics</h2>
+            <div class="card-subtitle">Fulfillment plan from 5 Buckley warehouse locations</div>
+          </div>
+        </div>
+        <div class="powered-by">Powered by StockIQ</div>
+      </div>
+      <div class="card-body">
+        <div class="lead-summary">
+          <div class="lead-pill now">
+            <div class="lp-value">85%</div>
+            <div class="lp-label">Available Now</div>
+          </div>
+          <div class="lead-pill weeks">
+            <div class="lp-value">10%</div>
+            <div class="lp-label">2–4 Weeks</div>
+          </div>
+          <div class="lead-pill custom">
+            <div class="lp-value">5%</div>
+            <div class="lp-label">Custom Fabrication</div>
+          </div>
+        </div>
+
+        <div class="logistics-grid">
+          <div>
+            <div class="warehouse-list">
+              <div class="warehouse-item">
+                <div class="wh-icon">🏭</div>
+                <div class="wh-info">
+                  <div class="wh-name">Rockland, MA</div>
+                  <div class="wh-detail">Primary warehouse — closest to Boston job site</div>
+                </div>
+                <div class="wh-pct">65%</div>
+              </div>
+              <div class="warehouse-item">
+                <div class="wh-icon">🔧</div>
+                <div class="wh-info">
+                  <div class="wh-name">Hanover, MA</div>
+                  <div class="wh-detail">Manufacturing — roof curbs (2-week fabrication)</div>
+                </div>
+                <div class="wh-pct">20%</div>
+              </div>
+              <div class="warehouse-item">
+                <div class="wh-icon">📦</div>
+                <div class="wh-info">
+                  <div class="wh-name">Manchester, NH</div>
+                  <div class="wh-detail">Backup for VAV boxes — overflow capacity</div>
+                </div>
+                <div class="wh-pct">15%</div>
+              </div>
+            </div>
+            <div class="delivery-note">
+              🚛 <span><strong>Free next-day delivery</strong> on all in-stock items to Boston metro area. Buckley contractor account verified.</span>
+            </div>
+          </div>
+          <div>
+            <div class="timeline-chart-container">
+              <canvas id="timelineChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PANEL 5: BID SUMMARY ═══ -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-left">
+          <div class="card-icon orange">💼</div>
+          <div>
+            <h2>Integrated Bid Summary</h2>
+            <div class="card-subtitle">MaxBidding estimate + Buckley equipment intelligence</div>
+          </div>
+        </div>
+        <span style="background:#dcfce7;color:#166534;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;">✅ Bid Ready</span>
+      </div>
+      <div class="card-body">
+        <div class="bid-summary-grid">
+          <div>
+            <div class="bid-lines">
+              <div class="bid-line">
+                <div class="bl-label">Equipment <span class="buckley-tag">Buckley Catalog</span></div>
+                <div class="bl-value">$1,566,650</div>
+              </div>
+              <div class="bid-line">
+                <div class="bl-label">Installation Labor</div>
+                <div class="bl-value">$4,200,000</div>
+              </div>
+              <div class="bid-line">
+                <div class="bl-label">Ductwork & Piping</div>
+                <div class="bl-value">$5,800,000</div>
+              </div>
+              <div class="bid-line">
+                <div class="bl-label">Controls / BMS Integration</div>
+                <div class="bl-value">$1,800,000</div>
+              </div>
+              <div class="bid-line">
+                <div class="bl-label">Other Costs (permits, insurance, overhead, profit)</div>
+                <div class="bl-value">$4,633,350</div>
+              </div>
+              <div class="bid-line total">
+                <div class="bl-label">TOTAL BID</div>
+                <div class="bl-value">$18,000,000</div>
+              </div>
+              <div class="bid-line discount" style="border-top:none;padding-top:10px;">
+                <div class="bl-label">🏷️ Buckley Contractor Discount (8%)</div>
+                <div class="bl-value">−$125,332</div>
+              </div>
+              <div class="bid-line discount" style="padding-top:6px;">
+                <div class="bl-label">⚡ Mass Save Rebates (est.)</div>
+                <div class="bl-value">−$55,000</div>
+              </div>
+              <div class="bid-line" style="background:var(--buckley-teal-bg);margin:12px -24px 0;padding:16px 24px;border-radius:0 0 0 14px;">
+                <div class="bl-label" style="font-weight:700;color:var(--buckley-teal-dark);">Net Equipment Cost</div>
+                <div class="bl-value" style="font-size:22px;color:var(--buckley-teal-dark);">$1,386,318</div>
+              </div>
+            </div>
+          </div>
+          <div class="bid-right">
+            <div class="confidence-meter">
+              <div class="cm-label">Bid Confidence Score</div>
+              <div class="cm-value">94%</div>
+              <div class="cm-bar"><div class="cm-fill"></div></div>
+              <div class="cm-detail">Based on real-time Buckley pricing, availability, and compliance data</div>
+            </div>
+
+            <div class="bid-donut-container">
+              <canvas id="bidChart"></canvas>
+            </div>
+
+            <div class="bid-actions">
+              <button class="bid-btn primary" onclick="alert('Generating bid package with Buckley equipment schedules, compliance certificates, and MaxBidding cost breakdown...')">
+                📄 Generate Bid Package
+                <span class="btn-sub">Includes Buckley spec sheets & compliance docs</span>
+              </button>
+              <button class="bid-btn secondary" onclick="alert('Exporting to MaxBidding submission portal for Suffolk Construction review...')">
+                🔗 Export to MaxBidding
+                <span class="btn-sub">Submit to Suffolk Construction portal</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── Manufacturer Doughnut Chart ──
+const mfgData = [
+  { name: 'Price Industries', value: 754000, color: '#0ea5a0' },
+  { name: 'Greenheck', value: 508250, color: '#f59e0b' },
+  { name: 'Fujitsu', value: 256000, color: '#6366f1' },
+  { name: 'TSI', value: 28800, color: '#ec4899' },
+  { name: 'Buckley Mfg', value: 19600, color: '#7a1212' },
+];
+
+const total = mfgData.reduce((s, d) => s + d.value, 0);
+
+new Chart(document.getElementById('mfgChart'), {
+  type: 'doughnut',
+  data: {
+    labels: mfgData.map(d => d.name),
+    datasets: [{
+      data: mfgData.map(d => d.value),
+      backgroundColor: mfgData.map(d => d.color),
+      borderWidth: 2,
+      borderColor: '#fff',
+      hoverOffset: 6,
+    }]
+  },
+  options: {
+    cutout: '65%',
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => `${ctx.label}: $${ctx.parsed.toLocaleString()} (${((ctx.parsed/total)*100).toFixed(1)}%)`
+        }
+      }
+    }
+  }
+});
+
+// Build legend
+const legendEl = document.getElementById('mfgLegend');
+mfgData.forEach(d => {
+  const pct = ((d.value / total) * 100).toFixed(1);
+  legendEl.innerHTML += `
+    <div class="legend-item">
+      <span class="legend-color" style="background:${d.color}"></span>
+      <span>${d.name}</span>
+      <span class="legend-value">$${d.value.toLocaleString()}</span>
+      <span class="legend-pct">${pct}%</span>
+    </div>`;
+});
+
+// ── Timeline Bar Chart ──
+new Chart(document.getElementById('timelineChart'), {
+  type: 'bar',
+  data: {
+    labels: ['OR Ceiling', 'Lab Exhaust', 'VAV Boxes', 'Diffusers', 'Dampers', 'ERV Units', 'VRF System', 'Venturi', 'Monitors', 'Hoods', 'Roof Curbs', 'Platforms'],
+    datasets: [{
+      label: 'Delivery (days)',
+      data: [1, 1, 1, 1, 1, 28, 1, 1, 1, 1, 14, 1],
+      backgroundColor: [
+        '#16a34a','#16a34a','#16a34a','#16a34a','#16a34a',
+        '#f59e0b',
+        '#16a34a','#16a34a','#16a34a','#16a34a',
+        '#6366f1',
+        '#16a34a'
+      ],
+      borderRadius: 4,
+      barThickness: 14,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ctx.parsed.x === 1 ? 'Next-day delivery' : `${ctx.parsed.x} days lead time`
+        }
+      }
+    },
+    scales: {
+      x: {
+        title: { display: true, text: 'Days to Delivery', font: { size: 11, family: 'Inter' } },
+        grid: { color: '#f0f0f0' },
+        ticks: { font: { size: 10, family: 'Inter' } }
+      },
+      y: {
+        grid: { display: false },
+        ticks: { font: { size: 10, family: 'Inter' } }
+      }
+    }
+  }
+});
+
+// ── Bid Breakdown Doughnut ──
+new Chart(document.getElementById('bidChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Equipment', 'Labor', 'Ductwork & Piping', 'Controls/BMS', 'Other'],
+    datasets: [{
+      data: [1566650, 4200000, 5800000, 1800000, 4633350],
+      backgroundColor: ['#0ea5a0', '#7a1212', '#ff8c00', '#6366f1', '#94a3b8'],
+      borderWidth: 2,
+      borderColor: '#fff',
+    }]
+  },
+  options: {
+    cutout: '60%',
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { font: { size: 10, family: 'Inter' }, padding: 8, usePointStyle: true, pointStyleWidth: 8 }
+      },
+      tooltip: {
+        callbacks: {
+          label: ctx => `${ctx.label}: $${(ctx.parsed/1000000).toFixed(2)}M`
+        }
+      }
+    }
+  }
+});
+</script>
+
+</body>
+</html>
