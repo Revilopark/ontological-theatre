@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abitat · Universal Bid Creator</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Roboto+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#b01c1c;--red-dark:#8a1515;--red-light:#d43030;
+  --orange:#ff8c00;--orange-light:#ffaa33;
+  --bg:#f0f2f5;--white:#fff;--surface:#fafafa;
+  --border:#e2e5ea;--border2:#d0d4db;
+  --text:#1a1d23;--text2:#4a5568;--text3:#718096;
+  --success:#16a34a;--warning:#d97706;--danger:#dc2626;--info:#2563eb;
+  --sidebar:240px;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+input,textarea,select,button{font-family:'Inter',sans-serif}
+
+/* Sidebar */
+.sidebar{width:var(--sidebar);background:var(--red-dark);min-height:100vh;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;overflow-y:auto}
+.sb-brand{padding:20px 16px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.sb-logo{width:38px;height:38px;background:var(--orange);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;color:#fff;letter-spacing:-0.3px;margin-bottom:8px}
+.sb-name{font-size:14px;font-weight:700;color:#fff}
+.sb-sub{font-size:9px;color:rgba(255,255,255,0.5);letter-spacing:0.1em;text-transform:uppercase;margin-top:3px}
+.sb-section{padding:14px 0 6px}
+.sb-section-label{font-size:8.5px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.35);padding:0 14px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.65);font-weight:500;border-left:3px solid transparent;transition:all 0.15s}
+.nav-item:hover{background:rgba(255,255,255,0.07);color:#fff}
+.nav-item.active{background:rgba(255,140,0,0.18);color:#fff;border-left-color:var(--orange);font-weight:600}
+.nav-item .icon{font-size:15px;width:20px;text-align:center}
+.sb-footer{margin-top:auto;padding:16px;border-top:1px solid rgba(255,255,255,0.1)}
+.sb-footer-text{font-size:9px;color:rgba(255,255,255,0.35);line-height:1.6}
+.sb-step-indicator{margin:12px 14px;display:flex;gap:4px}
+.sb-step{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,0.12);transition:background 0.3s}
+.sb-step.done{background:var(--orange)}
+.sb-step.current{background:var(--orange);animation:pulse-step 1.5s infinite}
+@keyframes pulse-step{0%,100%{opacity:1}50%{opacity:0.5}}
+
+/* Main */
+.main{margin-left:var(--sidebar);flex:1;min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-title{font-size:15px;font-weight:700}
+.topbar-sub{font-size:11px;color:var(--text3)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.badge{font-size:10px;padding:4px 10px;border-radius:8px;font-weight:600}
+.badge-red{background:rgba(176,28,28,0.1);color:var(--red);border:1px solid rgba(176,28,28,0.2)}
+.badge-green{background:rgba(22,163,74,0.1);color:var(--success);border:1px solid rgba(22,163,74,0.2)}
+.badge-orange{background:rgba(255,140,0,0.1);color:var(--orange);border:1px solid rgba(255,140,0,0.2)}
+.content{flex:1;padding:28px;max-width:1200px}
+
+/* Panels */
+.panel{display:none}.panel.active{display:block}
+
+/* Cards */
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:14px;font-weight:700}
+.card-sub{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* Upload */
+.upload-zone{border:2px dashed var(--border2);border-radius:12px;padding:48px 24px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface)}
+.upload-zone:hover{border-color:var(--orange);background:rgba(255,140,0,0.03)}
+.upload-zone.dragover{border-color:var(--orange);background:rgba(255,140,0,0.06);transform:scale(1.01)}
+.upload-icon{font-size:40px;margin-bottom:12px}
+.upload-text{font-size:14px;font-weight:600;margin-bottom:4px}
+.upload-sub{font-size:12px;color:var(--text3)}
+.upload-or{font-size:11px;color:var(--text3);margin:16px 0}
+
+/* Textarea */
+.rfp-input{width:100%;min-height:240px;border:1px solid var(--border);border-radius:10px;padding:16px;font-size:13px;line-height:1.7;resize:vertical;outline:none;font-family:'Inter',sans-serif;color:var(--text)}
+.rfp-input:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,140,0,0.1)}
+.rfp-input::placeholder{color:var(--text3)}
+
+/* Buttons */
+.btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--red);color:#fff}.btn-primary:hover{background:var(--red-light)}
+.btn-orange{background:var(--orange);color:#fff}.btn-orange:hover{background:var(--orange-light)}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}.btn-outline:hover{border-color:var(--text3)}
+.btn-success{background:var(--success);color:#fff}
+.btn-sm{padding:7px 14px;font-size:11px}
+.btn-lg{padding:14px 28px;font-size:14px}
+.btn:disabled{opacity:0.4;cursor:not-allowed}
+
+/* Grid */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+/* Stats */
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px}
+.stat-label{font-size:9.5px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:6px}
+.stat-val{font-size:24px;font-weight:800}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* Extracted items */
+.req-list{list-style:none}
+.req-item{padding:12px 16px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;display:flex;align-items:flex-start;gap:12px;background:var(--white);transition:all 0.15s}
+.req-item:hover{border-color:var(--orange);box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+.req-check{width:20px;height:20px;border-radius:6px;border:2px solid var(--border2);cursor:pointer;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:12px;color:transparent;transition:all 0.15s}
+.req-check.checked{background:var(--success);border-color:var(--success);color:#fff}
+.req-content{flex:1}
+.req-title{font-size:13px;font-weight:600}
+.req-detail{font-size:11px;color:var(--text3);margin-top:3px;line-height:1.5}
+.req-tags{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.req-tag{font-size:9px;padding:2px 8px;border-radius:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em}
+.req-tag.scope{background:rgba(37,99,235,0.1);color:var(--info)}
+.req-tag.timeline{background:rgba(217,119,6,0.1);color:var(--warning)}
+.req-tag.cost{background:rgba(22,163,74,0.1);color:var(--success)}
+.req-tag.compliance{background:rgba(176,28,28,0.1);color:var(--red)}
+.req-tag.technical{background:rgba(139,92,246,0.1);color:#7c3aed}
+
+/* Line items table */
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:10px 12px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:10px 12px;border-bottom:1px solid rgba(0,0,0,0.04);vertical-align:top}
+tr:hover td{background:rgba(255,140,0,0.02)}
+.editable{outline:none;border-radius:4px;padding:2px 6px;min-width:60px;transition:background 0.15s}
+.editable:focus{background:rgba(255,140,0,0.06)}
+.row-total{font-weight:700;color:var(--text)}
+
+/* Section builder */
+.section-block{border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden}
+.section-header{padding:14px 18px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.section-header:hover{background:rgba(255,140,0,0.03)}
+.section-num{font-size:10px;font-weight:700;color:var(--orange);margin-right:10px}
+.section-name{font-size:13px;font-weight:600;flex:1}
+.section-toggle{font-size:14px;color:var(--text3);transition:transform 0.2s}
+.section-toggle.open{transform:rotate(180deg)}
+.section-body{padding:18px;display:none}
+.section-body.open{display:block}
+.section-textarea{width:100%;min-height:120px;border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;line-height:1.7;resize:vertical;outline:none;font-family:'Inter',sans-serif}
+.section-textarea:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,140,0,0.08)}
+
+/* Confidence meter */
+.confidence-bar{height:8px;background:#eee;border-radius:4px;overflow:hidden;margin-top:6px}
+.confidence-fill{height:100%;border-radius:4px;transition:width 0.6s ease}
+
+/* Print */
+.print-preview{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:48px;max-width:800px;margin:0 auto}
+.print-header{text-align:center;padding-bottom:24px;border-bottom:2px solid var(--red);margin-bottom:32px}
+.print-logo{font-size:28px;font-weight:900;color:var(--red)}
+.print-title{font-size:20px;font-weight:800;margin-top:8px}
+.print-sub{font-size:12px;color:var(--text3);margin-top:4px}
+.print-section{margin-bottom:28px}
+.print-section h3{font-size:14px;font-weight:700;color:var(--red);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.print-section p,.print-section li{font-size:13px;line-height:1.8;color:var(--text2)}
+.print-table{width:100%;border-collapse:collapse;margin-top:12px}
+.print-table th{background:var(--surface);padding:10px;font-size:11px;text-align:left;border:1px solid var(--border)}
+.print-table td{padding:10px;font-size:12px;border:1px solid var(--border)}
+
+/* Loading */
+.loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:999;display:none}
+.loading-overlay.show{display:flex}
+.loading-card{background:var(--white);border-radius:16px;padding:40px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:14px;font-weight:600}
+.loading-sub{font-size:12px;color:var(--text3);margin-top:4px}
+
+/* Responsive */
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main{margin-left:0}
+}
+@media print{
+  .sidebar,.topbar,.no-print{display:none!important}
+  .main{margin-left:0}
+  .content{padding:0}
+  body{background:#fff}
+}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo">ABITAT</div>
+    <div class="sb-name">Universal Bid Creator</div>
+    <div class="sb-sub">RFP → Winning Proposal</div>
+  </div>
+  <div class="sb-step-indicator" id="stepIndicator">
+    <div class="sb-step current" data-step="0"></div>
+    <div class="sb-step" data-step="1"></div>
+    <div class="sb-step" data-step="2"></div>
+    <div class="sb-step" data-step="3"></div>
+    <div class="sb-step" data-step="4"></div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-section-label">Workflow</div>
+    <div class="nav-item active" onclick="goStep(0,this)"><span class="icon">📄</span> Upload RFP</div>
+    <div class="nav-item" onclick="goStep(1,this)"><span class="icon">🔍</span> Extract Requirements</div>
+    <div class="nav-item" onclick="goStep(2,this)"><span class="icon">💰</span> Cost Estimator</div>
+    <div class="nav-item" onclick="goStep(3,this)"><span class="icon">📝</span> Bid Builder</div>
+    <div class="nav-item" onclick="goStep(4,this)"><span class="icon">🖨️</span> Preview & Export</div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-section-label">Company Profile</div>
+    <div class="nav-item" onclick="toggleCompanyModal()"><span class="icon">🏢</span> Company Info</div>
+    <div class="nav-item" onclick="toggleTemplates()"><span class="icon">📋</span> Bid Templates</div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-section-label">Intelligence</div>
+    <div class="nav-item" onclick="showWinTips()"><span class="icon">🎯</span> Win Rate Tips</div>
+    <div class="nav-item" onclick="showPricing()"><span class="icon">📊</span> Market Pricing</div>
+  </div>
+  <div class="sb-footer">
+    <div class="sb-footer-text">Abitat Bid Creator v1.0<br>AI-Powered Proposal Engine<br>© 2026 AI Inkwell</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div>
+        <div class="topbar-title" id="topTitle">Step 1: Upload RFP</div>
+        <div class="topbar-sub" id="topSub">Paste or upload your Request for Proposal</div>
+      </div>
+    </div>
+    <div class="topbar-right no-print">
+      <span class="badge badge-orange" id="bidStatus">Draft</span>
+      <button class="btn btn-sm btn-outline" onclick="saveDraft()">💾 Save</button>
+      <button class="btn btn-sm btn-primary" id="nextBtn" onclick="nextStep()">Next →</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- STEP 0: UPLOAD -->
+    <div class="panel active" id="step-0">
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">📄 Upload or Paste RFP</div><div class="card-sub">Support for PDF text, Word content, or raw text paste</div></div></div>
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDrop(event)">
+          <div class="upload-icon">📎</div>
+          <div class="upload-text">Drop RFP document here or click to browse</div>
+          <div class="upload-sub">PDF, DOCX, TXT — or paste text below</div>
+          <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt" style="display:none" onchange="handleFile(event)">
+        </div>
+        <div class="upload-or">— OR paste RFP text directly —</div>
+        <textarea class="rfp-input" id="rfpText" placeholder="Paste the full RFP text here...&#10;&#10;Include: scope of work, requirements, timeline, evaluation criteria, submission instructions, any special conditions..."></textarea>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px">🏢 Your Company Info</div>
+          <div style="display:grid;gap:10px">
+            <input type="text" id="companyName" placeholder="Company Name" style="padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none">
+            <input type="text" id="companyContact" placeholder="Contact Person & Title" style="padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none">
+            <input type="text" id="companyEmail" placeholder="Email" style="padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none">
+            <input type="text" id="companyPhone" placeholder="Phone" style="padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none">
+            <textarea id="companyDesc" placeholder="Brief company description / qualifications..." style="padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;min-height:80px;resize:vertical;outline:none;font-family:Inter,sans-serif"></textarea>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px">⚙️ Bid Settings</div>
+          <div style="display:grid;gap:10px">
+            <div>
+              <label style="font-size:11px;font-weight:600;color:var(--text3);display:block;margin-bottom:4px">Project Type</label>
+              <select id="projectType" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;background:#fff">
+                <option value="construction">Construction</option>
+                <option value="renovation">Renovation / Retrofit</option>
+                <option value="consulting">Consulting / Professional Services</option>
+                <option value="technology">Technology / Software</option>
+                <option value="maintenance">Maintenance / Facilities</option>
+                <option value="design">Design / Architecture</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;color:var(--text3);display:block;margin-bottom:4px">Target Margin %</label>
+              <input type="number" id="targetMargin" value="15" min="0" max="50" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;color:var(--text3);display:block;margin-bottom:4px">Bid Due Date</label>
+              <input type="date" id="bidDueDate" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;color:var(--text3);display:block;margin-bottom:4px">Pricing Strategy</label>
+              <select id="priceStrategy" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;background:#fff">
+                <option value="competitive">Competitive (win on price)</option>
+                <option value="balanced">Balanced (price + quality)</option>
+                <option value="premium">Premium (win on value)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 1: EXTRACT REQUIREMENTS -->
+    <div class="panel" id="step-1">
+      <div class="stat-row">
+        <div class="stat-card"><div class="stat-label">Requirements Found</div><div class="stat-val" id="reqCount">0</div></div>
+        <div class="stat-card"><div class="stat-label">Scope Items</div><div class="stat-val" id="scopeCount">0</div></div>
+        <div class="stat-card"><div class="stat-label">Compliance Items</div><div class="stat-val" id="compCount">0</div></div>
+        <div class="stat-card"><div class="stat-label">Timeline Items</div><div class="stat-val" id="timeCount">0</div></div>
+        <div class="stat-card"><div class="stat-label">Bid Confidence</div><div class="stat-val" id="confScore">—</div><div class="confidence-bar"><div class="confidence-fill" id="confFill" style="width:0%;background:var(--orange)"></div></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">🔍 Extracted Requirements</div><div class="card-sub">Review and confirm each requirement. Check items you'll address in your bid.</div></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-sm btn-outline" onclick="checkAll()">✅ Check All</button>
+            <button class="btn btn-sm btn-outline" onclick="addReq()">+ Add Item</button>
+          </div>
+        </div>
+        <ul class="req-list" id="reqList"></ul>
+      </div>
+    </div>
+
+    <!-- STEP 2: COST ESTIMATOR -->
+    <div class="panel" id="step-2">
+      <div class="stat-row">
+        <div class="stat-card"><div class="stat-label">Direct Costs</div><div class="stat-val" id="directTotal">$0</div></div>
+        <div class="stat-card"><div class="stat-label">Overhead</div><div class="stat-val" id="overheadTotal">$0</div></div>
+        <div class="stat-card"><div class="stat-label">Margin</div><div class="stat-val" id="marginTotal">$0</div></div>
+        <div class="stat-card"><div class="stat-label">Contingency</div><div class="stat-val" id="contingencyTotal">$0</div></div>
+        <div class="stat-card" style="border-left:3px solid var(--red)"><div class="stat-label">Total Bid Price</div><div class="stat-val" style="color:var(--red)" id="bidTotal">$0</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">💰 Line Item Cost Breakdown</div><div class="card-sub">Click any value to edit. Costs auto-calculate.</div></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-sm btn-outline" onclick="addLineItem()">+ Add Line</button>
+            <button class="btn btn-sm btn-outline" onclick="addFromReqs()">⬇️ Import from Requirements</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table id="costTable">
+            <thead><tr><th style="width:30px">#</th><th>Description</th><th>Category</th><th style="text-align:right">Qty</th><th style="text-align:right">Unit Cost</th><th style="text-align:right">Total</th><th style="width:30px"></th></tr></thead>
+            <tbody id="costBody"></tbody>
+            <tfoot>
+              <tr style="border-top:2px solid var(--border)"><td colspan="5" style="text-align:right;font-weight:700">Subtotal</td><td style="text-align:right;font-weight:700" id="subtotalCell">$0</td><td></td></tr>
+              <tr><td colspan="5" style="text-align:right;font-size:11px;color:var(--text3)">Overhead (<span class="editable" contenteditable id="ohRate">12</span>%)</td><td style="text-align:right" id="ohCell">$0</td><td></td></tr>
+              <tr><td colspan="5" style="text-align:right;font-size:11px;color:var(--text3)">Contingency (<span class="editable" contenteditable id="contRate">5</span>%)</td><td style="text-align:right" id="contCell">$0</td><td></td></tr>
+              <tr><td colspan="5" style="text-align:right;font-size:11px;color:var(--text3)">Margin (<span class="editable" contenteditable id="marginRate">15</span>%)</td><td style="text-align:right" id="marginCell">$0</td><td></td></tr>
+              <tr style="border-top:2px solid var(--red)"><td colspan="5" style="text-align:right;font-weight:800;font-size:14px;color:var(--red)">TOTAL BID PRICE</td><td style="text-align:right;font-weight:800;font-size:14px;color:var(--red)" id="grandTotal">$0</td><td></td></tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><div class="card-title" style="margin-bottom:12px">📊 Cost Distribution</div><div style="height:220px"><canvas id="costChart"></canvas></div></div>
+        <div class="card"><div class="card-title" style="margin-bottom:12px">🎯 Pricing Intelligence</div>
+          <div id="pricingTips" style="font-size:12px;color:var(--text2);line-height:1.8"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3: BID BUILDER -->
+    <div class="panel" id="step-3">
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">📝 Proposal Sections</div><div class="card-sub">Expand each section to write your response. AI-generated drafts provided.</div></div>
+          <button class="btn btn-sm btn-orange" onclick="generateAllDrafts()">🤖 Auto-Draft All Sections</button>
+        </div>
+        <div id="sectionList"></div>
+      </div>
+    </div>
+
+    <!-- STEP 4: PREVIEW & EXPORT -->
+    <div class="panel" id="step-4">
+      <div class="no-print" style="display:flex;gap:10px;margin-bottom:20px">
+        <button class="btn btn-primary btn-lg" onclick="window.print()">🖨️ Print / Save PDF</button>
+        <button class="btn btn-outline" onclick="exportJSON()">📥 Export JSON</button>
+        <button class="btn btn-outline" onclick="copyText()">📋 Copy as Text</button>
+      </div>
+      <div class="print-preview" id="printPreview"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-card">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Analyzing RFP...</div>
+    <div class="loading-sub" id="loadingSub">Extracting requirements and scope</div>
+  </div>
+</div>
+
+<script>
+let currentStep=0,requirements=[],lineItems=[],bidSections=[],costChart=null;
+
+const defaultSections=[
+  {id:'cover',num:'1',name:'Cover Letter',content:''},
+  {id:'exec',num:'2',name:'Executive Summary',content:''},
+  {id:'understanding',num:'3',name:'Understanding of Requirements',content:''},
+  {id:'approach',num:'4',name:'Technical Approach / Methodology',content:''},
+  {id:'scope',num:'5',name:'Scope of Work',content:''},
+  {id:'timeline',num:'6',name:'Project Timeline & Milestones',content:''},
+  {id:'team',num:'7',name:'Team & Qualifications',content:''},
+  {id:'experience',num:'8',name:'Relevant Experience & References',content:''},
+  {id:'pricing',num:'9',name:'Pricing & Cost Proposal',content:''},
+  {id:'terms',num:'10',name:'Terms & Conditions',content:''},
+  {id:'compliance',num:'11',name:'Compliance & Certifications',content:''},
+  {id:'appendix',num:'12',name:'Appendices',content:''}
+];
+
+bidSections=[...defaultSections];
+
+// Navigation
+function goStep(n,el){
+  currentStep=n;
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('step-'+n).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+  if(el)el.classList.add('active');
+  else document.querySelectorAll('.nav-item')[n].classList.add('active');
+  updateStepIndicator();
+  updateTopbar();
+  if(n===2)recalcCosts();
+  if(n===3)renderSections();
+  if(n===4)renderPreview();
+}
+function nextStep(){if(currentStep===0){analyzeRFP()}else if(currentStep<4){goStep(currentStep+1)}}
+function updateStepIndicator(){document.querySelectorAll('.sb-step').forEach((s,i)=>{s.classList.remove('done','current');if(i<currentStep)s.classList.add('done');if(i===currentStep)s.classList.add('current');})}
+function updateTopbar(){
+  const titles=['Step 1: Upload RFP','Step 2: Extract Requirements','Step 3: Cost Estimator','Step 4: Bid Builder','Step 5: Preview & Export'];
+  const subs=['Paste or upload your Request for Proposal','Review and confirm extracted requirements','Build your line-item cost breakdown','Write your proposal sections','Review final bid and export'];
+  document.getElementById('topTitle').textContent=titles[currentStep];
+  document.getElementById('topSub').textContent=subs[currentStep];
+  document.getElementById('nextBtn').textContent=currentStep===4?'✅ Done':'Next →';
+}
+
+// File handling
+function handleFile(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{document.getElementById('rfpText').value=ev.target.result};r.readAsText(f)}
+function handleDrop(e){e.preventDefault();e.target.classList.remove('dragover');const f=e.dataTransfer.files[0];if(f){const r=new FileReader();r.onload=ev=>{document.getElementById('rfpText').value=ev.target.result};r.readAsText(f)}}
+
+// RFP Analysis
+function analyzeRFP(){
+  const text=document.getElementById('rfpText').value.trim();
+  if(!text){alert('Please paste or upload an RFP first.');return}
+  showLoading('Analyzing RFP...','Extracting requirements, scope, and timeline');
+  setTimeout(()=>{
+    requirements=extractRequirements(text);
+    hideLoading();
+    goStep(1);
+    renderRequirements();
+  },1500);
+}
+
+function extractRequirements(text){
+  const reqs=[];const lines=text.split(/\n+/);let id=1;
+  const scopeKW=/shall|must|require|provide|deliver|install|construct|implement|perform|execute|supply|maintain|design|build|develop|create|ensure/i;
+  const timeKW=/deadline|timeline|schedule|duration|days|weeks|months|complete by|start date|end date|milestone|phase/i;
+  const costKW=/budget|cost|price|payment|invoice|rate|fee|compensation|funding|financial|bond|insurance/i;
+  const compKW=/comply|compliance|regulation|license|permit|certif|osha|ada|leed|code|standard|safety|bonding|warranty|guarantee/i;
+  const techKW=/specification|technical|material|equipment|system|software|hardware|platform|integration|API|database/i;
+
+  lines.forEach(line=>{
+    const l=line.trim();if(l.length<15)return;
+    const tags=[];let priority='medium';
+    if(scopeKW.test(l)){tags.push('scope')}
+    if(timeKW.test(l)){tags.push('timeline')}
+    if(costKW.test(l)){tags.push('cost')}
+    if(compKW.test(l)){tags.push('compliance')}
+    if(techKW.test(l)){tags.push('technical')}
+    if(tags.length===0&&l.length>30&&/[.;:]/.test(l)){tags.push('scope')}
+    if(tags.length>0){
+      if(/must|shall|mandatory|critical/i.test(l))priority='high';
+      if(/optional|preferred|desired|nice to have/i.test(l))priority='low';
+      reqs.push({id:id++,text:l.replace(/^[\d.)\-•*]+\s*/,''),tags,priority,checked:true,category:tags[0]||'scope'});
+    }
+  });
+  if(reqs.length===0){
+    const sentences=text.match(/[^.!?]+[.!?]+/g)||[];
+    sentences.forEach(s=>{
+      const t=s.trim();if(t.length>20){
+        const tags=[];
+        if(scopeKW.test(t))tags.push('scope');
+        if(timeKW.test(t))tags.push('timeline');
+        if(costKW.test(t))tags.push('cost');
+        if(compKW.test(t))tags.push('compliance');
+        if(techKW.test(t))tags.push('technical');
+        if(tags.length>0)reqs.push({id:id++,text:t,tags,priority:'medium',checked:true,category:tags[0]});
+      }
+    });
+  }
+  return reqs;
+}
+
+function renderRequirements(){
+  const list=document.getElementById('reqList');list.innerHTML='';
+  requirements.forEach(r=>{
+    const li=document.createElement('li');li.className='req-item';
+    li.innerHTML=`
+      <div class="req-check ${r.checked?'checked':''}" onclick="toggleReq(${r.id})">✓</div>
+      <div class="req-content">
+        <div class="req-title">${r.text.slice(0,120)}${r.text.length>120?'...':''}</div>
+        <div class="req-detail">${r.text.length>120?r.text:''}</div>
+        <div class="req-tags">${r.tags.map(t=>`<span class="req-tag ${t}">${t}</span>`).join('')}
+          <span class="req-tag" style="background:${r.priority==='high'?'rgba(220,38,38,0.1);color:#dc2626':r.priority==='low'?'rgba(107,114,128,0.1);color:#6b7280':'rgba(217,119,6,0.1);color:#d97706'}">${r.priority}</span>
+        </div>
+      </div>`;
+    list.appendChild(li);
+  });
+  const checked=requirements.filter(r=>r.checked);
+  document.getElementById('reqCount').textContent=requirements.length;
+  document.getElementById('scopeCount').textContent=requirements.filter(r=>r.tags.includes('scope')).length;
+  document.getElementById('compCount').textContent=requirements.filter(r=>r.tags.includes('compliance')).length;
+  document.getElementById('timeCount').textContent=requirements.filter(r=>r.tags.includes('timeline')).length;
+  const conf=Math.min(95,Math.round(50+requirements.length*2+checked.length));
+  document.getElementById('confScore').textContent=conf+'%';
+  document.getElementById('confFill').style.width=conf+'%';
+  document.getElementById('confFill').style.background=conf>75?'var(--success)':conf>50?'var(--warning)':'var(--danger)';
+}
+
+function toggleReq(id){const r=requirements.find(x=>x.id===id);if(r){r.checked=!r.checked;renderRequirements()}}
+function checkAll(){requirements.forEach(r=>r.checked=true);renderRequirements()}
+function addReq(){requirements.push({id:Date.now(),text:'New requirement — click to edit',tags:['scope'],priority:'medium',checked:true,category:'scope'});renderRequirements()}
+
+// Cost Estimator
+function addLineItem(desc='',cat='Labor',qty=1,unit=0){
+  lineItems.push({id:Date.now(),desc:desc||'New line item',category:cat,qty,unitCost:unit});
+  renderCostTable();
+}
+function addFromReqs(){
+  const scopeReqs=requirements.filter(r=>r.checked&&r.tags.includes('scope'));
+  scopeReqs.forEach(r=>{if(!lineItems.find(l=>l.desc===r.text.slice(0,80))){lineItems.push({id:Date.now()+Math.random(),desc:r.text.slice(0,80),category:'Labor',qty:1,unitCost:0})}});
+  renderCostTable();
+}
+function renderCostTable(){
+  const body=document.getElementById('costBody');body.innerHTML='';
+  lineItems.forEach((item,i)=>{
+    const total=item.qty*item.unitCost;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="color:var(--text3)">${i+1}</td>
+      <td><span class="editable" contenteditable onblur="updateItem(${item.id},'desc',this.textContent)">${item.desc}</span></td>
+      <td><select onchange="updateItem(${item.id},'category',this.value)" style="border:none;font-size:12px;background:transparent;outline:none;color:var(--text2)">
+        ${['Labor','Materials','Equipment','Subcontractor','Permits','Travel','Other'].map(c=>`<option ${c===item.category?'selected':''}>${c}</option>`).join('')}
+      </select></td>
+      <td style="text-align:right"><span class="editable" contenteditable onblur="updateItem(${item.id},'qty',parseFloat(this.textContent)||0)">${item.qty}</span></td>
+      <td style="text-align:right"><span class="editable" contenteditable onblur="updateItem(${item.id},'unitCost',parseFloat(this.textContent.replace(/[,$]/g,''))||0)">$${item.unitCost.toLocaleString()}</span></td>
+      <td style="text-align:right;font-weight:600">$${total.toLocaleString()}</td>
+      <td><span style="cursor:pointer;color:var(--danger);font-size:14px" onclick="removeItem(${item.id})">×</span></td>`;
+    body.appendChild(tr);
+  });
+  recalcCosts();
+}
+function updateItem(id,field,val){const item=lineItems.find(i=>i.id===id);if(item){item[field]=val;renderCostTable()}}
+function removeItem(id){lineItems=lineItems.filter(i=>i.id!==id);renderCostTable()}
+function recalcCosts(){
+  const sub=lineItems.reduce((s,i)=>s+i.qty*i.unitCost,0);
+  const oh=sub*(parseFloat(document.getElementById('ohRate').textContent)||12)/100;
+  const cont=sub*(parseFloat(document.getElementById('contRate').textContent)||5)/100;
+  const margin=sub*(parseFloat(document.getElementById('marginRate').textContent)||15)/100;
+  const total=sub+oh+cont+margin;
+  const fmt=n=>'$'+Math.round(n).toLocaleString();
+  document.getElementById('subtotalCell').textContent=fmt(sub);
+  document.getElementById('ohCell').textContent=fmt(oh);
+  document.getElementById('contCell').textContent=fmt(cont);
+  document.getElementById('marginCell').textContent=fmt(margin);
+  document.getElementById('grandTotal').textContent=fmt(total);
+  document.getElementById('directTotal').textContent=fmt(sub);
+  document.getElementById('overheadTotal').textContent=fmt(oh);
+  document.getElementById('marginTotal').textContent=fmt(margin);
+  document.getElementById('contingencyTotal').textContent=fmt(cont);
+  document.getElementById('bidTotal').textContent=fmt(total);
+  updateCostChart();
+  updatePricingTips(sub,total);
+}
+
+function updateCostChart(){
+  const cats={};lineItems.forEach(i=>{cats[i.category]=(cats[i.category]||0)+i.qty*i.unitCost});
+  const labels=Object.keys(cats);const data=Object.values(cats);
+  const colors=['#b01c1c','#ff8c00','#2563eb','#16a34a','#7c3aed','#d97706','#64748b'];
+  if(costChart)costChart.destroy();
+  const ctx=document.getElementById('costChart');
+  if(!ctx)return;
+  costChart=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors.slice(0,labels.length),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},padding:8}}}}});
+}
+
+function updatePricingTips(sub,total){
+  const strategy=document.getElementById('priceStrategy')?.value||'balanced';
+  const tips=document.getElementById('pricingTips');
+  const margin=((total-sub)/sub*100).toFixed(1);
+  tips.innerHTML=`
+    <p style="margin-bottom:10px"><strong>Strategy:</strong> ${strategy.charAt(0).toUpperCase()+strategy.slice(1)}</p>
+    <p style="margin-bottom:10px"><strong>Effective Markup:</strong> ${margin}% over direct costs</p>
+    <p style="margin-bottom:10px">${strategy==='competitive'?'⚡ Consider trimming overhead to 8-10% and margin to 10-12% for aggressive pricing.':strategy==='premium'?'💎 Emphasize value-add services. Your margin supports quality delivery and risk mitigation.':'⚖️ Your pricing is balanced. Ensure your technical proposal justifies the cost.'}</p>
+    <p style="margin-bottom:10px"><strong>Tip:</strong> ${lineItems.length<3?'Add more granular line items — evaluators trust detailed breakdowns over lump sums.':'Good detail level. Consider adding unit costs for transparency.'}</p>
+    <p><strong>Win Rate Insight:</strong> Bids within 5-15% of the median price win most often. Lowest price wins only ~30% of the time in quality-weighted evaluations.</p>
+  `;
+}
+
+// Bid Sections
+function renderSections(){
+  const list=document.getElementById('sectionList');list.innerHTML='';
+  bidSections.forEach(s=>{
+    const div=document.createElement('div');div.className='section-block';
+    div.innerHTML=`
+      <div class="section-header" onclick="toggleSection('${s.id}')">
+        <div style="display:flex;align-items:center"><span class="section-num">§${s.num}</span><span class="section-name">${s.name}</span></div>
+        <span class="section-toggle" id="toggle-${s.id}">▼</span>
+      </div>
+      <div class="section-body" id="body-${s.id}">
+        <textarea class="section-textarea" id="text-${s.id}" placeholder="Write your ${s.name.toLowerCase()} here...">${s.content}</textarea>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button class="btn btn-sm btn-orange" onclick="draftSection('${s.id}')">🤖 Auto-Draft</button>
+          <button class="btn btn-sm btn-outline" onclick="clearSection('${s.id}')">Clear</button>
+        </div>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+function toggleSection(id){
+  const body=document.getElementById('body-'+id);
+  const toggle=document.getElementById('toggle-'+id);
+  body.classList.toggle('open');toggle.classList.toggle('open');
+}
+function draftSection(id){
+  const s=bidSections.find(x=>x.id===id);if(!s)return;
+  const company=document.getElementById('companyName').value||'[Your Company]';
+  const desc=document.getElementById('companyDesc').value||'';
+  const reqText=requirements.filter(r=>r.checked).map(r=>r.text).join('; ');
+  const total=document.getElementById('grandTotal')?.textContent||'$0';
+  const drafts={
+    cover:`Dear Selection Committee,\n\n${company} is pleased to submit this proposal in response to your Request for Proposal. We have carefully reviewed all requirements and are confident in our ability to deliver exceptional results.\n\n${desc?desc+'\n\n':''}We look forward to the opportunity to discuss our approach in detail.\n\nSincerely,\n${document.getElementById('companyContact').value||'[Contact Name]'}\n${company}`,
+    exec:`${company} proposes a comprehensive solution addressing all ${requirements.length} identified requirements. Our approach emphasizes quality delivery, adherence to timeline, and cost-effective execution.\n\nKey highlights:\n• ${requirements.filter(r=>r.priority==='high').length} critical requirements addressed with proven methodologies\n• Competitive pricing at ${total}\n• Experienced team with directly relevant project history\n• Commitment to safety, compliance, and stakeholder communication`,
+    understanding:`Based on our thorough review of the RFP, we understand the following key requirements:\n\n${requirements.filter(r=>r.checked).slice(0,8).map((r,i)=>`${i+1}. ${r.text.slice(0,100)}`).join('\n')}\n\nWe have identified ${requirements.length} total requirements spanning scope, timeline, compliance, and technical specifications.`,
+    approach:`Our methodology follows a structured approach:\n\n1. PLANNING PHASE: Detailed project planning, resource allocation, and stakeholder alignment\n2. EXECUTION PHASE: Systematic delivery against milestones with quality checkpoints\n3. MONITORING: Regular progress reporting, budget tracking, and risk management\n4. CLOSEOUT: Final deliverables, documentation, and warranty/support period\n\nEach phase includes defined deliverables, acceptance criteria, and escalation protocols.`,
+    scope:`${company} will provide the following scope of work:\n\n${requirements.filter(r=>r.checked&&r.tags.includes('scope')).map((r,i)=>`• ${r.text.slice(0,100)}`).join('\n')}\n\nExclusions: Items not specifically listed in this scope are excluded unless agreed upon in writing.`,
+    timeline:`Proposed project timeline:\n\n• Project Kickoff: Within 2 weeks of notice to proceed\n• Phase 1 — Planning & Mobilization: Weeks 1-4\n• Phase 2 — Core Execution: Weeks 5-16\n• Phase 3 — Testing & QA: Weeks 17-20\n• Phase 4 — Closeout & Handover: Weeks 21-24\n\nMilestone deliverables and progress reports will be provided bi-weekly.`,
+    team:`${company} will assign a dedicated project team:\n\n• Project Manager — Senior-level, 10+ years experience\n• Technical Lead — Subject matter expert\n• Quality Assurance — Dedicated QA/compliance oversight\n• Support Staff — As required by scope\n\nAll team members hold relevant certifications and have been vetted for this project type.`,
+    experience:`${company} has successfully completed similar projects including:\n\n1. [Project Name] — [Client] — $[Value] — Completed [Date]\n2. [Project Name] — [Client] — $[Value] — Completed [Date]\n3. [Project Name] — [Client] — $[Value] — Completed [Date]\n\nReferences available upon request.`,
+    pricing:`Total Bid Price: ${total}\n\nSee attached detailed cost breakdown for line-item pricing.\n\n• Direct Costs: ${document.getElementById('directTotal')?.textContent||'$0'}\n• Overhead: ${document.getElementById('overheadTotal')?.textContent||'$0'}\n• Contingency: ${document.getElementById('contingencyTotal')?.textContent||'$0'}\n• Margin: ${document.getElementById('marginTotal')?.textContent||'$0'}\n\nPricing is valid for 90 days from submission date.`,
+    terms:`Standard terms:\n\n• Payment: Net 30 from invoice date\n• Change Orders: Written approval required for scope changes\n• Warranty: 12 months from substantial completion\n• Insurance: General liability, workers comp, professional liability maintained throughout\n• Dispute Resolution: Mediation first, then binding arbitration\n• Termination: 30 days written notice by either party`,
+    compliance:`${company} confirms compliance with:\n\n${requirements.filter(r=>r.tags.includes('compliance')).map(r=>`✓ ${r.text.slice(0,80)}`).join('\n')||'✓ All applicable federal, state, and local regulations\n✓ OSHA safety standards\n✓ Equal opportunity employment\n✓ Required licensing and certifications'}\n\nAll certifications and licenses are current and available for inspection.`,
+    appendix:`Appendices:\n\nA. Detailed Cost Breakdown\nB. Project Schedule (Gantt Chart)\nC. Team Resumes / CVs\nD. Certifications & Licenses\nE. Insurance Certificates\nF. References & Past Performance\nG. Relevant Work Samples`
+  };
+  const textarea=document.getElementById('text-'+id);
+  if(textarea){textarea.value=drafts[id]||'[Draft content for '+s.name+']';s.content=textarea.value}
+  const body=document.getElementById('body-'+id);
+  if(!body.classList.contains('open')){body.classList.add('open');document.getElementById('toggle-'+id).classList.add('open')}
+}
+function clearSection(id){document.getElementById('text-'+id).value='';const s=bidSections.find(x=>x.id===id);if(s)s.content=''}
+function generateAllDrafts(){showLoading('Generating bid...','Auto-drafting all 12 sections');setTimeout(()=>{bidSections.forEach(s=>draftSection(s.id));hideLoading()},2000)}
+
+// Preview
+function renderPreview(){
+  bidSections.forEach(s=>{const ta=document.getElementById('text-'+s.id);if(ta)s.content=ta.value});
+  const company=document.getElementById('companyName').value||'[Your Company]';
+  const total=document.getElementById('grandTotal')?.textContent||'$0';
+  const due=document.getElementById('bidDueDate')?.value||'TBD';
+  let html=`
+    <div class="print-header">
+      <div class="print-logo">${company}</div>
+      <div class="print-title">Proposal & Bid Submission</div>
+      <div class="print-sub">Prepared ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})} · Due: ${due} · Total: ${total}</div>
+    </div>`;
+  bidSections.forEach(s=>{
+    if(s.content.trim()){
+      html+=`<div class="print-section"><h3>§${s.num} ${s.name}</h3><p>${s.content.replace(/\n/g,'<br>')}</p></div>`;
+    }
+  });
+  if(lineItems.length>0){
+    html+=`<div class="print-section"><h3>Detailed Cost Breakdown</h3><table class="print-table"><thead><tr><th>#</th><th>Description</th><th>Category</th><th>Qty</th><th>Unit Cost</th><th>Total</th></tr></thead><tbody>`;
+    lineItems.forEach((item,i)=>{
+      html+=`<tr><td>${i+1}</td><td>${item.desc}</td><td>${item.category}</td><td>${item.qty}</td><td>$${item.unitCost.toLocaleString()}</td><td>$${(item.qty*item.unitCost).toLocaleString()}</td></tr>`;
+    });
+    html+=`</tbody></table><p style="margin-top:12px;font-weight:700;font-size:14px">Total Bid Price: ${total}</p></div>`;
+  }
+  html+=`<div style="margin-top:40px;padding-top:20px;border-top:1px solid var(--border);text-align:center;font-size:11px;color:var(--text3)">Generated by Abitat Universal Bid Creator · AI Inkwell · Confidential</div>`;
+  document.getElementById('printPreview').innerHTML=html;
+}
+
+// Export
+function exportJSON(){
+  bidSections.forEach(s=>{const ta=document.getElementById('text-'+s.id);if(ta)s.content=ta.value});
+  const data={company:{name:document.getElementById('companyName').value,contact:document.getElementById('companyContact').value,email:document.getElementById('companyEmail').value},requirements,lineItems,sections:bidSections,total:document.getElementById('grandTotal')?.textContent,created:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='bid-'+Date.now()+'.json';a.click();
+}
+function copyText(){
+  bidSections.forEach(s=>{const ta=document.getElementById('text-'+s.id);if(ta)s.content=ta.value});
+  let text=bidSections.filter(s=>s.content.trim()).map(s=>`${'='.repeat(40)}\n§${s.num} ${s.name}\n${'='.repeat(40)}\n\n${s.content}\n`).join('\n');
+  navigator.clipboard.writeText(text).then(()=>alert('Bid copied to clipboard!'));
+}
+function saveDraft(){localStorage.setItem('abitat-bid-draft',JSON.stringify({rfp:document.getElementById('rfpText').value,company:{name:document.getElementById('companyName').value,contact:document.getElementById('companyContact').value},requirements,lineItems}));alert('Draft saved!')}
+
+// Utility
+function showLoading(t,s){document.getElementById('loadingText').textContent=t;document.getElementById('loadingSub').textContent=s;document.getElementById('loadingOverlay').classList.add('show')}
+function hideLoading(){document.getElementById('loadingOverlay').classList.remove('show')}
+function showWinTips(){alert('🎯 Win Rate Tips:\n\n1. Address EVERY requirement — missed items = automatic disqualification\n2. Lead with understanding, not credentials\n3. Be specific about timeline and milestones\n4. Include risk mitigation strategies\n5. Price within 5-15% of market median\n6. Use their language — mirror RFP terminology\n7. Include references from similar projects\n8. Make the evaluation committee\'s job easy — follow their format exactly')}
+function showPricing(){alert('📊 Market Pricing Reference:\n\nConstruction: $150-350/SF (varies by type)\nRenovation: 60-80% of new construction\nConsulting: $150-400/hr (senior), $80-150/hr (junior)\nTechnology: 2-5x annual maintenance cost\n\nOverhead: 8-15% typical\nContingency: 3-10% (risk-dependent)\nMargin: 8-20% (market-dependent)')}
+function toggleCompanyModal(){document.querySelectorAll('.nav-item')[0].click()}
+function toggleTemplates(){alert('📋 Templates:\n• Federal Government (FAR compliant)\n• State/Municipal\n• Private Sector\n• Design-Build\n• IDIQ/Task Order\n\nComing soon in v2.0')}
+
+// Init — load draft
+window.addEventListener('load',()=>{
+  const draft=localStorage.getItem('abitat-bid-draft');
+  if(draft){try{const d=JSON.parse(draft);if(d.rfp)document.getElementById('rfpText').value=d.rfp;if(d.company){document.getElementById('companyName').value=d.company.name||'';document.getElementById('companyContact').value=d.company.contact||''}}catch(e){}}
+  document.getElementById('ohRate').addEventListener('input',recalcCosts);
+  document.getElementById('contRate').addEventListener('input',recalcCosts);
+  document.getElementById('marginRate').addEventListener('input',recalcCosts);
+  renderSections();
+});
+</script>
+</body>
+</html>
