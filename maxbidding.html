@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MaxBidding · HVAC Subcontractor Bidding System</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#b01c1c;--red-d:#8a1515;--red-l:#d43030;
+  --orange:#ff8c00;--orange-l:#ffaa33;--orange-dim:rgba(255,140,0,0.1);
+  --bg:#f0f2f5;--white:#fff;--surface:#fafafa;
+  --border:#e2e5ea;--border2:#cdd1d8;
+  --text:#1a1d23;--t2:#4a5568;--t3:#718096;
+  --ok:#16a34a;--warn:#d97706;--danger:#dc2626;--info:#2563eb;--purple:#7c3aed;
+  --sb:260px;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+input,textarea,select,button{font-family:'Inter',sans-serif}
+
+.sb{width:var(--sb);background:linear-gradient(180deg,#7a1212,#5a0e0e);min-height:100vh;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;overflow-y:auto}
+.sb-brand{padding:20px 16px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.sb-logo-row{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.sb-logo{width:38px;height:38px;background:linear-gradient(135deg,var(--orange),#e07000);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:10px;color:#fff;letter-spacing:0.5px;box-shadow:0 4px 12px rgba(255,140,0,0.3)}
+.sb-name{font-size:16px;font-weight:800;color:#fff;letter-spacing:-0.02em}
+.sb-sub{font-size:9px;color:rgba(255,255,255,0.45);letter-spacing:0.1em;text-transform:uppercase;margin-top:2px}
+.sb-section{padding:12px 0 4px}
+.sb-label{font-size:8px;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,255,255,0.3);padding:0 16px;margin-bottom:4px}
+.nav{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.6);font-weight:500;border-left:3px solid transparent;transition:all 0.12s}
+.nav:hover{background:rgba(255,255,255,0.06);color:#fff}
+.nav.on{background:rgba(255,140,0,0.15);color:#fff;border-left-color:var(--orange);font-weight:600}
+.nav .ic{font-size:15px;width:20px;text-align:center}
+.nav .badge-count{margin-left:auto;background:var(--orange);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;min-width:20px;text-align:center}
+.sb-stats{padding:16px;border-top:1px solid rgba(255,255,255,0.06);margin-top:auto}
+.sb-stat{display:flex;justify-content:space-between;padding:6px 0;font-size:11px}
+.sb-stat .label{color:rgba(255,255,255,0.4)}
+.sb-stat .val{color:var(--orange);font-weight:700}
+.sb-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.06)}
+.sb-footer-text{font-size:8.5px;color:rgba(255,255,255,0.25);line-height:1.6}
+
+.main{margin-left:var(--sb);flex:1;min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40}
+.topbar-title{font-size:15px;font-weight:700}
+.topbar-sub{font-size:11px;color:var(--t3)}
+.content{flex:1;padding:24px 28px;overflow-y:auto}
+
+.panel{display:none}.panel.on{display:block}
+
+.badge{font-size:10px;padding:4px 10px;border-radius:8px;font-weight:600}
+.badge-r{background:rgba(176,28,28,0.1);color:var(--red);border:1px solid rgba(176,28,28,0.2)}
+.badge-g{background:rgba(22,163,74,0.1);color:var(--ok);border:1px solid rgba(22,163,74,0.2)}
+.badge-o{background:rgba(255,140,0,0.1);color:var(--orange);border:1px solid rgba(255,140,0,0.2)}
+.badge-b{background:rgba(37,99,235,0.1);color:var(--info);border:1px solid rgba(37,99,235,0.2)}
+
+.btn{padding:9px 18px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all 0.12s;display:inline-flex;align-items:center;gap:6px}
+.btn-p{background:var(--red);color:#fff}.btn-p:hover{background:var(--red-l)}
+.btn-o{background:var(--orange);color:#fff}.btn-o:hover{background:var(--orange-l)}
+.btn-out{background:transparent;border:1px solid var(--border);color:var(--t2)}.btn-out:hover{border-color:var(--t3)}
+.btn-ok{background:var(--ok);color:#fff}
+.btn-sm{padding:6px 12px;font-size:11px}
+
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}.g4{grid-template-columns:1fr 1fr 1fr 1fr}
+@media(max-width:1000px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px}
+.card-t{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card-sub{font-size:11px;color:var(--t3);margin-top:2px}
+
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:28px;font-weight:800}
+.stat .l{font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--t3);margin-top:4px}
+
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:8px 10px;font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:0.08em;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 10px;border-bottom:1px solid rgba(0,0,0,0.03)}
+tr:hover td{background:rgba(255,140,0,0.02)}
+.ed{outline:none;border-radius:3px;padding:2px 4px;min-width:50px}.ed:focus{background:rgba(255,140,0,0.06)}
+
+.form-group{margin-bottom:14px}
+.form-label{font-size:11px;font-weight:600;color:var(--t3);margin-bottom:4px;display:block}
+.form-input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;background:#fff}
+.form-input:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,140,0,0.08)}
+.form-select{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;background:#fff;appearance:auto}
+
+.upload-zone{border:2px dashed var(--border2);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface)}
+.upload-zone:hover{border-color:var(--orange);background:rgba(255,140,0,0.02)}
+
+.tag{font-size:9px;padding:2px 8px;border-radius:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em;display:inline-block}
+.tag-scope{background:rgba(37,99,235,0.1);color:var(--info)}
+.tag-time{background:rgba(217,119,6,0.1);color:var(--warn)}
+.tag-cost{background:rgba(22,163,74,0.1);color:var(--ok)}
+.tag-comp{background:rgba(176,28,28,0.1);color:var(--red)}
+.tag-tech{background:rgba(124,58,237,0.1);color:var(--purple)}
+.tag-high{background:rgba(220,38,38,0.1);color:var(--danger)}
+.tag-med{background:rgba(217,119,6,0.1);color:var(--warn)}
+.tag-low{background:rgba(107,114,128,0.1);color:#6b7280}
+
+.req-item{padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;background:var(--white)}
+.req-item:hover{border-color:var(--orange)}
+.chk{width:18px;height:18px;border-radius:5px;border:2px solid var(--border2);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:transparent;margin-top:2px}
+.chk.on{background:var(--ok);border-color:var(--ok);color:#fff}
+
+.bid-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:12px;cursor:pointer;transition:all 0.15s}
+.bid-card:hover{border-color:var(--orange);box-shadow:0 2px 12px rgba(0,0,0,0.05)}
+.bid-card .row{display:flex;align-items:center;justify-content:space-between}
+.bid-card .name{font-size:14px;font-weight:700}
+.bid-card .gc{font-size:11px;color:var(--t3);margin-top:2px}
+.bid-card .meta{display:flex;gap:8px;margin-top:10px}
+.bid-card .meta-item{font-size:11px;color:var(--t2)}
+
+.progress-bar{height:6px;background:#eee;border-radius:3px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;border-radius:3px;transition:width 0.4s}
+
+.section-block{border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden}
+.section-hdr{padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.section-hdr:hover{background:rgba(255,140,0,0.03)}
+.section-num{font-size:10px;font-weight:700;color:var(--orange);margin-right:8px}
+.section-name{font-size:12px;font-weight:600;flex:1}
+.section-body{padding:16px;display:none}
+.section-body.open{display:block}
+.section-ta{width:100%;min-height:100px;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12px;line-height:1.7;resize:vertical;outline:none;font-family:'Inter',sans-serif}
+.section-ta:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,140,0,0.06)}
+
+.risk-flag{padding:12px 16px;border-radius:8px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;font-size:12px;line-height:1.5}
+.risk-flag.high{background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.15);color:var(--danger)}
+.risk-flag.med{background:rgba(217,119,6,0.06);border:1px solid rgba(217,119,6,0.15);color:var(--warn)}
+.risk-flag.low{background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.15);color:var(--info)}
+
+.compliance-item{padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.04);display:flex;align-items:center;gap:10px;font-size:12px}
+.compliance-item:last-child{border-bottom:none}
+.comp-chk{width:16px;height:16px;border-radius:4px;border:2px solid var(--border2);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent}
+.comp-chk.on{background:var(--ok);border-color:var(--ok);color:#fff}
+
+.print-preview{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:40px;max-width:800px;margin:0 auto}
+.print-hdr{text-align:center;padding-bottom:20px;border-bottom:2px solid var(--red);margin-bottom:28px}
+.print-logo{font-size:24px;font-weight:900;color:var(--red)}
+.print-title{font-size:18px;font-weight:800;margin-top:6px}
+.print-sub{font-size:11px;color:var(--t3);margin-top:4px}
+.print-section{margin-bottom:24px}
+.print-section h3{font-size:13px;font-weight:700;color:var(--red);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.print-section p{font-size:12px;line-height:1.8;color:var(--t2)}
+
+.chart-box{height:200px;position:relative}
+
+@media(max-width:768px){.sb{display:none}.main{margin-left:0}}
+@media print{.sb,.topbar,.no-print{display:none!important}.main{margin-left:0}.content{padding:0}body{background:#fff}}
+</style>
+</head>
+<body>
+
+<div class="sb">
+  <div class="sb-brand">
+    <div class="sb-logo-row"><div class="sb-logo">MAX</div><div class="sb-name">MaxBidding</div></div>
+    <div class="sb-sub">HVAC Subcontractor Bidding System</div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Dashboard</div>
+    <div class="nav on" onclick="go('dash',this)"><span class="ic">📊</span> Active Bids<span class="badge-count" id="bidCount">0</span></div>
+    <div class="nav" onclick="go('new',this)"><span class="ic">➕</span> New Bid</div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Current Bid</div>
+    <div class="nav" onclick="go('rfp',this)"><span class="ic">📄</span> GC Requirements</div>
+    <div class="nav" onclick="go('reqs',this)"><span class="ic">🔍</span> Scope Extraction</div>
+    <div class="nav" onclick="go('takeoff',this)"><span class="ic">🔧</span> Equipment Takeoff</div>
+    <div class="nav" onclick="go('cost',this)"><span class="ic">💰</span> Cost Estimator</div>
+    <div class="nav" onclick="go('build',this)"><span class="ic">📝</span> Proposal Builder</div>
+    <div class="nav" onclick="go('preview',this)"><span class="ic">🖨️</span> Preview & Submit</div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Intelligence</div>
+    <div class="nav" onclick="go('compliance',this)"><span class="ic">✅</span> Compliance</div>
+    <div class="nav" onclick="go('risks',this)"><span class="ic">⚠️</span> Risk Flags</div>
+    <div class="nav" onclick="go('library',this)"><span class="ic">📚</span> Cost Library</div>
+  </div>
+  <div class="sb-stats">
+    <div class="sb-stat"><span class="label">Win Rate</span><span class="val" id="winRate">—</span></div>
+    <div class="sb-stat"><span class="label">Avg Margin</span><span class="val" id="avgMargin">—</span></div>
+    <div class="sb-stat"><span class="label">Pipeline</span><span class="val" id="pipeline">$0</span></div>
+  </div>
+  <div class="sb-footer"><div class="sb-footer-text">MaxBidding v2.0<br>HVAC Bid Intelligence Engine<br>© 2026 AI Inkwell</div></div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div><div class="topbar-title" id="topTitle">Dashboard</div><div class="topbar-sub" id="topSub">Active bids and pipeline overview</div></div>
+    <div class="no-print" style="display:flex;gap:8px;align-items:center">
+      <span class="badge badge-o" id="statusBadge">MaxBidding</span>
+      <button class="btn btn-sm btn-out" onclick="saveDraft()">💾 Save</button>
+    </div>
+  </div>
+  <div class="content">
+
+<!-- DASHBOARD -->
+<div class="panel on" id="p-dash">
+  <div class="stat-row" id="dashStats">
+    <div class="stat"><div class="v" style="color:var(--red)" id="dActive">0</div><div class="l">Active Bids</div></div>
+    <div class="stat"><div class="v" style="color:var(--ok)" id="dWon">0</div><div class="l">Won</div></div>
+    <div class="stat"><div class="v" style="color:var(--danger)" id="dLost">0</div><div class="l">Lost</div></div>
+    <div class="stat"><div class="v" style="color:var(--orange)" id="dPipeline">$0</div><div class="l">Pipeline Value</div></div>
+    <div class="stat"><div class="v" style="color:var(--info)" id="dAvgDays">—</div><div class="l">Avg Days to Bid</div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card">
+      <div class="card-t">📋 Active Bids</div>
+      <div id="bidList"><p style="color:var(--t3);font-size:13px;padding:20px 0;text-align:center">No active bids yet. Click "New Bid" to start.</p></div>
+    </div>
+    <div class="card">
+      <div class="card-t">📈 Bid Pipeline</div>
+      <div class="chart-box"><canvas id="pipeChart"></canvas></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="card-t">⏰ Upcoming Deadlines</div>
+    <div id="deadlineList"><p style="color:var(--t3);font-size:12px">No upcoming deadlines.</p></div>
+  </div>
+</div>
+
+<!-- NEW BID -->
+<div class="panel" id="p-new">
+  <div class="card">
+    <div class="card-t">➕ Create New Bid</div>
+    <div class="grid g2">
+      <div>
+        <div class="form-group"><label class="form-label">Project Name</label><input class="form-input" id="nProjName" placeholder="e.g. City Hall HVAC Renovation"></div>
+        <div class="form-group"><label class="form-label">General Contractor</label><input class="form-input" id="nGC" placeholder="e.g. Turner Construction"></div>
+        <div class="form-group"><label class="form-label">Project Location</label><input class="form-input" id="nLoc" placeholder="e.g. Syracuse, NY"></div>
+        <div class="form-group"><label class="form-label">Bid Due Date</label><input class="form-input" id="nDue" type="date"></div>
+      </div>
+      <div>
+        <div class="form-group"><label class="form-label">Project Type</label>
+          <select class="form-select" id="nType">
+            <option value="commercial">Commercial HVAC</option>
+            <option value="hospital">Hospital / Healthcare HVAC</option>
+            <option value="pharma">Pharmaceutical / Cleanroom</option>
+            <option value="residential">Residential Construction</option>
+            <option value="municipal">Municipal Rehab (US)</option>
+            <option value="mideast">Kuwait / Middle East</option>
+            <option value="oilgas">Oil & Gas / Industrial</option>
+            <option value="banking">Banking / Financial</option>
+            <option value="institutional">Institutional / Campus</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Estimated Value</label><input class="form-input" id="nValue" placeholder="e.g. 500000" type="number"></div>
+        <div class="form-group"><label class="form-label">Target Margin %</label><input class="form-input" id="nMargin" value="15" type="number"></div>
+        <div class="form-group"><label class="form-label">GC Contact</label><input class="form-input" id="nGCContact" placeholder="PM name & email"></div>
+      </div>
+    </div>
+    <div style="margin-top:16px"><button class="btn btn-o" onclick="createBid()">🚀 Create Bid & Start Takeoff</button></div>
+  </div>
+</div>
+
+<!-- GC REQUIREMENTS -->
+<div class="panel" id="p-rfp">
+  <div class="card">
+    <div class="card-t">📄 GC Specification / RFP Input</div>
+    <div class="upload-zone" onclick="document.getElementById('fileIn').click()">
+      <div style="font-size:36px;margin-bottom:8px">📎</div>
+      <div style="font-size:14px;font-weight:600">Drop GC spec package here or click to browse</div>
+      <div style="font-size:12px;color:var(--t3);margin-top:4px">PDF, DOCX, TXT — or paste below</div>
+      <input type="file" id="fileIn" accept=".pdf,.doc,.docx,.txt" style="display:none" onchange="handleFile(event)">
+    </div>
+    <div style="margin:16px 0;text-align:center;font-size:11px;color:var(--t3)">— OR paste GC specifications —</div>
+    <textarea class="section-ta" id="rfpText" style="min-height:200px" placeholder="Paste the GC's HVAC specification, scope of work, equipment schedule, or bid invitation here..."></textarea>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn btn-p" onclick="analyzeSpec()">🔍 Analyze & Extract Requirements</button>
+      <button class="btn btn-out" onclick="loadSample()">📋 Load Sample Spec</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCOPE EXTRACTION -->
+<div class="panel" id="p-reqs">
+  <div class="stat-row">
+    <div class="stat"><div class="v" id="rTotal">0</div><div class="l">Requirements</div></div>
+    <div class="stat"><div class="v" id="rScope">0</div><div class="l">Scope Items</div></div>
+    <div class="stat"><div class="v" id="rComp">0</div><div class="l">Compliance</div></div>
+    <div class="stat"><div class="v" id="rTech">0</div><div class="l">Technical</div></div>
+    <div class="stat"><div class="v" id="rConf">—</div><div class="l">Bid Confidence</div></div>
+  </div>
+  <div class="card">
+    <div class="card-t" style="justify-content:space-between"><span>🔍 Extracted Requirements</span><div><button class="btn btn-sm btn-out" onclick="checkAllReqs()">✅ All</button> <button class="btn btn-sm btn-out" onclick="addReq()">+ Add</button></div></div>
+    <div id="reqList"></div>
+  </div>
+</div>
+
+<!-- EQUIPMENT TAKEOFF -->
+<div class="panel" id="p-takeoff">
+  <div class="card">
+    <div class="card-t" style="justify-content:space-between"><span>🔧 HVAC Equipment Takeoff</span><div><button class="btn btn-sm btn-o" onclick="autoPopulateEquip()">⚡ Auto-Populate from Spec</button> <button class="btn btn-sm btn-out" onclick="addEquipRow()">+ Add</button></div></div>
+    <div style="overflow-x:auto">
+      <table><thead><tr><th>Equipment</th><th>Make/Model</th><th>Capacity</th><th>Qty</th><th style="text-align:right">Unit Cost</th><th style="text-align:right">Total</th><th>Notes</th><th></th></tr></thead>
+      <tbody id="equipBody"></tbody>
+      <tfoot><tr style="border-top:2px solid var(--border)"><td colspan="5" style="text-align:right;font-weight:700">Equipment Subtotal</td><td style="text-align:right;font-weight:700" id="equipTotal">$0</td><td colspan="2"></td></tr></tfoot>
+      </table>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card">
+      <div class="card-t">📦 Equipment Distribution</div>
+      <div class="chart-box"><canvas id="equipChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-t">📋 Approved Makes</div>
+      <div id="makesList" style="font-size:12px;color:var(--t2);line-height:1.8">
+        <p>Select a project type to load approved manufacturers.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COST ESTIMATOR -->
+<div class="panel" id="p-cost">
+  <div class="stat-row">
+    <div class="stat"><div class="v" id="cEquip">$0</div><div class="l">Equipment</div></div>
+    <div class="stat"><div class="v" id="cLabor">$0</div><div class="l">Labor</div></div>
+    <div class="stat"><div class="v" id="cMaterial">$0</div><div class="l">Materials</div></div>
+    <div class="stat"><div class="v" id="cSub">$0</div><div class="l">Subcontractors</div></div>
+    <div class="stat"><div class="v" id="cOH">$0</div><div class="l">Overhead</div></div>
+    <div class="stat" style="border-left:3px solid var(--red)"><div class="v" style="color:var(--red)" id="cTotal">$0</div><div class="l">Total Bid Price</div></div>
+  </div>
+  <div class="card">
+    <div class="card-t" style="justify-content:space-between"><span>💰 Full Cost Breakdown</span><div><button class="btn btn-sm btn-out" onclick="addCostRow()">+ Add Line</button> <button class="btn btn-sm btn-out" onclick="importEquipToCost()">⬇️ Import Equipment</button></div></div>
+    <div style="overflow-x:auto">
+      <table><thead><tr><th>#</th><th>Description</th><th>Category</th><th style="text-align:right">Qty</th><th style="text-align:right">Unit</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th><th></th></tr></thead>
+      <tbody id="costBody"></tbody>
+      <tfoot>
+        <tr style="border-top:2px solid var(--border)"><td colspan="6" style="text-align:right;font-weight:700">Direct Cost Subtotal</td><td style="text-align:right;font-weight:700" id="costSub">$0</td><td></td></tr>
+        <tr><td colspan="6" style="text-align:right;font-size:11px;color:var(--t3)">Overhead (<span class="ed" contenteditable id="costOH">12</span>%)</td><td style="text-align:right" id="costOHAmt">$0</td><td></td></tr>
+        <tr><td colspan="6" style="text-align:right;font-size:11px;color:var(--t3)">Contingency (<span class="ed" contenteditable id="costCont">8</span>%)</td><td style="text-align:right" id="costContAmt">$0</td><td></td></tr>
+        <tr><td colspan="6" style="text-align:right;font-size:11px;color:var(--t3)">Margin (<span class="ed" contenteditable id="costMargin">15</span>%)</td><td style="text-align:right" id="costMarginAmt">$0</td><td></td></tr>
+        <tr style="border-top:2px solid var(--red)"><td colspan="6" style="text-align:right;font-weight:800;font-size:14px;color:var(--red)">TOTAL BID PRICE</td><td style="text-align:right;font-weight:800;font-size:14px;color:var(--red)" id="costGrand">$0</td><td></td></tr>
+      </tfoot>
+      </table>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><div class="card-t">📊 Cost Distribution</div><div class="chart-box"><canvas id="costChart"></canvas></div></div>
+    <div class="card"><div class="card-t">🎯 Pricing Intelligence</div><div id="priceTips" style="font-size:12px;color:var(--t2);line-height:1.8"></div></div>
+  </div>
+</div>
+
+<!-- PROPOSAL BUILDER -->
+<div class="panel" id="p-build">
+  <div class="card">
+    <div class="card-t" style="justify-content:space-between"><span>📝 Bid Proposal Sections</span><button class="btn btn-sm btn-o" onclick="draftAll()">🤖 Auto-Draft All</button></div>
+    <div id="sectionList"></div>
+  </div>
+</div>
+
+<!-- PREVIEW -->
+<div class="panel" id="p-preview">
+  <div class="no-print" style="display:flex;gap:10px;margin-bottom:20px">
+    <button class="btn btn-p" onclick="window.print()">🖨️ Print / PDF</button>
+    <button class="btn btn-out" onclick="exportJSON()">📥 Export JSON</button>
+    <button class="btn btn-out" onclick="copyBid()">📋 Copy Text</button>
+    <button class="btn btn-ok" onclick="markSubmitted()">✅ Mark as Submitted</button>
+  </div>
+  <div class="print-preview" id="printArea"></div>
+</div>
+
+<!-- COMPLIANCE -->
+<div class="panel" id="p-compliance">
+  <div class="card">
+    <div class="card-t">✅ Compliance Checklist</div>
+    <div class="card-sub" style="margin-bottom:16px">Based on project type. Check items as you prepare them.</div>
+    <div id="compList"></div>
+  </div>
+</div>
+
+<!-- RISK FLAGS -->
+<div class="panel" id="p-risks">
+  <div class="card">
+    <div class="card-t">⚠️ Risk Analysis</div>
+    <div id="riskList"></div>
+  </div>
+</div>
+
+<!-- COST LIBRARY -->
+<div class="panel" id="p-library">
+  <div class="card">
+    <div class="card-t">📚 HVAC Cost Reference Library</div>
+    <div class="card-sub" style="margin-bottom:16px">Market rates from analyzed bid documents. Select region for localized pricing.</div>
+    <div style="margin-bottom:16px"><select class="form-select" style="max-width:300px" onchange="loadLibrary(this.value)"><option value="india">India (₹ INR)</option><option value="us">United States ($ USD)</option><option value="mideast">Kuwait / Saudi Arabia</option><option value="pakistan">Pakistan (₹ PKR)</option></select></div>
+    <div id="libraryContent"></div>
+  </div>
+</div>
+
+  </div>
+</div>
+
+<script>
+// DATA
+let bids=[],currentBid=null,reqs=[],equip=[],costs=[],sections=[];
+const defaultSections=[
+  {id:'cover',n:'1',name:'Cover Letter',c:''},
+  {id:'exec',n:'2',name:'Executive Summary',c:''},
+  {id:'qual',n:'3',name:'Qualifications & Experience',c:''},
+  {id:'approach',n:'4',name:'Technical Approach',c:''},
+  {id:'scope',n:'5',name:'Scope of Work',c:''},
+  {id:'equip',n:'6',name:'Equipment Schedule',c:''},
+  {id:'timeline',n:'7',name:'Project Schedule',c:''},
+  {id:'team',n:'8',name:'Key Personnel',c:''},
+  {id:'pricing',n:'9',name:'Pricing Summary',c:''},
+  {id:'exclusions',n:'10',name:'Exclusions & Clarifications',c:''},
+  {id:'compliance',n:'11',name:'Compliance & Insurance',c:''},
+  {id:'terms',n:'12',name:'Terms & Conditions',c:''}
+];
+
+const complianceByType={
+  commercial:['Performance Guarantee Proforma','Approved Makes Compliance','BIS Standards Checklist','10-Year Experience CVs','Workers Compensation Certificate','General Liability Insurance','Professional Indemnity Insurance','Tax Compliance Certificates'],
+  hospital:['Performance Guarantee','Approved Makes Compliance','NABH Standards Compliance','Infection Control Plan','Phased Construction Plan','Workers Comp','GL Insurance ($1M+)','Lead Liability (if applicable)','Background Checks for Personnel'],
+  pharma:['WHO-GMP Compliance Docs','Validation Protocols (IQ/OQ/PQ)','Room Data Sheets','Deviation Format','Cleanroom Classification Certs','21 CFR Part 11 Controls Compliance','HEPA Filter DOP Test Certs'],
+  municipal:['Business Certificate (DBA)','Workers Compensation','GL Insurance ($1M minimum)','Lead Liability Insurance ($500K)','Non-Collusion Affidavit','MBE/WBE Compliance (9% MBE, 6% WBE)','Bid Breakdown Sheet','EEO Requirements'],
+  mideast:['CTC Registration (2nd Category min)','MEW Compliance','ASHRAE Compliance','SMACNA Compliance','NFPA Compliance','Export Shipping Insurance','All-Risk Insurance','Third Party Insurance','Equipment Desert Rating Certs'],
+  oilgas:['Aramco Vendor Registration','Hazardous Area Equipment Certs (Ex-rated)','Method Statements (approved)','Job Hazard Analysis (JHA)','Permit to Work (PTW) System','H2S Safety Certification','Third Party Insurance','All-Risk Insurance'],
+  residential:['Business License','Workers Comp','GL Insurance','Building Permit','Contractor License'],
+  banking:['Background Checks','Workers Comp','GL Insurance','Professional Indemnity','Equipment Import Documentation','Local Agent Authorization'],
+  institutional:['Performance Bond','Workers Comp','GL Insurance','Professional Indemnity','BMS Integration Certification','Energy Recovery System Warranty']
+};
+
+const risksByType={
+  commercial:[
+    {level:'high',text:'Completeness Clause: "All items necessary and customary shall be deemed included whether specified or not." Budget 8-12% contingency.'},
+    {level:'high',text:'Performance & Power Guarantee: You guarantee BOTH cooling capacity AND power consumption. Use manufacturer certified data at actual site conditions.'},
+    {level:'med',text:'Drawings are diagrammatic only — dimensions cannot be scaled. Field-verify all measurements.'},
+    {level:'med',text:'10-year experience requirement for PM and dedicated full-time QC engineer required.'},
+    {level:'low',text:'All permits and inspection fees are contractor responsibility.'}
+  ],
+  hospital:[
+    {level:'high',text:'Active hospital during renovation — infection control barriers, noise restrictions, phased work required.'},
+    {level:'high',text:'Laminar flow OT plenums must be HEPA 99.97% @ 0.3μ, factory DOP tested. Failure = rejection.'},
+    {level:'med',text:'Government payment cycles: 60-120 days. Factor working capital cost into bid.'},
+    {level:'med',text:'L1 (lowest price) bidding in government tenders. Tight margins required.'},
+    {level:'low',text:'Equipment must be rated for local ambient conditions including monsoon humidity.'}
+  ],
+  pharma:[
+    {level:'high',text:'Beta-Lactam / Non Beta-Lactam MUST be completely isolated HVAC systems. Cross-contamination = patient death risk.'},
+    {level:'high',text:'Validation failure (IQ/OQ/PQ) = complete rework at your cost. Budget 10-12% contingency.'},
+    {level:'high',text:'Pressure cascades must be maintained ±15 Pa between adjacent rooms. Real-time monitoring required.'},
+    {level:'med',text:'Dehumidification is critical during monsoon season. Size for worst-case latent load.'},
+    {level:'low',text:'Room Data Sheets are the governing document — verify every parameter.'}
+  ],
+  mideast:[
+    {level:'high',text:'Engineer can force equipment replacement at YOUR COST if performance is unsatisfactory after adjustment.'},
+    {level:'high',text:'46-50°C ambient — standard catalog ratings do not apply. Desert-derate all equipment.'},
+    {level:'med',text:'Sand/dust loading requires sand trap louvers + multi-stage filtration on all air intakes.'},
+    {level:'med',text:'CTC Second Category registration required. Foreign contractors need local Kuwaiti partner.'},
+    {level:'low',text:'Voltage correction devices (stabilizers) may be required and are contractor cost.'}
+  ],
+  oilgas:[
+    {level:'high',text:'Hazardous area classification — standard HVAC equipment = EXPLOSION RISK. All equipment must be Ex-rated in classified zones.'},
+    {level:'high',text:'H2S (hydrogen sulfide) is lethal at 100ppm. HVAC must integrate with gas detection shutdown systems.'},
+    {level:'high',text:'Control rooms must maintain positive pressure to exclude explosive gases. Pressure failure = evacuation.'},
+    {level:'med',text:'Aramco audit regime — zero tolerance for non-conformance. Method statements must be approved BEFORE work.'},
+    {level:'med',text:'Permit to Work (PTW) required for every activity. Cannot work without formal permit.'}
+  ],
+  municipal:[
+    {level:'med',text:'MBE 9% / WBE 6% participation required on bids over $20K. Must name specific subs with dollar values.'},
+    {level:'med',text:'Lead liability insurance ($500K) required — indicates lead paint abatement work.'},
+    {level:'low',text:'5% retention held until final completion. Factor into cash flow.'},
+    {level:'low',text:'1-year warranty on all labor and materials. Must pass warranties to homeowner.'}
+  ],
+  banking:[{level:'med',text:'VRF systems sensitive to voltage fluctuation. Pakistan grid requires stabilizers.'},{level:'med',text:'Equipment must be imported directly from manufacturer — no warehouse/export house middlemen.'},{level:'low',text:'Server room requires 24/7 cooling independent of comfort AC system.'}],
+  residential:[{level:'low',text:'Standard residential requirements. Verify local building codes and permit requirements.'}],
+  institutional:[{level:'med',text:'Uptime guarantee — likely 95-99% target with penalties for downtime.'},{level:'med',text:'Independent commissioning agent will verify your work. Budget for rework on snag list.'},{level:'low',text:'Thermal storage and heat recovery systems add complexity but reduce operating costs.'}]
+};
+
+// NAV
+function go(id,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('p-'+id).classList.add('on');
+  document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));
+  if(el)el.classList.add('on');
+  const titles={dash:'Dashboard',new:'New Bid',rfp:'GC Requirements',reqs:'Scope Extraction',takeoff:'Equipment Takeoff',cost:'Cost Estimator',build:'Proposal Builder',preview:'Preview & Submit',compliance:'Compliance Checklist',risks:'Risk Analysis',library:'Cost Library'};
+  document.getElementById('topTitle').textContent=titles[id]||'';
+  if(id==='compliance')loadCompliance();
+  if(id==='risks')loadRisks();
+  if(id==='library')loadLibrary('india');
+  if(id==='build')renderSections();
+  if(id==='preview')renderPreview();
+  if(id==='cost')recalcCost();
+}
+
+// BIDS
+function createBid(){
+  const b={id:Date.now(),name:document.getElementById('nProjName').value||'Untitled',gc:document.getElementById('nGC').value||'',loc:document.getElementById('nLoc').value||'',due:document.getElementById('nDue').value||'',type:document.getElementById('nType').value,value:parseFloat(document.getElementById('nValue').value)||0,margin:parseFloat(document.getElementById('nMargin').value)||15,contact:document.getElementById('nGCContact').value||'',status:'active',created:new Date().toISOString()};
+  bids.push(b);currentBid=b;reqs=[];equip=[];costs=[];sections=[...defaultSections.map(s=>({...s}))];
+  document.getElementById('costMargin').textContent=b.margin;
+  updateDash();saveDraft();go('rfp');
+}
+function updateDash(){
+  const active=bids.filter(b=>b.status==='active');
+  document.getElementById('dActive').textContent=active.length;
+  document.getElementById('bidCount').textContent=active.length;
+  document.getElementById('dPipeline').textContent='$'+active.reduce((s,b)=>s+b.value,0).toLocaleString();
+  document.getElementById('pipeline').textContent='$'+(active.reduce((s,b)=>s+b.value,0)/1000).toFixed(0)+'K';
+  const list=document.getElementById('bidList');
+  if(active.length===0){list.innerHTML='<p style="color:var(--t3);font-size:13px;padding:20px 0;text-align:center">No active bids. Click "New Bid" to start.</p>';return}
+  list.innerHTML=active.map(b=>`<div class="bid-card" onclick="loadBid(${b.id})"><div class="row"><div><div class="name">${b.name}</div><div class="gc">GC: ${b.gc||'—'} · ${b.loc||'—'}</div></div><span class="badge badge-o">${b.type}</span></div><div class="meta"><span class="meta-item">💰 $${b.value.toLocaleString()}</span><span class="meta-item">📅 Due: ${b.due||'TBD'}</span><span class="meta-item">📊 ${b.margin}% margin</span></div></div>`).join('');
+}
+function loadBid(id){currentBid=bids.find(b=>b.id===id);if(currentBid)go('rfp')}
+
+// FILE
+function handleFile(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{document.getElementById('rfpText').value=ev.target.result};r.readAsText(f)}
+
+// ANALYZE
+function analyzeSpec(){
+  const text=document.getElementById('rfpText').value.trim();
+  if(!text){alert('Paste or upload GC specifications first.');return}
+  reqs=extractReqs(text);go('reqs');renderReqs();
+}
+function extractReqs(text){
+  const rs=[];let id=1;const lines=text.split(/\n+/);
+  const kw={scope:/shall|must|require|provide|deliver|install|supply|maintain|fabricat|commission|erect|test|balance/i,time:/deadline|timeline|schedule|duration|days|weeks|months|complete|start date|milestone|phase/i,cost:/budget|cost|price|payment|rate|fee|retention|bond|insurance|lump sum/i,comp:/comply|compliance|regulation|license|permit|certif|osha|safety|warranty|guarantee|standard|code|ASHRAE|SMACNA|NFPA/i,tech:/specification|technical|material|equipment|capacity|tonnage|BTU|CFM|AHU|chiller|VRF|duct|pipe|insulation|damper|diffuser|coil|compressor|refrigerant/i};
+  lines.forEach(line=>{
+    const l=line.trim();if(l.length<15)return;
+    const tags=[];
+    Object.entries(kw).forEach(([k,v])=>{if(v.test(l))tags.push(k)});
+    if(tags.length>0){
+      let pri='medium';
+      if(/must|shall|mandatory|critical/i.test(l))pri='high';
+      if(/optional|preferred|desired/i.test(l))pri='low';
+      rs.push({id:id++,text:l.replace(/^[\d.)\-•*]+\s*/,''),tags,pri,checked:true});
+    }
+  });
+  return rs;
+}
+function renderReqs(){
+  const list=document.getElementById('reqList');
+  list.innerHTML=reqs.map(r=>`<div class="req-item"><div class="chk ${r.checked?'on':''}" onclick="toggleReq(${r.id})">✓</div><div style="flex:1"><div style="font-size:12px;font-weight:600">${r.text.slice(0,120)}${r.text.length>120?'...':''}</div><div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">${r.tags.map(t=>`<span class="tag tag-${t}">${t}</span>`).join('')}<span class="tag tag-${r.pri}">${r.pri}</span></div></div></div>`).join('');
+  document.getElementById('rTotal').textContent=reqs.length;
+  document.getElementById('rScope').textContent=reqs.filter(r=>r.tags.includes('scope')).length;
+  document.getElementById('rComp').textContent=reqs.filter(r=>r.tags.includes('comp')).length;
+  document.getElementById('rTech').textContent=reqs.filter(r=>r.tags.includes('tech')).length;
+  const conf=Math.min(95,50+reqs.length*2);
+  document.getElementById('rConf').textContent=conf+'%';
+}
+function toggleReq(id){const r=reqs.find(x=>x.id===id);if(r){r.checked=!r.checked;renderReqs()}}
+function checkAllReqs(){reqs.forEach(r=>r.checked=true);renderReqs()}
+function addReq(){reqs.push({id:Date.now(),text:'New requirement',tags:['scope'],pri:'medium',checked:true});renderReqs()}
+
+// EQUIPMENT TAKEOFF
+const equipTemplates={
+  commercial:[
+    {name:'Air-Cooled Screw Chiller',make:'',cap:'100 TR',qty:2,cost:0,notes:''},
+    {name:'Primary CHW Pump',make:'',cap:'',qty:2,cost:0,notes:'1W+1S'},
+    {name:'Secondary CHW Pump',make:'',cap:'',qty:3,cost:0,notes:''},
+    {name:'AHU (Floor Mounted)',make:'',cap:'4000 CFM',qty:4,cost:0,notes:'Double-skin, DX coil'},
+    {name:'FCU (Ceiling Concealed)',make:'',cap:'',qty:20,cost:0,notes:''},
+    {name:'Hot Water Generator',make:'',cap:'',qty:1,cost:0,notes:''},
+    {name:'MCC Panel',make:'',cap:'',qty:1,cost:0,notes:''},
+    {name:'Expansion Tank',make:'',cap:'',qty:1,cost:0,notes:'Pressurized'},
+    {name:'VFD',make:'',cap:'',qty:6,cost:0,notes:'For pumps & AHU fans'},
+    {name:'BMS Controllers',make:'',cap:'',qty:1,cost:0,notes:'DDC system'}
+  ],
+  hospital:[
+    {name:'Split AC 1.5TR 3-Star',make:'Blue Star / Daikin',cap:'18000 BTU',qty:4,cost:49911,notes:'R-32/R-410A'},
+    {name:'Split AC 2.0TR 3-Star',make:'Blue Star / Daikin',cap:'24000 BTU',qty:20,cost:54547,notes:'R-32/R-410A'},
+    {name:'Cassette AC 3.5TR Inverter',make:'Daikin / Bluestar',cap:'42000 BTU',qty:2,cost:161572,notes:'3-Phase'},
+    {name:'Condensing Unit 24HP',make:'Bluestar / Daikin',cap:'14TR @45°C',qty:4,cost:260000,notes:'Inverter, R-410A, 52°C rated'},
+    {name:'AHU 4000 CFM DX',make:'Edge Tech / ZRCO',cap:'4000 CFM, 4.5" SP',qty:12,cost:350000,notes:'VFD, UV lamp, EEV'},
+    {name:'Laminar Flow Plenum (OT)',make:'Dyna / AAF',cap:'8ft x 6ft',qty:12,cost:350000,notes:'HEPA 99.97%, SS304'},
+    {name:'Supply Grilles + VCD',make:'Cosmic / System Air',cap:'per sqm',qty:9,cost:6500,notes:'Powder coated + plenum box'},
+    {name:'Return Air Grilles',make:'Cosmic / System Air',cap:'per sqm',qty:9,cost:4000,notes:''},
+    {name:'Volume Control Dampers',make:'Cosmic / System Air',cap:'per sqm',qty:20,cost:7500,notes:'AL with flanges'}
+  ],
+  pharma:[
+    {name:'AHU - Non Beta-Lactam',make:'',cap:'',qty:4,cost:0,notes:'HEPA, DOP tested'},
+    {name:'AHU - Beta-Lactam (Isolated)',make:'',cap:'',qty:2,cost:0,notes:'Separate system'},
+    {name:'HEPA Terminal Filters',make:'',cap:'99.97% @ 0.3μ',qty:40,cost:0,notes:''},
+    {name:'Dehumidifier (Desiccant)',make:'',cap:'',qty:2,cost:0,notes:'For monsoon season'},
+    {name:'Pressure Cascade Monitor',make:'',cap:'',qty:1,cost:0,notes:'Real-time ΔP'},
+    {name:'21 CFR Part 11 BMS',make:'',cap:'',qty:1,cost:0,notes:'Validated'}
+  ],
+  mideast:[
+    {name:'Water-Cooled Chiller (Desert Rated)',make:'',cap:'',qty:2,cost:0,notes:'Rated to 52°C ambient'},
+    {name:'Cooling Tower (Sand Resistant)',make:'',cap:'',qty:2,cost:0,notes:'CTI certified'},
+    {name:'AHU with Sand Filtration',make:'',cap:'',qty:6,cost:0,notes:'Multi-stage'},
+    {name:'Sand Trap Louvers',make:'',cap:'',qty:10,cost:0,notes:'At all air intakes'},
+    {name:'Voltage Stabilizer',make:'',cap:'',qty:2,cost:0,notes:'For low-voltage areas'}
+  ],
+  oilgas:[
+    {name:'Ex-Rated AHU (Zone 2)',make:'',cap:'',qty:2,cost:0,notes:'ATEX/IECEx certified'},
+    {name:'Pressurization Unit (Control Room)',make:'',cap:'',qty:1,cost:0,notes:'Positive pressure maintenance'},
+    {name:'Sand Trap Louvers',make:'',cap:'',qty:8,cost:0,notes:''},
+    {name:'H2S Gas Detection Integration',make:'',cap:'',qty:1,cost:0,notes:'Ties to HVAC shutdown'},
+    {name:'Fire & Smoke Dampers',make:'',cap:'',qty:20,cost:0,notes:'UL listed'}
+  ]
+};
+
+function autoPopulateEquip(){
+  const type=currentBid?.type||'commercial';
+  const template=equipTemplates[type]||equipTemplates.commercial;
+  equip=template.map((t,i)=>({id:Date.now()+i,...t}));
+  renderEquip();
+}
+function addEquipRow(){equip.push({id:Date.now(),name:'',make:'',cap:'',qty:1,cost:0,notes:''});renderEquip()}
+function renderEquip(){
+  const body=document.getElementById('equipBody');
+  body.innerHTML=equip.map((e,i)=>`<tr>
+    <td><span class="ed" contenteditable onblur="equip[${i}].name=this.textContent">${e.name}</span></td>
+    <td><span class="ed" contenteditable onblur="equip[${i}].make=this.textContent">${e.make}</span></td>
+    <td><span class="ed" contenteditable onblur="equip[${i}].cap=this.textContent">${e.cap}</span></td>
+    <td style="text-align:right"><span class="ed" contenteditable onblur="equip[${i}].qty=parseFloat(this.textContent)||0;renderEquip()">${e.qty}</span></td>
+    <td style="text-align:right"><span class="ed" contenteditable onblur="equip[${i}].cost=parseFloat(this.textContent.replace(/[,$₹]/g,''))||0;renderEquip()">${e.cost?e.cost.toLocaleString():'0'}</span></td>
+    <td style="text-align:right;font-weight:600">${(e.qty*e.cost).toLocaleString()}</td>
+    <td><span class="ed" contenteditable onblur="equip[${i}].notes=this.textContent" style="font-size:10px;color:var(--t3)">${e.notes}</span></td>
+    <td><span style="cursor:pointer;color:var(--danger)" onclick="equip.splice(${i},1);renderEquip()">×</span></td>
+  </tr>`).join('');
+  const total=equip.reduce((s,e)=>s+e.qty*e.cost,0);
+  document.getElementById('equipTotal').textContent='$'+total.toLocaleString();
+}
+
+// COST
+function addCostRow(){costs.push({id:Date.now(),desc:'',cat:'Labor',qty:1,unit:'LS',rate:0});renderCost()}
+function importEquipToCost(){
+  equip.forEach(e=>{if(e.name&&!costs.find(c=>c.desc===e.name)){costs.push({id:Date.now()+Math.random(),desc:e.name,cat:'Equipment',qty:e.qty,unit:'EA',rate:e.cost})}});
+  renderCost();
+}
+function renderCost(){
+  const body=document.getElementById('costBody');
+  body.innerHTML=costs.map((c,i)=>`<tr>
+    <td style="color:var(--t3)">${i+1}</td>
+    <td><span class="ed" contenteditable onblur="costs[${i}].desc=this.textContent">${c.desc}</span></td>
+    <td><select onchange="costs[${i}].cat=this.value;recalcCost()" style="border:none;font-size:11px;background:transparent">${['Equipment','Labor','Materials','Subcontractor','Insulation','Ductwork','Piping','Electrical','Controls','Testing','Permits','Other'].map(o=>`<option ${o===c.cat?'selected':''}>${o}</option>`).join('')}</select></td>
+    <td style="text-align:right"><span class="ed" contenteditable onblur="costs[${i}].qty=parseFloat(this.textContent)||0;recalcCost()">${c.qty}</span></td>
+    <td><span class="ed" contenteditable onblur="costs[${i}].unit=this.textContent" style="font-size:10px">${c.unit}</span></td>
+    <td style="text-align:right"><span class="ed" contenteditable onblur="costs[${i}].rate=parseFloat(this.textContent.replace(/[,$]/g,''))||0;recalcCost()">${c.rate.toLocaleString()}</span></td>
+    <td style="text-align:right;font-weight:600">$${(c.qty*c.rate).toLocaleString()}</td>
+    <td><span style="cursor:pointer;color:var(--danger)" onclick="costs.splice(${i},1);renderCost()">×</span></td>
+  </tr>`).join('');
+  recalcCost();
+}
+function recalcCost(){
+  const sub=costs.reduce((s,c)=>s+c.qty*c.rate,0);
+  const oh=sub*(parseFloat(document.getElementById('costOH')?.textContent)||12)/100;
+  const cont=sub*(parseFloat(document.getElementById('costCont')?.textContent)||8)/100;
+  const margin=sub*(parseFloat(document.getElementById('costMargin')?.textContent)||15)/100;
+  const total=sub+oh+cont+margin;
+  const fmt=n=>'$'+Math.round(n).toLocaleString();
+  document.getElementById('costSub').textContent=fmt(sub);
+  document.getElementById('costOHAmt').textContent=fmt(oh);
+  document.getElementById('costContAmt').textContent=fmt(cont);
+  document.getElementById('costMarginAmt').textContent=fmt(margin);
+  document.getElementById('costGrand').textContent=fmt(total);
+  document.getElementById('cTotal').textContent=fmt(total);
+  // Category totals
+  const cats={};costs.forEach(c=>{cats[c.cat]=(cats[c.cat]||0)+c.qty*c.rate});
+  document.getElementById('cEquip').textContent=fmt(cats['Equipment']||0);
+  document.getElementById('cLabor').textContent=fmt(cats['Labor']||0);
+  document.getElementById('cMaterial').textContent=fmt(cats['Materials']||0);
+  document.getElementById('cSub').textContent=fmt(cats['Subcontractor']||0);
+  document.getElementById('cOH').textContent=fmt(oh);
+}
+
+// SECTIONS
+function renderSections(){
+  if(!sections.length)sections=[...defaultSections.map(s=>({...s}))];
+  document.getElementById('sectionList').innerHTML=sections.map(s=>`<div class="section-block"><div class="section-hdr" onclick="toggleSec('${s.id}')"><div><span class="section-num">§${s.n}</span><span class="section-name">${s.name}</span></div><span style="color:var(--t3)">▼</span></div><div class="section-body" id="sb-${s.id}"><textarea class="section-ta" id="st-${s.id}" placeholder="Write ${s.name.toLowerCase()}...">${s.c}</textarea><div style="margin-top:8px"><button class="btn btn-sm btn-o" onclick="draftSec('${s.id}')">🤖 Draft</button></div></div></div>`).join('');
+}
+function toggleSec(id){const b=document.getElementById('sb-'+id);b.classList.toggle('open')}
+function draftSec(id){
+  const s=sections.find(x=>x.id===id);if(!s)return;
+  const pName=currentBid?.name||'[Project]';const gc=currentBid?.gc||'[GC]';
+  const total=document.getElementById('costGrand')?.textContent||'$0';
+  const drafts={
+    cover:`Dear ${gc},\n\nWe are pleased to submit our proposal for the ${pName} HVAC scope of work. Our team has reviewed the specifications in detail and is confident in our ability to deliver a high-quality installation on schedule and within budget.\n\nWe look forward to discussing our approach.`,
+    exec:`This proposal covers the complete HVAC scope for ${pName}. Our bid of ${total} includes all equipment, materials, labor, testing, and commissioning per the GC specifications.\n\nKey highlights:\n• ${reqs.filter(r=>r.pri==='high').length} critical requirements addressed\n• ${equip.length} equipment items specified with approved makes\n• Dedicated project team with 10+ years HVAC experience`,
+    qual:`[Company Name] has been providing HVAC installation services for [X] years. Our team specializes in [project type] installations with a proven track record of on-time, on-budget delivery.\n\nRelevant completed projects:\n1. [Project] — [Value] — [Year]\n2. [Project] — [Value] — [Year]\n3. [Project] — [Value] — [Year]`,
+    approach:`Our technical approach follows a structured methodology:\n\n1. MOBILIZATION: Shop drawings within 15 days of LOI\n2. PROCUREMENT: Equipment ordered within 2 weeks of drawing approval\n3. ROUGH-IN: Ductwork and piping installation coordinated with other trades\n4. EQUIPMENT SET: Major equipment placement and connection\n5. CONTROLS: BMS/DDC installation and programming\n6. TAB: Full testing, adjusting, and balancing\n7. COMMISSIONING: Performance verification and handover`,
+    scope:`Based on the GC specifications, our scope includes:\n\n${reqs.filter(r=>r.checked&&r.tags.includes('scope')).slice(0,10).map((r,i)=>`${i+1}. ${r.text.slice(0,80)}`).join('\n')}`,
+    equip:`Equipment schedule per approved makes:\n\n${equip.map(e=>`• ${e.name} — ${e.make||'TBD'} — ${e.cap} — Qty: ${e.qty}`).join('\n')}`,
+    timeline:`Proposed schedule:\n• Shop Drawings: 2 weeks from LOI\n• Equipment Procurement: 8-12 weeks\n• Installation: 16-20 weeks\n• TAB & Commissioning: 4 weeks\n• Handover: [Date]\n\nTotal duration: approximately 6-9 months`,
+    team:`Key personnel:\n• Project Manager — [Name], [X] years experience\n• Site Engineer — [Name], [X] years experience\n• QC Engineer — [Name], dedicated full-time\n• Commissioning Specialist — [Name]`,
+    pricing:`Total Bid Price: ${total}\n\nSee detailed cost breakdown attached.\n\nPricing valid for 90 days from submission.`,
+    exclusions:`The following items are EXCLUDED from our scope:\n\n• Civil works (foundations, waterproofing, fire doors)\n• Main power supply to our MCC incoming\n• Soft water supply to equipment\n• Architectural/structural modifications beyond specified openings\n• Any work not specifically mentioned in the GC specifications`,
+    compliance:`We confirm compliance with all applicable standards and regulations as specified.\n\nInsurance: [GL amount], [WC], [Professional Indemnity]\nLicenses: [License numbers]\nCertifications: [Relevant certifications]`,
+    terms:`• Payment: As per GC payment schedule\n• Retention: Per contract terms\n• Warranty: 12 months from substantial completion\n• Change Orders: Written approval required\n• Dispute Resolution: Per contract general conditions`
+  };
+  const ta=document.getElementById('st-'+id);if(ta){ta.value=drafts[id]||'';s.c=ta.value}
+  const body=document.getElementById('sb-'+id);if(!body.classList.contains('open'))body.classList.add('open');
+}
+function draftAll(){sections.forEach(s=>draftSec(s.id))}
+
+// PREVIEW
+function renderPreview(){
+  sections.forEach(s=>{const ta=document.getElementById('st-'+s.id);if(ta)s.c=ta.value});
+  const pName=currentBid?.name||'[Project]';const total=document.getElementById('costGrand')?.textContent||'$0';
+  let html=`<div class="print-hdr"><div class="print-logo">MaxBidding</div><div class="print-title">HVAC Bid Proposal — ${pName}</div><div class="print-sub">GC: ${currentBid?.gc||'—'} · ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})} · Total: ${total}</div></div>`;
+  sections.filter(s=>s.c.trim()).forEach(s=>{html+=`<div class="print-section"><h3>§${s.n} ${s.name}</h3><p>${s.c.replace(/\n/g,'<br>')}</p></div>`});
+  html+=`<div style="margin-top:32px;padding-top:16px;border-top:1px solid var(--border);text-align:center;font-size:10px;color:var(--t3)">Generated by MaxBidding · HVAC Bid Intelligence Engine · Confidential</div>`;
+  document.getElementById('printArea').innerHTML=html;
+}
+
+// COMPLIANCE
+function loadCompliance(){
+  const type=currentBid?.type||'commercial';
+  const items=complianceByType[type]||complianceByType.commercial;
+  document.getElementById('compList').innerHTML=items.map((item,i)=>`<div class="compliance-item"><div class="comp-chk" onclick="this.classList.toggle('on')">✓</div><span>${item}</span></div>`).join('');
+}
+
+// RISKS
+function loadRisks(){
+  const type=currentBid?.type||'commercial';
+  const risks=risksByType[type]||[];
+  document.getElementById('riskList').innerHTML=risks.map(r=>`<div class="risk-flag ${r.level}"><span style="font-size:14px">${r.level==='high'?'🔴':r.level==='med'?'🟡':'🔵'}</span><span>${r.text}</span></div>`).join('');
+}
+
+// LIBRARY
+function loadLibrary(region){
+  const libs={
+    india:`<h4 style="margin-bottom:12px">Hospital HVAC (Verified Rates)</h4><table><thead><tr><th>Item</th><th>Unit</th><th>Rate (₹)</th><th>USD Est.</th></tr></thead><tbody>
+      <tr><td>Split AC 1.5TR 3-Star</td><td>Each</td><td>₹49,911</td><td>~$600</td></tr>
+      <tr><td>Split AC 2.0TR 3-Star</td><td>Each</td><td>₹54,547</td><td>~$655</td></tr>
+      <tr><td>Cassette AC 3.5TR Inverter</td><td>Each</td><td>₹1,61,572</td><td>~$1,940</td></tr>
+      <tr><td>Condensing Unit 24HP (14TR @45°C)</td><td>Each</td><td>₹2,60,000</td><td>~$3,120</td></tr>
+      <tr><td>AHU 4000 CFM (DX, VFD, UV, EEV)</td><td>Each</td><td>₹3,50,000</td><td>~$4,200</td></tr>
+      <tr><td>Laminar Flow Plenum (OT, SS304)</td><td>Each</td><td>₹3,50,000</td><td>~$4,200</td></tr>
+      <tr><td>Supply Grilles + VCD + Plenum</td><td>SQM</td><td>₹6,500</td><td>~$78</td></tr>
+      <tr><td>Return Air Grilles</td><td>SQM</td><td>₹4,000</td><td>~$48</td></tr>
+      <tr><td>AL Volume Control Dampers</td><td>SQM</td><td>₹7,500</td><td>~$90</td></tr>
+      </tbody></table>`,
+    us:`<h4 style="margin-bottom:12px">US Commercial HVAC (Reference Rates)</h4><table><thead><tr><th>Item</th><th>Unit</th><th>Rate (USD)</th></tr></thead><tbody>
+      <tr><td>Air-Cooled Chiller (100 TR)</td><td>Each</td><td>$80,000-150,000</td></tr>
+      <tr><td>AHU (5000 CFM)</td><td>Each</td><td>$15,000-35,000</td></tr>
+      <tr><td>FCU (Ceiling Concealed)</td><td>Each</td><td>$1,500-3,500</td></tr>
+      <tr><td>GI Ductwork (installed)</td><td>LB</td><td>$6-12</td></tr>
+      <tr><td>CHW Piping (insulated)</td><td>LF</td><td>$25-60</td></tr>
+      <tr><td>Sheet Metal Worker</td><td>Hour</td><td>$65-95</td></tr>
+      <tr><td>Pipefitter</td><td>Hour</td><td>$70-100</td></tr>
+      <tr><td>Controls Technician</td><td>Hour</td><td>$75-110</td></tr>
+      <tr><td>TAB (per system)</td><td>LS</td><td>$5,000-15,000</td></tr>
+      </tbody></table>`,
+    mideast:`<h4 style="margin-bottom:12px">Kuwait/Saudi HVAC</h4><p style="font-size:12px;color:var(--t2);line-height:1.8">Desert premium: +15-25% over standard international rates.<br>Sand trap louvers: $500-2,000 per louver depending on size.<br>Equipment desert-derating: 10-20% capacity reduction at 46-50°C.<br>Export shipping + marine insurance: 3-5% of equipment cost.<br>Cooling tower water treatment: significant ongoing cost in water-scarce regions.</p>`,
+    pakistan:`<h4 style="margin-bottom:12px">Pakistan (Lahore) VRF Reference</h4><p style="font-size:12px;color:var(--t2);line-height:1.8">VRF systems for commercial: ₹8,000-12,000/TR installed.<br>Import duty on HVAC equipment: 25-35%.<br>Must import direct from manufacturer — no warehouse middlemen.<br>Voltage stabilizers mandatory due to grid instability.<br>10-year manufacturer experience requirement for equipment brands.</p>`
+  };
+  document.getElementById('libraryContent').innerHTML=libs[region]||libs.india;
+}
+
+// SAMPLE
+function loadSample(){
+  document.getElementById('rfpText').value=`HVAC SCOPE OF WORK - COMMERCIAL BUILDING
+
+The contractor shall furnish all labor, materials and equipment for supply, installation, testing and commissioning of the complete HVAC system.
+
+EQUIPMENT:
+a) Supply and installation of screw compressor type air cooled chilling machines
+b) Pumping systems - primary and secondary
+c) Air Handling Units (AHUs) - double skin, floor mounted
+d) Fan Coil Units (FCUs) - ceiling concealed
+e) Hot water generator
+f) Motor Control Centers
+g) Expansion tank with accessories
+
+SCOPE INCLUDES:
+- Chilled water and hot water piping with insulation
+- Sheet metal ductwork with external insulation and acoustic lining
+- Volume control dampers and smoke/fire dampers
+- Supply and return air diffusers and grilles
+- Vibration isolation for all equipment
+- Automatic controls and BMS integration
+- Wiring from MCC to all equipment
+- Testing, adjusting and balancing
+- As-built drawings and O&M manuals
+- Training of owner's staff
+
+The contractor shall guarantee that the HVAC system shall maintain inside conditions of 24°C DB and 50% RH.
+
+All equipment shall be from approved manufacturers with minimum 10 years experience.
+
+The contractor shall assign senior personnel with minimum 10 years experience and one dedicated QC engineer.
+
+Completion: 9 months from LOI.
+Performance guarantee period: 12 months from handover.`;
+}
+
+// EXPORT
+function exportJSON(){
+  sections.forEach(s=>{const ta=document.getElementById('st-'+s.id);if(ta)s.c=ta.value});
+  const data={bid:currentBid,requirements:reqs,equipment:equip,costs,sections,total:document.getElementById('costGrand')?.textContent,exported:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='maxbid-'+Date.now()+'.json';a.click();
+}
+function copyBid(){
+  sections.forEach(s=>{const ta=document.getElementById('st-'+s.id);if(ta)s.c=ta.value});
+  const text=sections.filter(s=>s.c.trim()).map(s=>`${'='.repeat(40)}\n§${s.n} ${s.name}\n${'='.repeat(40)}\n\n${s.c}\n`).join('\n');
+  navigator.clipboard.writeText(text).then(()=>alert('Copied!'));
+}
+function markSubmitted(){if(currentBid){currentBid.status='submitted';updateDash();alert('Bid marked as submitted!')}}
+function saveDraft(){try{localStorage.setItem('maxbidding',JSON.stringify({bids,currentBidId:currentBid?.id}))}catch(e){}}
+
+// INIT
+window.addEventListener('load',()=>{
+  try{const d=JSON.parse(localStorage.getItem('maxbidding'));if(d?.bids){bids=d.bids;if(d.currentBidId)currentBid=bids.find(b=>b.id===d.currentBidId)}}catch(e){}
+  updateDash();
+  ['costOH','costCont','costMargin'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',recalcCost)});
+});
+</script>
+</body>
+</html>

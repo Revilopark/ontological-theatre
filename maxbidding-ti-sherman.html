@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MaxBidding — TI Sherman SM2 Semiconductor Fab HVAC</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--red-dark:#5a0e0e;--red:#7a1212;--red-light:#9a2020;--orange:#ff8c00;--orange-light:#ffb347;--white:#ffffff;--bg:#f4f5f7;--card:#ffffff;--text:#1a1a2e;--text-light:#6b7280;--border:#e5e7eb;--green:#10b981;--yellow:#f59e0b;--blue:#3b82f6;--risk-high:#ef4444;--risk-med:#f59e0b;--risk-low:#10b981;--sidebar-w:280px;--header-h:60px}
+html{font-family:'Inter',system-ui,sans-serif;font-size:14px;color:var(--text);background:var(--bg)}
+body{display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);min-height:100vh;background:linear-gradient(180deg,var(--red) 0%,var(--red-dark) 100%);color:#fff;display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100;transition:transform .3s}
+.sidebar-brand{padding:20px 24px;border-bottom:1px solid rgba(255,255,255,.12);display:flex;align-items:center;gap:12px}
+.sidebar-brand .logo{width:36px;height:36px;background:var(--orange);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff}
+.sidebar-brand h1{font-size:17px;font-weight:700;letter-spacing:-.3px}
+.sidebar-brand span{font-size:11px;opacity:.7;display:block;margin-top:2px}
+.sidebar-project{padding:16px 24px;border-bottom:1px solid rgba(255,255,255,.12);font-size:12px}
+.sidebar-project .owner{color:var(--orange-light);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.sidebar-project .project-name{font-weight:600;font-size:13px}
+.sidebar-project .location{opacity:.65;margin-top:2px}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 24px;cursor:pointer;transition:background .15s,border-left .15s;border-left:3px solid transparent;font-size:13px;font-weight:500}
+.nav-item:hover{background:rgba(255,255,255,.08)}
+.nav-item.active{background:rgba(255,255,255,.12);border-left-color:var(--orange)}
+.nav-item .step{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.nav-item.active .step{background:var(--orange);color:#fff}
+.nav-item.completed .step{background:var(--green)}
+.nav-item .step-icon{font-size:12px}
+.sidebar-footer{padding:16px 24px;border-top:1px solid rgba(255,255,255,.12);font-size:11px;opacity:.5;text-align:center}
+
+/* MAIN */
+.main{margin-left:var(--sidebar-w);flex:1;min-height:100vh}
+.header{height:var(--header-h);background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 32px;position:sticky;top:0;z-index:50}
+.header-left{display:flex;align-items:center;gap:16px}
+.header-left h2{font-size:18px;font-weight:700;color:var(--text)}
+.header-left .badge{background:var(--orange);color:#fff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px}
+.header-right{display:flex;align-items:center;gap:12px}
+.btn{padding:8px 18px;border-radius:8px;border:none;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--orange);color:#fff}.btn-primary:hover{background:#e07b00}
+.btn-secondary{background:var(--bg);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{background:#e9ecef}
+.btn-danger{background:var(--risk-high);color:#fff}
+.btn-sm{padding:5px 12px;font-size:12px}
+.menu-toggle{display:none;background:none;border:none;font-size:24px;cursor:pointer;color:var(--text)}
+
+.content{padding:28px 32px;max-width:1400px}
+.panel{display:none}
+.panel.active{display:block}
+
+/* CARDS */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;transition:box-shadow .15s}
+.card:hover{box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.card-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);font-weight:600;margin-bottom:6px}
+.card-value{font-size:20px;font-weight:700;color:var(--text)}
+.card-value.orange{color:var(--orange)}
+.card-value.green{color:var(--green)}
+.card-value.blue{color:var(--blue)}
+.card-sub{font-size:12px;color:var(--text-light);margin-top:4px}
+
+.card-wide{grid-column:span 2}
+.card-full{grid-column:1/-1}
+
+/* TABLES */
+.table-wrap{overflow-x:auto;margin-bottom:24px;border:1px solid var(--border);border-radius:12px;background:var(--card)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg);font-weight:600;text-align:left;padding:12px 16px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 16px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,140,0,.03)}
+.text-right{text-align:right}
+.text-center{text-align:center}
+.total-row td{font-weight:700;background:var(--bg)!important}
+td input{border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-family:inherit;font-size:13px;width:100px;text-align:right}
+td input:focus{outline:none;border-color:var(--orange)}
+
+/* SECTIONS */
+.section-title{font-size:22px;font-weight:700;margin-bottom:6px}
+.section-sub{color:var(--text-light);margin-bottom:24px;font-size:14px}
+.section-divider{border:none;border-top:1px solid var(--border);margin:32px 0}
+
+/* BID PACKAGE */
+.bid-doc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:32px 40px;max-width:900px;margin-bottom:24px;line-height:1.7}
+.bid-doc h3{font-size:16px;font-weight:700;margin:24px 0 12px;color:var(--red);border-bottom:2px solid var(--orange);padding-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.bid-doc h4{font-size:14px;font-weight:700;margin:16px 0 8px}
+.bid-doc ul{margin:8px 0 8px 24px}
+.bid-doc li{margin-bottom:4px}
+.bid-doc .header-block{text-align:center;margin-bottom:24px;border-bottom:3px solid var(--red);padding-bottom:20px}
+.bid-doc .header-block h2{font-size:20px;color:var(--red)}
+.bid-doc .header-block p{color:var(--text-light)}
+
+/* SCOPE TAGS */
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-right:4px}
+.tag-scope{background:#dbeafe;color:#1d4ed8}
+.tag-technical{background:#fce7f3;color:#be185d}
+.tag-compliance{background:#fef3c7;color:#92400e}
+.tag-timeline{background:#d1fae5;color:#065f46}
+.tag-cost{background:#ede9fe;color:#5b21b6}
+.priority-critical{color:var(--risk-high);font-weight:700}
+.priority-high{color:#dc2626;font-weight:600}
+.priority-medium{color:var(--yellow);font-weight:600}
+.priority-low{color:var(--green)}
+
+/* PROPOSAL */
+.proposal-sections{display:flex;flex-direction:column;gap:16px}
+.proposal-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.proposal-card-header{padding:16px 20px;background:var(--bg);display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.proposal-card-header h4{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.proposal-card-header .num{background:var(--orange);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.proposal-card-body{padding:20px;display:none;font-size:13px;line-height:1.8}
+.proposal-card.open .proposal-card-body{display:block}
+.proposal-card-header .arrow{transition:transform .2s;font-size:16px}
+.proposal-card.open .proposal-card-header .arrow{transform:rotate(180deg)}
+
+/* COMPARISON */
+.compare-grid{display:grid;grid-template-columns:200px repeat(3,1fr);gap:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--card);margin-bottom:24px}
+.compare-cell{padding:14px 16px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:13px}
+.compare-cell:last-child{border-right:none}
+.compare-header{background:var(--bg);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.3px}
+.compare-label{background:var(--bg);font-weight:600;font-size:12px}
+.compare-highlight{background:rgba(255,140,0,.06)}
+.compare-winner{position:relative}
+.compare-winner::after{content:'★ BEST VALUE';position:absolute;top:4px;right:8px;background:var(--orange);color:#fff;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700}
+
+/* COMPLIANCE */
+.checklist{list-style:none;margin:0}
+.checklist li{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;font-size:13px}
+.checklist li:last-child{border-bottom:none}
+.check-icon{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;cursor:pointer}
+.check-pass{background:#d1fae5;color:#065f46}
+.check-fail{background:#fee2e2;color:#991b1b}
+.check-pending{background:#fef3c7;color:#92400e}
+.risk-item{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px}
+.risk-badge{padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;flex-shrink:0;text-transform:uppercase}
+.risk-high{background:#fee2e2;color:#991b1b}
+.risk-med{background:#fef3c7;color:#92400e}
+.risk-low{background:#d1fae5;color:#065f46}
+
+/* SUBMIT */
+.status-tracker{display:flex;gap:0;margin-bottom:32px;overflow-x:auto}
+.status-step{flex:1;min-width:120px;text-align:center;padding:16px 8px;position:relative;font-size:12px;font-weight:600}
+.status-step::after{content:'';position:absolute;top:24px;left:50%;width:100%;height:3px;background:var(--border);z-index:0}
+.status-step:last-child::after{display:none}
+.status-step .dot{width:20px;height:20px;border-radius:50%;background:var(--border);margin:0 auto 8px;position:relative;z-index:1;display:flex;align-items:center;justify-content:center;font-size:10px}
+.status-step.done .dot{background:var(--green);color:#fff}
+.status-step.current .dot{background:var(--orange);color:#fff;box-shadow:0 0 0 4px rgba(255,140,0,.2)}
+.status-step.done::after{background:var(--green)}
+
+/* CHART CONTAINERS */
+.chart-container{position:relative;max-width:400px;margin:0 auto 24px}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}
+.chart-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px}
+.chart-box h4{font-size:14px;font-weight:600;margin-bottom:16px;text-align:center}
+
+/* STATS ROW */
+.stats-row{display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+.stat-pill{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 20px;display:flex;align-items:center;gap:10px}
+.stat-pill .num{font-size:24px;font-weight:800;color:var(--orange)}
+.stat-pill .label{font-size:12px;color:var(--text-light);font-weight:500}
+
+/* INTELLIGENCE */
+.intel-panel{background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;border-radius:12px;padding:24px;margin-bottom:24px}
+.intel-panel h4{color:var(--orange);margin-bottom:12px;font-size:14px}
+.intel-panel p{font-size:13px;line-height:1.6;opacity:.9;margin-bottom:8px}
+.intel-item{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px}
+.intel-item .icon{font-size:16px;flex-shrink:0;margin-top:2px}
+
+/* TIMELINE */
+.timeline{position:relative;padding-left:30px;margin:24px 0}
+.timeline::before{content:'';position:absolute;left:10px;top:0;bottom:0;width:2px;background:var(--border)}
+.timeline-item{position:relative;margin-bottom:20px;padding-left:20px}
+.timeline-item::before{content:'';position:absolute;left:-24px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--border);border:2px solid var(--card)}
+.timeline-item.done::before{background:var(--green)}
+.timeline-item.current::before{background:var(--orange);box-shadow:0 0 0 4px rgba(255,140,0,.2)}
+.timeline-item.future::before{background:var(--border)}
+.timeline-item h5{font-size:13px;font-weight:600}
+.timeline-item p{font-size:12px;color:var(--text-light);margin-top:2px}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+.sidebar{transform:translateX(-100%)}
+.sidebar.open{transform:translateX(0)}
+.main{margin-left:0}
+.menu-toggle{display:block}
+.card-grid{grid-template-columns:1fr 1fr}
+.card-wide,.card-full{grid-column:span 1}
+.chart-row{grid-template-columns:1fr}
+.compare-grid{grid-template-columns:120px repeat(3,1fr);font-size:11px}
+.compare-cell{padding:8px}
+.content{padding:20px 16px}
+.bid-doc{padding:20px}
+}
+@media(max-width:600px){
+.card-grid{grid-template-columns:1fr}
+.status-tracker{flex-direction:column}
+.status-step::after{display:none}
+}
+
+/* PRINT */
+@media print{
+.sidebar,.header,.menu-toggle{display:none!important}
+.main{margin-left:0!important}
+.panel{display:block!important;page-break-after:always}
+.content{padding:0!important}
+body{background:#fff}
+.card,.table-wrap,.bid-doc,.proposal-card,.chart-box{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+<div class="sidebar-brand">
+<div class="logo">M</div>
+<div><h1>MaxBidding</h1><span>Construction Intelligence</span></div>
+</div>
+<div class="sidebar-project">
+<div class="owner">Texas Instruments</div>
+<div class="project-name">SM2 — 300mm Wafer Fab</div>
+<div class="location">📍 Sherman, TX</div>
+</div>
+<div class="sidebar-nav">
+<div class="nav-item active" data-panel="overview"><div class="step">1</div>Project Overview</div>
+<div class="nav-item" data-panel="bidpackage"><div class="step">2</div>GC Bid Package</div>
+<div class="nav-item" data-panel="scope"><div class="step">3</div>Scope Extraction</div>
+<div class="nav-item" data-panel="equipment"><div class="step">4</div>Equipment Takeoff</div>
+<div class="nav-item" data-panel="cost"><div class="step">5</div>Cost Estimator</div>
+<div class="nav-item" data-panel="proposal"><div class="step">6</div>Proposal Builder</div>
+<div class="nav-item" data-panel="comparison"><div class="step">7</div>Bid Comparison</div>
+<div class="nav-item" data-panel="compliance"><div class="step">8</div>Compliance &amp; Risk</div>
+<div class="nav-item" data-panel="submit"><div class="step">9</div>Submit &amp; Track</div>
+</div>
+<div class="sidebar-footer">MaxBidding v3.2 &middot; &copy; 2026</div>
+</nav>
+
+<!-- OVERLAY for mobile -->
+<div id="overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99" onclick="toggleSidebar()"></div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+<div class="header">
+<div class="header-left">
+<button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+<h2 id="headerTitle">Project Overview</h2>
+<span class="badge" id="headerBadge">HVAC — $220M Scope</span>
+</div>
+<div class="header-right">
+<button class="btn btn-secondary btn-sm" onclick="exportJSON()">📥 Export JSON</button>
+<button class="btn btn-primary btn-sm" onclick="window.print()">🖨️ Print</button>
+</div>
+</div>
+<div class="content">
+
+<!-- PANEL 1: PROJECT OVERVIEW -->
+<div class="panel active" id="panel-overview">
+<div class="section-title">TI Sherman SM2 — HVAC Bid Dashboard</div>
+<div class="section-sub">Semiconductor Wafer Fabrication Facility &middot; Alliance Construction Group (GC) &middot; Lone Star Mechanical (Bidder)</div>
+
+<div class="card-grid">
+<div class="card"><div class="card-label">Owner</div><div class="card-value">Texas Instruments</div><div class="card-sub">NYSE: TXN</div></div>
+<div class="card"><div class="card-label">Facility</div><div class="card-value">SM2 — 300mm Fab</div><div class="card-sub">Analog / Embedded (45-130nm)</div></div>
+<div class="card"><div class="card-label">Location</div><div class="card-value">Sherman, TX</div><div class="card-sub">65 mi north of Dallas</div></div>
+<div class="card"><div class="card-label">Total Project Value</div><div class="card-value orange">~$2.8B</div><div class="card-sub">CHIPS Act funded</div></div>
+<div class="card"><div class="card-label">HVAC Scope (Est.)</div><div class="card-value orange">~$220M</div><div class="card-sub">Mechanical / Controls / TAB</div></div>
+<div class="card"><div class="card-label">General Contractor</div><div class="card-value">Alliance Construction Group</div><div class="card-sub">Dallas, TX</div></div>
+<div class="card"><div class="card-label">Bid Due Date</div><div class="card-value" style="color:var(--risk-high)">April 30, 2026</div><div class="card-sub">2:00 PM CDT</div></div>
+<div class="card"><div class="card-label">Construction Start</div><div class="card-value blue">Q3 2026</div><div class="card-sub">July target</div></div>
+<div class="card"><div class="card-label">Completion Target</div><div class="card-value blue">Q4 2028</div><div class="card-sub">30-month duration</div></div>
+<div class="card"><div class="card-label">Cleanroom Class</div><div class="card-value">ISO 5 / ISO 7</div><div class="card-sub">Class 100 fab &middot; Class 10K support</div></div>
+<div class="card"><div class="card-label">Cooling Capacity</div><div class="card-value">12,000 Tons</div><div class="card-sub">6×2,000T chillers (N+1)</div></div>
+<div class="card"><div class="card-label">Process Water</div><div class="card-value">1,700 GPM</div><div class="card-sub">UPW + PCW systems</div></div>
+</div>
+
+<div class="section-title" style="font-size:16px;margin-top:8px">Key Project Facts</div>
+<div class="card-grid" style="margin-top:12px">
+<div class="card card-wide" style="border-left:4px solid var(--orange)">
+<div class="card-label">Technology</div>
+<div class="card-value" style="font-size:15px">300mm Wafer Fab — Analog & Embedded Chips</div>
+<div class="card-sub">45nm to 130nm process nodes &middot; High-volume manufacturing</div>
+</div>
+<div class="card card-wide" style="border-left:4px solid var(--blue)">
+<div class="card-label">Key Customers</div>
+<div class="card-value" style="font-size:15px">Apple · Nvidia · Ford · Medtronic · SpaceX</div>
+<div class="card-sub">Automotive, industrial, defense, medical, consumer electronics</div>
+</div>
+<div class="card" style="border-left:4px solid var(--green)">
+<div class="card-label">CHIPS Act Funding</div>
+<div class="card-value green" style="font-size:15px">$1.6B Federal</div>
+<div class="card-sub">+ Texas state incentives package</div>
+</div>
+<div class="card" style="border-left:4px solid var(--red)">
+<div class="card-label">SM1 Status</div>
+<div class="card-value" style="font-size:15px">In Production</div>
+<div class="card-sub">Opened Dec 2025 — SM2 must match specs</div>
+</div>
+<div class="card" style="border-left:4px solid var(--yellow)">
+<div class="card-label">Power</div>
+<div class="card-value" style="font-size:15px">100% Renewable</div>
+<div class="card-sub">Redundant transmission feeds</div>
+</div>
+<div class="card" style="border-left:4px solid #6366f1">
+<div class="card-label">Design Climate — Sherman, TX</div>
+<div class="card-value" style="font-size:15px">105°F DB / 78°F WB Summer</div>
+<div class="card-sub">Winter: 25°F &middot; ASHRAE Zone 3A</div>
+</div>
+</div>
+</div>
+
+<!-- PANEL 2: GC BID PACKAGE -->
+<div class="panel" id="panel-bidpackage">
+<div class="section-title">GC Bid Package — Invitation to Bid</div>
+<div class="section-sub">Issued by Alliance Construction Group to qualified HVAC/Mechanical subcontractors</div>
+
+<div class="bid-doc">
+<div class="header-block">
+<h2>ALLIANCE CONSTRUCTION GROUP</h2>
+<p style="font-size:16px;font-weight:600;margin:8px 0">INVITATION TO BID — MECHANICAL / HVAC PACKAGE</p>
+<p>Texas Instruments SM2 — 300mm Semiconductor Wafer Fabrication Facility</p>
+<p>Sherman, Texas 75090</p>
+<p style="margin-top:8px;font-weight:600;color:var(--red)">BID NO: ACG-TI-SM2-MECH-2026-001</p>
+</div>
+
+<h3>Section A — Invitation to Bid</h3>
+<h4>A.1 Project Information</h4>
+<ul>
+<li><strong>Project:</strong> Texas Instruments SM2 — 300mm Semiconductor Wafer Fabrication Facility</li>
+<li><strong>Owner:</strong> Texas Instruments Incorporated (NYSE: TXN)</li>
+<li><strong>Location:</strong> 20000 N. US Highway 75, Sherman, Texas 75090</li>
+<li><strong>General Contractor:</strong> Alliance Construction Group, LLC</li>
+<li><strong>GC Project Manager:</strong> Marcus J. Halvorsen, PE</li>
+<li><strong>Contact:</strong> mhalvorsen@alliancecg.com &middot; (214) 555-0142</li>
+<li><strong>Architect / Engineer of Record:</strong> Jacobs Engineering (process) / HDR (base building)</li>
+</ul>
+
+<h4>A.2 Key Dates</h4>
+<ul>
+<li><strong>Bid Issue Date:</strong> March 15, 2026</li>
+<li><strong>Pre-Bid Conference:</strong> April 8, 2026 — 10:00 AM CDT (mandatory, on-site)</li>
+<li><strong>Site Walk:</strong> April 8, 2026 — 1:00 PM CDT (following conference)</li>
+<li><strong>RFI Deadline:</strong> April 18, 2026 — 5:00 PM CDT</li>
+<li><strong>Addenda Issued By:</strong> April 22, 2026</li>
+<li><strong>Bid Due:</strong> April 30, 2026 — 2:00 PM CDT (no exceptions)</li>
+<li><strong>Award Target:</strong> May 30, 2026</li>
+<li><strong>NTP Target:</strong> July 1, 2026</li>
+<li><strong>Substantial Completion:</strong> December 31, 2028</li>
+</ul>
+
+<h4>A.3 Insurance Requirements</h4>
+<ul>
+<li>Commercial General Liability: $5,000,000 per occurrence / $10,000,000 aggregate</li>
+<li>Umbrella / Excess Liability: $5,000,000</li>
+<li>Professional Liability (E&O): $2,000,000</li>
+<li>Workers' Compensation: Statutory limits (Texas)</li>
+<li>Automobile Liability: $2,000,000 combined single limit</li>
+<li>Builder's Risk: Provided by GC — subcontractor to provide installation floater</li>
+</ul>
+
+<h4>A.4 Bonding Requirements</h4>
+<ul>
+<li>100% Performance Bond</li>
+<li>100% Payment Bond</li>
+<li>Surety must be rated A-VII or better by A.M. Best</li>
+<li>Bond premium to be included in bid price</li>
+</ul>
+
+<h4>A.5 Wage Requirements</h4>
+<ul>
+<li>Davis-Bacon prevailing wages apply (CHIPS Act federally-funded project)</li>
+<li>Certified payroll required weekly</li>
+<li>All apprenticeship ratios per DOL requirements</li>
+</ul>
+
+<h3>Section B — Scope of Work</h3>
+<p>The Mechanical/HVAC Subcontractor shall furnish all labor, materials, equipment, tools, supervision, engineering, and services necessary to complete the following systems in strict accordance with the contract documents.</p>
+
+<h4>B.1 Central Chilled Water Plant — 12,000 Ton Capacity</h4>
+<ul>
+<li>Water-cooled centrifugal chillers: six (6) × 2,000-ton units with VSD (N+1 redundancy)</li>
+<li>Refrigerant: R-514A or approved low-GWP alternative</li>
+<li>Primary, secondary, and tertiary chilled water pumping systems</li>
+<li>Cooling towers: six (6) induced-draft cells, 2,500-ton capacity each</li>
+<li>Condenser water treatment: chemical feed, filtration, blowdown control</li>
+<li>Thermal energy storage evaluation (2,000 ton-hour minimum if selected)</li>
+<li>Full instrumentation: flow meters, BTU meters, differential pressure sensors</li>
+</ul>
+
+<h4>B.2 Process Cooling Water (PCW) System</h4>
+<ul>
+<li>Separate closed-loop system independent from comfort chilled water</li>
+<li>Temperature control: ±0.5°F at point of use</li>
+<li>Redundant pumping (N+1), plate-and-frame heat exchangers</li>
+<li>5-micron filtration, UV sterilization, conductivity monitoring</li>
+<li>Supply temperature: 60°F ±0.5°F</li>
+<li>Capacity: 1,500 GPM minimum</li>
+</ul>
+
+<h4>B.3 Cleanroom Air Handling</h4>
+<ul>
+<li>Make-up air units (MAUs): twelve (12) units, 100% outside air, 50,000 CFM each (600,000 CFM total capacity)</li>
+<li>MAU features: gas-fired heat, DX pre-cool, chilled water final cool, steam humidification</li>
+<li>Recirculation air handlers (RCAUs): twenty (20) units, 40,000 CFM each, ULPA filtration</li>
+<li>Fan filter units (FFUs): approximately 3,000 units, 4'×4', ULPA grade, EC motor driven</li>
+<li>Cleanroom pressurization cascade: fab (+0.05" w.c.) → chase → subfab → general building</li>
+<li>Air change rates: 300-600 ACH in ISO 5 areas</li>
+</ul>
+
+<h4>B.4 Process Exhaust Systems (CRITICAL)</h4>
+<p><em>Separate, dedicated exhaust systems are required for each category. Cross-contamination between exhaust streams is strictly prohibited.</em></p>
+<ul>
+<li><strong>General Exhaust (GEX):</strong> galvanized steel ductwork, roof-mounted fans</li>
+<li><strong>Acid Exhaust (AEX):</strong> FRP ductwork, FRP fans, packed-tower scrubbers — 8 systems</li>
+<li><strong>Solvent/Organic Exhaust (SEX):</strong> welded steel duct, explosion-proof fans, thermal oxidizer treatment — 6 systems</li>
+<li><strong>Toxic/Pyrophoric Exhaust (TEX):</strong> welded SS316L duct, dedicated scrubbers or burn boxes — 4 systems</li>
+<li><strong>Heat Exhaust (HEX):</strong> steel ductwork, heat recovery where feasible</li>
+<li><strong>Lithography Exhaust (LEX):</strong> temperature-controlled, vibration-isolated</li>
+<li>All exhaust to be ducted above roofline per SEMI S6 and local code</li>
+</ul>
+
+<h4>B.5 Specialty Systems</h4>
+<ul>
+<li>Humidity control: ±1% RH in critical photolithography areas, ±2% RH in general fab</li>
+<li>Temperature control: ±0.1°C in lithography bays, ±0.5°C general fab</li>
+<li>Vibration isolation: VC-D criteria for general fab, VC-E for advanced lithography tools</li>
+<li>Cleanroom pressurization monitoring: real-time differential pressure across all zones</li>
+<li>Smoke detection and emergency purge systems per FM Global and SEMI S2</li>
+<li>Chemical delivery room ventilation (1 CFM/ft² minimum, emergency exhaust capability)</li>
+</ul>
+
+<h4>B.6 Building Automation / BMS</h4>
+<ul>
+<li>Full direct digital controls (DDC) — BACnet/IP backbone</li>
+<li>Integration with TI's existing Honeywell Experion facility management system</li>
+<li>Minimum 5,000 I/O points</li>
+<li>Web-based operator interface with role-based access</li>
+<li>Alarming, trending, energy monitoring, fault detection & diagnostics</li>
+<li>24/7 remote monitoring capability with 99.99% uptime SLA</li>
+<li>Cybersecurity per NIST 800-82 for industrial control systems</li>
+</ul>
+
+<h4>B.7 Associated Work</h4>
+<ul>
+<li>All ductwork: galvanized steel, stainless steel, FRP as required by service</li>
+<li>All piping: carbon steel, copper, FRP, PVDF, stainless as required</li>
+<li>Insulation: thermal and acoustic per specification (closed-cell on all chilled services)</li>
+<li>Vibration isolation: spring mounts, inertia bases, flex connectors</li>
+<li>Electrical connections: from MCC/panelboard to all mechanical equipment</li>
+<li>Testing, adjusting & balancing (TAB): AABC or NEBB certified</li>
+<li>Commissioning and integrated systems testing (IST)</li>
+<li>Cleanroom validation: particle counts, air velocity, pressurization, HEPA/ULPA integrity</li>
+<li>As-built drawings (AutoCAD + Revit BIM models)</li>
+<li>Operations & maintenance manuals (electronic + 3 hard copies)</li>
+<li>Operator training: 40 hours minimum, video-recorded</li>
+<li>Warranty: 2 years from beneficial occupancy, 5 years on compressors</li>
+</ul>
+
+<h3>Section C — Evaluation Criteria</h3>
+<table style="margin:12px 0">
+<tr><th>Criteria</th><th>Weight</th></tr>
+<tr><td>Technical Approach & Methodology</td><td>30%</td></tr>
+<tr><td>Relevant Experience — Semiconductor Fab Projects</td><td>25%</td></tr>
+<tr><td>Key Personnel Qualifications</td><td>15%</td></tr>
+<tr><td>Pricing</td><td>20%</td></tr>
+<tr><td>Safety Record (EMR, OSHA DART, Citations)</td><td>10%</td></tr>
+</table>
+
+<h3>Section D — Submission Requirements</h3>
+<ul>
+<li>Technical Proposal: 50 pages maximum (exclusive of appendices)</li>
+<li>Pricing Proposal: separate sealed envelope / separate digital upload</li>
+<li>Equipment Schedule: all major equipment with approved manufacturers, model numbers, capacities</li>
+<li>Project Schedule: CPM format, resource-loaded, showing integration with GC master schedule</li>
+<li>Safety Plan: site-specific, including EMR history (3 years), OSHA logs</li>
+<li>QA/QC Plan: inspection & test plans for all critical systems</li>
+<li>Minimum five (5) references from semiconductor fabrication facility projects completed within last 10 years</li>
+<li>Organizational chart with resumes of all key personnel</li>
+<li>Acknowledgment of all addenda</li>
+</ul>
+</div>
+</div>
+
+<!-- PANEL 3: SCOPE EXTRACTION -->
+<div class="panel" id="panel-scope">
+<div class="section-title">AI Scope Extraction</div>
+<div class="section-sub">Automatically parsed requirements from GC bid package — 38 items extracted</div>
+
+<div class="stats-row">
+<div class="stat-pill"><div class="num">38</div><div class="label">Total<br>Requirements</div></div>
+<div class="stat-pill"><div class="num">12</div><div class="label">Scope<br>Items</div></div>
+<div class="stat-pill"><div class="num">10</div><div class="label">Technical<br>Specs</div></div>
+<div class="stat-pill"><div class="num">8</div><div class="label">Compliance<br>Items</div></div>
+<div class="stat-pill"><div class="num">5</div><div class="label">Timeline<br>Items</div></div>
+<div class="stat-pill"><div class="num">3</div><div class="label">Cost<br>Items</div></div>
+</div>
+
+<div class="table-wrap">
+<table id="scopeTable">
+<thead>
+<tr><th>#</th><th>Requirement</th><th>Category</th><th>Priority</th><th>Source</th></tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+
+<!-- PANEL 4: EQUIPMENT TAKEOFF -->
+<div class="panel" id="panel-equipment">
+<div class="section-title">Equipment Takeoff</div>
+<div class="section-sub">Semiconductor fab HVAC major equipment schedule — pre-populated from scope analysis</div>
+
+<div class="stats-row">
+<div class="stat-pill"><div class="num">18</div><div class="label">Equipment<br>Line Items</div></div>
+<div class="stat-pill"><div class="num" id="equipTotal">$30.0M</div><div class="label">Equipment<br>Subtotal</div></div>
+</div>
+
+<div class="table-wrap">
+<table id="equipTable">
+<thead><tr><th>#</th><th>Equipment</th><th>Specifications</th><th class="text-center">Qty</th><th class="text-right">Unit Cost</th><th class="text-right">Total</th></tr></thead>
+<tbody></tbody>
+<tfoot><tr class="total-row"><td colspan="4"></td><td class="text-right">SUBTOTAL</td><td class="text-right" id="equipSubtotal">—</td></tr></tfoot>
+</table>
+</div>
+
+<div class="chart-row">
+<div class="chart-box"><h4>Equipment Cost Distribution</h4><div class="chart-container"><canvas id="equipChart"></canvas></div></div>
+<div class="chart-box"><h4>Equipment by System</h4><div class="chart-container"><canvas id="equipSystemChart"></canvas></div></div>
+</div>
+</div>
+
+<!-- PANEL 5: COST ESTIMATOR -->
+<div class="panel" id="panel-cost">
+<div class="section-title">Cost Estimator</div>
+<div class="section-sub">Full project cost breakdown — Lone Star Mechanical bid for TI SM2 HVAC scope</div>
+
+<div class="intel-panel">
+<h4>📊 Pricing Intelligence</h4>
+<div class="intel-item"><span class="icon">📈</span><p><strong>Market conditions:</strong> Semiconductor fab construction at all-time high. Chiller lead times 14-18 months. Steel prices up 12% YoY. Skilled labor shortage in north Texas.</p></div>
+<div class="intel-item"><span class="icon">🏗️</span><p><strong>Comparable projects:</strong> Samsung Taylor TX fab HVAC was $195M (smaller scope). TSMC Arizona fab HVAC packages ranged $280-340M. Intel Ohio fab HVAC ~$260M.</p></div>
+<div class="intel-item"><span class="icon">⚠️</span><p><strong>Risk premium:</strong> Adjacent active fab (SM1) requires contamination protocols. Davis-Bacon prevailing wages add ~15% to labor. Bond cost ~1.5% of contract value at this size.</p></div>
+</div>
+
+<div class="table-wrap">
+<table id="costTable">
+<thead><tr><th>Category</th><th>Description</th><th class="text-right">Amount</th><th class="text-right">% of Total</th></tr></thead>
+<tbody></tbody>
+<tfoot>
+<tr class="total-row"><td colspan="2">Direct Cost Subtotal</td><td class="text-right" id="costSubtotal">—</td><td></td></tr>
+<tr><td>Overhead</td><td>10% of subtotal</td><td class="text-right" id="costOverhead">—</td><td class="text-right" id="costOverheadPct">—</td></tr>
+<tr><td>Margin</td><td>8% of (subtotal + overhead)</td><td class="text-right" id="costMargin">—</td><td class="text-right" id="costMarginPct">—</td></tr>
+<tr class="total-row"><td colspan="2" style="font-size:16px">TOTAL BID PRICE</td><td class="text-right" style="font-size:16px;color:var(--orange)" id="costTotal">—</td><td></td></tr>
+</tfoot>
+</table>
+</div>
+
+<div class="chart-row">
+<div class="chart-box"><h4>Cost Distribution</h4><div class="chart-container"><canvas id="costChart"></canvas></div></div>
+<div class="chart-box"><h4>Cost by Category Type</h4><div class="chart-container"><canvas id="costTypeChart"></canvas></div></div>
+</div>
+</div>
+
+<!-- PANEL 6: PROPOSAL BUILDER -->
+<div class="panel" id="panel-proposal">
+<div class="section-title">Proposal Builder</div>
+<div class="section-sub">12-section bid response — Lone Star Mechanical → Alliance Construction Group</div>
+
+<div class="stats-row">
+<div class="stat-pill"><div class="num">12</div><div class="label">Proposal<br>Sections</div></div>
+<div class="stat-pill"><div class="num">100%</div><div class="label">Sections<br>Drafted</div></div>
+</div>
+
+<div class="proposal-sections" id="proposalSections"></div>
+</div>
+
+<!-- PANEL 7: BID COMPARISON -->
+<div class="panel" id="panel-comparison">
+<div class="section-title">Bid Comparison Analysis</div>
+<div class="section-sub">Side-by-side evaluation of 3 competing HVAC bids for TI SM2</div>
+
+<div class="compare-grid" id="compareGrid"></div>
+
+<div class="chart-row">
+<div class="chart-box"><h4>Bid Radar — Multi-Dimensional Comparison</h4><div class="chart-container" style="max-width:500px"><canvas id="radarChart"></canvas></div></div>
+<div class="chart-box"><h4>Price Comparison</h4><div class="chart-container"><canvas id="priceBarChart"></canvas></div></div>
+</div>
+
+<div class="intel-panel">
+<h4>🏆 Recommendation</h4>
+<p><strong>Lone Star Mechanical — BEST VALUE</strong> (Weighted Score: 88.4/100)</p>
+<p>While not the lowest price ($7.4M above ThermalTech), Lone Star offers the strongest technical approach (92/100), superior semiconductor fab experience (4 completed fabs), and on-schedule delivery at 30 months. ThermalTech's lower price comes with schedule risk (+2 months) and limited fab experience (2 projects). Pacific Mechanical has the most experience but at a 7% price premium.</p>
+</div>
+</div>
+
+<!-- PANEL 8: COMPLIANCE & RISK -->
+<div class="panel" id="panel-compliance">
+<div class="section-title">Compliance &amp; Risk Assessment</div>
+<div class="section-sub">Lone Star Mechanical — pre-qualification and risk analysis for TI SM2</div>
+
+<div class="card-grid" style="grid-template-columns:1fr 1fr">
+<div class="card" style="padding:0">
+<div style="padding:16px 20px;background:var(--bg);font-weight:700;font-size:14px;border-bottom:1px solid var(--border)">✅ Compliance Checklist</div>
+<ul class="checklist" id="complianceList"></ul>
+</div>
+<div class="card" style="padding:0">
+<div style="padding:16px 20px;background:var(--bg);font-weight:700;font-size:14px;border-bottom:1px solid var(--border)">⚠️ Risk Register</div>
+<div id="riskList"></div>
+</div>
+</div>
+
+<div class="chart-row" style="margin-top:24px">
+<div class="chart-box"><h4>Risk Distribution</h4><div class="chart-container"><canvas id="riskChart"></canvas></div></div>
+<div class="chart-box"><h4>Compliance Status</h4><div class="chart-container"><canvas id="complianceChart"></canvas></div></div>
+</div>
+</div>
+
+<!-- PANEL 9: SUBMIT & TRACK -->
+<div class="panel" id="panel-submit">
+<div class="section-title">Submit &amp; Track</div>
+<div class="section-sub">Bid submission management — TI SM2 HVAC Package</div>
+
+<div class="card" style="margin-bottom:24px;padding:24px">
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+<div>
+<div class="card-label">Current Status</div>
+<div id="submitStatus" class="card-value orange" style="font-size:24px">DRAFT</div>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn btn-primary" onclick="updateStatus('ready')">✅ Mark Ready</button>
+<button class="btn btn-primary" onclick="updateStatus('submitted')" style="background:var(--green)">📤 Submit Bid</button>
+<button class="btn btn-secondary" onclick="exportJSON()">📥 Export JSON</button>
+<button class="btn btn-secondary" onclick="window.print()">🖨️ Export PDF</button>
+</div>
+</div>
+</div>
+
+<div class="status-tracker" id="statusTracker"></div>
+
+<div class="section-title" style="font-size:16px;margin-top:32px">Project Timeline</div>
+<div class="timeline" id="projectTimeline"></div>
+
+<div class="card-grid" style="margin-top:24px">
+<div class="card"><div class="card-label">Bid Package</div><div class="card-value green">Received</div><div class="card-sub">March 15, 2026</div></div>
+<div class="card"><div class="card-label">Pre-Bid Conference</div><div class="card-value blue">April 8, 2026</div><div class="card-sub">10:00 AM CDT — On-site</div></div>
+<div class="card"><div class="card-label">RFI Deadline</div><div class="card-value">April 18, 2026</div><div class="card-sub">5:00 PM CDT</div></div>
+<div class="card"><div class="card-label">Bid Due</div><div class="card-value" style="color:var(--risk-high)">April 30, 2026</div><div class="card-sub">2:00 PM CDT — NO EXCEPTIONS</div></div>
+</div>
+</div>
+
+</div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+// =====================================================
+// DATA
+// =====================================================
+
+const scopeData = [
+{id:1,req:"Central chilled water plant — 12,000 ton total capacity",cat:"scope",priority:"critical",src:"B.1"},
+{id:2,req:"Six (6) water-cooled centrifugal chillers, 2,000 ton each, VSD, R-514A",cat:"technical",priority:"critical",src:"B.1"},
+{id:3,req:"N+1 redundancy on all chiller plant equipment",cat:"technical",priority:"critical",src:"B.1"},
+{id:4,req:"Cooling towers — 6 induced-draft cells, 2,500 ton each",cat:"scope",priority:"high",src:"B.1"},
+{id:5,req:"Primary/secondary/tertiary chilled water pumping",cat:"scope",priority:"high",src:"B.1"},
+{id:6,req:"Process cooling water system — separate from comfort CHW",cat:"scope",priority:"critical",src:"B.2"},
+{id:7,req:"PCW temperature control ±0.5°F at point of use",cat:"technical",priority:"critical",src:"B.2"},
+{id:8,req:"Make-up air units — 12 units, 50,000 CFM each, 600,000 CFM total",cat:"scope",priority:"critical",src:"B.3"},
+{id:9,req:"Recirculation air handlers — 20 units, 40,000 CFM, ULPA filtration",cat:"scope",priority:"critical",src:"B.3"},
+{id:10,req:"Fan filter units — ~3,000 units, 4×4, ULPA, EC motors",cat:"scope",priority:"high",src:"B.3"},
+{id:11,req:"Cleanroom pressurization cascade per ISO 14644",cat:"technical",priority:"critical",src:"B.3"},
+{id:12,req:"Separate acid exhaust system — FRP ductwork, packed-tower scrubbers",cat:"scope",priority:"critical",src:"B.4"},
+{id:13,req:"Separate solvent exhaust — explosion-proof, thermal oxidizer",cat:"scope",priority:"critical",src:"B.4"},
+{id:14,req:"Separate toxic/pyrophoric exhaust — SS316L, burn boxes/scrubbers",cat:"scope",priority:"critical",src:"B.4"},
+{id:15,req:"No cross-contamination between exhaust streams",cat:"technical",priority:"critical",src:"B.4"},
+{id:16,req:"Humidity control ±1% RH in photolithography areas",cat:"technical",priority:"high",src:"B.5"},
+{id:17,req:"Temperature control ±0.1°C in lithography bays",cat:"technical",priority:"high",src:"B.5"},
+{id:18,req:"Vibration isolation — VC-D general fab, VC-E lithography",cat:"technical",priority:"high",src:"B.5"},
+{id:19,req:"Full DDC/BMS — BACnet/IP, 5,000+ I/O points",cat:"scope",priority:"high",src:"B.6"},
+{id:20,req:"Integration with TI Honeywell Experion system",cat:"technical",priority:"high",src:"B.6"},
+{id:21,req:"24/7 remote monitoring — 99.99% uptime SLA",cat:"technical",priority:"medium",src:"B.6"},
+{id:22,req:"Davis-Bacon prevailing wages required",cat:"compliance",priority:"critical",src:"A.5"},
+{id:23,req:"$5M GL + $5M umbrella + $2M professional liability insurance",cat:"compliance",priority:"critical",src:"A.3"},
+{id:24,req:"100% performance bond + 100% payment bond",cat:"compliance",priority:"critical",src:"A.4"},
+{id:25,req:"TAB by AABC or NEBB certified firm",cat:"compliance",priority:"high",src:"B.7"},
+{id:26,req:"As-built drawings in AutoCAD + Revit BIM",cat:"compliance",priority:"medium",src:"B.7"},
+{id:27,req:"40 hours minimum operator training, video-recorded",cat:"compliance",priority:"medium",src:"B.7"},
+{id:28,req:"2-year warranty; 5-year on compressors",cat:"compliance",priority:"high",src:"B.7"},
+{id:29,req:"Pre-bid conference April 8, 2026 (mandatory)",cat:"timeline",priority:"critical",src:"A.2"},
+{id:30,req:"Bid due April 30, 2026 — 2:00 PM CDT",cat:"timeline",priority:"critical",src:"A.2"},
+{id:31,req:"NTP target July 1, 2026",cat:"timeline",priority:"high",src:"A.2"},
+{id:32,req:"Substantial completion December 31, 2028",cat:"timeline",priority:"high",src:"A.2"},
+{id:33,req:"30-month construction duration",cat:"timeline",priority:"high",src:"A.2"},
+{id:34,req:"Technical proposal 50 pages max",cat:"compliance",priority:"medium",src:"D"},
+{id:35,req:"5 semiconductor fab references required",cat:"compliance",priority:"high",src:"D"},
+{id:36,req:"Pricing weighted 20% of evaluation",cat:"cost",priority:"high",src:"C"},
+{id:37,req:"Technical approach weighted 30% of evaluation",cat:"cost",priority:"high",src:"C"},
+{id:38,req:"Safety record (EMR/OSHA) weighted 10%",cat:"cost",priority:"medium",src:"C"}
+];
+
+const equipmentData = [
+{name:"Centrifugal Chiller 2,000 Ton",spec:"Water-cooled, VSD, R-514A, Trane/York",qty:6,unit:1200000,system:"Chiller Plant"},
+{name:"Cooling Tower Cell",spec:"Induced draft, 2,500 ton, Marley/BAC",qty:6,unit:350000,system:"Chiller Plant"},
+{name:"Primary CHW Pump",spec:"3,000 GPM, 100HP, end-suction, VFD",qty:6,unit:45000,system:"Chiller Plant"},
+{name:"Secondary CHW Pump",spec:"4,500 GPM, 150HP, base-mounted, VFD",qty:6,unit:65000,system:"Chiller Plant"},
+{name:"Make-Up Air Unit (MAU)",spec:"50,000 CFM, gas heat, DX cool, humidification",qty:12,unit:280000,system:"Air Handling"},
+{name:"Recirculation Air Handler (RCAU)",spec:"40,000 CFM, ULPA filtration, EC fans",qty:20,unit:180000,system:"Air Handling"},
+{name:"Fan Filter Unit (FFU)",spec:'4\'×4\', ULPA 99.9995%, EC motor',qty:3000,unit:1800,system:"Air Handling"},
+{name:"Acid Exhaust Fan",spec:"FRP construction, 20,000 CFM each",qty:8,unit:55000,system:"Process Exhaust"},
+{name:"Solvent Exhaust Fan",spec:"Explosion-proof, 15,000 CFM, spark-resistant",qty:6,unit:48000,system:"Process Exhaust"},
+{name:"Toxic Exhaust System",spec:"SS316L, integrated scrubber/burn box",qty:4,unit:120000,system:"Process Exhaust"},
+{name:"General Exhaust Fan",spec:"30,000 CFM, belt-drive, roof-mounted",qty:10,unit:35000,system:"Process Exhaust"},
+{name:"PCW Heat Exchanger",spec:"Plate & frame, 500 ton, 316SS plates",qty:4,unit:85000,system:"PCW"},
+{name:"PCW Pump",spec:"1,500 GPM, 75HP, redundant (N+1)",qty:4,unit:38000,system:"PCW"},
+{name:"Thermal Oxidizer",spec:"For solvent exhaust, 98% DRE, natural gas",qty:2,unit:450000,system:"Process Exhaust"},
+{name:"Acid Scrubber",spec:"Packed tower, FRP, recirculating",qty:4,unit:180000,system:"Process Exhaust"},
+{name:"BMS/DDC System",spec:"BACnet/IP, 5,000+ pts, Honeywell integration",qty:1,unit:2800000,system:"Controls"},
+{name:"VFDs (Various)",spec:"All major rotating equipment",qty:80,unit:12000,system:"Controls"},
+{name:"Cleanroom Pressurization System",spec:"Multi-zone monitoring + auto-control",qty:1,unit:450000,system:"Controls"}
+];
+
+const costData = [
+{cat:"Equipment",desc:"Major mechanical equipment (per takeoff)",amount:32010000,type:"materials"},
+{cat:"Ductwork (GI + SS + FRP)",desc:"Galvanized, stainless, fiberglass-reinforced plastic",amount:28000000,type:"materials"},
+{cat:"Piping (CHW + PCW + Condensate)",desc:"Carbon steel, copper, FRP, PVDF, stainless",amount:22000000,type:"materials"},
+{cat:"Insulation",desc:"Thermal + acoustic, closed-cell on chilled services",amount:12000000,type:"materials"},
+{cat:"Electrical (MCC to Equipment)",desc:"Power wiring, disconnects, starters, conduit",amount:15000000,type:"materials"},
+{cat:"Controls / BMS",desc:"DDC controllers, sensors, actuators, software licensing",amount:8000000,type:"materials"},
+{cat:"Process Exhaust (Specialty)",desc:"Scrubbers, oxidizers, FRP systems, burn boxes",amount:14000000,type:"materials"},
+{cat:"Labor — Sheet Metal",desc:"Ductwork fabrication & installation, 85,000 MH",amount:18000000,type:"labor"},
+{cat:"Labor — Pipefitting",desc:"Pipe installation, welding, brazing, 72,000 MH",amount:16000000,type:"labor"},
+{cat:"Labor — Controls",desc:"BMS installation, programming, integration, 28,000 MH",amount:6000000,type:"labor"},
+{cat:"Testing, Adjusting & Balancing",desc:"NEBB-certified TAB for all systems",amount:4000000,type:"services"},
+{cat:"Commissioning & Validation",desc:"Cx, IST, cleanroom validation, particle counts",amount:6000000,type:"services"},
+{cat:"Permits & Insurance",desc:"Building permits, installation floater, bonds",amount:3000000,type:"overhead"},
+{cat:"Project Management",desc:"PM, APM, PE, scheduler — 30 months",amount:5000000,type:"overhead"},
+{cat:"Safety Program",desc:"Safety manager, training, PPE, monitoring",amount:2000000,type:"overhead"},
+{cat:"Contingency (8%)",desc:"Design development, unforeseen conditions",amount:15200000,type:"contingency"}
+];
+
+const proposalSections = [
+{num:1,title:"Cover Letter",content:`<p><strong>Lone Star Mechanical, Inc.</strong><br>4200 Commerce Street, Suite 800<br>Dallas, Texas 75226</p><p>March 28, 2026</p><p>Mr. Marcus J. Halvorsen, PE<br>Alliance Construction Group, LLC<br>Re: TI SM2 — Mechanical/HVAC Package — Bid No. ACG-TI-SM2-MECH-2026-001</p><p>Dear Mr. Halvorsen,</p><p>Lone Star Mechanical is pleased to submit our proposal for the Mechanical/HVAC scope on the Texas Instruments SM2 300mm Semiconductor Wafer Fabrication Facility in Sherman, Texas. With over 28 years of experience in critical environment mechanical construction — including four completed semiconductor fabrication facilities — we are uniquely qualified to deliver this project safely, on schedule, and within budget.</p><p>Our proposed price of <strong>$225,721,000</strong> reflects a comprehensive understanding of the semiconductor fab HVAC requirements, current market conditions, and the critical nature of maintaining adjacent SM1 operations during construction. We have secured equipment reservations with Trane, Marley, and our key suppliers to mitigate the current supply chain challenges.</p><p>We look forward to the opportunity to partner with Alliance Construction Group on this landmark project.</p><p>Respectfully,<br><strong>Robert "Bobby" Castillo</strong><br>President & CEO, Lone Star Mechanical, Inc.</p>`},
+{num:2,title:"Executive Summary",content:`<p>Lone Star Mechanical proposes to furnish all labor, materials, equipment, and services for the complete Mechanical/HVAC scope of the TI SM2 facility for a lump-sum price of <strong>$225,721,000</strong>.</p><p><strong>Key Highlights:</strong></p><ul><li>30-month schedule aligned with GC master schedule — substantial completion Dec 2028</li><li>12,000-ton chilled water plant with N+1 redundancy on all systems</li><li>600,000+ CFM cleanroom air handling — ISO 5 / ISO 7 environments</li><li>Six (6) independent process exhaust systems with full code-compliant treatment</li><li>Full BMS integration with TI's Honeywell Experion platform</li><li>Peak workforce of 380 skilled tradespeople — all Davis-Bacon compliant</li><li>EMR: 0.78 — zero lost-time incident target</li><li>Equipment lead-time mitigation: letters of intent already executed with major vendors</li></ul><p>Our team brings direct experience from the Samsung Taylor, GlobalFoundries Malta, and Micron Boise fab projects, ensuring proven semiconductor construction methodology from day one.</p>`},
+{num:3,title:"Qualifications & Experience",content:`<p><strong>Lone Star Mechanical, Inc.</strong> — Founded 1998, Dallas, Texas</p><ul><li>Annual revenue: $420M (2025)</li><li>Employees: 1,850 (field: 1,400 / office: 450)</li><li>Bonding capacity: $500M single / $1.2B aggregate</li></ul><p><strong>Semiconductor Fab Projects:</strong></p><ul><li>Samsung Electronics — Taylor, TX — 5nm Fab — HVAC $165M (2023-2025)</li><li>GlobalFoundries — Malta, NY — Fab 8.2 expansion — HVAC $88M (2021-2023)</li><li>Micron Technology — Boise, ID — Fab 1 modernization — HVAC $62M (2020-2022)</li><li>Texas Instruments — SM1, Sherman, TX — HVAC support scope $28M (2024-2025)</li></ul><p><strong>Cleanroom certifications:</strong> ISO 14644 compliant construction protocols, SEMI S2/S6/S8 experience, FM Global semiconductor standards</p>`},
+{num:4,title:"Technical Approach",content:`<p><strong>Phased Installation Strategy:</strong></p><p>Our approach synchronizes mechanical installation with building shell progress, structured in five phases:</p><ul><li><strong>Phase 1 (Months 1-6):</strong> Central utility plant — foundations, chiller pads, cooling tower basin, underground piping. Equipment procurement and factory witness testing.</li><li><strong>Phase 2 (Months 4-12):</strong> Main distribution — CHW/PCW risers, main duct trunks, exhaust shafts. Coordinate with structural steel and deck pour schedule.</li><li><strong>Phase 3 (Months 8-18):</strong> Cleanroom level rough-in — MAU installation, RCAU placement, FFU grid support, exhaust ductwork to roof. BMS backbone installation.</li><li><strong>Phase 4 (Months 14-24):</strong> Finish work — FFU installation, terminal connections, controls programming, insulation completion.</li><li><strong>Phase 5 (Months 22-30):</strong> TAB, commissioning, integrated systems testing, cleanroom validation, owner training.</li></ul><p><strong>SM1 Protection Protocol:</strong> Dedicated contamination prevention officer, continuous particle monitoring at SM1 boundary, HEPA-filtered temporary enclosures, vibration monitoring within 200' of active fab.</p>`},
+{num:5,title:"Scope of Work (Detailed)",content:`<p>Per bid documents, Lone Star Mechanical's scope includes:</p><ul><li>12,000-ton central chilled water plant with 6×2,000T Trane CenTraVac chillers</li><li>Process cooling water system — separate loop, ±0.5°F control</li><li>12 make-up air units, 20 recirculation air handlers, ~3,000 FFUs</li><li>Complete process exhaust: general, acid (8 systems), solvent (6), toxic (4), heat, lithography</li><li>Thermal oxidizers (2), acid scrubbers (4), burn boxes as required</li><li>Full BMS/DDC — 5,000+ points, Honeywell Experion integration</li><li>All ductwork: GI, SS, FRP per service classification</li><li>All piping: CHW, CW, PCW, condensate, drain — steel, copper, FRP, PVDF</li><li>Complete insulation program (thermal + acoustic)</li><li>Electrical from MCC to all mechanical equipment</li><li>TAB, commissioning, cleanroom validation</li><li>As-built BIM models, O&M manuals, 40 hours operator training</li></ul>`},
+{num:6,title:"Equipment Schedule",content:`<p><strong>Major Equipment — Approved Manufacturers:</strong></p><ul><li>Chillers: Trane CenTraVac CVHH (primary) / York YZ (alternate)</li><li>Cooling Towers: Marley NC8000 (primary) / BAC 3000 Series (alternate)</li><li>MAUs: Air Enterprises custom AHU (primary) / Munters (alternate)</li><li>RCAUs: Air Enterprises (primary) / Huntair (alternate)</li><li>FFUs: Envirco MAC-10 (primary) / AAF AstroPak (alternate)</li><li>Exhaust Fans: Twin City Fan (GEX) / Sternvent FRP (AEX)</li><li>BMS: Honeywell Niagara (per TI standard)</li><li>VFDs: ABB ACS880 (primary) / Danfoss VLT (alternate)</li><li>Thermal Oxidizers: MEGTEC/Dürr Clean Technology</li><li>Acid Scrubbers: Tri-Mer Corporation</li></ul><p><em>Equipment submittals with full cut sheets will be provided within 14 days of NTP.</em></p>`},
+{num:7,title:"Project Schedule",content:`<p><strong>CPM Milestone Schedule:</strong></p><ul><li><strong>Jul 2026:</strong> NTP — Mobilization, submittals, procurement</li><li><strong>Aug 2026:</strong> Central plant foundations begin</li><li><strong>Oct 2026:</strong> First chillers delivered and set</li><li><strong>Dec 2026:</strong> Cooling towers operational, temp CHW available</li><li><strong>Mar 2027:</strong> Main CHW/PCW distribution 50% complete</li><li><strong>Jun 2027:</strong> MAU installation begins</li><li><strong>Sep 2027:</strong> RCAU installation, exhaust systems rough-in</li><li><strong>Dec 2027:</strong> FFU grid installation begins</li><li><strong>Mar 2028:</strong> BMS programming and integration</li><li><strong>Jun 2028:</strong> TAB begins</li><li><strong>Sep 2028:</strong> Commissioning and IST</li><li><strong>Nov 2028:</strong> Cleanroom validation</li><li><strong>Dec 2028:</strong> Substantial completion — owner training</li></ul><p><em>Full resource-loaded CPM schedule in Primavera P6 format will be provided with contract execution.</em></p>`},
+{num:8,title:"Key Personnel",content:`<p><strong>Project Director:</strong> Tom Whitfield, PE — 32 years exp., led Samsung Taylor & GlobalFoundries Malta HVAC</p><p><strong>Project Manager:</strong> Sarah Chen, PE, LEED AP — 18 years exp., managed $200M+ mechanical projects, Micron Boise fab PM</p><p><strong>Site Superintendent:</strong> Jake Morrison — 25 years exp., field leadership on 3 semiconductor fabs, OSHA 500 instructor</p><p><strong>MEP Coordinator / BIM Manager:</strong> David Park — 12 years exp., Revit/Navisworks specialist, clash detection lead on TSMC project</p><p><strong>QA/QC Manager:</strong> Linda Vasquez — 20 years exp., ASME/AWS certified, cleanroom construction protocols specialist</p><p><strong>Commissioning Lead:</strong> Dr. Michael Torres, PE, CxA, BCxP — 15 years exp., commissioning authority on 6 semiconductor fabs</p><p><strong>Safety Director:</strong> Chris Okafor, CSP, CHST — 22 years exp., zero lost-time incidents on last 4 projects</p>`},
+{num:9,title:"Pricing Summary",content:`<p><strong>LUMP SUM BID PRICE: $225,721,000</strong></p><p><em>Pricing breakdown by division:</em></p><ul><li>Equipment & Materials: $131,010,000 (58%)</li><li>Labor (all trades): $40,000,000 (18%)</li><li>Services (TAB, Cx, validation): $10,000,000 (4%)</li><li>Project overhead (PM, safety, insurance): $10,000,000 (4%)</li><li>Contingency: $15,200,000 (7%)</li><li>Overhead (10%): $19,011,000 (8%)</li><li>Margin: $500,000 (included in above)</li></ul><p><strong>Payment terms:</strong> Monthly progress billing per AIA G702/G703. Retainage: 5% reduced to 2.5% at 50% completion.</p><p><strong>Equipment deposits:</strong> 30% upon PO placement for long-lead items (chillers, MAUs, thermal oxidizers).</p>`},
+{num:10,title:"Exclusions & Clarifications",content:`<p><strong>Exclusions:</strong></p><ul><li>Process piping beyond mechanical room boundaries (by others)</li><li>Ultrapure water (UPW) and waste treatment systems</li><li>Cleanroom wall and ceiling systems (by cleanroom contractor)</li><li>Fire suppression / sprinkler systems (by fire protection sub)</li><li>Electrical work upstream of MCC (by electrical sub)</li><li>Structural supports for rooftop equipment (by GC)</li><li>Hazardous material abatement (if encountered)</li><li>Seismic bracing engineering (by EOR — installation by LSM)</li></ul><p><strong>Clarifications:</strong></p><ul><li>Bid assumes 5-day/10-hour work weeks. Premium time for 6th/7th days if required by schedule.</li><li>Chiller delivery requires 18-month lead time from PO — early procurement authorization needed.</li><li>GC to provide clear, level laydown area minimum 2 acres adjacent to building.</li><li>Temporary power (480V, 200A) and water to be provided by GC at no cost.</li></ul>`},
+{num:11,title:"Safety & Compliance",content:`<p><strong>Safety Record:</strong></p><ul><li>EMR (3-year average): 0.78</li><li>DART Rate: 0.42</li><li>OSHA Citations (5 years): Zero serious; 2 other-than-serious (corrected)</li><li>Lost Time Incidents (2025): Zero</li><li>Total Recordable Incident Rate: 0.85</li></ul><p><strong>Safety Program:</strong></p><ul><li>Full-time site safety manager + 2 safety technicians</li><li>Daily toolbox talks, weekly all-hands safety meetings</li><li>100% OSHA 30 for supervisors, OSHA 10 for all field personnel</li><li>Behavior-based safety observation program</li><li>Drug & alcohol testing: pre-employment, random, post-incident</li><li>Active fab (SM1) contamination prevention plan</li><li>Hot work, confined space, LOTO, fall protection programs</li></ul><p><strong>Target: Zero incidents — zero lost-time — zero OSHA recordables</strong></p>`},
+{num:12,title:"Terms & Conditions",content:`<p><strong>Contract Basis:</strong> Lump sum per AIA A401-2017 (Standard Form of Agreement Between Contractor and Subcontractor)</p><p><strong>Key Terms:</strong></p><ul><li>Payment: Net 30 from approved application for payment</li><li>Retainage: 5%, reduced to 2.5% at 50% completion</li><li>Change orders: Per AIA G701, with 15% markup on labor, 10% on materials</li><li>Schedule: Time is of the essence. Liquidated damages per prime contract flow-down.</li><li>Warranty: 2 years standard, 5 years on compressors, 10 years on structural supports</li><li>Insurance: Per Section A.3 requirements — certificates provided with executed contract</li><li>Bonding: 100% P&P bonds — Zurich Surety (A+ XV rated)</li><li>Dispute resolution: Mediation → Binding arbitration (AAA) in Dallas County, TX</li><li>This proposal valid for 90 days from date of submission</li></ul>`}
+];
+
+const comparisonData = {
+headers:["Criteria","Lone Star Mechanical","ThermalTech Solutions","Pacific Mechanical"],
+rows:[
+["Total Price","$225.7M","$218.3M","$241.2M"],
+["$/Ton Cooling","$18,808","$18,192","$20,100"],
+["Technical Score","92 / 100","85 / 100","88 / 100"],
+["Fab Experience","4 semiconductor fabs","2 semiconductor fabs","6 semiconductor fabs"],
+["Largest Fab Project","$165M (Samsung Taylor)","$95M (Onsemi Phoenix)","$280M (TSMC Arizona)"],
+["Proposed Schedule","30 months","32 months","28 months"],
+["Peak Workforce","380","310","420"],
+["Safety EMR","0.78","0.92","0.71"],
+["DART Rate","0.42","0.68","0.38"],
+["Bonding Capacity","$500M single","$300M single","$750M single"],
+["Key PM Experience","18 yrs / 3 fabs","12 yrs / 1 fab","22 yrs / 5 fabs"],
+["Weighted Score","88.4 / 100","82.1 / 100","86.7 / 100"],
+["Recommendation","★ BEST VALUE","Lowest Price","Most Experience"]
+]
+};
+
+const complianceItems = [
+{item:"Texas Mechanical Contractor License (TDLR)",status:"pass"},
+{item:"$5M Commercial General Liability",status:"pass"},
+{item:"$5M Umbrella / Excess Liability",status:"pass"},
+{item:"$2M Professional Liability (E&O)",status:"pass"},
+{item:"100% Performance Bond",status:"pass"},
+{item:"100% Payment Bond",status:"pass"},
+{item:"Davis-Bacon Prevailing Wage Compliance",status:"pass"},
+{item:"OSHA 30-Hour — All Supervisors",status:"pass"},
+{item:"OSHA 10-Hour — All Field Workers",status:"pass"},
+{item:"Confined Space Entry Program",status:"pass"},
+{item:"Hot Work Permit Program",status:"pass"},
+{item:"Fall Protection Plan",status:"pass"},
+{item:"Lockout/Tagout (LOTO) Program",status:"pass"},
+{item:"Silica Exposure Control Plan",status:"pass"},
+{item:"EMR < 1.0 (Current: 0.78)",status:"pass"}
+];
+
+const riskItems = [
+{level:"high",text:"Cleanroom contamination during construction — active SM1 fab adjacent. Requires dedicated contamination prevention officer, continuous particle monitoring, HEPA-filtered enclosures."},
+{level:"high",text:"Supply chain risk on centrifugal chillers — 14-18 month lead times currently. Early procurement authorization and vendor LOIs critical to schedule."},
+{level:"high",text:"Texas power grid reliability — Winter Storm Uri (2021) precedent. Temporary backup power plan required during commissioning phase."},
+{level:"med",text:"Skilled labor shortage in Sherman area (pop. ~50,000). Plan: mobilize Dallas/DFW workforce with per diem + temporary housing. Partner with UA Local 100 for pipefitters and SMART Local 68 for sheet metal."},
+{level:"med",text:"Water rights and usage — fab consumes 1,700 GPM. North Texas Municipal Water District allocation must be confirmed. Cooling tower water treatment optimization to minimize blowdown."},
+{level:"med",text:"Trade coordination in confined fab structure — 20+ subcontractors working simultaneously. BIM clash detection and 3-week look-ahead scheduling essential."},
+{level:"low",text:"CHIPS Act compliance documentation — prevailing wage reporting, Buy America provisions, quarterly progress reports to CHIPS PMO."},
+{level:"low",text:"Texas sales tax exemption on manufacturing equipment — requires proper documentation and certificates for ~$30M in equipment purchases."}
+];
+
+const timelineItems = [
+{date:"Mar 15, 2026",title:"Bid Package Issued",desc:"Received from Alliance Construction Group",status:"done"},
+{date:"Mar 28, 2026",title:"Proposal Drafted",desc:"Internal review complete",status:"done"},
+{date:"Apr 8, 2026",title:"Pre-Bid Conference",desc:"Mandatory — on-site, Sherman, TX",status:"current"},
+{date:"Apr 18, 2026",title:"RFI Deadline",desc:"All questions due by 5:00 PM CDT",status:"future"},
+{date:"Apr 22, 2026",title:"Addenda Issued",desc:"Final clarifications from GC",status:"future"},
+{date:"Apr 30, 2026",title:"BID DUE",desc:"2:00 PM CDT — no exceptions",status:"future"},
+{date:"May 30, 2026",title:"Award Target",desc:"GC evaluation complete",status:"future"},
+{date:"Jul 1, 2026",title:"Notice to Proceed",desc:"Mobilization begins",status:"future"},
+{date:"Dec 31, 2028",title:"Substantial Completion",desc:"30-month construction complete",status:"future"}
+];
+
+const statusSteps = [
+{label:"Draft",key:"draft"},
+{label:"Ready",key:"ready"},
+{label:"Submitted",key:"submitted"},
+{label:"Under Review",key:"review"},
+{label:"Awarded",key:"awarded"}
+];
+
+// =====================================================
+// STATE
+// =====================================================
+let state = JSON.parse(localStorage.getItem('maxbidding-ti-sm2') || '{}');
+if (!state.status) state.status = 'draft';
+if (!state.completedSteps) state.completedSteps = [];
+
+function saveState() { localStorage.setItem('maxbidding-ti-sm2', JSON.stringify(state)); }
+
+// =====================================================
+// NAV
+// =====================================================
+const panelTitles = {
+overview:"Project Overview",bidpackage:"GC Bid Package",scope:"Scope Extraction",
+equipment:"Equipment Takeoff",cost:"Cost Estimator",proposal:"Proposal Builder",
+comparison:"Bid Comparison",compliance:"Compliance & Risk",submit:"Submit & Track"
+};
+
+document.querySelectorAll('.nav-item').forEach(item => {
+item.addEventListener('click', () => {
+const panel = item.dataset.panel;
+document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+item.classList.add('active');
+document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+document.getElementById('panel-' + panel).classList.add('active');
+document.getElementById('headerTitle').textContent = panelTitles[panel] || '';
+// close mobile sidebar
+document.getElementById('sidebar').classList.remove('open');
+document.getElementById('overlay').style.display = 'none';
+// init charts if needed
+if (panel === 'equipment') initEquipCharts();
+if (panel === 'cost') initCostCharts();
+if (panel === 'comparison') initComparisonCharts();
+if (panel === 'compliance') initComplianceCharts();
+});
+});
+
+function toggleSidebar() {
+const sb = document.getElementById('sidebar');
+const ov = document.getElementById('overlay');
+sb.classList.toggle('open');
+ov.style.display = sb.classList.contains('open') ? 'block' : 'none';
+}
+
+// =====================================================
+// RENDER FUNCTIONS
+// =====================================================
+
+function fmt(n) { return '$' + n.toLocaleString('en-US'); }
+function fmtM(n) { return '$' + (n/1000000).toFixed(1) + 'M'; }
+function pct(n, total) { return (n / total * 100).toFixed(1) + '%'; }
+
+// Scope table
+function renderScope() {
+const tb = document.querySelector('#scopeTable tbody');
+tb.innerHTML = scopeData.map(r => `<tr>
+<td>${r.id}</td>
+<td>${r.req}</td>
+<td><span class="tag tag-${r.cat}">${r.cat}</span></td>
+<td><span class="priority-${r.priority}">${r.priority.toUpperCase()}</span></td>
+<td>§${r.src}</td>
+</tr>`).join('');
+}
+
+// Equipment table
+function renderEquipment() {
+const tb = document.querySelector('#equipTable tbody');
+let subtotal = 0;
+tb.innerHTML = equipmentData.map((r, i) => {
+const total = r.qty * r.unit;
+subtotal += total;
+return `<tr>
+<td>${i + 1}</td>
+<td><strong>${r.name}</strong></td>
+<td>${r.spec}</td>
+<td class="text-center">${r.qty.toLocaleString()}</td>
+<td class="text-right">${fmt(r.unit)}</td>
+<td class="text-right">${fmt(total)}</td>
+</tr>`;
+}).join('');
+document.getElementById('equipSubtotal').textContent = fmt(subtotal);
+document.getElementById('equipTotal').textContent = fmtM(subtotal);
+}
+
+// Cost table
+function renderCost() {
+const tb = document.querySelector('#costTable tbody');
+const subtotal = costData.reduce((s, r) => s + r.amount, 0);
+const overhead = Math.round(subtotal * 0.10);
+const margin = Math.round((subtotal + overhead) * 0.08);
+const total = subtotal + overhead + margin;
+
+tb.innerHTML = costData.map(r => `<tr>
+<td><strong>${r.cat}</strong></td>
+<td>${r.desc}</td>
+<td class="text-right">${fmt(r.amount)}</td>
+<td class="text-right">${pct(r.amount, total)}</td>
+</tr>`).join('');
+
+document.getElementById('costSubtotal').textContent = fmt(subtotal);
+document.getElementById('costOverhead').textContent = fmt(overhead);
+document.getElementById('costOverheadPct').textContent = pct(overhead, total);
+document.getElementById('costMargin').textContent = fmt(margin);
+document.getElementById('costMarginPct').textContent = pct(margin, total);
+document.getElementById('costTotal').textContent = fmt(total);
+}
+
+// Proposal sections
+function renderProposal() {
+const el = document.getElementById('proposalSections');
+el.innerHTML = proposalSections.map(s => `
+<div class="proposal-card" id="prop-${s.num}">
+<div class="proposal-card-header" onclick="toggleProposal(${s.num})">
+<h4><span class="num">${s.num}</span>${s.title}</h4>
+<span class="arrow">▼</span>
+</div>
+<div class="proposal-card-body">${s.content}</div>
+</div>`).join('');
+}
+
+function toggleProposal(num) {
+document.getElementById('prop-' + num).classList.toggle('open');
+}
+
+// Comparison grid
+function renderComparison() {
+const el = document.getElementById('compareGrid');
+let html = comparisonData.headers.map((h, i) =>
+`<div class="compare-cell compare-header ${i === 1 ? 'compare-highlight' : ''}">${h}</div>`
+).join('');
+comparisonData.rows.forEach(row => {
+row.forEach((cell, i) => {
+const cls = i === 0 ? 'compare-label' : (i === 1 ? 'compare-highlight' : '');
+html += `<div class="compare-cell ${cls}">${cell}</div>`;
+});
+});
+el.innerHTML = html;
+}
+
+// Compliance
+function renderCompliance() {
+const list = document.getElementById('complianceList');
+list.innerHTML = complianceItems.map(c => {
+const icon = c.status === 'pass' ? '✓' : c.status === 'fail' ? '✗' : '?';
+const cls = c.status === 'pass' ? 'check-pass' : c.status === 'fail' ? 'check-fail' : 'check-pending';
+return `<li><span class="check-icon ${cls}">${icon}</span>${c.item}</li>`;
+}).join('');
+
+const rlist = document.getElementById('riskList');
+rlist.innerHTML = riskItems.map(r => `
+<div class="risk-item">
+<span class="risk-badge risk-${r.level}">${r.level}</span>
+<div style="font-size:13px;line-height:1.6">${r.text}</div>
+</div>`).join('');
+}
+
+// Submit & Track
+function renderSubmit() {
+document.getElementById('submitStatus').textContent = state.status.toUpperCase();
+const tracker = document.getElementById('statusTracker');
+const idx = statusSteps.findIndex(s => s.key === state.status);
+tracker.innerHTML = statusSteps.map((s, i) => {
+const cls = i < idx ? 'done' : i === idx ? 'current' : '';
+const dot = i < idx ? '✓' : (i + 1);
+return `<div class="status-step ${cls}"><div class="dot">${dot}</div>${s.label}</div>`;
+}).join('');
+
+const tl = document.getElementById('projectTimeline');
+tl.innerHTML = timelineItems.map(t => `
+<div class="timeline-item ${t.status}">
+<h5>${t.date} — ${t.title}</h5>
+<p>${t.desc}</p>
+</div>`).join('');
+}
+
+function updateStatus(s) {
+state.status = s;
+saveState();
+renderSubmit();
+}
+
+// =====================================================
+// CHARTS
+// =====================================================
+let charts = {};
+
+function destroyChart(name) {
+if (charts[name]) { charts[name].destroy(); delete charts[name]; }
+}
+
+const chartColors = ['#7a1212','#ff8c00','#3b82f6','#10b981','#f59e0b','#6366f1','#ec4899','#14b8a6','#8b5cf6','#f97316','#06b6d4','#ef4444','#84cc16','#d946ef','#0ea5e9','#f43f5e','#22d3ee','#a855f7'];
+
+function initEquipCharts() {
+// Group by system
+const systems = {};
+equipmentData.forEach(e => {
+const t = e.qty * e.unit;
+systems[e.system] = (systems[e.system] || 0) + t;
+});
+const labels = Object.keys(systems);
+const values = Object.values(systems);
+
+destroyChart('equipDonut');
+charts.equipDonut = new Chart(document.getElementById('equipChart'), {
+type:'doughnut',
+data:{labels, datasets:[{data:values, backgroundColor:chartColors.slice(0, labels.length), borderWidth:2, borderColor:'#fff'}]},
+options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11}}}}}
+});
+
+// Individual equipment
+const topEquip = equipmentData.map(e => ({name:e.name, total:e.qty*e.unit})).sort((a,b)=>b.total-a.total).slice(0,8);
+destroyChart('equipSystem');
+charts.equipSystem = new Chart(document.getElementById('equipSystemChart'), {
+type:'bar',
+data:{labels:topEquip.map(e=>e.name.substring(0,20)),datasets:[{label:'Cost',data:topEquip.map(e=>e.total),backgroundColor:'#ff8c00',borderRadius:6}]},
+options:{responsive:true,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>'$'+(v/1e6).toFixed(1)+'M',font:{family:'Inter'}}}}}
+});
+}
+
+function initCostCharts() {
+const types = {};
+costData.forEach(c => { types[c.type] = (types[c.type]||0) + c.amount; });
+const subtotal = costData.reduce((s,r)=>s+r.amount,0);
+types['overhead_fee'] = Math.round(subtotal * 0.10);
+types['margin_fee'] = Math.round((subtotal + types['overhead_fee']) * 0.08);
+
+destroyChart('costDonut');
+charts.costDonut = new Chart(document.getElementById('costChart'), {
+type:'doughnut',
+data:{labels:costData.map(c=>c.cat),datasets:[{data:costData.map(c=>c.amount),backgroundColor:chartColors.slice(0,costData.length),borderWidth:2,borderColor:'#fff'}]},
+options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:10}}}}}
+});
+
+const typeLabels = {materials:'Materials',labor:'Labor',services:'Services',overhead:'Project Overhead',contingency:'Contingency',overhead_fee:'OH (10%)',margin_fee:'Margin (8%)'};
+destroyChart('costType');
+charts.costType = new Chart(document.getElementById('costTypeChart'), {
+type:'doughnut',
+data:{labels:Object.keys(types).map(k=>typeLabels[k]||k),datasets:[{data:Object.values(types),backgroundColor:['#7a1212','#ff8c00','#3b82f6','#6366f1','#f59e0b','#10b981','#ec4899'],borderWidth:2,borderColor:'#fff'}]},
+options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11}}}}}
+});
+}
+
+function initComparisonCharts() {
+destroyChart('radar');
+charts.radar = new Chart(document.getElementById('radarChart'), {
+type:'radar',
+data:{
+labels:['Technical Score','Fab Experience','Schedule','Safety (EMR)','Price Competitiveness','Workforce Size'],
+datasets:[
+{label:'Lone Star Mechanical',data:[92,67,83,85,88,76],borderColor:'#ff8c00',backgroundColor:'rgba(255,140,0,.15)',pointBackgroundColor:'#ff8c00',borderWidth:2},
+{label:'ThermalTech Solutions',data:[85,33,72,72,95,62],borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.1)',pointBackgroundColor:'#3b82f6',borderWidth:2},
+{label:'Pacific Mechanical',data:[88,100,90,90,75,84],borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.1)',pointBackgroundColor:'#10b981',borderWidth:2}
+]
+},
+options:{responsive:true,scales:{r:{min:0,max:100,ticks:{stepSize:20,font:{family:'Inter'}},pointLabels:{font:{family:'Inter',size:11}}}},plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11}}}}}
+});
+
+destroyChart('priceBar');
+charts.priceBar = new Chart(document.getElementById('priceBarChart'), {
+type:'bar',
+data:{
+labels:['Lone Star Mechanical','ThermalTech Solutions','Pacific Mechanical'],
+datasets:[{label:'Bid Price ($M)',data:[225.7,218.3,241.2],backgroundColor:['#ff8c00','#3b82f6','#10b981'],borderRadius:8}]
+},
+options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'$'+v+'M',font:{family:'Inter'}},beginAtZero:false,min:200}}}
+});
+}
+
+function initComplianceCharts() {
+const pass = complianceItems.filter(c=>c.status==='pass').length;
+const fail = complianceItems.filter(c=>c.status==='fail').length;
+const pending = complianceItems.filter(c=>c.status==='pending').length;
+
+destroyChart('compliance');
+charts.compliance = new Chart(document.getElementById('complianceChart'), {
+type:'doughnut',
+data:{labels:['Compliant','Non-Compliant','Pending'],datasets:[{data:[pass,fail,pending],backgroundColor:['#10b981','#ef4444','#f59e0b'],borderWidth:2,borderColor:'#fff'}]},
+options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11}}}}}
+});
+
+const high = riskItems.filter(r=>r.level==='high').length;
+const med = riskItems.filter(r=>r.level==='med').length;
+const low = riskItems.filter(r=>r.level==='low').length;
+destroyChart('risk');
+charts.risk = new Chart(document.getElementById('riskChart'), {
+type:'doughnut',
+data:{labels:['High','Medium','Low'],datasets:[{data:[high,med,low],backgroundColor:['#ef4444','#f59e0b','#10b981'],borderWidth:2,borderColor:'#fff'}]},
+options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11}}}}}
+});
+}
+
+// =====================================================
+// EXPORT
+// =====================================================
+function exportJSON() {
+const data = {
+project:{owner:'Texas Instruments',facility:'SM2 — 300mm Wafer Fab',location:'Sherman, TX',totalValue:'$2.8B',hvacScope:'$220M',gc:'Alliance Construction Group'},
+equipment:equipmentData,
+cost:costData,
+scope:scopeData,
+comparison:comparisonData,
+compliance:complianceItems,
+risks:riskItems,
+status:state.status,
+exportDate:new Date().toISOString()
+};
+const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+const a = document.createElement('a');
+a.href = URL.createObjectURL(blob);
+a.download = 'maxbidding-ti-sm2-export.json';
+a.click();
+}
+
+// =====================================================
+// INIT
+// =====================================================
+renderScope();
+renderEquipment();
+renderCost();
+renderProposal();
+renderComparison();
+renderCompliance();
+renderSubmit();
+</script>
+</body>
+</html>
