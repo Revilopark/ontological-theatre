@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bailey & Company · Healthcare M&A Investment Bank · Analysis & Graph</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+  :root {
+    --bg:#0f1117;--surface:#181b25;--surface2:#1e2230;--border:#2a2e3d;
+    --accent:#4f7cff;--accent2:#6c8cff;--accent-dim:rgba(79,124,255,0.12);
+    --teal:#0ea5a0;--teal-dim:rgba(14,165,160,0.12);
+    --amber:#d4a017;--amber-dim:rgba(212,160,23,0.12);
+    --red:#e05252;--red-dim:rgba(224,82,82,0.1);
+    --green:#34d399;--green-dim:rgba(52,211,153,0.1);
+    --text:#e8eaf0;--text-dim:#8890a8;--text-mid:#b0b8d0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+  header{padding:28px 32px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+  .logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#3a5fd9);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;box-shadow:0 4px 16px rgba(79,124,255,0.35);}
+  .header-text h1{font-size:20px;font-weight:800;letter-spacing:-0.02em;}
+  .header-text p{font-size:11px;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase;margin-top:2px;}
+  .badge{padding:4px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:0.04em;}
+  .badge-blue{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(79,124,255,0.25);}
+  .badge-teal{background:var(--teal-dim);color:var(--teal);border:1px solid rgba(14,165,160,0.25);}
+  .badge-amber{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(212,160,23,0.25);}
+  .tabs{display:flex;gap:2px;padding:12px 32px 0;border-bottom:1px solid var(--border);}
+  .tab{padding:10px 20px;font-size:12px;font-weight:600;color:var(--text-dim);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;}
+  .tab:hover{color:var(--text);}.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .content{padding:28px 32px;max-width:1400px;}
+  .panel{display:none;}.panel.active{display:block;}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+  @media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;}
+  .card h3{font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .metric{text-align:center;padding:16px;}
+  .metric .value{font-size:28px;font-weight:800;color:var(--accent);}
+  .metric .label{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-top:4px;}
+  .list-item{padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px;line-height:1.6;}
+  .list-item:last-child{border-bottom:none;}.list-item strong{color:var(--accent2);}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{text-align:left;padding:8px 12px;font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;border-bottom:1px solid var(--border);font-weight:600;}
+  td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.03);color:var(--text-mid);}
+  tr:hover td{background:rgba(79,124,255,0.03);}
+  .section-title{font-size:18px;font-weight:800;margin:28px 0 16px;letter-spacing:-0.01em;}
+  .section-title:first-child{margin-top:0;}
+  .subtitle{font-size:11px;color:var(--text-dim);margin-bottom:20px;line-height:1.6;}
+  #graphCanvas{width:100%;height:600px;background:var(--surface);border:1px solid var(--border);border-radius:14px;position:relative;overflow:hidden;}
+  .graph-node{position:absolute;border-radius:12px;padding:10px 14px;font-size:11px;font-weight:600;cursor:grab;user-select:none;box-shadow:0 4px 16px rgba(0,0,0,0.3);transition:box-shadow 0.2s;z-index:2;text-align:center;min-width:100px;}
+  .graph-node:hover{box-shadow:0 6px 24px rgba(79,124,255,0.3);z-index:10;}
+  .graph-node.core{background:linear-gradient(135deg,#4f7cff,#3a5fd9);color:#fff;font-size:13px;min-width:140px;}
+  .graph-node.vertical{background:var(--surface2);border:2px solid var(--accent);color:var(--accent);}
+  .graph-node.deal{background:var(--surface2);border:1.5px solid var(--teal);color:var(--teal);font-size:10px;}
+  .graph-node.leader{background:var(--surface2);border:1.5px solid var(--amber);color:var(--amber);font-size:10px;}
+  .graph-node.sector{background:var(--surface2);border:1.5px solid var(--green);color:var(--green);font-size:10px;}
+  .graph-node .sub{font-size:9px;color:rgba(255,255,255,0.5);margin-top:3px;}
+  svg.graph-lines{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;}
+  svg.graph-lines line{stroke:rgba(79,124,255,0.2);stroke-width:1.5;}
+  .graph-legend{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;}
+  .legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim);}
+  .legend-dot{width:10px;height:10px;border-radius:3px;}
+  .risk-bar{height:8px;border-radius:4px;background:var(--surface2);overflow:hidden;margin-top:6px;}
+  .risk-fill{height:100%;border-radius:4px;transition:width 0.6s ease;}
+  .footer{padding:20px 32px;border-top:1px solid var(--border);font-size:10px;color:var(--text-dim);display:flex;justify-content:space-between;margin-top:40px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">B&C</div>
+  <div class="header-text"><h1>Bailey & Company — Healthcare Investment Banking Analysis</h1><p>Middle-Market Healthcare M&A · Nashville, TN · bnco.com</p></div>
+  <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;">
+    <span class="badge badge-blue">200+ Transactions</span>
+    <span class="badge badge-teal">$17B+ Deal Value</span>
+    <span class="badge badge-amber">Est. ~2006</span>
+  </div>
+</header>
+<div class="tabs">
+  <div class="tab active" onclick="showPanel('overview',this)">Overview</div>
+  <div class="tab" onclick="showPanel('verticals',this)">Verticals & Deals</div>
+  <div class="tab" onclick="showPanel('market',this)">Market Outlook</div>
+  <div class="tab" onclick="showPanel('graph',this)">Graph Structure</div>
+  <div class="tab" onclick="showPanel('competitive',this)">Competitive Position</div>
+</div>
+<div class="content">
+
+<div class="panel active" id="panel-overview">
+  <div class="section-title">Firm Profile</div>
+  <div class="subtitle">Bailey & Company (bnco.com) is one of the preeminent investment banks for strategic transactions in the middle-market healthcare sector. Co-founded by Jeff Bailey and Jack Bailey, headquartered in Nashville with offices in NYC and LA. Tim Scallen serves as CEO (appointed May 2024). The firm grew headcount by 60% in 2024 alone, now fielding 11 managing directors across 4 offices with 30+ active engagements entering 2025.</div>
+  <div class="grid-3">
+    <div class="card metric"><div class="value">$17B+</div><div class="label">Total Transaction Value</div></div>
+    <div class="card metric"><div class="value">200+</div><div class="label">Completed Transactions</div></div>
+    <div class="card metric"><div class="value">11</div><div class="label">Managing Directors</div></div>
+    <div class="card metric"><div class="value">4</div><div class="label">Coverage Verticals</div></div>
+    <div class="card metric"><div class="value">4</div><div class="label">Office Locations</div></div>
+    <div class="card metric"><div class="value">30+</div><div class="label">Active Engagements (2025)</div></div>
+  </div>
+  <div class="section-title">Leadership</div>
+  <div class="grid-3">
+    <div class="card"><h3>👤 Jeff Bailey</h3><div class="list-item">Co-Founder & Managing Director. Nearly 20-year track record in healthcare M&A advisory.</div></div>
+    <div class="card"><h3>👤 Jack Bailey</h3><div class="list-item">Co-Founder & Managing Director. Drives deal origination and investor network.</div></div>
+    <div class="card"><h3>👤 Tim Scallen</h3><div class="list-item">CEO (May 2024). Former COO. Prev. TT Capital, Norwest Equity, Bain Capital Credit.</div></div>
+  </div>
+  <div class="section-title">2024 Expansion</div>
+  <div class="grid-2">
+    <div class="card"><h3>📈 Team Growth</h3>
+      <div class="list-item">4 new MDs from B. Riley: <strong>James Castro, James Metcalf, Andrew Hewlett, Ben Matz</strong></div>
+      <div class="list-item">Hired <strong>Rebecca Springer</strong> (ex-PitchBook lead HC analyst) for thought leadership</div>
+      <div class="list-item">60% headcount growth during 2024</div>
+    </div>
+    <div class="card"><h3>🏢 Geographic Expansion</h3>
+      <div class="list-item"><strong>Nashville</strong> — HQ / epicenter</div>
+      <div class="list-item"><strong>New York City</strong> — opened 2024</div>
+      <div class="list-item"><strong>Los Angeles</strong> — opened 2024</div>
+    </div>
+  </div>
+  <div class="section-title">Services</div>
+  <div class="grid-2">
+    <div class="card"><h3>🤝 Transaction Types</h3>
+      <div class="list-item"><strong>Mergers & Acquisitions</strong> — sell-side and buy-side</div>
+      <div class="list-item"><strong>Growth Capital Raises</strong> — equity and debt</div>
+      <div class="list-item"><strong>Private Placements</strong></div>
+      <div class="list-item"><strong>Financial Restructurings</strong></div>
+      <div class="list-item"><strong>Recapitalizations</strong></div>
+    </div>
+    <div class="card"><h3>🔧 Process Pillars</h3>
+      <div class="list-item"><strong>Relationships</strong> — institutional investors + industry exec network</div>
+      <div class="list-item"><strong>Platform</strong> — dedicated teams, competitive process dynamics</div>
+      <div class="list-item"><strong>Insight</strong> — real-time market intel via DealCloud (Intapp)</div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="panel-verticals">
+  <div class="section-title">Four Coverage Verticals</div>
+  <div class="grid-2">
+    <div class="card"><h3 style="color:var(--accent)">🏥 Healthcare Services</h3>
+      <div class="list-item">PPMs, multispecialty groups, dental, ophthalmology, gastro, surgical, infusion, post-acute, behavioral health</div>
+      <div class="list-item" style="color:var(--text-dim)">Largest historical vertical. PPM sentiment recovering by late 2025.</div>
+    </div>
+    <div class="card"><h3 style="color:var(--teal)">💻 Healthcare IT & Tech-Enabled Services</h3>
+      <div class="list-item">Patient engagement, reputation mgmt, clinical analytics, RCM, EHR integrations, care coordination</div>
+      <div class="list-item" style="color:var(--text-dim)">Near-record deal activity Q3 2024. Sponsors knitting point solutions into platforms.</div>
+    </div>
+    <div class="card"><h3 style="color:var(--amber)">🛡️ Payer Tech & Services</h3>
+      <div class="list-item">Insurance distribution, benefits admin, claims mgmt, UR, ICHRA, population health</div>
+      <div class="list-item" style="color:var(--text-dim)">ACA + employer markets as haven from regulatory risk. ICHRA ~30% YoY.</div>
+    </div>
+    <div class="card"><h3 style="color:var(--green)">💊 Pharma Tech & Services</h3>
+      <div class="list-item">Drug development outsourcing, clinical trial tech, pharma supply chain, specialty pharmacy, 340B, commercial analytics</div>
+      <div class="list-item" style="color:var(--text-dim)">Pharma outsourcing trend driving expanded coverage.</div>
+    </div>
+  </div>
+  <div class="section-title">Notable Recent Transactions</div>
+  <div class="card" style="overflow-x:auto;"><table>
+    <thead><tr><th>Client</th><th>Acquirer/Investor</th><th>Sector</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>The Surgical Clinic</strong></td><td>One Oncology</td><td>HC Services</td><td>Multispecialty surgical (TN/KY), 17 locations</td></tr>
+      <tr><td><strong>SocialClimb</strong></td><td>RLDatix</td><td>HC IT</td><td>Patient satisfaction & reputation SaaS</td></tr>
+      <tr><td><strong>Care Connectors</strong></td><td>Epilog Partners</td><td>VBC</td><td>Tech-enabled VBC, Medicare Advantage in-home</td></tr>
+      <tr><td><strong>Claims Eval</strong></td><td>Ethos Risk Services</td><td>Payer</td><td>Peer review & utilization review</td></tr>
+      <tr><td><strong>Tellus</strong></td><td>Netsmart</td><td>HC IT</td><td>Behavioral health/human services tech</td></tr>
+      <tr><td><strong>Medivest</strong></td><td>Undisclosed</td><td>HC Services</td><td>Acquisition advisory</td></tr>
+      <tr><td><strong>Smile Design Dentistry</strong></td><td>Undisclosed</td><td>Dental</td><td>Practice acquisition</td></tr>
+      <tr><td><strong>Elevate Eyecare</strong></td><td>Undisclosed</td><td>Ophthalmology</td><td>Growth capital raise</td></tr>
+      <tr><td><strong>IRIS</strong></td><td>Undisclosed</td><td>HC IT</td><td>AI retinal diagnostics</td></tr>
+      <tr><td><strong>Total Infusion Care</strong></td><td>Undisclosed</td><td>HC Services</td><td>Infusion services</td></tr>
+      <tr><td><strong>Axiom Medical</strong></td><td>Undisclosed</td><td>HC Services</td><td>Strategic investment</td></tr>
+      <tr><td><strong>OrthoCarolina</strong></td><td>Undisclosed</td><td>HC Services</td><td>Diagnostic imaging divestiture</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<div class="panel" id="panel-market">
+  <div class="section-title">2025–2026 Healthcare M&A Outlook</div>
+  <div class="subtitle">M&A flat through Q2 2025 (in line with 2024). Positive signs for H2 2025 into 2026. Multiples stabilized at pre-pandemic averages. ~$75B PE dry powder for US healthcare. 200+ PE-backed HC providers held 5+ years need exits.</div>
+  <div class="grid-2">
+    <div class="card"><h3>📉 Antitrust & Headline Risk Easing</h3>
+      <div class="list-item">PE-owned providers = <strong>&lt;4%</strong> of US HC ecosystem</div>
+      <div class="list-item">Steward saga winding down; narrative shifting to payers/PBMs</div>
+      <div class="list-item">⚠️ California OHCA still elongating timelines</div>
+    </div>
+    <div class="card"><h3>🏛️ Large Strategics Active</h3>
+      <div class="list-item">Payviders/distributors active; digital health reactivating M&A</div>
+      <div class="list-item">Health system M&A: scale (adjacent geos) + rationalization</div>
+      <div class="list-item">Outsourcing trends in RCM, 340B pharmacy, biomedical</div>
+    </div>
+    <div class="card"><h3>🔄 PPM Sentiment Reversal</h3>
+      <div class="list-item">Mid-market sponsors betting on podiatry, pain, ENT, pediatrics</div>
+      <div class="list-item">Distressed PPMs regrouping for 2025 return to market</div>
+      <div class="list-item">Investors tiring of elevated HIT valuations → PPMs as relative value</div>
+    </div>
+    <div class="card"><h3>🔥 Hot Sectors 2025–26</h3>
+      <div class="list-item"><strong>GRC</strong> — credentialing, patient safety, directory mgmt</div>
+      <div class="list-item"><strong>ICHRA</strong> — ~500K enrolled, 30% YoY growth</div>
+      <div class="list-item"><strong>SNFists</strong> — post-acute primary care, fragmented</div>
+      <div class="list-item"><strong>Value-Based Care</strong> — tech-enabled payer services</div>
+    </div>
+  </div>
+  <div class="section-title">Risk Assessment</div>
+  <div class="card">
+    <div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600"><span>Regulatory / Policy Risk</span><span style="color:var(--amber)">MODERATE</span></div><div class="risk-bar"><div class="risk-fill" style="width:55%;background:var(--amber)"></div></div></div>
+    <div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600"><span>Deal Volume Recovery</span><span style="color:var(--teal)">POSITIVE</span></div><div class="risk-bar"><div class="risk-fill" style="width:65%;background:var(--teal)"></div></div></div>
+    <div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600"><span>PE Dry Powder Deployment</span><span style="color:var(--green)">HIGH</span></div><div class="risk-bar"><div class="risk-fill" style="width:80%;background:var(--green)"></div></div></div>
+    <div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600"><span>Valuation Multiple Compression</span><span style="color:var(--accent)">STABILIZED</span></div><div class="risk-bar"><div class="risk-fill" style="width:50%;background:var(--accent)"></div></div></div>
+    <div><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600"><span>California OHCA Friction</span><span style="color:var(--red)">ELEVATED</span></div><div class="risk-bar"><div class="risk-fill" style="width:70%;background:var(--red)"></div></div></div>
+  </div>
+</div>
+
+<div class="panel" id="panel-graph">
+  <div class="section-title">Bailey & Company — Entity Relationship Graph</div>
+  <div class="subtitle">Interactive graph showing organizational structure, coverage verticals, key deals, leadership, and sector watchlist. Drag nodes to rearrange.</div>
+  <div id="graphCanvas"><svg class="graph-lines" id="graphSVG"></svg></div>
+  <div class="graph-legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div> Core Entity</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent);opacity:0.5"></div> Vertical</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div> Key Deal</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div> Leadership</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Sector Watch</div>
+  </div>
+</div>
+
+<div class="panel" id="panel-competitive">
+  <div class="section-title">Competitive Positioning</div>
+  <div class="subtitle">Bailey & Company operates in the middle-market healthcare IB space — typically $50M–$500M EV range.</div>
+  <div class="card" style="overflow-x:auto"><table>
+    <thead><tr><th>Firm</th><th>HQ</th><th>Focus</th><th>Differentiation</th><th>Scale</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Bailey & Company</strong></td><td>Nashville</td><td>MM HC M&A</td><td>HC-only, Nashville ecosystem, 4 verticals, founder-led + institutional CEO</td><td>11 MDs, $17B+</td></tr>
+      <tr><td>Cain Brothers (KeyBanc)</td><td>NYC</td><td>HC IB</td><td>Full-service banking, larger deals, balance sheet</td><td>Large (bank)</td></tr>
+      <tr><td>Leerink Partners</td><td>Boston</td><td>Biopharma + HC</td><td>Research + banking, life sciences</td><td>Large</td></tr>
+      <tr><td>Provident HC Partners</td><td>Boston</td><td>MM HC M&A</td><td>Physician practice, behavioral, home health</td><td>Boutique</td></tr>
+      <tr><td>Houlihan Lokey</td><td>LA/NYC</td><td>Cross-sector + HC</td><td>Restructuring expertise, large platform</td><td>Global</td></tr>
+      <tr><td>Piper Sandler</td><td>Minneapolis</td><td>HC services + HIT</td><td>Equity research + banking</td><td>Large</td></tr>
+    </tbody>
+  </table></div>
+  <div class="section-title" style="margin-top:28px">Moat Analysis</div>
+  <div class="grid-2">
+    <div class="card"><h3>✅ Strengths</h3>
+      <div class="list-item"><strong>Healthcare-only</strong> — no sector distraction</div>
+      <div class="list-item"><strong>Nashville network</strong> — HCA, Envision, TeamHealth, Change HC ecosystem</div>
+      <div class="list-item"><strong>4-vertical coverage</strong> — diversified across services, HIT, payer, pharma</div>
+      <div class="list-item"><strong>Rapid institutional scaling</strong> — 60% growth, DealCloud platform</div>
+      <div class="list-item"><strong>Proprietary research</strong> — ex-PitchBook lead analyst hire</div>
+      <div class="list-item"><strong>Deep PE relationships</strong> — 30+ active engagements</div>
+    </div>
+    <div class="card"><h3>⚠️ Risks & Gaps</h3>
+      <div class="list-item"><strong>Size limitation</strong> — can't compete on capital-intensive deals</div>
+      <div class="list-item"><strong>Rapid growth risk</strong> — 4 MDs from one firm = culture challenge</div>
+      <div class="list-item"><strong>Founder transition</strong> — CEO shifted to institutional hire</div>
+      <div class="list-item"><strong>Cyclicality</strong> — M&A volume flat through Q2 2025</div>
+      <div class="list-item"><strong>New offices unproven</strong> — NYC/LA opened 2024</div>
+      <div class="list-item"><strong>No balance sheet</strong> — can't underwrite like bank peers</div>
+    </div>
+  </div>
+  <div class="section-title" style="margin-top:28px">Relevance to PKD / FQHC Opportunity</div>
+  <div class="card">
+    <div class="list-item"><strong>Direct overlap:</strong> Bailey covers 340B pharmacy, specialty pharma, HC services — all core to PKD</div>
+    <div class="list-item"><strong>Pharma tech vertical:</strong> PKD's billing agent model sits in their pharma tech & services coverage</div>
+    <div class="list-item"><strong>Potential advisor:</strong> At Series B+ or strategic exit, Bailey is a natural M&A advisor</div>
+    <div class="list-item"><strong>Network value:</strong> 200+ deals = deep buy-side relationships with natural PKD acquirers</div>
+    <div class="list-item"><strong>Comp intel:</strong> Proprietary research could provide transaction comps for PKD valuation</div>
+  </div>
+</div>
+
+</div>
+<div class="footer"><span>Bailey & Company Analysis · AI Inkwell · March 2026</span><span>Sources: bnco.com, Intapp, PitchBook refs, public filings</span></div>
+
+<script>
+function showPanel(id,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  el.classList.add('active');
+  if(id==='graph')setTimeout(initGraph,50);
+}
+const gN=[
+  {id:'bailey',label:'Bailey & Company',sub:'Nashville · bnco.com',cls:'core',x:500,y:280},
+  {id:'hcs',label:'Healthcare Services',cls:'vertical',x:200,y:120},
+  {id:'hit',label:'Healthcare IT',cls:'vertical',x:800,y:120},
+  {id:'payer',label:'Payer Tech & Services',cls:'vertical',x:200,y:440},
+  {id:'pharma',label:'Pharma Tech & Services',cls:'vertical',x:800,y:440},
+  {id:'jeff',label:'Jeff Bailey',sub:'Co-Founder & MD',cls:'leader',x:420,y:60},
+  {id:'jack',label:'Jack Bailey',sub:'Co-Founder & MD',cls:'leader',x:580,y:60},
+  {id:'tim',label:'Tim Scallen',sub:'CEO',cls:'leader',x:500,y:500},
+  {id:'surgical',label:'Surgical Clinic → One Oncology',cls:'deal',x:60,y:200},
+  {id:'social',label:'SocialClimb → RLDatix',cls:'deal',x:920,y:200},
+  {id:'care',label:'Care Connectors → Epilog',cls:'deal',x:660,y:530},
+  {id:'claims',label:'Claims Eval → Ethos Risk',cls:'deal',x:100,y:360},
+  {id:'tellus',label:'Tellus → Netsmart',cls:'deal',x:920,y:340},
+  {id:'grc',label:'GRC',sub:'Governance Risk Compliance',cls:'sector',x:340,y:180},
+  {id:'ichra',label:'ICHRA',sub:'~500K, 30% YoY',cls:'sector',x:340,y:380},
+  {id:'snf',label:'SNFists',sub:'Post-Acute Primary Care',cls:'sector',x:660,y:180},
+  {id:'vbc',label:'Value-Based Care',sub:'Tech-enabled',cls:'sector',x:660,y:380},
+];
+const gE=[
+  ['bailey','hcs'],['bailey','hit'],['bailey','payer'],['bailey','pharma'],
+  ['bailey','jeff'],['bailey','jack'],['bailey','tim'],
+  ['hcs','surgical'],['hit','social'],['payer','claims'],['pharma','care'],['hit','tellus'],
+  ['hcs','grc'],['hcs','snf'],['payer','ichra'],['hit','vbc'],
+  ['bailey','grc'],['bailey','ichra'],['bailey','snf'],['bailey','vbc'],
+];
+let dr=null,dO={x:0,y:0};
+function initGraph(){
+  const c=document.getElementById('graphCanvas'),s=document.getElementById('graphSVG');
+  c.querySelectorAll('.graph-node').forEach(n=>n.remove());s.innerHTML='';
+  const nE={};
+  gN.forEach(n=>{
+    const el=document.createElement('div');el.className='graph-node '+n.cls;
+    el.innerHTML=n.label+(n.sub?'<div class="sub">'+n.sub+'</div>':'');
+    el.style.left=n.x+'px';el.style.top=n.y+'px';el.dataset.id=n.id;
+    el.addEventListener('mousedown',e=>{dr=n;dO={x:e.clientX-n.x,y:e.clientY-n.y};el.style.cursor='grabbing';});
+    c.appendChild(el);nE[n.id]=el;
+  });
+  function dl(){s.innerHTML='';gE.forEach(([a,b])=>{const eA=nE[a],eB=nE[b];if(!eA||!eB)return;const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',eA.offsetLeft+eA.offsetWidth/2);l.setAttribute('y1',eA.offsetTop+eA.offsetHeight/2);l.setAttribute('x2',eB.offsetLeft+eB.offsetWidth/2);l.setAttribute('y2',eB.offsetTop+eB.offsetHeight/2);s.appendChild(l);});}
+  dl();
+  c.addEventListener('mousemove',e=>{if(!dr)return;dr.x=e.clientX-dO.x;dr.y=e.clientY-dO.y;nE[dr.id].style.left=dr.x+'px';nE[dr.id].style.top=dr.y+'px';dl();});
+  c.addEventListener('mouseup',()=>{if(dr){nE[dr.id].style.cursor='grab';dr=null;}});
+  c.addEventListener('mouseleave',()=>{if(dr){nE[dr.id].style.cursor='grab';dr=null;}});
+}
+</script>
+</body>
+</html>
