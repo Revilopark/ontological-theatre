@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpecIQ — Buckley Associates Specification Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-primary: #0a1628;
+  --bg-secondary: #0f1f3a;
+  --bg-card: #132240;
+  --bg-input: #0d1a30;
+  --border: #1a3155;
+  --border-focus: #0ea5a0;
+  --teal: #0ea5a0;
+  --teal-dim: rgba(14,165,160,0.15);
+  --teal-glow: rgba(14,165,160,0.3);
+  --orange: #ff8c00;
+  --orange-dim: rgba(255,140,0,0.12);
+  --green: #22c55e;
+  --green-dim: rgba(34,197,94,0.12);
+  --red: #ef4444;
+  --red-dim: rgba(239,68,68,0.12);
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, #0b1a35 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.logo span:first-child { color: var(--teal); }
+.logo span:last-child { color: var(--orange); }
+
+.header-subtitle {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 400;
+  border-left: 1px solid var(--border);
+  padding-left: 16px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  display: inline-block;
+  animation: pulse 2s ease infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Layout */
+.main {
+  display: flex;
+  height: calc(100vh - 64px);
+}
+
+/* Left Panel */
+.left-panel {
+  width: 340px;
+  min-width: 340px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--teal);
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+select, input[type="number"] {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  transition: border-color 0.2s;
+  outline: none;
+}
+
+select:focus, input[type="number"]:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px var(--teal-dim);
+}
+
+select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+select option { background: var(--bg-input); color: var(--text-primary); }
+
+.checkbox-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.checkbox-item input[type="checkbox"] {
+  accent-color: var(--teal);
+  cursor: pointer;
+}
+
+.find-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--teal), #0c8c88);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+  letter-spacing: 0.3px;
+}
+
+.find-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px var(--teal-glow); }
+.find-btn:active { transform: translateY(0); }
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 16px 0;
+}
+
+/* Right Panel */
+.right-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px;
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.4;
+}
+
+.empty-state h3 {
+  font-size: 18px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  font-size: 13px;
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+/* Results */
+.results { display: none; }
+.results.visible { display: block; }
+
+.section-header {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  margin-top: 28px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-header:first-child { margin-top: 0; }
+.section-header .line { flex: 1; height: 1px; background: var(--border); }
+
+/* Primary Recommendation Card */
+.primary-card {
+  background: linear-gradient(135deg, var(--bg-card) 0%, #162a4a 100%);
+  border: 1px solid var(--teal);
+  border-radius: 12px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.primary-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--teal), var(--orange));
+}
+
+.primary-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--teal-dim);
+  color: var(--teal);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+.primary-card h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.primary-manufacturer {
+  font-size: 13px;
+  color: var(--orange);
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.spec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.spec-item {
+  background: rgba(0,0,0,0.2);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.spec-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.spec-value {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.badge-green { background: var(--green-dim); color: var(--green); }
+.badge-orange { background: var(--orange-dim); color: var(--orange); }
+.badge-red { background: var(--red-dim); color: var(--red); }
+
+.price-range {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--teal);
+  margin-bottom: 16px;
+}
+
+.price-range .label {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.btn-secondary {
+  padding: 10px 18px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover { border-color: var(--teal); color: var(--teal); }
+
+.btn-primary-sm {
+  padding: 10px 18px;
+  background: var(--teal);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary-sm:hover { background: #0c8c88; }
+
+/* Alternative cards */
+.alt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.alt-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+  transition: border-color 0.2s;
+}
+
+.alt-card:hover { border-color: var(--teal); }
+
+.alt-card .fit-score {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.fit-high { background: var(--green-dim); color: var(--green); }
+.fit-med { background: var(--orange-dim); color: var(--orange); }
+
+.alt-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.alt-card .alt-mfr { font-size: 11px; color: var(--orange); margin-bottom: 10px; }
+
+.alt-specs {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.alt-price {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--teal);
+  margin-top: 10px;
+}
+
+/* Compliance */
+.compliance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.compliance-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.compliance-item .ci-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.compliance-item .ci-value {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.ci-value.pass { color: var(--green); }
+.ci-value.warn { color: var(--orange); }
+.ci-value.fail { color: var(--red); }
+
+/* Competitive */
+.comp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  background: var(--bg-card);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.comp-table th {
+  background: rgba(0,0,0,0.2);
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.comp-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  color: var(--text-secondary);
+}
+
+.comp-table tr:last-child td { border-bottom: none; }
+
+.comp-table .winner { color: var(--teal); font-weight: 600; }
+.comp-table .buckley-col { color: var(--teal); font-weight: 500; }
+.comp-advantage {
+  background: var(--teal-dim);
+  border: 1px solid rgba(14,165,160,0.25);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-top: 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+.comp-advantage strong { color: var(--teal); }
+
+/* Submittal Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.visible { display: flex; }
+
+.modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 600px;
+  max-width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 28px;
+}
+
+.modal h3 {
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.modal .modal-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.submittal-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.submittal-section h5 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--teal);
+  margin-bottom: 8px;
+}
+
+.submittal-section p, .submittal-section li {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.submittal-section ul { padding-left: 16px; }
+
+.modal-close {
+  padding: 10px 20px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.modal-close:hover { border-color: var(--teal); }
+
+/* Loading animation */
+.loading { display: none; text-align: center; padding: 60px; }
+.loading.visible { display: block; }
+
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--teal);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-text {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo"><span>Spec</span><span>IQ</span></div>
+    <div class="header-subtitle">Buckley Associates — AI Specification Assistant</div>
+  </div>
+  <div class="header-right">
+    <span><span class="status-dot"></span>&nbsp; Product DB v3.2 — 42 Lines Active</span>
+    <span style="color:var(--text-muted)">|</span>
+    <span>ASHRAE 90.1-2022 · AIM Act · Mass Save 2025–27</span>
+  </div>
+</div>
+
+<div class="main">
+  <!-- Left Panel: Input Form -->
+  <div class="left-panel">
+    <div class="panel-title">⚙ Specification Parameters</div>
+
+    <div class="form-group">
+      <label>Application Type</label>
+      <select id="appType">
+        <option value="">— Select Application —</option>
+        <option value="lab_exhaust">Laboratory Exhaust</option>
+        <option value="operating_room">Operating Room</option>
+        <option value="commercial_office">Commercial Office</option>
+        <option value="classroom">Classroom / Education</option>
+        <option value="data_center">Data Center</option>
+        <option value="kitchen">Kitchen Ventilation</option>
+        <option value="multifamily">Multi-Family Residential</option>
+        <option value="parking">Parking Garage</option>
+        <option value="cleanroom">Cleanroom</option>
+        <option value="industrial">Industrial / Manufacturing</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Airflow (CFM)</label>
+      <input type="number" id="cfm" placeholder="e.g. 5000" min="0">
+    </div>
+
+    <div class="form-group">
+      <label>Static Pressure (in. WG)</label>
+      <input type="number" id="sp" placeholder="e.g. 2.5" step="0.1" min="0">
+    </div>
+
+    <div class="form-group">
+      <label>Sound Criteria</label>
+      <select id="sound">
+        <option value="NC-25">NC-25 (Critical)</option>
+        <option value="NC-30">NC-30 (Quiet)</option>
+        <option value="NC-35" selected>NC-35 (Standard)</option>
+        <option value="NC-40">NC-40 (Moderate)</option>
+        <option value="NC-45">NC-45 (Industrial)</option>
+      </select>
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-group">
+      <label>Jurisdiction</label>
+      <select id="jurisdiction">
+        <option value="boston">Boston, MA</option>
+        <option value="cambridge">Cambridge, MA</option>
+        <option value="ma_stretch">Other MA Stretch Code</option>
+        <option value="ma_specialized">MA Specialized Code</option>
+        <option value="ct">Connecticut</option>
+        <option value="nh">New Hampshire</option>
+        <option value="me">Maine</option>
+        <option value="vt">Vermont</option>
+        <option value="ri">Rhode Island</option>
+        <option value="eastern_ny">Eastern New York</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Building Size (sq ft)</label>
+      <input type="number" id="bldgSize" placeholder="e.g. 50000" min="0">
+    </div>
+
+    <div class="form-group">
+      <label>Refrigerant Preference</label>
+      <select id="refrigerant">
+        <option value="no_pref">No Preference</option>
+        <option value="R-32">R-32</option>
+        <option value="R-454B">R-454B</option>
+        <option value="R-410A">R-410A (Legacy)</option>
+      </select>
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-group">
+      <label>Special Requirements</label>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" value="hepa"> HEPA</label>
+        <label class="checkbox-item"><input type="checkbox" value="ulpa"> ULPA</label>
+        <label class="checkbox-item"><input type="checkbox" value="uvc"> UV-C</label>
+        <label class="checkbox-item"><input type="checkbox" value="erv"> Energy Recovery</label>
+        <label class="checkbox-item"><input type="checkbox" value="vrf"> VRF</label>
+        <label class="checkbox-item"><input type="checkbox" value="chilled_beams"> Chilled Beams</label>
+        <label class="checkbox-item"><input type="checkbox" value="displacement"> Displacement Vent</label>
+        <label class="checkbox-item"><input type="checkbox" value="fire_smoke"> Fire/Smoke Dampers</label>
+      </div>
+    </div>
+
+    <button class="find-btn" onclick="findProducts()">🔍 Find Products</button>
+  </div>
+
+  <!-- Right Panel: Results -->
+  <div class="right-panel">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">⚡</div>
+      <h3>Configure Your Specification</h3>
+      <p>Select application type, enter airflow and static pressure parameters, then click <strong>Find Products</strong> to get AI-powered recommendations from Buckley's 42 manufacturer lines.</p>
+    </div>
+
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">Analyzing 42 product lines across 3,800+ SKUs...</div>
+    </div>
+
+    <div class="results" id="results"></div>
+  </div>
+</div>
+
+<!-- Submittal Modal -->
+<div class="modal-overlay" id="submittalModal">
+  <div class="modal" id="submittalContent"></div>
+</div>
+
+<script>
+// =================== PRODUCT DATABASE ===================
+const PRODUCTS = [
+  // --- GREENHECK FANS ---
+  { id:'gh-sq-1', name:'SQ Centrifugal Inline Fan', manufacturer:'Greenheck', type:'centrifugal_fan', cfm_range:[500,15000], static_pressure:4.0, efficiency:0.92, ahri_certified:true, mass_save_eligible:true, fei_compliant:true, refrigerant:null, applications:['commercial_office','classroom','data_center','industrial','multifamily'], price_range:[2800,12500], sound:'NC-35', desc:'Square inline centrifugal, direct drive, premium efficiency' },
+  { id:'gh-qei-1', name:'QEI Centrifugal Roof Exhaust', manufacturer:'Greenheck', type:'centrifugal_fan', cfm_range:[800,25000], static_pressure:3.5, efficiency:0.90, ahri_certified:true, mass_save_eligible:true, fei_compliant:true, refrigerant:null, applications:['commercial_office','classroom','industrial','kitchen','parking'], price_range:[3200,18000], sound:'NC-40', desc:'Belt-drive centrifugal upblast, weather-resistant' },
+  { id:'gh-qep-1', name:'QEP Centrifugal Plenum Fan', manufacturer:'Greenheck', type:'centrifugal_fan', cfm_range:[2000,50000], static_pressure:6.0, efficiency:0.93, ahri_certified:true, mass_save_eligible:true, fei_compliant:true, refrigerant:null, applications:['commercial_office','data_center','industrial','cleanroom'], price_range:[8500,45000], sound:'NC-35', desc:'High-efficiency plenum fan, airfoil wheel, AMCA rated' },
+  // --- GREENHECK LAB EXHAUST ---
+  { id:'gh-vektorh', name:'Vektor-H Lab Exhaust', manufacturer:'Greenheck', type:'lab_exhaust', cfm_range:[1000,40000], static_pressure:5.0, efficiency:0.91, ahri_certified:true, mass_save_eligible:true, fei_compliant:true, refrigerant:null, applications:['lab_exhaust','cleanroom'], price_range:[18000,85000], sound:'NC-35', desc:'High-plume dilution lab exhaust, wind-responsive, N+1 capable' },
+  { id:'gh-vektorch', name:'Vektor-CH Combined Heat Lab Exhaust', manufacturer:'Greenheck', type:'lab_exhaust', cfm_range:[1500,35000], static_pressure:5.5, efficiency:0.90, ahri_certified:true, mass_save_eligible:true, fei_compliant:true, refrigerant:null, applications:['lab_exhaust'], price_range:[22000,95000], sound:'NC-35', desc:'Combined heat Vektor with energy recovery for cold climates' },
+  // --- GREENHECK DOAS/ERV ---
+  { id:'gh-doas-erv', name:'DOAS-ERV Energy Recovery Unit', manufacturer:'Greenheck', type:'erv', cfm_range:[500,30000], static_pressure:4.0, efficiency:0.84, ahri_certified:true, mass_save_eligible:true, fei_compliant:true, refrigerant:null, applications:['commercial_office','classroom','lab_exhaust','multifamily','cleanroom'], price_range:[12000,65000], sound:'NC-30', desc:'Dedicated outdoor air system with enthalpy wheel, 84% effectiveness' },
+  // --- GREENHECK MAKE-UP AIR ---
+  { id:'gh-mua', name:'Make-Up Air Unit', manufacturer:'Greenheck', type:'mua', cfm_range:[1000,40000], static_pressure:3.0, efficiency:0.88, ahri_certified:true, mass_save_eligible:true, fei_compliant:true, refrigerant:null, applications:['kitchen','industrial','parking','lab_exhaust'], price_range:[8000,42000], sound:'NC-40', desc:'Tempered make-up air, gas/electric heat, modulating controls' },
+  // --- GREENHECK FIRE/SMOKE DAMPERS ---
+  { id:'gh-fsd311', name:'FSD-311 Fire/Smoke Damper', manufacturer:'Greenheck', type:'fire_smoke_damper', cfm_range:[0,99999], static_pressure:0, efficiency:1.0, ahri_certified:false, mass_save_eligible:false, fei_compliant:true, refrigerant:null, applications:['commercial_office','classroom','lab_exhaust','operating_room','data_center','kitchen','multifamily','parking','cleanroom','industrial'], price_range:[280,850], sound:'NC-25', desc:'UL 555/555S listed, 1½ & 3 hour rated, static & dynamic' },
+  { id:'gh-fsd211', name:'FSD-211 Combination Fire/Smoke Damper', manufacturer:'Greenheck', type:'fire_smoke_damper', cfm_range:[0,99999], static_pressure:0, efficiency:1.0, ahri_certified:false, mass_save_eligible:false, fei_compliant:true, refrigerant:null, applications:['commercial_office','classroom','lab_exhaust','operating_room','data_center','kitchen','multifamily','parking','cleanroom','industrial'], price_range:[320,950], sound:'NC-25', desc:'UL 555/555S, curtain-blade, low leakage' },
+  // --- GREENHECK KITCHEN ---
+  { id:'gh-ksp', name:'KSP Kitchen Supply Plenum', manufacturer:'Greenheck', type:'kitchen_hood', cfm_range:[500,10000], static_pressure:2.0, efficiency:0.88, ahri_certified:false, mass_save_eligible:true, fei_compliant:true, refrigerant:null, applications:['kitchen'], price_range:[4500,18000], sound:'NC-40', desc:'Type I/II kitchen hood with integrated supply plenum' },
+  { id:'gh-synergy', name:'Synergy Kitchen Ventilation', manufacturer:'Greenheck', type:'kitchen_hood', cfm_range:[800,12000], static_pressure:2.5, efficiency:0.90, ahri_certified:false, mass_save_eligible:true, fei_compliant:true, refrigerant:null, applications:['kitchen'], price_range:[8000,35000], sound:'NC-40', desc:'Demand-controlled kitchen ventilation with exhaust/supply coordination' },
+
+  // --- PRICE INDUSTRIES ---
+  { id:'pi-630', name:'630 Series Ceiling Diffuser', manufacturer:'Price Industries', type:'diffuser', cfm_range:[50,2000], static_pressure:0.5, efficiency:0.95, ahri_certified:false, mass_save_eligible:false, fei_compliant:true, refrigerant:null, applications:['commercial_office','classroom','operating_room','cleanroom','multifamily'], price_range:[85,320], sound:'NC-25', desc:'Square plaque ceiling diffuser, steel/aluminum, pattern control' },
+  { id:'pi-vav', name:'VAV Terminal Box', manufacturer:'Price Industries', type:'vav', cfm_range:[200,8000], static_pressure:1.5, efficiency:0.92, ahri_certified:true, mass_save_eligible:true, fei_compliant:true, refrigerant:null, applications:['commercial_office','classroom','lab_exhaust','data_center'], price_range:[650,3200], sound:'NC-30', desc:'Single-duct VAV with hot water or electric reheat, DDC-ready' },
+  { id:'pi-ultrasuite', name:'UltraSuite OR Ceiling System', manufacturer:'Price Industries', type:'or_ceiling', cfm_range:[800,4000], static_pressure:1.0, efficiency:0.97, ahri_certified:false, mass_save_eligible:false, fei_compliant:true, refrigerant:null, applications:['operating_room'], price_range:[28000,85000], sound:'NC-25', desc:'Unidirectional laminar flow OR ceiling, HEPA integrated, ASHRAE 170 compliant' },
+  { id:'pi-chilled-beam', name:'Passive Chilled Beam', manufacturer:'Price Industries', type:'chilled_beam', cfm_range:[100,1200], static_pressure:0.3, efficiency:0.95, ahri_certified:true, mass_save_eligible:true, fei_compliant:true, refrigerant:null, applications:['commercial_office','classroom','lab_exhaust'], price_range:[1200,4500], sound:'NC-25', desc:'2-pipe passive chilled beam, no fan energy, condensation-free' },
+  { id:'pi-active-beam', name:'Active Chilled Beam', manufacturer:'Price Industries', type:'chilled_beam', cfm_range:[200,2000], static_pressure:0.5, efficiency:0.94, ahri_certified:true, mass_save_eligible:true, fei_compliant:true, refrigerant:null, applications:['commercial_office','classroom','lab_exhaust','cleanroom'], price_range:[1800,6000], sound:'NC-25', desc:'4-pipe active chilled beam with primary air induction' },
+  { id:'pi-displacement', name:'Displacement Ventilation Unit', manufacturer:'Price Industries', type:'displacement', cfm_range:[200,5000], static_pressure:0.3, efficiency:0.96, ahri_certified:false, mass_save_eligible:true, fei_compliant:true, refrigerant:null, applications:['commercial_office','classroom','cleanroom'], price_range:[1500,6500], sound:'NC-25', desc:'Floor/wall-mounted displacement diffuser, ASHRAE 62.1 ventilation effectiveness 1.2' },
+  // --- ANTEC CONTROLS (Price Industries subsidiary) ---
+  { id:'antec-venturi', name:'Antec Controls Venturi Valve', manufacturer:'Price Industries / Antec Controls', type:'venturi_valve', cfm_range:[50,5000], static_pressure:0.8, efficiency:0.97, ahri_certified:false, mass_save_eligible:false, fei_compliant:true, refrigerant:null, applications:['lab_exhaust','cleanroom','operating_room'], price_range:[800,3500], sound:'NC-25', desc:'Pressure-independent venturi airflow valve, ±5% accuracy, lab/cleanroom' },
+  { id:'pi-hepa', name:'HEPA Diffuser Module', manufacturer:'Price Industries', type:'hepa_diffuser', cfm_range:[200,2000], static_pressure:1.2, efficiency:0.9997, ahri_certified:false, mass_save_eligible:false, fei_compliant:true, refrigerant:null, applications:['operating_room','cleanroom','lab_exhaust'], price_range:[1800,5500], sound:'NC-25', desc:'Ceiling-mounted HEPA module, 99.97% @ 0.3μm, gel-seal or knife-edge' },
+
+  // --- FUJITSU AIRSTAGE VRF ---
+  { id:'fuj-j', name:'Airstage J-Series VRF', manufacturer:'Fujitsu', type:'vrf', cfm_range:[1200,7200], static_pressure:0.8, efficiency:0.95, ahri_certified:true, mass_save_eligible:true, fei_compliant:true, refrigerant:'R-32', applications:['commercial_office','classroom','multifamily'], price_range:[8500,22000], sound:'NC-30', desc:'3–6 ton heat pump VRF, R-32, -13°F heating, up to 28.1 IEER' },
+  { id:'fuj-v', name:'Airstage V-Series VRF', manufacturer:'Fujitsu', type:'vrf', cfm_range:[4800,24000], static_pressure:1.0, efficiency:0.94, ahri_certified:true, mass_save_eligible:true, fei_compliant:true, refrigerant:'R-32', applications:['commercial_office','classroom','data_center','multifamily'], price_range:[28000,75000], sound:'NC-35', desc:'8–20 ton 2-pipe VRF, R-32, simultaneous heating/cooling zones' },
+  { id:'fuj-h', name:'Airstage H-Series VRF (Heat Recovery)', manufacturer:'Fujitsu', type:'vrf', cfm_range:[6000,43200], static_pressure:1.2, efficiency:0.96, ahri_certified:true, mass_save_eligible:true, fei_compliant:true, refrigerant:'R-32', applications:['commercial_office','classroom','data_center','multifamily','operating_room'], price_range:[45000,165000], sound:'NC-30', desc:'10–36 ton 3-pipe heat recovery VRF, R-32, up to 30.2 IEER' },
+
+  // --- BIG ASS FANS ---
+  { id:'baf-hvls', name:'Powerfoil X3.0 HVLS Fan', manufacturer:'Big Ass Fans', type:'hvls', cfm_range:[5000,85000], static_pressure:0, efficiency:0.92, ahri_certified:false, mass_save_eligible:true, fei_compliant:true, refrigerant:null, applications:['industrial','parking','commercial_office','data_center'], price_range:[4500,12000], sound:'NC-40', desc:'High-volume low-speed fan, 8–24 ft dia, destratification + comfort cooling' },
+  { id:'baf-clean', name:'Clean Air System', manufacturer:'Big Ass Fans', type:'air_cleaning', cfm_range:[1000,8000], static_pressure:0.5, efficiency:0.95, ahri_certified:false, mass_save_eligible:false, fei_compliant:true, refrigerant:null, applications:['commercial_office','classroom','industrial'], price_range:[3500,9000], sound:'NC-30', desc:'UVGI + bipolar ionization + MERV-13 filtration, ceiling-mounted' },
+
+  // --- DUCTSOX ---
+  { id:'ds-fabric', name:'Fabric Air Dispersion System', manufacturer:'DuctSox', type:'fabric_duct', cfm_range:[500,30000], static_pressure:1.0, efficiency:0.93, ahri_certified:false, mass_save_eligible:false, fei_compliant:true, refrigerant:null, applications:['commercial_office','classroom','industrial','kitchen','data_center'], price_range:[1200,15000], sound:'NC-30', desc:'Antimicrobial fabric duct, even air distribution, lightweight install' },
+
+  // --- NOVELAIRE ---
+  { id:'na-dehum', name:'ComfortDry Dehumidification System', manufacturer:'NovelAire', type:'dehumidifier', cfm_range:[500,10000], static_pressure:2.0, efficiency:0.88, ahri_certified:true, mass_save_eligible:true, fei_compliant:true, refrigerant:null, applications:['commercial_office','classroom','multifamily','cleanroom','lab_exhaust'], price_range:[6000,28000], sound:'NC-35', desc:'Low-dewpoint desiccant dehumidification, energy wheel technology' },
+
+  // --- SYSTEMAIR ---
+  { id:'sys-carpark', name:'Jet Fan (Car Park Ventilation)', manufacturer:'Systemair', type:'jet_fan', cfm_range:[5000,60000], static_pressure:0.5, efficiency:0.89, ahri_certified:false, mass_save_eligible:false, fei_compliant:true, refrigerant:null, applications:['parking'], price_range:[3200,8500], sound:'NC-45', desc:'Impulse jet fan for enclosed parking, CO/NO2 demand control' },
+  { id:'sys-classroom-doas', name:'Geniox Classroom DOAS', manufacturer:'Systemair', type:'erv', cfm_range:[300,5000], static_pressure:2.5, efficiency:0.82, ahri_certified:true, mass_save_eligible:true, fei_compliant:true, refrigerant:'R-454B', applications:['classroom'], price_range:[6500,22000], sound:'NC-30', desc:'Modular classroom DOAS with heat recovery, CO2 DCV' },
+
+  // --- SOLUTIONAIR ---
+  { id:'sa-ahu', name:'Custom Air Handler', manufacturer:'SolutionAir', type:'ahu', cfm_range:[2000,60000], static_pressure:6.0, efficiency:0.90, ahri_certified:true, mass_save_eligible:true, fei_compliant:true, refrigerant:null, applications:['commercial_office','classroom','data_center','operating_room','cleanroom','industrial'], price_range:[25000,150000], sound:'NC-30', desc:'Semi-custom AHU, double-wall construction, chilled water or DX' },
+
+  // --- GPS AIR ---
+  { id:'gps-npbi', name:'Needlepoint Bipolar Ionization', manufacturer:'GPS Air / Global Plasma Solutions', type:'air_cleaning', cfm_range:[500,50000], static_pressure:0, efficiency:0.90, ahri_certified:false, mass_save_eligible:false, fei_compliant:true, refrigerant:null, applications:['commercial_office','classroom','operating_room','multifamily'], price_range:[800,5000], sound:'NC-25', desc:'In-duct NPBI, reduces pathogens/VOCs, no ozone, UL 2998' },
+
+  // --- LUMALIER ---
+  { id:'lum-uvc', name:'UV-C Upper Air Germicidal Fixture', manufacturer:'Lumalier', type:'uvc', cfm_range:[0,99999], static_pressure:0, efficiency:0.99, ahri_certified:false, mass_save_eligible:false, fei_compliant:true, refrigerant:null, applications:['operating_room','classroom','commercial_office','lab_exhaust','cleanroom'], price_range:[1200,4500], sound:'NC-25', desc:'Upper-air UV-C germicidal, ASHRAE 241 compliant, occupied-space safe' },
+
+  // --- BUCKLEY MANUFACTURING ---
+  { id:'buck-curb', name:'GPI Welded Roof Curb', manufacturer:'Buckley Manufacturing', type:'accessory', cfm_range:[0,99999], static_pressure:0, efficiency:1.0, ahri_certified:false, mass_save_eligible:false, fei_compliant:true, refrigerant:null, applications:['commercial_office','classroom','lab_exhaust','operating_room','data_center','kitchen','multifamily','parking','cleanroom','industrial'], price_range:[350,2200], sound:'NC-25', desc:'Custom welded roof curb, 18ga galv/aluminum, next-day delivery' },
+  { id:'buck-strut', name:'Buckstrut VRF Condenser Platform', manufacturer:'Buckley Manufacturing', type:'accessory', cfm_range:[0,99999], static_pressure:0, efficiency:1.0, ahri_certified:false, mass_save_eligible:false, fei_compliant:true, refrigerant:null, applications:['commercial_office','classroom','multifamily'], price_range:[450,1800], sound:'NC-25', desc:'18" above snow-line condenser platform for VRF/mini-split' },
+  { id:'buck-vfb', name:'VFB MERV-13 Filter Kit', manufacturer:'Buckley Manufacturing', type:'accessory', cfm_range:[0,99999], static_pressure:0.2, efficiency:0.90, ahri_certified:false, mass_save_eligible:false, fei_compliant:true, refrigerant:null, applications:['commercial_office','classroom','multifamily'], price_range:[180,450], sound:'NC-25', desc:'MERV-13 filter box for Fujitsu/Daikin VRF indoor units' },
+  { id:'buck-silencer', name:'Hospital-Grade Duct Silencer', manufacturer:'Buckley Manufacturing', type:'silencer', cfm_range:[500,30000], static_pressure:0.5, efficiency:1.0, ahri_certified:false, mass_save_eligible:false, fei_compliant:true, refrigerant:null, applications:['operating_room','lab_exhaust','cleanroom','commercial_office'], price_range:[600,4500], sound:'NC-25', desc:'Rectangular/round duct silencer, hospital-grade acoustic lining' },
+];
+
+// =================== APPLICATION → PRODUCT MAPPING ===================
+const APP_PRODUCT_MAP = {
+  lab_exhaust: { primary:['lab_exhaust','venturi_valve'], secondary:['erv','centrifugal_fan','fire_smoke_damper','hepa_diffuser','dehumidifier','silencer'], tertiary:['uvc','air_cleaning','accessory'] },
+  operating_room: { primary:['or_ceiling','hepa_diffuser','venturi_valve'], secondary:['vav','silencer','uvc','fire_smoke_damper'], tertiary:['ahu','diffuser','vrf','air_cleaning','accessory'] },
+  commercial_office: { primary:['vrf','vav','diffuser','chilled_beam'], secondary:['centrifugal_fan','erv','displacement','fabric_duct'], tertiary:['hvls','air_cleaning','uvc','fire_smoke_damper','dehumidifier','accessory'] },
+  classroom: { primary:['erv','vrf','displacement','vav'], secondary:['diffuser','centrifugal_fan','chilled_beam','air_cleaning'], tertiary:['uvc','fabric_duct','dehumidifier','fire_smoke_damper','accessory'] },
+  data_center: { primary:['centrifugal_fan','vrf','ahu'], secondary:['erv','vav','hvls','fabric_duct'], tertiary:['fire_smoke_damper','accessory'] },
+  kitchen: { primary:['kitchen_hood','mua'], secondary:['centrifugal_fan','fire_smoke_damper','fabric_duct'], tertiary:['accessory'] },
+  multifamily: { primary:['vrf','erv','centrifugal_fan'], secondary:['diffuser','dehumidifier','air_cleaning'], tertiary:['fire_smoke_damper','accessory'] },
+  parking: { primary:['jet_fan','centrifugal_fan'], secondary:['mua','hvls','fire_smoke_damper'], tertiary:['accessory'] },
+  cleanroom: { primary:['hepa_diffuser','venturi_valve','ahu'], secondary:['centrifugal_fan','erv','displacement','chilled_beam','dehumidifier'], tertiary:['uvc','fire_smoke_damper','silencer','accessory'] },
+  industrial: { primary:['centrifugal_fan','hvls','mua'], secondary:['erv','fabric_duct','ahu','air_cleaning'], tertiary:['fire_smoke_damper','dehumidifier','accessory'] },
+};
+
+// =================== JURISDICTION DATA ===================
+const JURISDICTIONS = {
+  boston: { tier:'Stretch', berdo:true, berdoThreshold:20000, massSave:true, aimAct:true, label:'Boston, MA', rebateMultiplier:1.0 },
+  cambridge: { tier:'Specialized', berdo:false, massSave:true, aimAct:true, label:'Cambridge, MA', rebateMultiplier:1.0 },
+  ma_stretch: { tier:'Stretch', berdo:false, massSave:true, aimAct:true, label:'MA Stretch Code', rebateMultiplier:1.0 },
+  ma_specialized: { tier:'Specialized', berdo:false, massSave:true, aimAct:true, label:'MA Specialized Code', rebateMultiplier:1.0 },
+  ct: { tier:'Base+', berdo:false, massSave:false, aimAct:true, label:'Connecticut', rebateMultiplier:0.6 },
+  nh: { tier:'Base', berdo:false, massSave:false, aimAct:true, label:'New Hampshire', rebateMultiplier:0.4 },
+  me: { tier:'Stretch-equiv', berdo:false, massSave:false, aimAct:true, label:'Maine', rebateMultiplier:0.5 },
+  vt: { tier:'Stretch-equiv', berdo:false, massSave:false, aimAct:true, label:'Vermont', rebateMultiplier:0.5 },
+  ri: { tier:'Stretch', berdo:false, massSave:false, aimAct:true, label:'Rhode Island', rebateMultiplier:0.7 },
+  eastern_ny: { tier:'Base', berdo:false, massSave:false, aimAct:true, label:'Eastern New York', rebateMultiplier:0.3 },
+};
+
+// =================== COMPETITIVE DATA ===================
+const COMPETITORS = {
+  centrifugal_fan: { loren_cook:'Series 100/200 Centrifugal', daikin:null, buckley_adv:'Greenheck SQ/QEI/QEP: highest FEI in class, AMCA-certified, Buckley stocks 100+ fan sizes for next-day delivery. Loren Cook requires 3–4 week lead time.' },
+  lab_exhaust: { loren_cook:'Vektor competitor (none equivalent)', daikin:null, buckley_adv:'Greenheck Vektor-H is the only high-plume-dilution lab exhaust with wind-responsive nozzle technology. Loren Cook has no equivalent product. Buckley delivered 40,000 CFM N+1 Vektor system for MIT Building 4.' },
+  vrf: { loren_cook:null, daikin:'VRV IV+ Heat Recovery', buckley_adv:'Fujitsu Airstage R-32 units are Mass Save qualified through 2027. Daikin VRV still ships R-410A in many configurations — ineligible for Mass Save rebates after Jan 2026. Buckley bundles Buckstrut platform + VFB filter kit, eliminating 2 separate vendor orders.' },
+  or_ceiling: { loren_cook:null, daikin:null, buckley_adv:'Price UltraSuite is the market-leading unidirectional OR ceiling, specified at Maine Medical Center and 70%+ of New England hospital ORs. No comparable single-source OR ceiling system exists from competitors.' },
+  chilled_beam: { loren_cook:null, daikin:null, buckley_adv:'Price Industries holds 60%+ of the North American chilled beam market. AHRI-certified performance data, integrated with Price VAV for hybrid systems. No competitor offers end-to-end beam + diffuser + VAV from one rep.' },
+  kitchen_hood: { loren_cook:'Captive Aire (rep conflict)', daikin:null, buckley_adv:'Greenheck Synergy demand-controlled kitchen ventilation reduces exhaust by 30–50% vs constant-volume hoods. Integrated supply/exhaust coordination eliminates separate MUA sizing.' },
+  erv: { loren_cook:null, daikin:'Daikin Rebel ERV', buckley_adv:'Greenheck DOAS-ERV achieves 84% enthalpy recovery vs Daikin Rebel at 78%. Buckley provides local startup/commissioning from 7 regional offices. HTS New England (Daikin) has 2 offices.' },
+  vav: { loren_cook:null, daikin:null, buckley_adv:'Price VAV terminal boxes: quietest in class, AHRI 880 certified, integrated DDC-ready controllers. Single-source with Price diffusers and chilled beams for coordinated air distribution.' },
+  diffuser: { loren_cook:null, daikin:null, buckley_adv:'Price 630 Series: industry-standard square plaque, NC-25 achievable, pattern control for perimeter/interior. Buckley stocks 3,800+ items for free next-day delivery.' },
+};
+
+// =================== ENGINE ===================
+function getSpecialReqs() {
+  return [...document.querySelectorAll('.checkbox-group input:checked')].map(c => c.value);
+}
+
+function scoreProduct(product, appType, cfm, sp, reqs) {
+  let score = 0;
+  const map = APP_PRODUCT_MAP[appType];
+  if (!map) return 0;
+
+  if (map.primary.includes(product.type)) score += 50;
+  else if (map.secondary.includes(product.type)) score += 30;
+  else if (map.tertiary.includes(product.type)) score += 10;
+  else return 0;
+
+  if (!product.applications.includes(appType)) return 0;
+
+  // CFM fit
+  if (cfm) {
+    if (cfm >= product.cfm_range[0] && cfm <= product.cfm_range[1]) score += 25;
+    else if (cfm < product.cfm_range[0] * 0.8 || cfm > product.cfm_range[1] * 1.2) score -= 20;
+    else score += 10;
+  }
+
+  // SP fit
+  if (sp && product.static_pressure > 0) {
+    if (sp <= product.static_pressure) score += 15;
+    else score -= 10;
+  }
+
+  // Special requirements
+  if (reqs.includes('hepa') && (product.type === 'hepa_diffuser' || product.type === 'or_ceiling')) score += 20;
+  if (reqs.includes('ulpa') && product.type === 'hepa_diffuser') score += 15;
+  if (reqs.includes('uvc') && product.type === 'uvc') score += 20;
+  if (reqs.includes('erv') && product.type === 'erv') score += 20;
+  if (reqs.includes('vrf') && product.type === 'vrf') score += 25;
+  if (reqs.includes('chilled_beams') && product.type === 'chilled_beam') score += 25;
+  if (reqs.includes('displacement') && product.type === 'displacement') score += 25;
+  if (reqs.includes('fire_smoke') && product.type === 'fire_smoke_damper') score += 20;
+
+  // Bonus for certifications
+  if (product.ahri_certified) score += 5;
+  if (product.fei_compliant) score += 5;
+  if (product.mass_save_eligible) score += 5;
+
+  return score;
+}
+
+function calcFEI(cfm, sp) {
+  if (!cfm || !sp) return { value: 1.05, pass: true };
+  const fanPower = (cfm * sp) / (6356 * 0.65);
+  const refPower = (cfm * sp) / (6356 * 0.60);
+  const fei = refPower / fanPower;
+  return { value: Math.round(fei * 100) / 100, pass: fei >= 1.0 };
+}
+
+function estimateRebate(product, jurisdiction) {
+  const jur = JURISDICTIONS[jurisdiction];
+  if (!product.mass_save_eligible) return 0;
+  const base = product.type === 'vrf' ? 3500 : product.type === 'erv' ? 2000 : product.type === 'chilled_beam' ? 1500 : 800;
+  return Math.round(base * jur.rebateMultiplier);
+}
+
+function formatPrice(range) {
+  return '$' + range[0].toLocaleString() + ' – $' + range[1].toLocaleString();
+}
+
+// =================== FIND PRODUCTS ===================
+function findProducts() {
+  const appType = document.getElementById('appType').value;
+  if (!appType) { alert('Please select an Application Type'); return; }
+
+  const cfm = parseFloat(document.getElementById('cfm').value) || 0;
+  const sp = parseFloat(document.getElementById('sp').value) || 0;
+  const sound = document.getElementById('sound').value;
+  const jurisdiction = document.getElementById('jurisdiction').value;
+  const bldgSize = parseFloat(document.getElementById('bldgSize').value) || 0;
+  const refPref = document.getElementById('refrigerant').value;
+  const reqs = getSpecialReqs();
+
+  // Show loading
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('results').classList.remove('visible');
+  const loadingEl = document.getElementById('loading');
+  loadingEl.classList.add('visible');
+
+  setTimeout(() => {
+    loadingEl.classList.remove('visible');
+
+    // Score all products
+    let scored = PRODUCTS.map(p => ({ ...p, score: scoreProduct(p, appType, cfm, sp, reqs) }))
+      .filter(p => p.score > 0);
+
+    // Refrigerant filter
+    if (refPref !== 'no_pref') {
+      scored = scored.map(p => {
+        if (p.refrigerant && p.refrigerant !== refPref) p.score -= 15;
+        if (p.refrigerant && p.refrigerant === refPref) p.score += 10;
+        return p;
+      });
+    }
+
+    scored.sort((a, b) => b.score - a.score);
+
+    // Filter out accessories for primary unless nothing else
+    const mainProducts = scored.filter(p => p.type !== 'accessory' && p.type !== 'fire_smoke_damper' && p.type !== 'silencer');
+    const primary = mainProducts[0] || scored[0];
+    const alternatives = scored.filter(p => p.id !== primary.id).slice(0, 4);
+
+    renderResults(primary, alternatives, { appType, cfm, sp, sound, jurisdiction, bldgSize, refPref, reqs });
+  }, 1200);
+}
+
+// =================== RENDER ===================
+function renderResults(primary, alternatives, params) {
+  const jur = JURISDICTIONS[params.jurisdiction];
+  const fei = calcFEI(params.cfm, params.sp);
+  const rebate = estimateRebate(primary, params.jurisdiction);
+  const berdoApplies = jur.berdo && params.bldgSize >= (jur.berdoThreshold || 99999);
+  const refStatus = params.refPref === 'R-410A' ? 'warn' : 'pass';
+
+  const appLabels = {
+    lab_exhaust:'Laboratory Exhaust', operating_room:'Operating Room', commercial_office:'Commercial Office',
+    classroom:'Classroom/Education', data_center:'Data Center', kitchen:'Kitchen Ventilation',
+    multifamily:'Multi-Family Residential', parking:'Parking Garage', cleanroom:'Cleanroom', industrial:'Industrial/Manufacturing'
+  };
+
+  // Competitive data
+  const comp = COMPETITORS[primary.type] || COMPETITORS['centrifugal_fan'];
+
+  let html = '';
+
+  // === SECTION 1: PRIMARY RECOMMENDATION ===
+  html += `<div class="section-header">Primary Recommendation <div class="line"></div></div>`;
+  html += `<div class="primary-card">
+    <div class="primary-badge">★ Best Match — ${appLabels[params.appType]}</div>
+    <h2>${primary.name}</h2>
+    <div class="primary-manufacturer">${primary.manufacturer} — via Buckley Associates</div>
+    <div class="spec-grid">
+      <div class="spec-item"><div class="spec-label">CFM Range</div><div class="spec-value">${primary.cfm_range[0].toLocaleString()}–${primary.cfm_range[1].toLocaleString()}</div></div>
+      <div class="spec-item"><div class="spec-label">Max Static Pressure</div><div class="spec-value">${primary.static_pressure}" WG</div></div>
+      <div class="spec-item"><div class="spec-label">Efficiency</div><div class="spec-value">${(primary.efficiency * 100).toFixed(0)}%</div></div>
+      <div class="spec-item"><div class="spec-label">Sound Rating</div><div class="spec-value">${primary.sound || 'NC-35'}</div></div>
+      ${primary.refrigerant ? `<div class="spec-item"><div class="spec-label">Refrigerant</div><div class="spec-value">${primary.refrigerant}</div></div>` : ''}
+      <div class="spec-item"><div class="spec-label">Score</div><div class="spec-value" style="color:var(--teal)">${primary.score}/100</div></div>
+    </div>
+    <div class="badges">
+      ${primary.ahri_certified ? '<span class="badge badge-green">✅ AHRI Certified</span>' : '<span class="badge badge-orange">⚠ Non-AHRI</span>'}
+      ${primary.mass_save_eligible ? '<span class="badge badge-green">✅ Mass Save Eligible</span>' : '<span class="badge badge-orange">❌ Not Mass Save</span>'}
+      ${primary.fei_compliant ? '<span class="badge badge-green">✅ ASHRAE 90.1-2022 FEI</span>' : '<span class="badge badge-red">❌ FEI Non-Compliant</span>'}
+      ${primary.refrigerant === 'R-32' || primary.refrigerant === 'R-454B' ? '<span class="badge badge-green">✅ AIM Act Compliant</span>' : primary.refrigerant === 'R-410A' ? '<span class="badge badge-red">⚠ R-410A Phase-Out</span>' : ''}
+    </div>
+    <div class="price-range"><span class="label">Estimated Price Range</span>${formatPrice(primary.price_range)}</div>
+    <div class="btn-row">
+      <button class="btn-primary-sm" onclick="showSubmittal('${primary.id}')">📄 Generate Submittal</button>
+      <button class="btn-secondary" onclick="alert('Schedule request sent to Buckley sales team.')">📅 Schedule Rep Visit</button>
+      <button class="btn-secondary" onclick="alert('Downloading ${primary.name} cut sheet (PDF)...')">📎 Download Cut Sheet</button>
+    </div>
+  </div>`;
+
+  // === SECTION 2: ALTERNATIVES ===
+  if (alternatives.length) {
+    html += `<div class="section-header">Alternative Products <div class="line"></div></div>`;
+    html += `<div class="alt-grid">`;
+    alternatives.forEach(alt => {
+      const fitClass = alt.score >= 40 ? 'fit-high' : 'fit-med';
+      const fitLabel = alt.score >= 40 ? 'Strong Fit' : 'Viable Option';
+      html += `<div class="alt-card">
+        <div class="fit-score ${fitClass}">${fitLabel} — ${alt.score}pts</div>
+        <h4>${alt.name}</h4>
+        <div class="alt-mfr">${alt.manufacturer}</div>
+        <div class="alt-specs">
+          CFM: ${alt.cfm_range[0].toLocaleString()}–${alt.cfm_range[1].toLocaleString()}<br>
+          SP: ${alt.static_pressure}" WG &nbsp;|&nbsp; Eff: ${(alt.efficiency*100).toFixed(0)}%<br>
+          ${alt.ahri_certified ? '✅ AHRI' : '⚠ Non-AHRI'} &nbsp;|&nbsp; ${alt.fei_compliant ? '✅ FEI' : '❌ FEI'}
+          ${alt.refrigerant ? '<br>Refrigerant: ' + alt.refrigerant : ''}
+        </div>
+        <div class="alt-price">${formatPrice(alt.price_range)}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // === SECTION 3: COMPLIANCE CHECK ===
+  html += `<div class="section-header">Compliance & Incentives — ${jur.label} <div class="line"></div></div>`;
+  html += `<div class="compliance-grid">
+    <div class="compliance-item">
+      <div class="ci-label">Energy Code Tier</div>
+      <div class="ci-value ${jur.tier === 'Specialized' ? 'warn' : 'pass'}">${jur.tier}</div>
+    </div>
+    <div class="compliance-item">
+      <div class="ci-label">BERDO Applies?</div>
+      <div class="ci-value ${berdoApplies ? 'warn' : 'pass'}">${berdoApplies ? '⚠ YES — $1,000/day penalty risk' : params.jurisdiction === 'boston' ? 'No (under 20K sqft)' : 'N/A — Outside Boston'}</div>
+    </div>
+    <div class="compliance-item">
+      <div class="ci-label">AIM Act Refrigerant Status</div>
+      <div class="ci-value ${refStatus}">${params.refPref === 'R-410A' ? '⚠ R-410A phaseout — install deadline Dec 2028' : params.refPref === 'R-32' || params.refPref === 'R-454B' ? '✅ A2L compliant' : '✅ Compliant (non-refrigerant or A2L)'}</div>
+    </div>
+    <div class="compliance-item">
+      <div class="ci-label">Mass Save Rebate Estimate</div>
+      <div class="ci-value ${rebate > 0 ? 'pass' : ''}">${rebate > 0 ? '$' + rebate.toLocaleString() + ' estimated' : 'Not eligible'}</div>
+    </div>
+    <div class="compliance-item">
+      <div class="ci-label">FEI Calculation (ASHRAE 90.1-2022)</div>
+      <div class="ci-value ${fei.pass ? 'pass' : 'fail'}">FEI = ${fei.value} ${fei.pass ? '✅ Compliant (≥1.0)' : '❌ Below threshold'}</div>
+    </div>
+    <div class="compliance-item">
+      <div class="ci-label">ASHRAE 241 (IAQ)</div>
+      <div class="ci-value pass">✅ Ventilation + filtration addressed</div>
+    </div>
+  </div>`;
+
+  // === SECTION 4: COMPETITIVE ANALYSIS ===
+  html += `<div class="section-header">Competitive Analysis <div class="line"></div></div>`;
+  html += `<table class="comp-table">
+    <tr><th>Criteria</th><th style="color:var(--teal)">Buckley (${primary.manufacturer})</th><th>Loren Cook (ADC)</th><th>Daikin/Haakon (HTS)</th></tr>
+    <tr><td>Product</td><td class="buckley-col">${primary.name}</td><td>${comp.loren_cook || '—'}</td><td>${comp.daikin || '—'}</td></tr>
+    <tr><td>AHRI Certified</td><td class="winner">${primary.ahri_certified ? '✅ Yes' : '—'}</td><td>${comp.loren_cook ? '⚠ Varies' : '—'}</td><td>${comp.daikin ? '✅ Yes' : '—'}</td></tr>
+    <tr><td>Mass Save Qualified</td><td class="winner">${primary.mass_save_eligible ? '✅ Yes' : '—'}</td><td>⚠ Limited</td><td>⚠ R-410A models excluded</td></tr>
+    <tr><td>FEI Compliant</td><td class="winner">✅ Yes</td><td>⚠ Select models</td><td>${comp.daikin ? '✅ Yes' : '—'}</td></tr>
+    <tr><td>Local Inventory</td><td class="winner">✅ 5 warehouses, next-day</td><td>❌ 3–4 week lead</td><td>❌ National distribution</td></tr>
+    <tr><td>Local Rep Offices</td><td class="winner">7 offices, 5 states</td><td>Limited NE presence</td><td>2 offices</td></tr>
+    <tr><td>Refrigerant</td><td class="winner">${primary.refrigerant || 'N/A'}</td><td>N/A</td><td>${comp.daikin ? 'R-410A (transitioning)' : '—'}</td></tr>
+  </table>`;
+  html += `<div class="comp-advantage"><strong>Buckley Advantage:</strong> ${comp.buckley_adv}</div>`;
+
+  document.getElementById('results').innerHTML = html;
+  document.getElementById('results').classList.add('visible');
+}
+
+// =================== SUBMITTAL MODAL ===================
+function showSubmittal(productId) {
+  const product = PRODUCTS.find(p => p.id === productId);
+  if (!product) return;
+
+  const cfm = document.getElementById('cfm').value || '—';
+  const sp = document.getElementById('sp').value || '—';
+  const jurisdiction = document.getElementById('jurisdiction').value;
+  const jur = JURISDICTIONS[jurisdiction];
+  const appType = document.getElementById('appType').value;
+  const appLabels = {
+    lab_exhaust:'Laboratory Exhaust', operating_room:'Operating Room', commercial_office:'Commercial Office',
+    classroom:'Classroom/Education', data_center:'Data Center', kitchen:'Kitchen Ventilation',
+    multifamily:'Multi-Family Residential', parking:'Parking Garage', cleanroom:'Cleanroom', industrial:'Industrial/Manufacturing'
+  };
+  const today = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+
+  document.getElementById('submittalContent').innerHTML = `
+    <h3>📄 Submittal Package</h3>
+    <p class="modal-sub">Generated ${today} — ${product.name} | Buckley Associates</p>
+
+    <div class="submittal-section">
+      <h5>1. Product Identification</h5>
+      <p><strong>Product:</strong> ${product.name}<br>
+      <strong>Manufacturer:</strong> ${product.manufacturer}<br>
+      <strong>Buckley Rep:</strong> Buckley Associates, 1099 Hingham St, Rockland MA 02370<br>
+      <strong>Application:</strong> ${appLabels[appType] || '—'}</p>
+    </div>
+
+    <div class="submittal-section">
+      <h5>2. Design Parameters</h5>
+      <p><strong>Airflow:</strong> ${cfm} CFM<br>
+      <strong>Static Pressure:</strong> ${sp}" WG<br>
+      <strong>Sound:</strong> ${document.getElementById('sound').value}<br>
+      ${product.refrigerant ? '<strong>Refrigerant:</strong> ' + product.refrigerant + '<br>' : ''}
+      <strong>Efficiency:</strong> ${(product.efficiency * 100).toFixed(0)}%</p>
+    </div>
+
+    <div class="submittal-section">
+      <h5>3. Certifications & Compliance</h5>
+      <ul>
+        ${product.ahri_certified ? '<li>✅ AHRI Performance Certified</li>' : ''}
+        ${product.fei_compliant ? '<li>✅ ASHRAE 90.1-2022 FEI Compliant</li>' : ''}
+        ${product.mass_save_eligible ? '<li>✅ Mass Save Qualified Product List (2025–2027)</li>' : ''}
+        <li>✅ ${jur.tier} Energy Code — ${jur.label}</li>
+        <li>UL Listed / AMCA Certified (where applicable)</li>
+      </ul>
+    </div>
+
+    <div class="submittal-section">
+      <h5>4. Warranty & Support</h5>
+      <p><strong>Standard Warranty:</strong> ${product.manufacturer === 'Greenheck' ? '10-year fan warranty' : product.manufacturer === 'Fujitsu' ? '7-year compressor / 5-year parts' : '5-year limited'}<br>
+      <strong>Local Support:</strong> 7 Buckley offices across New England + Eastern NY<br>
+      <strong>Inventory:</strong> ${product.price_range[0] < 1000 ? 'Stocked — next-day delivery available' : 'Build-to-order — contact Buckley for lead time'}</p>
+    </div>
+
+    <div class="submittal-section">
+      <h5>5. Estimated Pricing</h5>
+      <p><strong>List Price Range:</strong> ${formatPrice(product.price_range)}<br>
+      <strong>Mass Save Rebate:</strong> ${product.mass_save_eligible ? '$' + estimateRebate(product, jurisdiction).toLocaleString() : 'N/A'}<br>
+      <em>Contact Buckley Associates for project-specific pricing: (781) 982-9800</em></p>
+    </div>
+
+    <button class="modal-close" onclick="closeSubmittal()">Close Submittal</button>
+  `;
+
+  document.getElementById('submittalModal').classList.add('visible');
+}
+
+function closeSubmittal() {
+  document.getElementById('submittalModal').classList.remove('visible');
+}
+
+document.getElementById('submittalModal').addEventListener('click', function(e) {
+  if (e.target === this) closeSubmittal();
+});
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSubmittal(); });
+</script>
+</body>
+</html>
