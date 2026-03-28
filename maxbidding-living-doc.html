@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MaxBidding — Living Document | TI SM2 Sherman</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0b0f1a;
+  --bg-card: rgba(255,255,255,0.03);
+  --bg-card-hover: rgba(255,255,255,0.06);
+  --border: rgba(255,255,255,0.08);
+  --border-light: rgba(255,255,255,0.12);
+  --text: #e2e8f0;
+  --text-dim: #94a3b8;
+  --text-muted: #64748b;
+  --gold: #D4AF37;
+  --gold-dim: rgba(212,175,55,0.15);
+  --teal: #0ea5a0;
+  --teal-dim: rgba(14,165,160,0.15);
+  --orange: #ff8c00;
+  --orange-dim: rgba(255,140,0,0.15);
+  --red: #dc2626;
+  --red-dim: rgba(220,38,38,0.15);
+  --green: #22c55e;
+  --green-dim: rgba(34,197,94,0.15);
+  --blue: #3b82f6;
+  --blue-dim: rgba(59,130,246,0.15);
+  --sidebar-w: 280px;
+  --header-h: 140px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); overflow:hidden; height:100vh; }
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,0.2); }
+
+/* HEADER */
+.header {
+  position:fixed; top:0; left:0; right:0; z-index:100;
+  background:linear-gradient(180deg, rgba(11,15,26,0.98) 0%, rgba(11,15,26,0.95) 100%);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:12px 24px;
+}
+.header-top { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.logo-area { display:flex; align-items:center; gap:12px; }
+.logo { font-size:24px; font-weight:800; letter-spacing:-0.5px; }
+.logo span:first-child { color:var(--gold); }
+.logo span:last-child { color:var(--text); }
+.logo-sub { font-size:10px; text-transform:uppercase; letter-spacing:2px; color:var(--text-muted); margin-top:2px; }
+.project-name {
+  font-size:15px; font-weight:600; color:var(--text);
+  background:transparent; border:1px solid transparent; padding:4px 8px; border-radius:6px;
+  transition:all 0.2s; cursor:text; flex:1; min-width:300px;
+}
+.project-name:hover { border-color:var(--border-light); }
+.project-name:focus { outline:none; border-color:var(--gold); background:rgba(255,255,255,0.03); }
+.header-meta { display:flex; gap:20px; font-size:11px; color:var(--text-muted); flex-wrap:wrap; }
+.header-meta span { display:flex; align-items:center; gap:4px; }
+.header-meta strong { color:var(--text-dim); font-weight:500; }
+.header-bottom { display:flex; align-items:center; gap:16px; margin-top:8px; flex-wrap:wrap; }
+.master-total {
+  font-size:20px; font-weight:700; color:var(--gold);
+  display:flex; align-items:center; gap:8px;
+}
+.master-total small { font-size:10px; color:var(--text-muted); font-weight:400; text-transform:uppercase; letter-spacing:1px; }
+.progress-bar-wrap {
+  flex:1; min-width:150px; max-width:300px;
+  background:rgba(255,255,255,0.05); border-radius:10px; height:8px; overflow:hidden;
+}
+.progress-bar-fill {
+  height:100%; border-radius:10px;
+  background:linear-gradient(90deg, var(--gold), var(--teal));
+  transition:width 0.6s ease;
+}
+.status-badges { display:flex; gap:4px; flex-wrap:wrap; }
+.badge {
+  font-size:9px; padding:3px 8px; border-radius:10px; font-weight:600;
+  text-transform:uppercase; letter-spacing:0.5px; cursor:pointer; transition:all 0.2s;
+}
+.badge.active { transform:scale(1.05); }
+.badge-draft { background:var(--bg-card); color:var(--text-muted); border:1px solid var(--border); }
+.badge-draft.active { background:rgba(255,255,255,0.1); color:var(--text); }
+.badge-itb { background:var(--orange-dim); color:var(--orange); border:1px solid rgba(255,140,0,0.3); }
+.badge-itb.active { background:rgba(255,140,0,0.25); }
+.badge-received { background:var(--blue-dim); color:var(--blue); border:1px solid rgba(59,130,246,0.3); }
+.badge-received.active { background:rgba(59,130,246,0.25); }
+.badge-review { background:var(--gold-dim); color:var(--gold); border:1px solid rgba(212,175,55,0.3); }
+.badge-review.active { background:rgba(212,175,55,0.25); }
+.badge-awarded { background:var(--teal-dim); color:var(--teal); border:1px solid rgba(14,165,160,0.3); }
+.badge-awarded.active { background:rgba(14,165,160,0.25); }
+.badge-construction { background:var(--green-dim); color:var(--green); border:1px solid rgba(34,197,94,0.3); }
+.badge-construction.active { background:rgba(34,197,94,0.25); }
+.timestamp { font-size:10px; color:var(--text-muted); margin-left:auto; white-space:nowrap; }
+
+/* SIDEBAR */
+.sidebar {
+  position:fixed; top:var(--header-h); left:0; bottom:0;
+  width:var(--sidebar-w); background:rgba(11,15,26,0.98);
+  border-right:1px solid var(--border);
+  overflow-y:auto; z-index:90; padding:8px 0;
+}
+.sidebar-section { padding:8px 12px; }
+.sidebar-section-title {
+  font-size:9px; text-transform:uppercase; letter-spacing:1.5px;
+  color:var(--text-muted); margin-bottom:6px; padding:0 4px;
+}
+.sidebar-item {
+  display:flex; align-items:center; gap:8px; padding:8px 12px;
+  border-radius:8px; cursor:pointer; transition:all 0.15s;
+  margin-bottom:1px;
+}
+.sidebar-item:hover { background:var(--bg-card-hover); }
+.sidebar-item.active { background:var(--gold-dim); border-left:2px solid var(--gold); }
+.sidebar-item .num { font-size:10px; color:var(--text-muted); width:20px; font-weight:500; }
+.sidebar-item .name { font-size:12px; font-weight:500; flex:1; line-height:1.3; }
+.sidebar-item .status-icon { font-size:12px; }
+.sidebar-item .amount { font-size:10px; color:var(--text-muted); font-weight:500; }
+.sidebar-item.featured .name { color:var(--gold); }
+.nav-item {
+  display:flex; align-items:center; gap:8px; padding:10px 16px;
+  cursor:pointer; transition:all 0.15s; border-radius:8px; margin:0 8px 2px;
+}
+.nav-item:hover { background:var(--bg-card-hover); }
+.nav-item.active { background:var(--gold-dim); }
+.nav-item .icon { font-size:16px; }
+.nav-item .label { font-size:12px; font-weight:500; }
+
+/* MAIN */
+.main {
+  position:fixed; top:var(--header-h); left:var(--sidebar-w); right:0; bottom:0;
+  overflow-y:auto; padding:20px 24px;
+}
+
+/* CARDS */
+.card {
+  background:var(--bg-card); border:1px solid var(--border);
+  border-radius:12px; padding:16px; margin-bottom:16px;
+  backdrop-filter:blur(10px);
+}
+.card-title {
+  font-size:13px; font-weight:600; margin-bottom:12px;
+  display:flex; align-items:center; gap:8px;
+}
+.card-title .icon { font-size:16px; }
+
+/* STATS GRID */
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(170px,1fr)); gap:10px; margin-bottom:20px; }
+.stat-card {
+  background:var(--bg-card); border:1px solid var(--border); border-radius:10px;
+  padding:14px; transition:all 0.2s;
+}
+.stat-card:hover { border-color:var(--border-light); background:var(--bg-card-hover); }
+.stat-label { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:4px; }
+.stat-value { font-size:20px; font-weight:700; }
+.stat-value.gold { color:var(--gold); }
+.stat-value.teal { color:var(--teal); }
+.stat-value.orange { color:var(--orange); }
+.stat-value.green { color:var(--green); }
+.stat-value.blue { color:var(--blue); }
+.stat-sub { font-size:10px; color:var(--text-muted); margin-top:2px; }
+
+/* TABLES */
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:11px; }
+th { background:rgba(255,255,255,0.04); color:var(--text-dim); font-weight:600; text-transform:uppercase;
+  letter-spacing:0.5px; font-size:9px; padding:8px 10px; text-align:left; white-space:nowrap;
+  border-bottom:1px solid var(--border);
+}
+td { padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.03); vertical-align:middle; }
+tr:hover td { background:rgba(255,255,255,0.02); }
+.cell-green { color:var(--green); }
+.cell-red { color:var(--red); }
+.cell-gold { color:var(--gold); }
+.cell-teal { color:var(--teal); }
+.cell-orange { color:var(--orange); }
+.cell-blue { color:var(--blue); }
+.cell-lowest { background:rgba(34,197,94,0.08); font-weight:600; }
+.cell-highest { background:rgba(220,38,38,0.05); }
+.status-pill {
+  display:inline-block; font-size:9px; padding:2px 8px; border-radius:8px; font-weight:600;
+}
+.pill-awarded { background:var(--teal-dim); color:var(--teal); }
+.pill-received { background:var(--blue-dim); color:var(--blue); }
+.pill-itb { background:var(--orange-dim); color:var(--orange); }
+.pill-review { background:var(--gold-dim); color:var(--gold); }
+.pill-not-started { background:rgba(255,255,255,0.05); color:var(--text-muted); }
+.pill-overdue { background:var(--red-dim); color:var(--red); }
+
+/* CHARTS */
+.charts-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+.chart-card {
+  background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:16px;
+}
+.chart-card h3 { font-size:12px; font-weight:600; margin-bottom:12px; color:var(--text-dim); }
+.chart-container { position:relative; width:100%; }
+.chart-container.donut { max-width:280px; margin:0 auto; }
+
+/* SECTIONS */
+.section { margin-bottom:20px; }
+.section-header {
+  display:flex; align-items:center; gap:8px; padding:10px 0;
+  cursor:pointer; user-select:none;
+}
+.section-header h3 { font-size:14px; font-weight:600; flex:1; }
+.section-header .toggle { font-size:12px; color:var(--text-muted); transition:transform 0.2s; }
+.section-header .toggle.open { transform:rotate(90deg); }
+.section-content { padding:0 0 8px; }
+.section-content.collapsed { display:none; }
+
+/* TRADE HEADER */
+.trade-header {
+  background:linear-gradient(135deg, rgba(212,175,55,0.08), rgba(14,165,160,0.05));
+  border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px;
+}
+.trade-header h2 { font-size:20px; font-weight:700; margin-bottom:8px; }
+.trade-header h2 span { color:var(--gold); }
+.trade-meta { display:flex; gap:24px; flex-wrap:wrap; }
+.trade-meta-item { display:flex; flex-direction:column; }
+.trade-meta-item label { font-size:9px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
+.trade-meta-item value { font-size:14px; font-weight:600; }
+
+/* SCOPE TEXT */
+.scope-text {
+  font-size:12px; line-height:1.7; color:var(--text-dim);
+  background:rgba(0,0,0,0.2); border:1px solid var(--border);
+  border-radius:8px; padding:16px; max-height:300px; overflow-y:auto;
+}
+.scope-text h4 { color:var(--text); margin:12px 0 4px; font-size:13px; }
+.scope-text ul { padding-left:20px; margin:4px 0; }
+.scope-text li { margin-bottom:2px; }
+
+/* TAGS */
+.tag { display:inline-block; font-size:9px; padding:2px 8px; border-radius:6px; margin:2px; font-weight:500; }
+.tag-mandatory { background:var(--red-dim); color:var(--red); }
+.tag-preferred { background:var(--orange-dim); color:var(--orange); }
+.tag-optional { background:var(--blue-dim); color:var(--blue); }
+
+/* SCORECARD */
+.scorecard-row { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.03); }
+.scorecard-row:last-child { border-bottom:none; }
+.scorecard-label { font-size:11px; width:140px; color:var(--text-dim); }
+.scorecard-weight { font-size:10px; width:50px; color:var(--text-muted); text-align:center; }
+.scorecard-bar { flex:1; height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden; }
+.scorecard-bar-fill { height:100%; border-radius:3px; transition:width 0.4s; }
+.scorecard-score { font-size:11px; width:40px; text-align:right; font-weight:600; }
+
+/* CHANGELOG */
+.changelog-entry {
+  display:flex; gap:12px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.03);
+  font-size:11px;
+}
+.changelog-date { color:var(--text-muted); white-space:nowrap; width:80px; font-weight:500; }
+.changelog-text { color:var(--text-dim); flex:1; }
+
+/* RECOMMENDATION */
+.recommendation {
+  background:rgba(14,165,160,0.05); border:1px solid rgba(14,165,160,0.2);
+  border-radius:8px; padding:16px; font-size:12px; line-height:1.6; color:var(--text-dim);
+}
+.recommendation strong { color:var(--teal); }
+
+/* BUTTONS */
+.btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:8px 16px; border-radius:8px; font-size:11px; font-weight:600;
+  border:none; cursor:pointer; transition:all 0.2s; font-family:'Inter',sans-serif;
+}
+.btn:hover { transform:translateY(-1px); }
+.btn-gold { background:var(--gold); color:#000; }
+.btn-gold:hover { background:#e5c040; }
+.btn-teal { background:var(--teal); color:#fff; }
+.btn-teal:hover { background:#0fb8b2; }
+.btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-dim); }
+.btn-outline:hover { border-color:var(--text-muted); color:var(--text); }
+.btn-red { background:var(--red); color:#fff; }
+.btn-sm { padding:5px 10px; font-size:10px; }
+.bottom-bar {
+  position:sticky; bottom:0; background:rgba(11,15,26,0.95); backdrop-filter:blur(10px);
+  border-top:1px solid var(--border); padding:12px 0; display:flex; gap:8px; flex-wrap:wrap;
+  margin-top:20px;
+}
+
+/* KEY DATES */
+.key-dates { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.date-item {
+  display:flex; align-items:center; gap:10px; padding:8px 12px;
+  background:rgba(255,255,255,0.02); border-radius:8px;
+}
+.date-dot { width:8px; height:8px; border-radius:50%; }
+.date-label { font-size:11px; flex:1; }
+.date-value { font-size:11px; font-weight:600; color:var(--text-dim); }
+
+/* GANTT */
+.gantt-row { display:flex; align-items:center; gap:8px; padding:3px 0; }
+.gantt-label { font-size:10px; width:120px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.gantt-track { flex:1; height:16px; background:rgba(255,255,255,0.03); border-radius:4px; position:relative; }
+.gantt-bar { position:absolute; height:100%; border-radius:4px; font-size:8px; display:flex; align-items:center; padding:0 4px; color:#fff; font-weight:600; overflow:hidden; white-space:nowrap; }
+
+/* PANEL VISIBILITY */
+.panel { display:none; }
+.panel.active { display:block; }
+
+/* PRINT */
+@media print {
+  .sidebar, .header, .bottom-bar { display:none !important; }
+  .main { position:static; margin:0; padding:20px; }
+  body { background:#fff; color:#000; overflow:visible; }
+  .card, .stat-card, .chart-card, .trade-header { border-color:#ddd; background:#fafafa; }
+  .stat-value, .card-title { color:#000; }
+}
+
+/* RESPONSIVE */
+@media (max-width:900px) {
+  .sidebar { width:220px; }
+  .main { left:220px; }
+  .charts-row { grid-template-columns:1fr; }
+  .stats-grid { grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); }
+}
+@media (max-width:600px) {
+  .sidebar { display:none; }
+  .main { left:0; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div class="logo-area">
+      <div>
+        <div class="logo"><span>Max</span><span>Bidding</span></div>
+        <div class="logo-sub">Living Document</div>
+      </div>
+    </div>
+    <input class="project-name" id="projectName" value="Texas Instruments SM2 — 300mm Wafer Fabrication Facility">
+    <div class="header-meta">
+      <span><strong>Owner:</strong> Texas Instruments</span>
+      <span><strong>GC:</strong> Alliance Construction Group</span>
+      <span><strong>Location:</strong> Sherman, TX</span>
+    </div>
+  </div>
+  <div class="header-bottom">
+    <div class="master-total">
+      <small>Master Bid Total</small>
+      <span id="masterTotal">$0</span>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+    </div>
+    <div class="status-badges">
+      <span class="badge badge-draft">Draft</span>
+      <span class="badge badge-itb">ITB Issued</span>
+      <span class="badge badge-received active">Bids Received</span>
+      <span class="badge badge-review">Under Review</span>
+      <span class="badge badge-awarded">Awarded</span>
+      <span class="badge badge-construction">In Construction</span>
+    </div>
+    <div class="timestamp" id="timestamp"></div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Navigation</div>
+    <div class="nav-item active" onclick="showPanel('overview')">
+      <span class="icon">📊</span><span class="label">Project Overview</span>
+    </div>
+    <div class="nav-item" onclick="showPanel('summary')">
+      <span class="icon">📋</span><span class="label">Master Bid Summary</span>
+    </div>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Trade Packages</div>
+    <div id="tradeNav"></div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main" id="mainContent">
+  <!-- Overview Panel -->
+  <div class="panel active" id="panel-overview">
+    <div class="stats-grid" id="statsGrid"></div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>📊 Budget Allocation by Trade</h3>
+        <div class="chart-container donut"><canvas id="budgetPie"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>📈 Bid Status Distribution</h3>
+        <div class="chart-container donut"><canvas id="statusDonut"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">📅</span> Bid Timeline (Gantt)</div>
+      <div id="ganttChart"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">🗓️</span> Key Dates</div>
+      <div class="key-dates" id="keyDates"></div>
+    </div>
+  </div>
+
+  <!-- Summary Panel -->
+  <div class="panel" id="panel-summary">
+    <div class="card">
+      <div class="card-title"><span class="icon">📋</span> Master Bid Roll-Up — All 16 Trades</div>
+      <div class="table-wrap"><table id="summaryTable"></table></div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>🍩 Award Status</h3>
+        <div class="chart-container donut"><canvas id="awardDonut"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>📊 Budget Variance by Trade</h3>
+        <div class="chart-container"><canvas id="varianceBar"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trade Panels (generated by JS) -->
+  <div id="tradePanels"></div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bottom-bar" style="position:fixed;bottom:0;left:280px;right:0;z-index:80;padding:12px 24px;">
+  <button class="btn btn-gold" onclick="alert('ITB email draft generated. Ready to send to selected bidders.')">📤 Send ITB to Bidders</button>
+  <button class="btn btn-outline" onclick="window.print()">📄 Generate Bid Package PDF</button>
+  <button class="btn btn-teal" onclick="awardCurrentTrade()">✅ Award Trade</button>
+  <button class="btn btn-outline" onclick="alert('Add Bidder dialog would open here.')">➕ Add Bidder</button>
+  <button class="btn btn-outline" onclick="exportSummary()">📥 Export Master Summary</button>
+</div>
+
+<script>
+// ===== DATA MODEL =====
+const TRADES = [
+  {
+    id:1, name:"Site Work & Earthwork", budget:45, status:"awarded", bidders:3,
+    awardedTo:"Granite Construction", awardedAmt:42.8,
+    bids:[{company:"Granite Construction",contact:"Tom Harris",phone:"916-555-0123",email:"tharris@granite.com",sent:"Mar 10",response:"Mar 20",amount:42.8,status:"Awarded"},
+          {company:"Flatiron Construction",contact:"Dan Lee",phone:"512-555-0145",email:"dlee@flatiron.com",sent:"Mar 10",response:"Mar 22",amount:44.1,status:"Bid Received"},
+          {company:"Kiewit Infrastructure",contact:"Sarah Mills",phone:"402-555-0167",email:"smills@kiewit.com",sent:"Mar 10",response:"Mar 24",amount:46.5,status:"Bid Received"}],
+    lowBid:42.8, highBid:46.5, dueDate:"Mar 25, 2026",
+    scope:"Complete site preparation including mass grading, erosion control, utility trenching, storm drainage, paving, and site concrete for 1,200-acre semiconductor fabrication campus.",
+    techReqs:[{text:"Mass grading: 4.2M cubic yards cut/fill",tag:"mandatory"},{text:"Storm water management per TCEQ requirements",tag:"mandatory"},{text:"Temporary construction roads & laydown areas",tag:"mandatory"},{text:"Soil stabilization for expansive clay soils",tag:"preferred"},{text:"GPS-guided machine control",tag:"preferred"}],
+    timeline:{start:0,end:6},
+    bidComparison:[
+      {item:"Mass Grading",vals:[18.5,19.2,20.1],budget:19},
+      {item:"Utilities/Drainage",vals:[8.2,8.5,9.0],budget:8.5},
+      {item:"Paving & Concrete",vals:[6.8,7.0,7.5],budget:7.0},
+      {item:"Erosion Control",vals:[2.1,2.0,2.3],budget:2.0},
+      {item:"Temp Facilities",vals:[3.2,3.4,3.6],budget:3.5},
+      {item:"OH+Margin",vals:[4.0,4.0,4.0],budget:5.0}
+    ],
+    scores:{technical:[88,82,90],experience:[85,80,88],personnel:[82,78,84],safety:[90,85,92]},
+    changelog:["Mar 10 — ITB issued to 3 bidders","Mar 20 — Granite Construction bid received: $42.8M","Mar 22 — Flatiron Construction bid received: $44.1M","Mar 24 — Kiewit Infrastructure bid received: $46.5M","Mar 28 — Awarded to Granite Construction"],
+    recommendation:"Granite Construction offers the lowest price at $42.8M (4.9% under budget) with strong local experience in North Texas heavy civil. Recommended for award."
+  },
+  {
+    id:2, name:"Concrete & Foundations", budget:120, status:"awarded", bidders:4,
+    awardedTo:"Webcor Concrete", awardedAmt:115.2,
+    bids:[{company:"Webcor Concrete",contact:"Lisa Chen",phone:"415-555-0134",email:"lchen@webcor.com",sent:"Mar 8",response:"Mar 18",amount:115.2,status:"Awarded"},
+          {company:"Baker Concrete",contact:"Jim Baker",phone:"937-555-0156",email:"jbaker@bakerconcrete.com",sent:"Mar 8",response:"Mar 20",amount:118.7,status:"Bid Received"},
+          {company:"Sundt Construction",contact:"Maria Gonzalez",phone:"480-555-0178",email:"mgonzalez@sundt.com",sent:"Mar 8",response:"Mar 22",amount:122.3,status:"Bid Received"},
+          {company:"PCL Constructors",contact:"Dave Wilson",phone:"303-555-0190",email:"dwilson@pcl.com",sent:"Mar 8",response:"Mar 21",amount:124.5,status:"Bid Received"}],
+    lowBid:115.2, highBid:124.5, dueDate:"Mar 22, 2026",
+    scope:"All cast-in-place concrete including mat foundations, pile caps, grade beams, elevated slabs, cleanroom sub-fab structure, equipment pads, and vibration isolation foundations for semiconductor tools.",
+    techReqs:[{text:"Mat foundations: 8ft thick, 6000 PSI concrete",tag:"mandatory"},{text:"Vibration isolation specs per IEST-RP-CC012",tag:"mandatory"},{text:"Cleanroom-grade surface finish (FF50/FL25 minimum)",tag:"mandatory"},{text:"Self-consolidating concrete for congested areas",tag:"preferred"},{text:"Fiber reinforcement for crack control",tag:"optional"}],
+    timeline:{start:1,end:8},
+    bidComparison:[
+      {item:"Foundations",vals:[42,43.5,45,46],budget:44},
+      {item:"Elevated Slabs",vals:[28,29,30,31],budget:30},
+      {item:"Equipment Pads",vals:[15,15.5,16,16.5],budget:16},
+      {item:"Formwork",vals:[12,12.5,13,13.5],budget:13},
+      {item:"Rebar/PT",vals:[10,10.2,10.3,10.5],budget:10},
+      {item:"OH+Margin",vals:[8.2,8,8,7],budget:7}
+    ],
+    scores:{technical:[90,86,88,84],experience:[92,85,80,78],personnel:[88,84,82,80],safety:[94,90,88,86]},
+    changelog:["Mar 8 — ITB issued to 4 bidders","Mar 18 — Webcor bid received: $115.2M","Mar 20 — Baker Concrete bid received: $118.7M","Mar 21 — PCL bid received: $124.5M","Mar 22 — Sundt bid received: $122.3M","Apr 1 — Awarded to Webcor Concrete"],
+    recommendation:"Webcor Concrete provides best value at $115.2M (4% under budget) with extensive semiconductor fab foundation experience including Intel Chandler and TSMC Phoenix. Recommended for award."
+  },
+  {
+    id:3, name:"Structural Steel", budget:180, status:"received", bidders:3,
+    bids:[{company:"Schuff Steel",contact:"Bob Schuff",phone:"602-555-0123",email:"bschuff@schuffsteel.com",sent:"Mar 12",response:"Mar 26",amount:172,status:"Bid Received"},
+          {company:"Cives Steel",contact:"Mark Anthony",phone:"207-555-0145",email:"manthony@cives.com",sent:"Mar 12",response:"Mar 28",amount:183,status:"Bid Received"},
+          {company:"Nucor Building Systems",contact:"Angela Torres",phone:"252-555-0167",email:"atorres@nucor.com",sent:"Mar 12",response:"Mar 30",amount:195,status:"Bid Received"}],
+    lowBid:172, highBid:195, dueDate:"Mar 30, 2026",
+    scope:"Supply and erection of structural steel frame, roof deck, miscellaneous metals, stairs, handrails, embedded plates, and crane rails for fab, subfab, and CUB buildings.",
+    techReqs:[{text:"AISC 360 & 341 certified fabricator",tag:"mandatory"},{text:"Seismic Design Category C",tag:"mandatory"},{text:"40-ton crane rails in CUB",tag:"mandatory"},{text:"AESS finish for lobby areas",tag:"preferred"},{text:"BIM coordination Level 400",tag:"preferred"}],
+    timeline:{start:3,end:14},
+    bidComparison:[
+      {item:"Main Fab Structure",vals:[72,78,85],budget:78},
+      {item:"Sub-fab/CUB Steel",vals:[38,40,42],budget:40},
+      {item:"Roof Deck",vals:[18,19,21],budget:19},
+      {item:"Misc. Metals",vals:[14,15,16],budget:15},
+      {item:"Erection Labor",vals:[18,19,20],budget:18},
+      {item:"OH+Margin",vals:[12,12,11],budget:10}
+    ],
+    scores:{technical:[92,88,85],experience:[88,82,78],personnel:[90,84,80],safety:[92,88,86]},
+    changelog:["Mar 12 — ITB issued to 3 bidders","Mar 26 — Schuff Steel bid received: $172M","Mar 28 — Cives Steel bid received: $183M","Mar 30 — Nucor bid received: $195M"],
+    recommendation:"Schuff Steel is the low bidder at $172M (4.4% under budget) with strong fab experience. Recommend proceeding to detailed evaluation."
+  },
+  {
+    id:4, name:"Building Envelope / Curtain Wall", budget:85, status:"itb", bidders:2,
+    bids:[{company:"Permasteelisa Group",contact:"Franco Bianchi",phone:"212-555-0134",email:"fbianchi@permasteelisa.com",sent:"Mar 18",response:"—",amount:null,status:"ITB Sent"},
+          {company:"Enclos Corp",contact:"Jennifer Kim",phone:"952-555-0156",email:"jkim@enclos.com",sent:"Mar 18",response:"—",amount:null,status:"ITB Sent"}],
+    lowBid:null, highBid:null, dueDate:"Apr 15, 2026",
+    scope:"Complete building envelope including insulated metal wall panels, curtain wall systems, window assemblies, louvers, and all sealants/waterproofing for fab, office, and amenity buildings.",
+    techReqs:[{text:"Thermal performance: U-0.04 wall assemblies",tag:"mandatory"},{text:"ASTM E2357 air barrier testing",tag:"mandatory"},{text:"Class 1 cleanroom envelope integrity",tag:"mandatory"},{text:"Blast-resistant design per UFC 4-010-01",tag:"preferred"}],
+    timeline:{start:6,end:18},
+    changelog:["Mar 18 — ITB issued to 2 bidders","Apr 15 — Bids due"],
+    recommendation:""
+  },
+  {
+    id:5, name:"Roofing", budget:22, status:"awarded", bidders:3,
+    awardedTo:"Tecta America", awardedAmt:20.5,
+    bids:[{company:"Tecta America",contact:"Randy Wells",phone:"847-555-0123",email:"rwells@tectaamerica.com",sent:"Mar 5",response:"Mar 15",amount:20.5,status:"Awarded"},
+          {company:"Nations Roof",contact:"Phil Grant",phone:"972-555-0145",email:"pgrant@nationsroof.com",sent:"Mar 5",response:"Mar 16",amount:21.8,status:"Bid Received"},
+          {company:"Tremco Roofing",contact:"Sue Park",phone:"216-555-0167",email:"spark@tremco.com",sent:"Mar 5",response:"Mar 18",amount:23.1,status:"Bid Received"}],
+    lowBid:20.5, highBid:23.1, dueDate:"Mar 18, 2026",
+    scope:"Complete roofing systems including TPO membrane, standing seam metal, insulation, vapor barriers, drainage, and green roof sections for office building.",
+    techReqs:[{text:"FM Global-approved assemblies",tag:"mandatory"},{text:"20-year NDL warranty",tag:"mandatory"},{text:"R-30 minimum insulation",tag:"mandatory"},{text:"Solar-ready structural attachments",tag:"preferred"}],
+    timeline:{start:8,end:16},
+    bidComparison:[
+      {item:"TPO Membrane",vals:[7.5,8.0,8.5],budget:8.0},
+      {item:"Metal Roofing",vals:[5.0,5.2,5.6],budget:5.5},
+      {item:"Insulation",vals:[3.0,3.2,3.4],budget:3.2},
+      {item:"Drainage/Flashing",vals:[2.5,2.8,3.0],budget:2.8},
+      {item:"OH+Margin",vals:[2.5,2.6,2.6],budget:2.5}
+    ],
+    scores:{technical:[90,86,88],experience:[85,82,84],personnel:[88,84,86],safety:[92,88,90]},
+    changelog:["Mar 5 — ITB issued to 3 bidders","Mar 15 — Tecta America bid received: $20.5M","Mar 16 — Nations Roof bid received: $21.8M","Mar 18 — Tremco bid received: $23.1M","Mar 25 — Awarded to Tecta America"],
+    recommendation:"Tecta America at $20.5M (6.8% under budget) with excellent semiconductor facility roofing track record. Recommended and awarded."
+  },
+  {
+    id:6, name:"HVAC / Mechanical", budget:225, status:"review", bidders:3, featured:true,
+    bids:[{company:"Lone Star Mechanical",contact:"Mike Chen",phone:"281-555-0134",email:"mchen@lonestar.com",sent:"Mar 15",response:"Mar 28",amount:225.7,status:"Bid Received"},
+          {company:"ThermalTech Solutions",contact:"Amy Park",phone:"214-555-0189",email:"apark@thermaltech.com",sent:"Mar 15",response:"Mar 30",amount:218.3,status:"Bid Received"},
+          {company:"Pacific Mechanical",contact:"James Wu",phone:"310-555-0156",email:"jwu@pacificmech.com",sent:"Mar 15",response:"Apr 2",amount:241.2,status:"Bid Received"}],
+    lowBid:218.3, highBid:241.2, dueDate:"Apr 5, 2026",
+    scope:`<h4>1. Central Utility Building (CUB) Systems</h4>
+<ul>
+<li>Chilled water plant: 4× 2,500-ton centrifugal chillers (N+1 redundancy) with variable-primary pumping</li>
+<li>Hot water system: 3× 20 MMBTU/hr condensing boilers with plate heat exchangers</li>
+<li>Cooling towers: 5× 3,000-ton induced-draft towers with VFD fans and water treatment</li>
+<li>Process cooling water (PCW): Dedicated loop, 45°F supply, ±0.5°F tolerance</li>
+<li>Facility cooling water (FCW): 55°F supply for general HVAC loads</li>
+</ul>
+<h4>2. Cleanroom HVAC — ISO Class 1-5</h4>
+<ul>
+<li>Make-up air units (MAU): 12× 60,000 CFM units with enthalpy wheels, DX cooling, gas-phase filtration</li>
+<li>Recirculating air handlers (RAH): 48× fan-filter units per bay, ULPA filtration (99.9995% @ 0.12μm)</li>
+<li>Cleanroom pressurization cascade: ISO 1 → ISO 5 → ISO 7 → corridor → outside (positive differential 0.03-0.05" WC per zone)</li>
+<li>Temperature: 68°F ±0.5°F in lithography, ±1°F in general fab</li>
+<li>Humidity: 45% RH ±2% (lithography: ±1%)</li>
+<li>Airflow: 60-90 FPM unidirectional in ISO 5, 0.45 m/s in ISO 1 mini-environments</li>
+</ul>
+<h4>3. Process Exhaust Systems</h4>
+<ul>
+<li>General exhaust (GEX): Galvanized steel, 4,000+ FPM duct velocity</li>
+<li>Acid exhaust (AEX): FRP ductwork, scrubbed discharge, 316L SS dampers</li>
+<li>Solvent exhaust (SEX): FM-approved, LEL monitoring, thermal oxidizer abatement</li>
+<li>Heat exhaust (HEX): Welded AL ductwork for process tool heat removal</li>
+<li>Toxic exhaust (TEX): Double-wall containment, continuous gas monitoring, emergency backup fans</li>
+<li>Vacuum exhaust: Central dry pump system with N2 purge</li>
+</ul>
+<h4>4. Building Automation & Controls Integration</h4>
+<ul>
+<li>BACnet/IP backbone with LON field buses</li>
+<li>Integration with fab FMCS (Facility Monitoring & Control System)</li>
+<li>24/7 monitoring with auto-failover sequences</li>
+<li>Historical data trending: 1-second resolution for critical parameters</li>
+</ul>
+<h4>5. Testing, Adjusting & Balancing (TAB)</h4>
+<ul>
+<li>AABC-certified TAB contractor</li>
+<li>Cleanroom certification per ISO 14644-3</li>
+<li>Full NEBB commissioning procedures</li>
+</ul>`,
+    techReqs:[
+      {text:"N+1 redundancy on all critical systems",tag:"mandatory"},
+      {text:"ISO 14644 cleanroom certification capability",tag:"mandatory"},
+      {text:"ASHRAE 90.1-2022 energy compliance",tag:"mandatory"},
+      {text:"Process exhaust abatement per TCEQ Title V",tag:"mandatory"},
+      {text:"Temperature control ±0.5°F in litho areas",tag:"mandatory"},
+      {text:"Humidity control ±1% RH in litho areas",tag:"mandatory"},
+      {text:"BACnet/IP controls integration",tag:"mandatory"},
+      {text:"Minimum 10 years semiconductor fab HVAC experience",tag:"mandatory"},
+      {text:"LEED Silver contribution points",tag:"preferred"},
+      {text:"Energy recovery on exhaust systems",tag:"preferred"},
+      {text:"VFD on all motors >5 HP",tag:"preferred"},
+      {text:"Predictive maintenance IoT sensors",tag:"optional"},
+      {text:"Digital twin capability",tag:"optional"}
+    ],
+    timeline:{start:4,end:24},
+    bidComparison:[
+      {item:"Equipment (Chillers, AHUs, Pumps)",vals:[32,30,36],budget:35},
+      {item:"Ductwork (Supply, Return, Exhaust)",vals:[28,27,31],budget:30},
+      {item:"Piping (CHW, HW, PCW, FCW)",vals:[22,20,24],budget:23},
+      {item:"Insulation (Duct & Pipe)",vals:[12,11.5,13],budget:12},
+      {item:"Electrical (VFDs, Controls Wiring)",vals:[15,14,16.5],budget:15},
+      {item:"Controls / BMS Integration",vals:[8,7.5,9],budget:8},
+      {item:"Process Exhaust Systems",vals:[14,13,15.5],budget:14},
+      {item:"Labor (Sheet Metal, Pipe, Controls)",vals:[40,38,42],budget:40},
+      {item:"TAB / Commissioning",vals:[10,9.5,11],budget:10},
+      {item:"OH + Margin",vals:[35.7,38.3,33.2],budget:35},
+      {item:"Contingency",vals:[9,10,10],budget:8}
+    ],
+    scores:{technical:[92,85,88],experience:[90,72,95],personnel:[88,80,85],safety:[95,88,96]},
+    changelog:[
+      "Mar 15 — ITB issued to 3 bidders",
+      "Mar 28 — Lone Star Mechanical bid received: $225.7M",
+      "Mar 30 — ThermalTech Solutions bid received: $218.3M",
+      "Apr 2 — Pacific Mechanical bid received: $241.2M",
+      "Apr 5 — Evaluation scoring completed",
+      "Apr 8 — Review meeting with PM team"
+    ],
+    recommendation:`<strong>Recommendation: Lone Star Mechanical — $225.7M</strong><br><br>
+While ThermalTech Solutions offers the lowest price at $218.3M (5.1% under budget), <strong>Lone Star Mechanical at $225.7M</strong> represents the best overall value for this critical trade package:<br><br>
+• <strong>Technical Score (92/100):</strong> Highest among all bidders. Their approach to cleanroom HVAC design demonstrates deep understanding of ISO Class 1 environments and semiconductor process requirements.<br><br>
+• <strong>Fab Experience (90/100):</strong> Completed 3 semiconductor fab HVAC projects in the past 5 years including Samsung Taylor ($180M) and GlobalFoundries Malta ($145M). Key personnel proposed have direct 300mm fab experience.<br><br>
+• <strong>Key Personnel:</strong> Project Manager (Mike Chen) led the Samsung Taylor HVAC package. Lead Engineer has 15+ years cleanroom mechanical design. Superintendent has commissioned 4 fabs.<br><br>
+• <strong>Safety Record:</strong> 0.42 EMR, zero lost-time incidents in past 3 years. Best-in-class safety program with semiconductor-specific protocols.<br><br>
+• <strong>Price Premium Justification:</strong> The $7.4M premium over ThermalTech (3.4%) is offset by superior technical capability, lower risk, and proven fab delivery. ThermalTech's limited semiconductor experience (one smaller project) presents execution risk on a $2.1B fab.<br><br>
+• <strong>Schedule:</strong> Lone Star's proposed 22-month installation schedule aligns with master schedule. ThermalTech proposed 24 months, which conflicts with Q4 2028 completion.<br><br>
+<strong>Risk Assessment:</strong> Low risk with Lone Star. Medium-High risk with ThermalTech (limited fab experience). Medium risk with Pacific (highest price, good experience).<br><br>
+<em>Recommended Action: Award to Lone Star Mechanical at $225.7M pending final negotiation targeting $220M.</em>`
+  },
+  {
+    id:7, name:"Plumbing", budget:35, status:"received", bidders:3,
+    bids:[{company:"Murray Company",contact:"Paul Kim",phone:"562-555-0123",email:"pkim@murraycompany.com",sent:"Mar 14",response:"Mar 28",amount:33.5,status:"Bid Received"},
+          {company:"Pan-Pacific Plumbing",contact:"Tony Tran",phone:"713-555-0145",email:"ttran@panpacific.com",sent:"Mar 14",response:"Mar 29",amount:34.8,status:"Bid Received"},
+          {company:"Harder Mechanical",contact:"Steve Harder",phone:"503-555-0167",email:"sharder@harder.com",sent:"Mar 14",response:"Apr 1",amount:36.2,status:"Bid Received"}],
+    lowBid:33.5, highBid:36.2, dueDate:"Apr 1, 2026",
+    scope:"Complete plumbing systems including domestic water, sanitary waste, storm drainage, acid waste/neutralization, DI water distribution, and all plumbing fixtures for fab, CUB, and office buildings.",
+    techReqs:[{text:"Acid waste neutralization system",tag:"mandatory"},{text:"Double-containment acid waste piping",tag:"mandatory"},{text:"High-purity DI water distribution",tag:"mandatory"},{text:"Backflow prevention per TCEQ",tag:"mandatory"},{text:"Real-time leak detection",tag:"preferred"}],
+    timeline:{start:5,end:20},
+    bidComparison:[
+      {item:"Domestic Water",vals:[8.5,9.0,9.5],budget:9.0},
+      {item:"Sanitary/Storm",vals:[6.0,6.2,6.5],budget:6.5},
+      {item:"Acid Waste",vals:[7.5,7.8,8.0],budget:8.0},
+      {item:"DI Water Dist.",vals:[5.0,5.2,5.5],budget:5.0},
+      {item:"Fixtures",vals:[3.0,3.2,3.2],budget:3.0},
+      {item:"OH+Margin",vals:[3.5,3.4,3.5],budget:3.5}
+    ],
+    scores:{technical:[86,84,82],experience:[82,80,78],personnel:[84,82,80],safety:[88,86,84]},
+    changelog:["Mar 14 — ITB issued to 3 bidders","Mar 28 — Murray Company bid received: $33.5M","Mar 29 — Pan-Pacific bid received: $34.8M","Apr 1 — Harder Mechanical bid received: $36.2M"],
+    recommendation:"Murray Company at $33.5M (4.3% under budget) with solid semiconductor plumbing experience. Recommend for award."
+  },
+  {
+    id:8, name:"Fire Protection / Sprinkler", budget:28, status:"itb", bidders:2,
+    bids:[{company:"SimplexGrinnell",contact:"Larry Moore",phone:"561-555-0134",email:"lmoore@simplex.com",sent:"Mar 20",response:"—",amount:null,status:"ITB Sent"},
+          {company:"Viking Fire Protection",contact:"Karen Walsh",phone:"616-555-0156",email:"kwalsh@viking.com",sent:"Mar 20",response:"—",amount:null,status:"ITB Sent"}],
+    lowBid:null, highBid:null, dueDate:"Apr 20, 2026",
+    scope:"Complete fire protection including wet sprinkler, pre-action (cleanroom), FM-200 clean agent (IT/electrical rooms), fire detection/alarm, and standpipe/hose systems.",
+    techReqs:[{text:"FM Global-approved systems",tag:"mandatory"},{text:"Pre-action for cleanroom areas",tag:"mandatory"},{text:"Clean agent for electrical rooms",tag:"mandatory"},{text:"Intelligent detection/VESDA",tag:"mandatory"},{text:"Integration with BAS/FMCS",tag:"preferred"}],
+    timeline:{start:8,end:22},
+    changelog:["Mar 20 — ITB issued to 2 bidders","Apr 20 — Bids due"],
+    recommendation:""
+  },
+  {
+    id:9, name:"Electrical", budget:310, status:"received", bidders:4,
+    bids:[{company:"Rosendin Electric",contact:"John Rosendin",phone:"408-555-0123",email:"jrosendin@rosendin.com",sent:"Mar 10",response:"Mar 24",amount:295,status:"Bid Received"},
+          {company:"Cupertino Electric",contact:"Maria Santos",phone:"408-555-0145",email:"msantos@cei.com",sent:"Mar 10",response:"Mar 26",amount:305,status:"Bid Received"},
+          {company:"Helix Electric",contact:"Dan Morgan",phone:"619-555-0167",email:"dmorgan@helixelectric.com",sent:"Mar 10",response:"Mar 28",amount:318,status:"Bid Received"},
+          {company:"Tri-City Electric",contact:"Bill Thompson",phone:"214-555-0189",email:"bthompson@tricity.com",sent:"Mar 10",response:"Mar 30",amount:328,status:"Bid Received"}],
+    lowBid:295, highBid:328, dueDate:"Mar 30, 2026",
+    scope:"Complete electrical systems including 345kV/138kV substation, main switchgear, power distribution, emergency generators, UPS systems, lighting, fire alarm, grounding, and all process power for semiconductor tools.",
+    techReqs:[{text:"Dual-feed 345kV utility service",tag:"mandatory"},{text:"99.9999% power reliability (Six 9s)",tag:"mandatory"},{text:"Clean power for process tools (IEEE 1100)",tag:"mandatory"},{text:"Emergency generator: 4× 3MW diesel",tag:"mandatory"},{text:"UPS: 2× 10MW rotary",tag:"mandatory"},{text:"Isolated grounding per semiconductor standards",tag:"mandatory"},{text:"Arc flash analysis per NFPA 70E",tag:"preferred"}],
+    timeline:{start:3,end:26},
+    bidComparison:[
+      {item:"Substation/Switchgear",vals:[85,90,95,100],budget:90},
+      {item:"Power Distribution",vals:[65,68,72,75],budget:70},
+      {item:"Generators/UPS",vals:[45,47,48,50],budget:48},
+      {item:"Lighting",vals:[22,23,24,25],budget:24},
+      {item:"Process Power",vals:[38,40,42,44],budget:42},
+      {item:"Fire Alarm/LV",vals:[18,18,17,16],budget:18},
+      {item:"OH+Margin",vals:[22,19,20,18],budget:18}
+    ],
+    scores:{technical:[94,92,88,84],experience:[92,90,82,78],personnel:[90,88,84,80],safety:[94,92,88,86]},
+    changelog:["Mar 10 — ITB issued to 4 bidders","Mar 24 — Rosendin bid received: $295M","Mar 26 — Cupertino Electric bid received: $305M","Mar 28 — Helix Electric bid received: $318M","Mar 30 — Tri-City Electric bid received: $328M"],
+    recommendation:"Rosendin Electric at $295M (4.8% under budget) is the clear leader — largest electrical contractor in the US with extensive semiconductor fab experience including TSMC Arizona and Intel Ohio. Strongly recommended."
+  },
+  {
+    id:10, name:"Cleanroom Construction", budget:280, status:"itb", bidders:2,
+    bids:[{company:"M+W Group (Exyte)",contact:"Hans Mueller",phone:"972-555-0134",email:"hmueller@exyte.net",sent:"Mar 18",response:"—",amount:null,status:"ITB Sent"},
+          {company:"CH2M (Jacobs)",contact:"Rachel Adams",phone:"720-555-0156",email:"radams@jacobs.com",sent:"Mar 18",response:"—",amount:null,status:"ITB Sent"}],
+    lowBid:null, highBid:null, dueDate:"Apr 25, 2026",
+    scope:"Complete cleanroom construction including raised floor systems, cleanroom wall panels (HPL), ceiling grid/HEPA/ULPA systems, AMC controls, cleanroom doors/airlocks, and all cleanroom-specific finishes.",
+    techReqs:[{text:"ISO Class 1 to Class 5 environments",tag:"mandatory"},{text:"Raised floor: 48\" height, 2000 lb/sf live load",tag:"mandatory"},{text:"ULPA filtration (99.9995% @ 0.12μm)",tag:"mandatory"},{text:"AMC: molecular contamination <1 ppb",tag:"mandatory"},{text:"Vibration: VC-E criterion",tag:"mandatory"},{text:"ESD flooring per ANSI/ESD S20.20",tag:"preferred"}],
+    timeline:{start:8,end:26},
+    changelog:["Mar 18 — ITB issued to 2 bidders","Apr 25 — Bids due"],
+    recommendation:""
+  },
+  {
+    id:11, name:"Process Piping (UHP, CDA, Vacuum, Exhaust)", budget:320, status:"received", bidders:3,
+    bids:[{company:"Kinetics Systems (Exyte)",contact:"Ray Nakamura",phone:"480-555-0123",email:"rnakamura@exyte.net",sent:"Mar 12",response:"Mar 28",amount:308,status:"Bid Received"},
+          {company:"Pure Process Technology",contact:"Linda Zhao",phone:"503-555-0145",email:"lzhao@pureprocess.com",sent:"Mar 12",response:"Mar 30",amount:315,status:"Bid Received"},
+          {company:"Applied Integrated Systems",contact:"Kevin O'Brien",phone:"512-555-0167",email:"kobrien@ais.com",sent:"Mar 12",response:"Apr 2",amount:335,status:"Bid Received"}],
+    lowBid:308, highBid:335, dueDate:"Apr 2, 2026",
+    scope:"Complete process piping including ultra-high purity (UHP) gas distribution, bulk chemical distribution (BCD), CDA, nitrogen, vacuum, scrubbed/unscrubbed exhaust, and all process drains.",
+    techReqs:[{text:"UHP gas: electropolished 316L SS, Ra<7μin",tag:"mandatory"},{text:"SEMI F20 compliance for gas systems",tag:"mandatory"},{text:"Orbital welding with 100% weld inspection",tag:"mandatory"},{text:"Helium leak testing per SEMI S2",tag:"mandatory"},{text:"Double containment for toxic/corrosive",tag:"mandatory"},{text:"Real-time gas monitoring/detection",tag:"preferred"}],
+    timeline:{start:6,end:26},
+    bidComparison:[
+      {item:"UHP Gas Distribution",vals:[92,95,100],budget:95},
+      {item:"Bulk Chemical Dist.",vals:[65,68,72],budget:70},
+      {item:"CDA / N2 / Vacuum",vals:[48,50,55],budget:52},
+      {item:"Process Exhaust",vals:[42,44,46],budget:45},
+      {item:"Process Drains",vals:[28,25,27],budget:28},
+      {item:"OH+Margin",vals:[33,33,35],budget:30}
+    ],
+    scores:{technical:[94,90,86],experience:[96,88,82],personnel:[92,86,80],safety:[94,90,88]},
+    changelog:["Mar 12 — ITB issued to 3 bidders","Mar 28 — Kinetics Systems bid received: $308M","Mar 30 — Pure Process bid received: $315M","Apr 2 — Applied Integrated bid received: $335M"],
+    recommendation:"Kinetics Systems (Exyte subsidiary) at $308M (3.75% under budget) is the industry leader in semiconductor process piping with unmatched experience. Strongly recommended."
+  },
+  {
+    id:12, name:"Building Automation / Controls", budget:45, status:"received", bidders:3,
+    bids:[{company:"Johnson Controls",contact:"Tim Richards",phone:"414-555-0123",email:"trichards@jci.com",sent:"Mar 14",response:"Mar 28",amount:43.5,status:"Bid Received"},
+          {company:"Siemens Building Tech",contact:"Elena Petrova",phone:"847-555-0145",email:"epetrova@siemens.com",sent:"Mar 14",response:"Mar 30",amount:44.8,status:"Bid Received"},
+          {company:"Honeywell Building Solutions",contact:"Chris Park",phone:"973-555-0167",email:"cpark@honeywell.com",sent:"Mar 14",response:"Apr 1",amount:46.2,status:"Bid Received"}],
+    lowBid:43.5, highBid:46.2, dueDate:"Apr 1, 2026",
+    scope:"Complete building automation system including FMCS, BACnet/IP backbone, DDC controllers, sensors, actuators, graphics, trending, alarming, and integration with all mechanical/electrical systems.",
+    techReqs:[{text:"BACnet/IP Level 4 certified",tag:"mandatory"},{text:"FMCS integration (Siemens/Honeywell/JCI)",tag:"mandatory"},{text:"1-second data trending for cleanroom",tag:"mandatory"},{text:"Redundant servers/network",tag:"mandatory"},{text:"Cybersecurity per IEC 62443",tag:"preferred"}],
+    timeline:{start:6,end:26},
+    bidComparison:[
+      {item:"Hardware (Controllers/Sensors)",vals:[15,16,17],budget:16},
+      {item:"Software/Graphics",vals:[8,8.5,9],budget:8.5},
+      {item:"Installation Labor",vals:[10,10.5,10.5],budget:10},
+      {item:"Commissioning",vals:[5,4.8,4.7],budget:5},
+      {item:"OH+Margin",vals:[5.5,5,5],budget:5.5}
+    ],
+    scores:{technical:[90,92,88],experience:[88,90,86],personnel:[86,88,84],safety:[90,88,86]},
+    changelog:["Mar 14 — ITB issued to 3 bidders","Mar 28 — Johnson Controls bid received: $43.5M","Mar 30 — Siemens bid received: $44.8M","Apr 1 — Honeywell bid received: $46.2M"],
+    recommendation:"Johnson Controls at $43.5M (3.3% under budget) with strong FMCS experience. Close competitor Siemens has slightly better technical score. Recommend detailed evaluation."
+  },
+  {
+    id:13, name:"Elevators & Vertical Transport", budget:8, status:"awarded", bidders:2,
+    awardedTo:"ThyssenKrupp", awardedAmt:7.6,
+    bids:[{company:"ThyssenKrupp Elevator",contact:"Karl Schmidt",phone:"770-555-0123",email:"kschmidt@thyssenkrupp.com",sent:"Mar 5",response:"Mar 12",amount:7.6,status:"Awarded"},
+          {company:"Otis Elevator",contact:"Jean-Pierre Blanc",phone:"860-555-0145",email:"jpblanc@otis.com",sent:"Mar 5",response:"Mar 14",amount:8.2,status:"Bid Received"}],
+    lowBid:7.6, highBid:8.2, dueDate:"Mar 15, 2026",
+    scope:"Supply and install 12 elevators: 6 passenger (4000 lb), 4 freight (10,000 lb), 2 cleanroom material lifts with HEPA-filtered cabs.",
+    techReqs:[{text:"Cleanroom-compatible material lifts",tag:"mandatory"},{text:"Seismic rated",tag:"mandatory"},{text:"Destination dispatch system",tag:"preferred"},{text:"IoT-enabled predictive maintenance",tag:"optional"}],
+    timeline:{start:10,end:22},
+    bidComparison:[
+      {item:"Passenger Elevators",vals:[3.0,3.2],budget:3.2},
+      {item:"Freight Elevators",vals:[2.5,2.8],budget:2.8},
+      {item:"Cleanroom Lifts",vals:[1.2,1.3],budget:1.2},
+      {item:"OH+Margin",vals:[0.9,0.9],budget:0.8}
+    ],
+    scores:{technical:[88,90],experience:[86,88],personnel:[84,86],safety:[90,92]},
+    changelog:["Mar 5 — ITB issued to 2 bidders","Mar 12 — ThyssenKrupp bid received: $7.6M","Mar 14 — Otis bid received: $8.2M","Mar 20 — Awarded to ThyssenKrupp"],
+    recommendation:"ThyssenKrupp at $7.6M (5% under budget) with competitive pricing and good cleanroom elevator experience. Awarded."
+  },
+  {
+    id:14, name:"Painting & Coatings", budget:12, status:"received", bidders:3,
+    bids:[{company:"Certified Coatings",contact:"Rick Palmer",phone:"713-555-0123",email:"rpalmer@certcoatings.com",sent:"Mar 14",response:"Mar 24",amount:11.2,status:"Bid Received"},
+          {company:"Hempel Coatings",contact:"Anders Sorensen",phone:"281-555-0145",email:"asorensen@hempel.com",sent:"Mar 14",response:"Mar 26",amount:11.8,status:"Bid Received"},
+          {company:"Sherwin-Williams Pro",contact:"Nancy Lee",phone:"216-555-0167",email:"nlee@sherwin.com",sent:"Mar 14",response:"Mar 28",amount:12.5,status:"Bid Received"}],
+    lowBid:11.2, highBid:12.5, dueDate:"Mar 28, 2026",
+    scope:"Complete painting and coatings including structural steel fireproofing (SFRM), epoxy floor coatings (cleanroom-rated), exterior architectural coatings, and chemical-resistant coatings for CUB/sub-fab.",
+    techReqs:[{text:"Cleanroom-compatible coatings (low VOC/AMC)",tag:"mandatory"},{text:"Chemical-resistant epoxy for sub-fab",tag:"mandatory"},{text:"SFRM fireproofing per UL assemblies",tag:"mandatory"},{text:"Anti-static floor coatings",tag:"preferred"}],
+    timeline:{start:10,end:24},
+    bidComparison:[
+      {item:"SFRM Fireproofing",vals:[3.5,3.8,4.0],budget:3.8},
+      {item:"Epoxy Flooring",vals:[3.0,3.2,3.5],budget:3.2},
+      {item:"Architectural Paint",vals:[2.0,2.0,2.2],budget:2.2},
+      {item:"Chemical Coatings",vals:[1.5,1.6,1.5],budget:1.5},
+      {item:"OH+Margin",vals:[1.2,1.2,1.3],budget:1.3}
+    ],
+    scores:{technical:[86,88,84],experience:[84,82,80],personnel:[82,80,78],safety:[88,86,84]},
+    changelog:["Mar 14 — ITB issued to 3 bidders","Mar 24 — Certified Coatings bid received: $11.2M","Mar 26 — Hempel bid received: $11.8M","Mar 28 — Sherwin-Williams bid received: $12.5M"],
+    recommendation:"Certified Coatings at $11.2M (6.7% under budget) — strong local presence and semiconductor coating experience."
+  },
+  {
+    id:15, name:"Insulation", budget:18, status:"itb", bidders:2,
+    bids:[{company:"Irex Contracting Group",contact:"Sam Martinez",phone:"717-555-0123",email:"smartinez@irex.com",sent:"Mar 20",response:"—",amount:null,status:"ITB Sent"},
+          {company:"BrandSafway Insulation",contact:"Doug Perry",phone:"770-555-0145",email:"dperry@brandsafway.com",sent:"Mar 20",response:"—",amount:null,status:"ITB Sent"}],
+    lowBid:null, highBid:null, dueDate:"Apr 18, 2026",
+    scope:"Complete mechanical and process piping insulation including chilled water, hot water, steam, process piping, duct insulation, and all jacketing/cladding.",
+    techReqs:[{text:"Cleanroom-compatible insulation materials",tag:"mandatory"},{text:"Closed-cell for below-ambient piping",tag:"mandatory"},{text:"Stainless steel jacketing for outdoor",tag:"mandatory"},{text:"Fire-rated penetration seals",tag:"preferred"}],
+    timeline:{start:10,end:24},
+    changelog:["Mar 20 — ITB issued to 2 bidders","Apr 18 — Bids due"],
+    recommendation:""
+  },
+  {
+    id:16, name:"Testing & Commissioning", budget:35, status:"not-started", bidders:0,
+    bids:[],
+    lowBid:null, highBid:null, dueDate:"May 15, 2026",
+    scope:"Comprehensive testing and commissioning of all building systems including cleanroom certification (ISO 14644), HVAC TAB, electrical testing, fire alarm acceptance, elevator inspection, and integrated systems testing.",
+    techReqs:[{text:"ISO 14644 cleanroom certification",tag:"mandatory"},{text:"ASHRAE Guideline 0 Cx process",tag:"mandatory"},{text:"NETA electrical testing",tag:"mandatory"},{text:"Full building integrated systems testing",tag:"mandatory"},{text:"Performance verification period (90 days)",tag:"preferred"}],
+    timeline:{start:22,end:30},
+    changelog:["Not yet started — ITB preparation in progress"],
+    recommendation:""
+  }
+];
+
+const STATUS_ICONS = {
+  'awarded':'✅','received':'🟢','review':'🟡','itb':'🟡','not-started':'⚪','overdue':'🔴'
+};
+const STATUS_LABELS = {
+  'awarded':'Awarded','received':'Bids Received','review':'Under Review','itb':'ITB Out','not-started':'Not Started','overdue':'Overdue'
+};
+const STATUS_PILL_CLASS = {
+  'awarded':'pill-awarded','received':'pill-received','review':'pill-review','itb':'pill-itb','not-started':'pill-not-started','overdue':'pill-overdue'
+};
+
+let currentPanel = 'overview';
+
+// ===== INIT =====
+function init() {
+  updateTimestamp();
+  renderSidebar();
+  renderOverview();
+  renderSummary();
+  renderTradePanels();
+  updateMasterTotal();
+  showPanel('overview');
+}
+
+function updateTimestamp() {
+  document.getElementById('timestamp').textContent = 'Updated: ' + new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function fmt(n) {
+  if(n==null) return '—';
+  if(n>=1000) return '$'+((n/1000).toFixed(1))+'B';
+  return '$'+n.toFixed(1)+'M';
+}
+function fmtShort(n) {
+  if(n==null) return '—';
+  return '$'+n+'M';
+}
+
+// ===== SIDEBAR =====
+function renderSidebar() {
+  const nav = document.getElementById('tradeNav');
+  nav.innerHTML = TRADES.map(t => `
+    <div class="sidebar-item ${t.featured?'featured':''}" id="nav-trade-${t.id}" onclick="showPanel('trade-${t.id}')">
+      <span class="num">${String(t.id).padStart(2,'0')}</span>
+      <span class="name">${t.name}</span>
+      <span class="status-icon">${STATUS_ICONS[t.status]||'⚪'}</span>
+      <span class="amount">${t.awardedAmt?fmt(t.awardedAmt):(t.lowBid?fmt(t.lowBid):'')}</span>
+    </div>
+  `).join('');
+}
+
+// ===== SHOW PANEL =====
+function showPanel(id) {
+  currentPanel = id;
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  const p = document.getElementById('panel-'+id);
+  if(p) p.classList.add('active');
+  // Update sidebar active states
+  document.querySelectorAll('.nav-item,.sidebar-item').forEach(n=>n.classList.remove('active'));
+  if(id==='overview') document.querySelector('.nav-item:nth-child(1)')?.classList.add('active');
+  else if(id==='summary') document.querySelector('.nav-item:nth-child(2)')?.classList.add('active');
+  else document.getElementById('nav-'+id)?.classList.add('active');
+  // Render charts on switch
+  setTimeout(()=>{
+    if(id==='overview') renderOverviewCharts();
+    else if(id==='summary') renderSummaryCharts();
+    else if(id.startsWith('trade-')) renderTradeCharts(parseInt(id.replace('trade-','')));
+  },50);
+}
+
+// ===== MASTER TOTAL =====
+function updateMasterTotal() {
+  let total = 0;
+  let awarded = 0;
+  let tradesAwarded = 0;
+  TRADES.forEach(t => {
+    if(t.awardedAmt) { total += t.awardedAmt; awarded += t.awardedAmt; tradesAwarded++; }
+    else if(t.lowBid) total += t.lowBid;
+  });
+  const gcFee = total * 0.05;
+  document.getElementById('masterTotal').innerHTML = `<small>Master Bid Total</small> ${fmt(total + gcFee)}`;
+  const pct = Math.round((tradesAwarded/TRADES.length)*100);
+  document.getElementById('progressBar').style.width = pct+'%';
+}
+
+// ===== OVERVIEW PANEL =====
+function renderOverview() {
+  const awarded = TRADES.filter(t=>t.status==='awarded');
+  const itbIssued = TRADES.filter(t=>t.status!=='not-started');
+  const bidsReceived = TRADES.filter(t=>['received','review','awarded'].includes(t.status));
+  let totalBid = 0; TRADES.forEach(t=>{ if(t.awardedAmt) totalBid+=t.awardedAmt; else if(t.lowBid) totalBid+=t.lowBid; });
+  const totalBudget = TRADES.reduce((s,t)=>s+t.budget,0);
+  
+  const stats = [
+    {label:'Total Project Value',value:'$2.8B',cls:'gold'},
+    {label:'Construction Value',value:'$2.1B',cls:'gold'},
+    {label:'GC Fee (5%)',value:'$105M',cls:'gold'},
+    {label:'Trades to Bid',value:'16',cls:''},
+    {label:'ITBs Issued',value:itbIssued.length.toString(),cls:'orange'},
+    {label:'Bids Received',value:bidsReceived.length.toString(),cls:'blue'},
+    {label:'Trades Awarded',value:awarded.length.toString(),cls:'teal'},
+    {label:'Budget Remaining',value:fmt(totalBudget-totalBid),cls:'green',sub:'of '+fmt(totalBudget)+' budget'},
+    {label:'Schedule',value:'30 mo',cls:''},
+    {label:'Start Date',value:'Q3 2026',cls:''},
+    {label:'Completion',value:'Q4 2028',cls:''},
+    {label:'Bid Package Status',value:'75%',cls:'orange',sub:'12 of 16 issued'}
+  ];
+  document.getElementById('statsGrid').innerHTML = stats.map(s=>`
+    <div class="stat-card">
+      <div class="stat-label">${s.label}</div>
+      <div class="stat-value ${s.cls}">${s.value}</div>
+      ${s.sub?'<div class="stat-sub">'+s.sub+'</div>':''}
+    </div>
+  `).join('');
+
+  // Gantt
+  const gantt = document.getElementById('ganttChart');
+  const maxMonth = 30;
+  const colors = {awarded:'var(--teal)',received:'var(--blue)',review:'var(--gold)',itb:'var(--orange)','not-started':'rgba(255,255,255,0.1)'};
+  gantt.innerHTML = TRADES.map(t=>{
+    const s = (t.timeline?.start||0); const e = (t.timeline?.end||maxMonth);
+    const left = (s/maxMonth*100)+'%'; const width = ((e-s)/maxMonth*100)+'%';
+    return `<div class="gantt-row">
+      <div class="gantt-label">${String(t.id).padStart(2,'0')}. ${t.name}</div>
+      <div class="gantt-track">
+        <div class="gantt-bar" style="left:${left};width:${width};background:${colors[t.status]||colors['not-started']}">
+          ${t.name.split('/')[0].split('(')[0].trim().substring(0,15)}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Key dates
+  const dates = [
+    {color:'var(--gold)',label:'Project NTP',value:'Jul 1, 2026'},
+    {color:'var(--orange)',label:'All ITBs Issued',value:'Apr 30, 2026'},
+    {color:'var(--blue)',label:'All Bids Due',value:'May 30, 2026'},
+    {color:'var(--teal)',label:'All Trades Awarded',value:'Jun 30, 2026'},
+    {color:'var(--green)',label:'Construction Start',value:'Jul 15, 2026'},
+    {color:'var(--gold)',label:'Steel Topping Out',value:'Mar 2027'},
+    {color:'var(--teal)',label:'Cleanroom Turnover',value:'Jun 2028'},
+    {color:'var(--red)',label:'Substantial Completion',value:'Dec 31, 2028'}
+  ];
+  document.getElementById('keyDates').innerHTML = dates.map(d=>`
+    <div class="date-item">
+      <div class="date-dot" style="background:${d.color}"></div>
+      <div class="date-label">${d.label}</div>
+      <div class="date-value">${d.value}</div>
+    </div>
+  `).join('');
+}
+
+// ===== OVERVIEW CHARTS =====
+let chartInstances = {};
+function destroyChart(id) { if(chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; } }
+
+function renderOverviewCharts() {
+  // Budget Pie
+  destroyChart('budgetPie');
+  const ctx1 = document.getElementById('budgetPie');
+  if(!ctx1) return;
+  chartInstances.budgetPie = new Chart(ctx1, {
+    type:'doughnut',
+    data:{
+      labels:TRADES.map(t=>t.name.split('/')[0].split('(')[0].trim().substring(0,18)),
+      datasets:[{
+        data:TRADES.map(t=>t.budget),
+        backgroundColor:['#D4AF37','#0ea5a0','#3b82f6','#ff8c00','#22c55e','#dc2626','#8b5cf6','#f59e0b','#06b6d4','#ec4899','#14b8a6','#f97316','#6366f1','#84cc16','#e11d48','#0891b2'],
+        borderWidth:0
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: $${ctx.raw}M`}}}
+    }
+  });
+
+  // Status Donut
+  destroyChart('statusDonut');
+  const statusCounts = {awarded:0,received:0,review:0,itb:0,'not-started':0};
+  TRADES.forEach(t=>statusCounts[t.status]=(statusCounts[t.status]||0)+1);
+  chartInstances.statusDonut = new Chart(document.getElementById('statusDonut'), {
+    type:'doughnut',
+    data:{
+      labels:['Awarded','Bids Received','Under Review','ITB Out','Not Started'],
+      datasets:[{
+        data:[statusCounts.awarded,statusCounts.received,statusCounts.review,statusCounts.itb,statusCounts['not-started']],
+        backgroundColor:['#0ea5a0','#3b82f6','#D4AF37','#ff8c00','rgba(255,255,255,0.1)'],
+        borderWidth:0
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:true,
+      plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:10},padding:8}}}
+    }
+  });
+}
+
+// ===== SUMMARY PANEL =====
+function renderSummary() {
+  const table = document.getElementById('summaryTable');
+  let rows = TRADES.map(t => {
+    const spread = (t.lowBid && t.highBid) ? (((t.highBid-t.lowBid)/t.lowBid)*100).toFixed(1)+'%' : '—';
+    const variance = t.awardedAmt ? ((t.awardedAmt-t.budget)/t.budget*100).toFixed(1)+'%' : (t.lowBid ? ((t.lowBid-t.budget)/t.budget*100).toFixed(1)+'%' : '—');
+    const varClass = t.awardedAmt ? (t.awardedAmt<t.budget?'cell-green':'cell-red') : (t.lowBid?(t.lowBid<t.budget?'cell-green':'cell-red'):'');
+    return `<tr>
+      <td>${String(t.id).padStart(2,'0')}</td>
+      <td style="cursor:pointer;color:var(--text)" onclick="showPanel('trade-${t.id}')">${t.name}</td>
+      <td>${fmt(t.budget)}</td>
+      <td>${t.lowBid?fmt(t.lowBid):'—'}</td>
+      <td>${t.highBid?fmt(t.highBid):'—'}</td>
+      <td style="text-align:center">${t.bidders}</td>
+      <td>${spread}</td>
+      <td>${t.awardedTo||'—'}</td>
+      <td class="cell-teal">${t.awardedAmt?fmt(t.awardedAmt):'—'}</td>
+      <td class="${varClass}">${variance}</td>
+      <td><span class="status-pill ${STATUS_PILL_CLASS[t.status]}">${STATUS_LABELS[t.status]}</span></td>
+    </tr>`;
+  }).join('');
+
+  const totalBudget = TRADES.reduce((s,t)=>s+t.budget,0);
+  const totalAwarded = TRADES.reduce((s,t)=>s+(t.awardedAmt||0),0);
+
+  table.innerHTML = `
+    <thead><tr>
+      <th>#</th><th>Trade</th><th>Budget Est.</th><th>Low Bid</th><th>High Bid</th>
+      <th>Bidders</th><th>Spread</th><th>Awarded To</th><th>Awarded $</th><th>Variance</th><th>Status</th>
+    </tr></thead>
+    <tbody>${rows}
+    <tr style="background:rgba(212,175,55,0.08);font-weight:600">
+      <td colspan="2">TOTAL (16 Trades)</td>
+      <td class="cell-gold">${fmt(totalBudget)}</td>
+      <td colspan="5"></td>
+      <td class="cell-teal">${fmt(totalAwarded)}</td>
+      <td></td><td></td>
+    </tr></tbody>`;
+}
+
+function renderSummaryCharts() {
+  // Award status donut
+  destroyChart('awardDonut');
+  const awarded = TRADES.filter(t=>t.status==='awarded').reduce((s,t)=>s+t.budget,0);
+  const pending = TRADES.filter(t=>['received','review','itb'].includes(t.status)).reduce((s,t)=>s+t.budget,0);
+  const notStarted = TRADES.filter(t=>t.status==='not-started').reduce((s,t)=>s+t.budget,0);
+  chartInstances.awardDonut = new Chart(document.getElementById('awardDonut'),{
+    type:'doughnut',
+    data:{
+      labels:['Awarded','Pending','Not Started'],
+      datasets:[{data:[awarded,pending,notStarted],backgroundColor:['#0ea5a0','#ff8c00','rgba(255,255,255,0.1)'],borderWidth:0}]
+    },
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:10}}}}}
+  });
+
+  // Variance bar
+  destroyChart('varianceBar');
+  const labels = TRADES.map(t=>String(t.id).padStart(2,'0'));
+  const variances = TRADES.map(t=>{
+    const bid = t.awardedAmt || t.lowBid;
+    return bid ? ((bid-t.budget)/t.budget*100) : 0;
+  });
+  const barColors = variances.map(v=>v<0?'#22c55e':(v>0?'#dc2626':'rgba(255,255,255,0.1)'));
+  chartInstances.varianceBar = new Chart(document.getElementById('varianceBar'),{
+    type:'bar',
+    data:{labels,datasets:[{label:'Variance %',data:variances,backgroundColor:barColors,borderRadius:4}]},
+    options:{
+      responsive:true,maintainAspectRatio:true,
+      scales:{x:{ticks:{color:'#64748b',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#64748b',callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.03)'}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.raw.toFixed(1)+'% vs budget'}}}
+    }
+  });
+}
+
+// ===== TRADE PANELS =====
+function renderTradePanels() {
+  const container = document.getElementById('tradePanels');
+  container.innerHTML = TRADES.map(t => {
+    const hasBids = t.bids && t.bids.some(b=>b.amount);
+    return `
+    <div class="panel" id="panel-trade-${t.id}">
+      <!-- Trade Header -->
+      <div class="trade-header">
+        <h2><span>${String(t.id).padStart(2,'0')}.</span> ${t.name}</h2>
+        <div class="trade-meta">
+          <div class="trade-meta-item"><label>Budget Estimate</label><value class="cell-gold">${fmt(t.budget)}</value></div>
+          <div class="trade-meta-item"><label>Status</label><value><span class="status-pill ${STATUS_PILL_CLASS[t.status]}">${STATUS_LABELS[t.status]}</span></value></div>
+          <div class="trade-meta-item"><label>Bid Due Date</label><value>${t.dueDate}</value></div>
+          <div class="trade-meta-item"><label>Bidders</label><value>${t.bids.length} invited / ${t.bids.filter(b=>b.amount).length} responded</value></div>
+          ${t.awardedTo?`<div class="trade-meta-item"><label>Awarded To</label><value class="cell-teal">${t.awardedTo} — ${fmt(t.awardedAmt)}</value></div>`:''}
+        </div>
+      </div>
+
+      <!-- Scope of Work -->
+      <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">
+          <h3>📋 Section 1: Scope of Work</h3>
+          <span class="toggle open">▶</span>
+        </div>
+        <div class="section-content">
+          <div class="scope-text">${t.scope}</div>
+        </div>
+      </div>
+
+      <!-- Technical Requirements -->
+      ${t.techReqs?`
+      <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">
+          <h3>⚙️ Section 2: Technical Requirements</h3>
+          <span class="toggle open">▶</span>
+        </div>
+        <div class="section-content">
+          <div class="card">
+            ${t.techReqs.map(r=>`<div style="margin:4px 0"><span class="tag tag-${r.tag}">${r.tag}</span> <span style="font-size:12px;color:var(--text-dim)">${r.text}</span></div>`).join('')}
+          </div>
+        </div>
+      </div>`:''}
+
+      <!-- Invited Bidders -->
+      <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">
+          <h3>👥 Section 3: Invited Bidders</h3>
+          <span class="toggle open">▶</span>
+        </div>
+        <div class="section-content">
+          <div class="card">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Company</th><th>Contact</th><th>Phone</th><th>Email</th><th>ITB Sent</th><th>Response</th><th>Bid Amount</th><th>Status</th></tr></thead>
+                <tbody>${t.bids.map(b=>`<tr>
+                  <td style="font-weight:500">${b.company}</td><td>${b.contact}</td><td>${b.phone}</td>
+                  <td style="color:var(--blue)">${b.email}</td><td>${b.sent}</td><td>${b.response}</td>
+                  <td class="cell-gold">${b.amount?fmt(b.amount):'—'}</td>
+                  <td><span class="status-pill ${b.status==='Awarded'?'pill-awarded':b.status==='Bid Received'?'pill-received':'pill-itb'}">${b.status}</span></td>
+                </tr>`).join('')}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bid Comparison -->
+      ${hasBids && t.bidComparison?`
+      <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">
+          <h3>📊 Section 4: Bid Comparison</h3>
+          <span class="toggle open">▶</span>
+        </div>
+        <div class="section-content">
+          <div class="card">
+            <div class="table-wrap">
+              <table>
+                <thead><tr>
+                  <th>Line Item</th>
+                  ${t.bids.filter(b=>b.amount).map(b=>`<th>${b.company.split(' ')[0]}</th>`).join('')}
+                  <th>Budget</th><th>Variance</th>
+                </tr></thead>
+                <tbody>${t.bidComparison.map(row=>{
+                  const minVal = Math.min(...row.vals);
+                  return `<tr>
+                    <td style="font-weight:500">${row.item}</td>
+                    ${row.vals.map(v=>{
+                      const isLow = v===minVal && row.vals.filter(x=>x===v).length===1;
+                      const cls = v<row.budget?'cell-green':(v>row.budget?'cell-red':'');
+                      return `<td class="${cls} ${isLow?'cell-lowest':''}">$${v}M</td>`;
+                    }).join('')}
+                    <td style="color:var(--text-muted)">$${row.budget}M</td>
+                    <td class="${row.vals[0]<row.budget?'cell-green':'cell-red'}">${((row.vals[0]-row.budget)/row.budget*100).toFixed(1)}%</td>
+                  </tr>`;
+                }).join('')}
+                <tr style="font-weight:700;border-top:2px solid var(--border)">
+                  <td>TOTAL</td>
+                  ${t.bids.filter(b=>b.amount).map(b=>`<td class="${b.amount<t.budget?'cell-green':'cell-red'}">${fmt(b.amount)}</td>`).join('')}
+                  <td class="cell-gold">${fmt(t.budget)}</td>
+                  <td></td>
+                </tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>`:''}
+
+      <!-- Scorecard -->
+      ${hasBids && t.scores?`
+      <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">
+          <h3>🏆 Section 5: Bid Evaluation Scorecard</h3>
+          <span class="toggle open">▶</span>
+        </div>
+        <div class="section-content">
+          <div class="charts-row">
+            <div class="card">
+              <div class="card-title">Weighted Scoring Matrix</div>
+              ${renderScorecard(t)}
+            </div>
+            <div class="chart-card">
+              <h3>Radar Comparison</h3>
+              <div class="chart-container"><canvas id="radar-${t.id}"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>`:''}
+
+      <!-- Recommendation -->
+      <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">
+          <h3>📝 Section 6: Recommendation & Notes</h3>
+          <span class="toggle open">▶</span>
+        </div>
+        <div class="section-content">
+          ${t.recommendation?`<div class="recommendation">${t.recommendation}</div>`:'<div class="card"><p style="color:var(--text-muted);font-size:12px">No recommendation yet — awaiting bids.</p></div>'}
+        </div>
+      </div>
+
+      <!-- Change Log -->
+      <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">
+          <h3>📜 Section 7: Change Log</h3>
+          <span class="toggle open">▶</span>
+        </div>
+        <div class="section-content">
+          <div class="card">
+            ${(t.changelog||[]).map(entry=>{
+              const parts = entry.split(' — ');
+              return `<div class="changelog-entry"><span class="changelog-date">${parts[0]}</span><span class="changelog-text">${parts.slice(1).join(' — ')}</span></div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderScorecard(t) {
+  const criteria = [
+    {name:'Price Competitiveness',weight:20},
+    {name:'Technical Capability',weight:30},
+    {name:'Fab Experience',weight:25},
+    {name:'Key Personnel',weight:15},
+    {name:'Safety Record',weight:10}
+  ];
+  const bidders = t.bids.filter(b=>b.amount);
+  const colors = ['var(--gold)','var(--teal)','var(--blue)','var(--orange)'];
+  
+  // Calculate price scores
+  const priceScores = bidders.map(b => Math.max(0, 100 - ((b.amount - t.budget) / t.budget * 100) * 5));
+  
+  let html = '<div style="overflow-x:auto"><table><thead><tr><th>Criteria</th><th>Weight</th>';
+  bidders.forEach(b => html += `<th>${b.company.split(' ')[0]}</th>`);
+  html += '</tr></thead><tbody>';
+  
+  const totals = bidders.map(()=>0);
+  criteria.forEach((c,ci) => {
+    html += `<tr><td>${c.name}</td><td>${c.weight}%</td>`;
+    bidders.forEach((b,bi) => {
+      let score;
+      if(ci===0) score = Math.round(priceScores[bi]);
+      else if(ci===1) score = t.scores.technical[bi];
+      else if(ci===2) score = t.scores.experience[bi];
+      else if(ci===3) score = t.scores.personnel[bi];
+      else score = t.scores.safety[bi];
+      totals[bi] += score * c.weight / 100;
+      html += `<td><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:4px;background:rgba(255,255,255,0.05);border-radius:2px"><div style="width:${score}%;height:100%;background:${colors[bi]};border-radius:2px"></div></div><span style="font-size:10px;font-weight:600;width:24px">${score}</span></div></td>`;
+    });
+    html += '</tr>';
+  });
+  html += `<tr style="font-weight:700;border-top:2px solid var(--border)"><td>WEIGHTED TOTAL</td><td>100%</td>`;
+  totals.forEach((t,i) => html += `<td style="color:${colors[i]};font-size:14px">${t.toFixed(1)}</td>`);
+  html += '</tr></tbody></table></div>';
+  return html;
+}
+
+function renderTradeCharts(tradeId) {
+  const t = TRADES.find(tr=>tr.id===tradeId);
+  if(!t || !t.scores) return;
+  const bidders = t.bids.filter(b=>b.amount);
+  if(bidders.length===0) return;
+  
+  const chartId = 'radar-'+t.id;
+  destroyChart(chartId);
+  const canvas = document.getElementById(chartId);
+  if(!canvas) return;
+  
+  const priceScores = bidders.map(b => Math.round(Math.max(0, 100 - ((b.amount - t.budget) / t.budget * 100) * 5)));
+  const colors = [
+    {bg:'rgba(212,175,55,0.2)',border:'#D4AF37'},
+    {bg:'rgba(14,165,160,0.2)',border:'#0ea5a0'},
+    {bg:'rgba(59,130,246,0.2)',border:'#3b82f6'},
+    {bg:'rgba(255,140,0,0.2)',border:'#ff8c00'}
+  ];
+  
+  chartInstances[chartId] = new Chart(canvas, {
+    type:'radar',
+    data:{
+      labels:['Price','Technical','Experience','Personnel','Safety'],
+      datasets: bidders.map((b,i) => ({
+        label:b.company.split(' ')[0],
+        data:[priceScores[i], t.scores.technical[i], t.scores.experience[i], t.scores.personnel[i], t.scores.safety[i]],
+        backgroundColor:colors[i].bg,
+        borderColor:colors[i].border,
+        borderWidth:2,
+        pointRadius:3,
+        pointBackgroundColor:colors[i].border
+      }))
+    },
+    options:{
+      responsive:true,maintainAspectRatio:true,
+      scales:{r:{min:50,max:100,ticks:{stepSize:10,color:'#64748b',backdropColor:'transparent',font:{size:8}},grid:{color:'rgba(255,255,255,0.05)'},pointLabels:{color:'#94a3b8',font:{size:10}}}},
+      plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:10},padding:8}}}
+    }
+  });
+}
+
+// ===== TOGGLE SECTION =====
+function toggleSection(header) {
+  const content = header.nextElementSibling;
+  const toggle = header.querySelector('.toggle');
+  content.classList.toggle('collapsed');
+  toggle.classList.toggle('open');
+}
+
+// ===== ACTIONS =====
+function awardCurrentTrade() {
+  if(!currentPanel.startsWith('trade-')) { alert('Select a trade first.'); return; }
+  const id = parseInt(currentPanel.replace('trade-',''));
+  const t = TRADES.find(tr=>tr.id===id);
+  if(!t) return;
+  if(t.status==='awarded') { alert(t.name+' is already awarded to '+t.awardedTo+'.'); return; }
+  const bidders = t.bids.filter(b=>b.amount);
+  if(bidders.length===0) { alert('No bids received yet for '+t.name+'.'); return; }
+  const winner = prompt('Award '+t.name+' to which bidder?\n\n'+bidders.map((b,i)=>(i+1)+'. '+b.company+' — '+fmt(b.amount)).join('\n')+'\n\nEnter number:');
+  if(!winner) return;
+  const idx = parseInt(winner)-1;
+  if(idx<0||idx>=bidders.length) return;
+  t.status = 'awarded';
+  t.awardedTo = bidders[idx].company;
+  t.awardedAmt = bidders[idx].amount;
+  bidders[idx].status = 'Awarded';
+  t.changelog.push(new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})+' — Awarded to '+t.awardedTo+' at '+fmt(t.awardedAmt));
+  renderSidebar(); renderSummary(); updateMasterTotal();
+  showPanel(currentPanel);
+  alert('✅ '+t.name+' awarded to '+t.awardedTo+' at '+fmt(t.awardedAmt));
+}
+
+function exportSummary() {
+  let csv = '#,Trade,Budget,Low Bid,High Bid,Bidders,Awarded To,Awarded $,Status\n';
+  TRADES.forEach(t=>{
+    csv += `${t.id},"${t.name}",${t.budget},${t.lowBid||''},${t.highBid||''},${t.bidders},"${t.awardedTo||''}",${t.awardedAmt||''},${STATUS_LABELS[t.status]}\n`;
+  });
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'MaxBidding_TI_SM2_Summary.csv';
+  a.click();
+}
+
+// ===== INIT =====
+init();
+</script>
+</body>
+</html>
